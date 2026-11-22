@@ -84,7 +84,11 @@ class CorpusVerifyRedDetailTests(unittest.TestCase):
         after = steps[steps.index(verify) + 1:]
         detail = [s for s in after if verify_ac.RED_DETAIL_ENV in str(s.get("run", ""))]
         self.assertEqual(len(detail), 1, "no step after the verification prints the red detail")
-        self.assertEqual(detail[0].get("if"), "failure()",
+        # `failure()` alone is true when any earlier step failed, and that skips the
+        # verification: the detail step reads the verification step's own outcome too.
+        self.assertTrue(verify.get("id"), "the verification step has no id to read it by")
+        self.assertEqual(detail[0].get("if"),
+                         f"failure() && steps.{verify['id']}.outcome == 'failure'",
                          "the detail step must run when, and only when, the verification fails")
         with tempfile.TemporaryDirectory() as d:
             tmp = Path(d)
@@ -180,6 +184,36 @@ class CorpusVerifyRedDetailTests(unittest.TestCase):
         self.assertIn("red: US0001::AC1 - pytest " + node, text)
         self.assertIn(f"the batch answered: cached pytest run for {node} did not pass", text)
         self.assertIn("rerun-marker", text)
+
+    def test_a_red_line_after_a_green_one_is_the_line_recorded(self) -> None:
+        """Every line of a criterion runs until one is red; the record names that line above
+        its own output, not the first line, which passed."""
+        red = "shell echo bad-marker; exit 5"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            log = root / "detail.log"
+            self._verify(root, _story(root, "US0001", "Done", "shell echo ok-marker",
+                                      f"- **Verify:** {red}\n"), log)
+            text = log.read_text(encoding="utf-8")
+        self.assertRegex(text, r"\Ared: US0001::AC1 - " + re.escape(red)
+                         + r"\nexit 5 after \d+ ms\n--- stdout\nbad-marker\n\n\Z")
+        self.assertNotIn("ok-marker", text, "the green line is named above the red one's output")
+
+    def test_a_recorded_verdict_over_several_green_lines_names_the_line_it_shows(self) -> None:
+        """Every line passed and the author's record is the red: the record shows the last
+        line's run, and names that line above it, not the first."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            log = root / "detail.log"
+            self._verify(root, _story(root, "US0001", "Done", "shell echo first-marker",
+                                      "- **Verify:** shell echo second-marker\n"
+                                      "- **Verified:** no - unread\n"), log)
+            text = log.read_text(encoding="utf-8")
+        self.assertRegex(text, r"\Ared: US0001::AC1 - shell echo second-marker\n"
+                               r"the selector passed, but this criterion records "
+                               r"`Verified: no` - unread\nexit 0 after \d+ ms\n"
+                               r"--- stdout\nsecond-marker\n\n\Z")
+        self.assertNotIn("first-marker", text, "a line is named above another line's output")
 
     def test_a_recorded_verdict_that_overrides_a_green_is_recorded_with_why(self) -> None:
         with tempfile.TemporaryDirectory() as d:

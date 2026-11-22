@@ -2903,7 +2903,9 @@ def _run_timeout(flag: int | None) -> int:
 def _record_red(story_path: Path, text: str, ac: str, verifier: str, result: VerifierResult,
                 rerun=None, why: str = "") -> None:
     """Append criterion `ac`'s red to the file `RED_DETAIL_ENV` names: its `<record>::<AC>` id
-    and verifier, then the verifier's own exit, stdout and stderr under them.
+    and `verifier`, the Verify line `result` is the run of, then that line's own exit, stdout
+    and stderr under them. Of a criterion's several lines that is the red one, or the last when
+    every line passed and the author's recorded verdict is the red.
 
     Nothing is written when the variable is unset, or when the unit's status claims no
     completion, which the release gate reads as unbuilt rather than red. A red a batch answered
@@ -3034,7 +3036,7 @@ def verify_story(
                     "score": result.score,
                     "vacuous": result.vacuous,
                 })
-                _record_red(story_path, text, block.ac_id, block.verifier, result,
+                _record_red(story_path, text, block.ac_id, verifier, result,
                             why=report.failures[-1]["stderr"])
                 continue
             report.verified += 1
@@ -4238,14 +4240,15 @@ def _bindings(scope, quals: list[str]) -> list:
 def _bound_after(body: list, name: str, bound: list) -> list:
     """What `name` may be bound to after the statements `body` run, from `bound` before them.
 
-    A def or class statement binds the name, and a later one rebinds it, so the last wins. An
-    import or `del` leaves it holding no doctest of this module's own, and an assignment binds
-    it to `_UNREAD`. Under an `if`, either branch may run; under a `with`, its body does; under
-    a loop, a `try` or a `match`, any block may run or none, and a `finally` block runs after
-    them. Where it depends on which ran, every definition that may be bound counts."""
+    A def or class statement binds the name to what `_decorated` reads it as, and a later one
+    rebinds it, so the last wins. An import or `del` leaves it holding no doctest of this
+    module's own, and an assignment binds it to `_UNREAD`. Under an `if`, either branch may
+    run, and with no `else` the binding before it may stand; under a `with`, its body does;
+    under a loop, a `try` or a `match`, any block may run or none, and a `finally` block always
+    runs after them. Where it depends on which ran, every definition that may be bound counts."""
     for stmt in body:
         if isinstance(stmt, _TEST_DEFS):
-            bound = [stmt] if stmt.name == name else bound
+            bound = _decorated(stmt, bound) if stmt.name == name else bound
         elif isinstance(stmt, (ast.Import, ast.ImportFrom)):
             bound = [] if any((a.asname or a.name.split(".")[0]) == name
                               for a in stmt.names) else bound
@@ -4267,6 +4270,19 @@ def _bound_after(body: list, name: str, bound: list) -> list:
             bound = _bound_after(getattr(stmt, "finalbody", []), name, bound)
         bound = list(dict.fromkeys(bound))
     return bound
+
+
+def _decorated(stmt, bound: list) -> list:
+    """What the def or class `stmt` binds its name to, from `bound` before it: what its
+    decorators return. A property's `@<name>.setter` or `@<name>.deleter`, named by the def's
+    own name, keeps the property and its docstring, so the name stays bound as it was; the
+    same decorator on any other property binds that one, which is not read. Any other def or
+    class is read by its own docstring, which `property`, a property's `.getter`,
+    `staticmethod` and `classmethod` keep."""
+    for deco in stmt.decorator_list:
+        if isinstance(deco, ast.Attribute) and deco.attr in ("setter", "deleter"):
+            return bound if getattr(deco.value, "id", None) == stmt.name else [_UNREAD]
+    return [stmt]
 
 
 def _names_defined(parsed: tuple, names: list[str]) -> str | None:

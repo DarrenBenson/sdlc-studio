@@ -242,15 +242,17 @@ jobs:
         # At 300 s that verifier, 353 s on this runner, read red in the same run (BG1054).
         # Each red criterion's own verifier output goes to the detail file, which the next step
         # prints: the lane's own message names a red by id alone.
+        id: verify
         env:
           SDLC_VERIFY_TIMEOUT: 450
           SDLC_VERIFY_RED_DETAIL: ${{ runner.temp }}/corpus-red-detail.log
         run: bash tools/verify-corpus.sh full
 
       - name: Red criteria, each with its verifier's own output
-        # Runs only when the verification fails, and fails itself when it prints a red, so
-        # `gh run view --log-failed` shows the output beside the ids.
-        if: failure()
+        # Runs only when the verification step itself fails: an earlier step that fails the job
+        # skips that step, whose outcome is then `skipped`. It fails itself when it prints a
+        # red, so `gh run view --log-failed` shows the output beside the ids.
+        if: failure() && steps.verify.outcome == 'failure'
         env:
           SDLC_VERIFY_RED_DETAIL: ${{ runner.temp }}/corpus-red-detail.log
         run: |

@@ -1144,7 +1144,32 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
               "def json():\n    " + EXAMPLE + "\n\n\nimport json.decoder\n\n\n"
               "def annotated():\n    pass\n\n\nannotated: int\n\n\n"
               "def rebound_in_with():\n    " + EXAMPLE + "\n\n\n"
-              "with contextlib.nullcontext():\n    def rebound_in_with():\n        pass\n")
+              "with contextlib.nullcontext():\n    def rebound_in_with():\n        pass\n\n\n"
+              # A decorated def binds what its decorator returns: a property's `.setter` and
+              # `.deleter` keep its getter's docstring, its `.getter` takes the new one's.
+              "def _keep(func):\n    return func\n\n\n"
+              "class Props:\n    @property\n    def got(self):\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "    @got.setter\n    def got(self, value):\n        pass\n\n"
+              "    @property\n    def set_only(self):\n        pass\n\n"
+              "    @set_only.setter\n    def set_only(self, value):\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "    @property\n    def kept(self):\n        " + EXAMPLE.replace("\n", "\n    ")
+              + "\n\n    @kept.deleter\n    def kept(self):\n        pass\n\n"
+              "    @property\n    def regot(self):\n        " + EXAMPLE.replace("\n", "\n    ")
+              + "\n\n    @regot.getter\n    def regot(self):\n        pass\n\n"
+              "    @property\n    def regot_doc(self):\n        pass\n\n"
+              "    @regot_doc.getter\n    def regot_doc(self):\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "    @got.setter\n    def other(self, value):\n        pass\n\n"
+              "    @property\n    def stacked(self):\n        " + EXAMPLE.replace("\n", "\n    ")
+              + "\n\n    @_keep\n    @stacked.setter\n    def stacked(self, value):\n        pass\n\n"
+              "    @stacked.setter\n    @_keep\n    def stacked(self, value):\n        pass\n\n\n"
+              "class Later:\n    @Props.got.setter\n    def got(self, value):\n        pass\n\n\n"
+              "def rebound_in_finally():\n    " + EXAMPLE + "\n\n\n"
+              "try:\n    pass\nfinally:\n    def rebound_in_finally():\n        pass\n\n\n"
+              "def kept_past_if():\n    " + EXAMPLE + "\n\n\n"
+              "if not sys:\n    def kept_past_if():\n        pass\n")
 
     def _project(self, root: Path, rows: str) -> Path:
         tests = root / "pkg" / "tests"
@@ -1233,13 +1258,18 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0014 | AC4 | dotted import | test_c.py::test_c.json | Pass |\n"
                 "| US0014 | AC5 | annotation only | test_c.py::test_c.annotated | Pass |\n"
                 "| US0015 | AC1 | with rebinds | test_c.py::test_c.rebound_in_with | Pass |\n"
-                "| US0015 | AC2 | read, not rebound | test_c.py::test_c.subscripted | Pass |\n")
+                "| US0015 | AC2 | read, not rebound | test_c.py::test_c.subscripted | Pass |\n"
+                # A property whose example sits on its setter alone, a `.getter` replacing the
+                # getter that held it, and a def a `finally` block rebinds, which always runs.
+                "| US0015 | AC3 | setter's example | test_c.py::test_c.Props.set_only | Pass |\n"
+                "| US0015 | AC4 | getter replaced | test_c.py::test_c.Props.regot | Pass |\n"
+                "| US0015 | AC5 | finally rebinds | test_c.py::test_c.rebound_in_finally | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, out = self._ts_check(root, self._project(root, rows))
             self.assertEqual(rc, 1, out)
             self.assertNotIn("ts-check: 0 finding(s)", out)
-            self.assertIn("ts-check: 30 finding(s)", out)
+            self.assertIn("ts-check: 33 finding(s)", out)
             lines = out.splitlines()
             for story, ac, name in (("US0002", "AC4", "DeletedTests"),
                                     ("US0003", "AC2", "test_gone"),
@@ -1274,7 +1304,10 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                                     ("US0014", "AC4", "test_c.py::test_c.json`"),
                                     ("US0014", "AC5", "test_c.py::test_c.annotated`"),
                                     ("US0015", "AC1", "test_c.py::test_c.rebound_in_with`"),
-                                    ("US0015", "AC2", "test_c.py::test_c.subscripted`")):
+                                    ("US0015", "AC2", "test_c.py::test_c.subscripted`"),
+                                    ("US0015", "AC3", "test_c.py::test_c.Props.set_only`"),
+                                    ("US0015", "AC4", "test_c.py::test_c.Props.regot`"),
+                                    ("US0015", "AC5", "test_c.py::test_c.rebound_in_finally`")):
                 hit = [ln for ln in lines if story in ln and ln.lstrip().startswith(f"{ac}:")]
                 self.assertEqual(len(hit), 1, f"no single finding names {story} {ac}:\n{out}")
                 self.assertIn(name, hit[0])
@@ -1325,6 +1358,16 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0009 | AC4 | in finally | test_c.py::test_c.in_finally | Pass |\n"
                 "| US0009 | AC5 | in a match case | test_c.py::test_c.matched | Pass |\n"
                 "| US0010 | AC1 | loop else | test_c.py::test_c.loop_else | Pass |\n"
+                # A property's setter or deleter keeps its getter's example, beside any other
+                # decorator too, a `.getter` brings its own, another property's setter binds
+                # that property, and an `if` with no `else` may leave the earlier one bound.
+                "| US0010 | AC2 | plain setter | test_c.py::test_c.Props.got | Pass |\n"
+                "| US0010 | AC3 | plain deleter | test_c.py::test_c.Props.kept | Pass |\n"
+                "| US0010 | AC4 | getter's own | test_c.py::test_c.Props.regot_doc | Pass |\n"
+                "| US0010 | AC5 | other's setter | test_c.py::test_c.Props.other | Pass |\n"
+                "| US0011 | AC1 | setter by path | test_c.py::test_c.Later.got | Pass |\n"
+                "| US0011 | AC2 | no else | test_c.py::test_c.kept_past_if | Pass |\n"
+                "| US0011 | AC3 | stacked setters | test_c.py::test_c.Props.stacked | Pass |\n"
                 "| US0002 | AC1 | manual | manual: read the rendered page | Pass |\n"
                 "| US0002 | AC2 | shell | shell grep (see story Verify) | Pass |\n")
         with tempfile.TemporaryDirectory() as d:

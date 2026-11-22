@@ -681,8 +681,8 @@ own `urllib`, and the soft runtime tools are listed in §1.
 | `PYTEST_ADDOPTS` | Extended, never replaced, by `migrate.py` while it collects a project's tests, with `-p no:cacheprovider`, and restored after | No | unset |
 | `PYTHONDONTWRITEBYTECODE` | Cleared by `migrate.py` while it collects a project's tests, and restored after | No | unset |
 | `PYTHONPYCACHEPREFIX` | Set by `migrate.py` to a private temporary directory while it collects a project's tests, and restored after | No | unset |
-| `SDLC_VERIFY_TIMEOUT` | The ceiling in seconds for one criterion's verifier | No | 300 |
-| `SDLC_VERIFY_RED_DETAIL` | A file `verify_ac.py run` appends each red criterion's own verifier output to, one block per failing criterion on a unit whose status claims completion; the scheduled corpus lane sets it so a red it reports can be read in its own log | No | unset (no detail is written) |
+| `SDLC_VERIFY_TIMEOUT` | The ceiling in seconds for one criterion's verifier, read by the release gate's verify lane and by `verify_ac.py run` when `--timeout` is not given; a value that is not a positive integer is ignored | No | 300 at the gate, 120 for `verify_ac.py run` |
+| `SDLC_VERIFY_RED_DETAIL` | A file `verify_ac.py run` and the release gate's verify lane append each red criterion's own verifier output to, one block per failing criterion on a unit whose status claims completion; the scheduled corpus lane sets it so a red it reports can be read in its own log | No | unset (no detail is written) |
 | `SDLC_VERIFY_BATCH_TIMEOUT` | The ceiling in seconds for the pytest batch the verify lane runs | No | 3600 |
 | `SDLC_VERIFY_WORKERS` | How many stories the verify lane runs at once | No | the core count, at most 8 |
 | `SDLC_COVERAGE_PYTHON` | The interpreter the coverage measurement runs under | No | the running interpreter |
@@ -858,6 +858,7 @@ none.
 | 2026-11-21 | 6.4.0 | Unparseable Verify lines (BG0981): the Breakdown gate's first criterion says a groomed story or bug carries no `Verify:` line `verify_ac.py run` cannot parse |
 | 2026-11-21 | 6.4.0 | Verify AC (BG1023): the vitest and jest verbs select a test by file and name, so the parse criterion is ticked and the row no longer names BG1023 as holding it; the feature stays Partial, held by BG1063 |
 | 2026-11-22 | 6.4.0 | Environment variables (BG1578): the table gains `SDLC_VERIFY_RED_DETAIL`, the file `verify_ac.py run` appends each red criterion's own verifier output to, which the scheduled corpus lane sets |
+| 2026-11-22 | 6.4.0 | Environment variables (BG1578): `SDLC_VERIFY_TIMEOUT` names both its readers and their defaults, 300 s at the release gate and 120 s for `verify_ac.py run`, which now reads it when `--timeout` is not given, and `SDLC_VERIFY_RED_DETAIL` names the release gate's verify lane, which the corpus lane runs, beside `verify_ac.py run` as writing the file |
 
 ---
 
