@@ -4273,12 +4273,13 @@ def _bound_after(body: list, name: str, bound: list) -> list:
 
 
 def _decorated(stmt, bound: list) -> list:
-    """What the def or class `stmt` binds its name to, from `bound` before it: what its
-    decorators return. A property's `@<name>.setter` or `@<name>.deleter`, named by the def's
-    own name, keeps the property and its docstring, so the name stays bound as it was; the
-    same decorator on any other property binds that one, which is not read. Any other def or
-    class is read by its own docstring, which `property`, a property's `.getter`,
-    `staticmethod` and `classmethod` keep."""
+    """What the def or class `stmt` is read as binding its name to, from `bound` before it.
+    Of its decorators ending in `.setter` or `.deleter`, as a property's do, the first listed
+    decides, whatever else decorates it: on the def's own name it keeps the property and its
+    docstring, so the name stays bound as it was; on anything else it binds what is not read.
+    Any other def or class is read by its own docstring, which `property`, a property's
+    `.getter`, `staticmethod` and `classmethod` keep; what any other decorator returns is not
+    looked at."""
     for deco in stmt.decorator_list:
         if isinstance(deco, ast.Attribute) and deco.attr in ("setter", "deleter"):
             return bound if getattr(deco.value, "id", None) == stmt.name else [_UNREAD]
