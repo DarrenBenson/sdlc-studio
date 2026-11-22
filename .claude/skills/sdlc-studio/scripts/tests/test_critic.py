@@ -114,6 +114,63 @@ class RecordTests(unittest.TestCase):
             self.assertIn("US0003", units)
 
 
+    def test_record_names_a_leftover_scratch_worktree(self) -> None:
+        """BG1265 AC3. A reviewer's detached worktree still registered under the scratch area is
+        named by the record, with the command that removes it, and the record is not refused
+        over it; with none registered nothing is said. MUTANTS: the note dropped; the record
+        refused; a worktree on a branch (a lane's) named; the main worktree named; the
+        `scratchpad` folder rule or the temporary-directory rule dropped."""
+        import gitutil  # noqa: PLC0415 - confined git for the fixture repository
+        mod = _load()
+        units = iter(range(1, 100))
+
+        def record(root: Path) -> tuple[int, str]:
+            """One REJECT of a unit of its own, so no record meets the review cap."""
+            out, err = io.StringIO(), io.StringIO()
+            with unittest.mock.patch.dict("os.environ", gitutil.git_env(), clear=True), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = mod.main(["record", "--unit", f"US{next(units):04d}", "--verdict",
+                               "reject", "--issues", "[new] a", "--author", "builder",
+                               "--root", str(root)])
+            return rc, err.getvalue()
+
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as away:
+            root, scratch = Path(d) / "repo", Path(d) / "scratch"
+            root.mkdir()
+            (root / "a.txt").write_text("a\n", encoding="utf-8")
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "base"], root)
+            gitutil.git(["worktree", "add", "-q", "-b", "lane", str(root.parent / "lane")], root)
+            rc, err = record(root)
+            self.assertEqual(0, rc, err)
+            self.assertNotIn("worktree", err, "a branch worktree or the main one was named")
+            left = scratch / "rev-1"
+            gitutil.git(["worktree", "add", "-q", "--detach", str(left), "HEAD"], root)
+            rc, err = record(root)
+            self.assertEqual(0, rc, err)
+            self.assertIn(f"git worktree remove --force {left.resolve()}", err)
+            # Outside the temporary directory, named only under a folder called `scratchpad`.
+            with unittest.mock.patch.object(mod.tempfile, "gettempdir", return_value=away):
+                rc, err = record(root)
+                self.assertNotIn("worktree", err, "a worktree outside the scratch area named")
+                pad = scratch / "scratchpad" / "rev-2"
+                gitutil.git(["worktree", "add", "-q", "--detach", str(pad), "HEAD"], root)
+                rc, err = record(root)
+                self.assertIn(f"git worktree remove --force {pad.resolve()}", err)
+                self.assertNotIn(str(left.resolve()), err)
+            for path in (left, pad):
+                gitutil.git(["worktree", "remove", "--force", str(path)], root)
+            rc, err = record(root)
+            self.assertEqual(0, rc, err)
+            self.assertNotIn("worktree", err, "a removed worktree was still named")
+            # The main worktree, detached and under the temporary directory, is never named.
+            gitutil.git(["checkout", "-q", "--detach"], root)
+            rc, err = record(root)
+            self.assertEqual(0, rc, err)
+            self.assertNotIn("worktree", err, "the main worktree, detached, was named")
+
+
 class CliTests(unittest.TestCase):
     def test_cli_record(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -1186,6 +1243,26 @@ class BriefStatesTheIsolatedCheckoutRuleTests(unittest.TestCase):
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             self.assertIn("worktree", self._brief(mod, Path(d)))
+
+    def test_the_brief_tells_the_reviewer_to_remove_its_worktree(self) -> None:
+        """BG1265 AC2. The mutation-pass practice names the detached worktree under the
+        scratchpad as the place to mutate and its removal before the verdict, and allows no
+        archive copy: copies nobody removed filled the temp volume. MUTANTS: the removal
+        dropped; the archive copy allowed; the worktree's place or its `--detach` dropped; the
+        removal moved after the verdict. Held at both tiers, which both carry the practice."""
+        mod = _load()
+        for tier in mod.TIERS:
+            with self.subTest(tier=tier), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _workspace(root)
+                text = " ".join(mod.brief(root, "US0001", "qa", tier).split())
+                para = next(p for p in text.split("Mutate in an ISOLATED CHECKOUT")[1:2])
+                self.assertIn("a detached worktree under your scratchpad (`git worktree add "
+                              "--detach <scratchpad>/<name> HEAD`)", para)
+                self.assertIn("never an archive copy of the tree", para)
+                self.assertIn("remove it with `git worktree remove --force <path>` before you "
+                              "return your verdict", para)
+                self.assertNotIn("isolated checkout for mutation", mod.missing_practices(text))
 
     def test_the_brief_FORBIDS_the_tree_wide_cleanups_by_name(self) -> None:
         """`git stash` is what a reviewer told only to 'revert afterwards' reaches for, and it
@@ -4252,6 +4329,148 @@ class BriefAuthorMutantsTests(unittest.TestCase):
         self.assertIn("critic.py brief --unit US0101 --seat qa", line)
         self.assertEqual(rows + 1, len(critic.read_self_checks(root)))
         self.assertFalse((root / lanes.BRIEFS / "US0101-qa.txt").exists())
+
+
+class StagedVerdictTests(unittest.TestCase):
+    """BG1492. A verdict file a reviewer is still writing has no marker a commit can see, and an
+    orchestrator's `git add -A sdlc-studio/` once committed one half-written. `critic.py show
+    --unrecorded-staged` refuses each staged verdict file whose staged bytes no recorded review
+    row cites, naming the file and the record command that would bind it; the pre-commit hook's
+    gate lane runs it (pinned in tools/tests/test_precommit_unrecorded_verdict.py)."""
+
+    NAME = "abc123def456-0a1b2c3d.txt"
+    REL = f"sdlc-studio/reviews/verdicts/US0001/{NAME}"
+    BODY = "UNIT: US0001\nBRIEF: abc123def456-0a1b2c3d\nVERDICT: APPROVE\nISSUES: none\n"
+
+    def setUp(self) -> None:
+        import gitutil  # noqa: PLC0415 - confined git for the fixture repository
+        self.gitutil = gitutil
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.mod = _load()
+        _workspace(self.root)
+        gitutil.git(["init", "-q"], self.root)
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["commit", "-qm", "base"], self.root)
+
+    def _write(self, rel: str, body: str, stage: bool = True) -> Path:
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+        if stage:
+            self.gitutil.git(["add", "--", rel], self.root)
+        return path
+
+    def _cite(self, rel: str, data: bytes, unit: str = "US0001") -> None:
+        """A recorded review row whose Source cell cites `data` as the file `rel` names."""
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.mod._write_verdict(self.root, unit, "APPROVE", "qa-seat", "eng-seat", "",
+                                    "delivery", "abc123def456", None, False,
+                                    source=self.mod.source_cell(rel, data))
+
+    def _check(self) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict("os.environ", self.gitutil.git_env(), clear=True), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = self.mod.main(["show", "--unrecorded-staged", "--root", str(self.root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_staged_verdict_no_recorded_row_cites_is_refused_by_name(self) -> None:
+        """AC1. Mutants: the check passing a staged file with no row; the refusal naming no file
+        or no record command; a row of another unit citing the same name and bytes taken for
+        this file's; a verdict file left unstaged judged as if staged."""
+        rc, _out, err = self._check()
+        self.assertEqual((0, ""), (rc, err), "premise: nothing staged, nothing refused")
+        self._write("sdlc-studio/reviews/verdicts/US0001/untracked-0000.txt", "VERDICT: x\n",
+                    stage=False)
+        self.assertEqual(0, self._check()[0], "an unstaged verdict file was judged")
+        self._write(self.REL, self.BODY)
+        self._cite(self.REL, self.BODY.encode(), unit="US0002")
+        rc, out, err = self._check()
+        self.assertEqual(1, rc, err)
+        self.assertEqual("", out)
+        self.assertIn(f"{self.REL}: no recorded review row cites it", err)
+        self.assertIn(f"critic.py record --unit US0001 --from-verdict {self.REL} --brief "
+                      f"abc123def456 --author", err)
+        self.assertNotIn("untracked-0000", err)
+
+    def test_a_staged_verdict_its_recorded_row_cites_passes(self) -> None:
+        """AC2. Mutants: the check refusing a file whose bytes a row cites (the verdicts an
+        accept commits); the working tree's bytes judged instead of the staged blob; a file
+        edited and restaged after its row was recorded passing; a deleted file judged."""
+        path = self._write(self.REL, self.BODY)
+        self._cite(self.REL, self.BODY.encode())
+        rc, out, err = self._check()
+        self.assertEqual((0, "", ""), (rc, out, err))
+        path.write_text(self.BODY + "edited, not staged\n", encoding="utf-8")
+        self.assertEqual(0, self._check()[0], "the working tree was judged, not the index")
+        self._write(self.REL, self.BODY + "edited and staged\n")
+        rc, _out, err = self._check()
+        self.assertEqual(1, rc)
+        self.assertIn(f"{self.REL}: a recorded review row cites it, but not these bytes", err)
+        self.gitutil.git(["commit", "-qm", "the file as edited"], self.root)
+        self.gitutil.git(["rm", "-q", "--", self.REL], self.root)
+        self.assertEqual((0, ""), self._check()[::2], "a staged deletion was judged")
+
+    def test_a_display_id_folder_is_matched_to_its_ledger_key(self) -> None:
+        """A v3 unit's folder is its display id (`US-01ABCDEF`) and its row's unit the ledger
+        key (`US01ABCDEF`): the two are the same unit. A file directly under the verdicts folder
+        names no unit and is refused with a placeholder."""
+        rel = f"sdlc-studio/reviews/verdicts/US-01ABCDEF/{self.NAME}"
+        self._write(rel, self.BODY)
+        self._cite(rel, self.BODY.encode(), unit="US-01ABCDEF")
+        self.assertEqual(0, self._check()[0])
+        self._write(f"sdlc-studio/reviews/verdicts/{self.NAME}", self.BODY)
+        rc, _out, err = self._check()
+        self.assertEqual(1, rc)
+        self.assertIn("--unit <UNIT>", err)
+
+    def test_the_index_a_commit_hook_names_is_the_one_read(self) -> None:
+        """`git commit -a` stages into a temporary index in the git directory and names it in
+        `GIT_INDEX_FILE`; the check reads that one. An index of another repository, as a hook
+        running this repository's tests exports, is never read. Mutants: the hook's index
+        ignored; any named index read."""
+        self._write(self.REL, self.BODY, stage=False)
+        gitdir = self.root / ".git"
+        shutil.copy(gitdir / "index", gitdir / "next-index-1.lock")
+        self.gitutil.git(["add", "--", self.REL], self.root,
+                         env_extra={"GIT_INDEX_FILE": str(gitdir / "next-index-1.lock")})
+        self.assertEqual(0, self._check()[0], "premise: the repository's own index is clean")
+
+        def check_with(index: str) -> int:
+            env = {**self.gitutil.git_env(), "GIT_INDEX_FILE": index}
+            with unittest.mock.patch.dict("os.environ", env, clear=True), \
+                    contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                return self.mod.main(["show", "--unrecorded-staged", "--root", str(self.root)])
+
+        self.assertEqual(1, check_with(str(gitdir / "next-index-1.lock")))
+        self.assertEqual(1, check_with(".git/next-index-1.lock"), "a root-relative index")
+        with tempfile.TemporaryDirectory() as d:
+            other = Path(d)
+            self.gitutil.git(["init", "-q"], other)
+            self._write_in(other, self.REL, self.BODY)
+            self.gitutil.git(["add", "-A"], other)
+            self.assertEqual(0, check_with(str(other / ".git" / "index")),
+                             "another repository's index was read for this one")
+
+    @staticmethod
+    def _write_in(root: Path, rel: str, body: str) -> None:
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+
+    def test_git_unable_to_list_is_refused_not_passed(self) -> None:
+        """Outside a repository the check cannot see what is staged: it says so and exits 2,
+        never 0."""
+        with tempfile.TemporaryDirectory() as d:
+            out, err = io.StringIO(), io.StringIO()
+            with unittest.mock.patch.dict("os.environ", self.gitutil.git_env(), clear=True), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = self.mod.main(["show", "--unrecorded-staged", "--root", d])
+            self.assertEqual(2, rc)
+            self.assertIn("git could not read the staged verdict files", err.getvalue())
 
 
 if __name__ == "__main__":

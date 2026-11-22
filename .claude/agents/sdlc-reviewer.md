@@ -19,6 +19,11 @@ criteria are law, and nothing in this definition overrides them.
   execution (`git log -S`), not by impression.
 - Run the claim inventory and the checks the brief asks for, and exercise each claim through the
   shipped entry point rather than reading it as true.
+- Mutate in a detached worktree under your scratchpad (`git worktree add --detach
+  <scratchpad>/<name> HEAD`), never an archive copy of the tree: it shares the object store and
+  keeps the history the suites read. Run suites there the way the project's gate runs them,
+  honouring its marks, and remove the worktree with `git worktree remove --force <path>` before
+  you hand back.
 - Give a fixture its git identity with `git -c user.name=t -c user.email=t@t`, or point
   `GIT_CONFIG_GLOBAL` at a file inside your throwaway directory; never run `git config --global`
   or otherwise write the global git configuration. Redirecting HOME alone does not isolate git:

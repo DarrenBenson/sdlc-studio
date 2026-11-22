@@ -114,6 +114,34 @@ class AgentDefinitionTests(unittest.TestCase):
                     missing = [rule for rule, pattern in rules.items() if not pattern.search(body)]
                     self.assertEqual([], missing, f"{path} is silent on git isolation")
 
+    def test_the_reviewer_mutates_in_a_worktree_and_removes_it(self) -> None:
+        """BG1265 AC1. The shipped reviewer and this repository's copy, each read on its own,
+        tell the reviewer where to mutate, how to run the suites there and to remove the copy
+        before handing back: archive copies under the scratchpad were never removed and filled
+        the temp volume. MUTANTS: any one of the three instructions dropped from either file;
+        an archive copy allowed; the two copies differing."""
+        rules = {
+            "a detached worktree under the scratchpad": re.compile(
+                r"detached worktree under your scratchpad \(`git worktree add --detach "),
+            "never an archive copy": re.compile(r"never an archive copy of the tree"),
+            "suites run as the gate runs them": re.compile(
+                r"run suites there the way the project's gate runs them", re.I),
+            "removed before hand-back": re.compile(
+                r"remove the worktree with `git worktree remove --force <path>` before you hand "
+                r"back"),
+        }
+        texts = []
+        for label, path in (("template", TEMPLATES / "sdlc-reviewer.md"),
+                            ("installed copy", REPO / ".claude" / "agents" / "sdlc-reviewer.md")):
+            with self.subTest(copy=label):
+                text = path.read_text(encoding="utf-8")
+                texts.append(text)
+                body = section(text, "How you work")
+                self.assertIsNotNone(body, f"{path} has no '## How you work' section")
+                missing = [rule for rule, pattern in rules.items() if not pattern.search(body)]
+                self.assertEqual([], missing, f"{path} omits a worktree instruction")
+        self.assertEqual(texts[0], texts[1], "the installed reviewer differs from the template")
+
     def test_this_repository_s_copies_match_the_templates(self) -> None:
         """AC4. MUTANT: a hand edit to this repository's `.claude/agents/` copy, or a copy missing."""
         shipped = sorted(p.name for p in TEMPLATES.glob("*.md"))

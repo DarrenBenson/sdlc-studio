@@ -329,6 +329,16 @@ run "floor-pending" \
   "plan the unit (one acceptance criterion, a Verify line, or a linked plan), or declare a real single-file footprint in its Affects field; the lane prints the per-unit remedies" \
   -- python3 "$skill/engagement_floor.py" check --pending --root .
 
+# A VERDICT FILE NO RECORDED ROW CITES. A reviewer's verdict file has no marker a commit can see
+# while it is still being written, and a `git add -A sdlc-studio/` of an accept's records once
+# committed one half-written. Each staged one must be cited, bytes and all, by a review row
+# `critic.py record` wrote. Folded into the gate lane, so the commit's lane count stays at the
+# cap, and asked of critic only when the commit stages a verdict file.
+unrecorded_verdicts() {
+  [ -n "$(git diff --cached --name-only -- sdlc-studio/reviews/verdicts/)" ] || return 0
+  python3 "$skill/critic.py" --root . show --unrecorded-staged
+}
+
 # Comprehensive artefact gate: conformance, reconcile drift, validate, integrity,
 # duplicate-id, doc-coverage, doc-freshness. This is the same gate CI runs.
 #
@@ -342,7 +352,7 @@ run "floor-pending" \
 # it buys is that the two can no longer disagree about one tree). Most of what remains is
 # reconcile's own corpus re-reads. The gate prints its own `gate cost:` line and its
 # dominant lane on every run, so read that line rather than this comment for the number.
-gate_lane() { if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then return 0; fi
+gate_lane() { local verdicts=0; unrecorded_verdicts || verdicts=1; if gate_out="$(python3 "$skill/gate.py" --root . 2>&1)"; then return "$verdicts"; fi
   printf '%s\n' "$gate_out" | grep -E '\[(FAIL|warn)\]|^gate:'
   # Reconcile drift is the common case: list each item with its own fix (self-diagnosing).
   DRIFT_JSON="$(python3 "$skill/reconcile.py" detect --format json 2>/dev/null)"
@@ -360,8 +370,8 @@ for t, info in d.get("types", {}).items():
   return 1
 }
 run "gate" \
-  "the artefact gate CI runs: conformance, reconcile drift, validate, integrity, duplicate ids and docs (it prints each of its own lanes and its cost)" \
-  "address each failing check; run the named script for per-item detail (e.g. \`$skill/validate.py check\`, \`$skill/conformance.py\`); mechanical drift clears with \`$skill/reconcile.py apply\`" \
+  "the artefact gate CI runs: conformance, reconcile drift, validate, integrity, duplicate ids and docs (it prints each of its own lanes and its cost); and no staged verdict file under sdlc-studio/reviews/verdicts/ that no recorded review row cites" \
+  "address each failing check; run the named script for per-item detail (e.g. \`$skill/validate.py check\`, \`$skill/conformance.py\`); mechanical drift clears with \`$skill/reconcile.py apply\`; a verdict file still being written is unstaged, or recorded with the \`critic.py record\` command named above" \
   -- gate_lane
 
 # Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local

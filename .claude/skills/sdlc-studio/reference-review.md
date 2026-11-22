@@ -529,27 +529,27 @@ so a unit in a run still needs one of the exits above.
 
 ### Where a delegated reviewer mutates {#mutation-isolation}
 
-A delegated reviewer mutates code in an **isolated checkout** - its own worktree, or a copy of
-the file somewhere else - **never the author's working tree**. That tree is live: the author and
-other lanes are editing it, and a mutant written over an uncommitted change becomes
-indistinguishable from that change the moment the file is restored. A reviewer mutation-testing
-in an author's tree **silently reverted** a shipped repair this way, and the suite stayed green
-over the reverted code because nothing pinned the repaired behaviour.
+A delegated reviewer mutates code in an **isolated checkout** of its own, **never the author's
+working tree**: a detached worktree under its scratchpad (`git worktree add --detach
+<scratchpad>/<name> HEAD`), never an archive copy, which has no history. It runs the suites there as
+the gate does and removes it (`git worktree remove --force <path>`) **before its verdict**, as the
+shipped reviewer agent definition says. The author's tree is live: a mutant over uncommitted work is
+indistinguishable from it once restored, and one there **silently reverted** a shipped repair.
 
 The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted
-changes**, naming the file, before it applies a single mutant. Commit the work first, or point
-the run at an isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and
-is forbidden to a delegated REVIEWER - it is tree-wide, so in a shared tree it reverts another
-reviewer's mutant mid-run. That distinction is the whole reason the reviewer works in a
-checkout of its own. Reasoning about what edit would turn a test red costs
-nothing and needs no tree at all, which is the right move for a reviewer who has neither.
+changes**, naming the file, before it applies a single mutant. Commit the work first, or point the
+run at an isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and is
+forbidden to a delegated REVIEWER - it is tree-wide, so in a shared tree it reverts another
+reviewer's mutant mid-run. That distinction is the whole reason the reviewer works in a checkout of
+its own. Reasoning about what edit would turn a test red costs nothing and needs no tree at all,
+which is the right move for a reviewer who has neither.
 
-**The rule is in the brief too.** The refusal above protects the author, and nothing protected
-the tree from the reviewer: four reviewers once ran concurrently over one tree and left a live
-mutant in it. So `critic.py brief` states the requirement at both tiers, names this harness's
-mechanism (`Agent(isolation: 'worktree')`) and forbids `git stash` and `git checkout --` by
-name - both are **tree-wide**, so one reviewer's cleanup reverts another's mutant mid-run. A
-brief naming the instruction without that reason is refused.
+**The rule is in the brief too.** The refusal above protects only the author: four reviewers once
+ran concurrently over one tree and left a live mutant in it. So `critic.py brief` states the rule at
+both tiers, names this harness's mechanism (`Agent(isolation: 'worktree')`) and forbids `git stash`
+and `git checkout --` by name: both are **tree-wide**, so one reviewer's cleanup reverts another's
+mutant mid-run. A brief without that reason is refused; `critic.py record` names a detached worktree
+left under a scratch area.
 
 **And the result carries the tree it was measured in.** `mutation.py run` records whether it ran
 in a linked worktree, the main worktree, or a checkout git cannot describe, and prints the

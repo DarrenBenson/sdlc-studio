@@ -23,6 +23,7 @@ import os
 import re
 import shlex
 import sys
+import tempfile
 from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -204,8 +205,8 @@ def verdict_file_section(path: Path, unit: str, stem: str) -> str:
 def verdict_root(root: Path | str) -> Path:
     """The checkout a verdict file lives in: the main worktree when `root` is the top of a
     linked one, so a reviewer briefed in a worktree writes where the recorder reads; otherwise
-    `root` itself, absolute. `_git` runs under the scrubbed environment, so a hook's inherited
-    `GIT_DIR` cannot answer for another repository."""
+    `root` itself, absolute. `_git` runs under the scrubbed environment, so a git directory a
+    hook's environment names cannot answer for another repository."""
     here = Path(root).resolve()
     res = _git(here, "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir")
     if res is None or res.returncode != 0:
@@ -245,6 +246,10 @@ _TICK_RUN = re.compile(r"(?<!\\)`+")
 #: function - a re-recorded verdict, a closure quoting a finding - was being escaped again,
 #: which is how the repair record came to carry hundreds of doubled escapes.
 _BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
+#: An asterisk that is not already escaped, idempotent by the same lookbehind. Raw, a finding
+#: naming globs outside a code span (`a_* or b_*`) pairs its asterisks into emphasis with spaces
+#: inside, and markdownlint refuses the ledger (MD037) at the next commit that touches it.
+_BARE_ASTERISK = re.compile(r"(?<!\\)\*")
 #: The point straight after a `]` or a `)` where a run of backslashes (often none) meets an
 #: opening bracket. Raw, a finding quoting a regex (`[A-Z][A-Z]`) or a reversed link
 #: (`(state)[2]`) is read as a link, and markdownlint refuses the ledger (MD052, MD011) at the
@@ -252,9 +257,9 @@ _BARE_UNDERSCORE = re.compile(r"(?<!\\)_")
 #: run the author typed (`[a-z]\[q]`) stays one longer than written, never confused with an
 #: escape the writer added. A lone `[new]` tag is no such link, so it is written as typed.
 _LINKING_BRACKET = re.compile(r"(?<=[\])])(?=\\*\[)")
-#: The escapes `_escape_outside_spans` writes, which the ledger's readers undo: `\\_`, and the
-#: one backslash added at a `_LINKING_BRACKET` point.
-_MD_ESCAPED = re.compile(r"\\_|(?<=[\])])\\(?=\\*\[)")
+#: The escapes `_escape_outside_spans` writes, which the ledger's readers undo: `\\_`, `\\*`,
+#: and the one backslash added at a `_LINKING_BRACKET` point.
+_MD_ESCAPED = re.compile(r"\\[_*]|(?<=[\])])\\(?=\\*\[)")
 
 
 def _scan_ticks(text: str) -> tuple[list[tuple[int, int]], list[int]]:
@@ -295,13 +300,15 @@ def _outside_spans(text: str, fn) -> str:
 
 
 def _escape_outside_spans(text: str) -> str:
-    """Escape underscores, and a bracket that would open a link, leaving every code span alone."""
+    """Escape underscores, asterisks, and a bracket that would open a link, leaving every code
+    span alone."""
     return _outside_spans(text, lambda t: _LINKING_BRACKET.sub(
-        r"\\", _BARE_UNDERSCORE.sub(r"\\_", t)))
+        r"\\", _BARE_ASTERISK.sub(r"\\*", _BARE_UNDERSCORE.sub(r"\\_", t))))
 
 
 def _unescape(text: str) -> str:
-    """The escapes `_clean` writes, undone: `\\_`, and the backslash added before a linking `[`."""
+    """The escapes `_clean` writes, undone: `\\_`, `\\*`, and the backslash added before a
+    linking `[`."""
     return _MD_ESCAPED.sub(lambda m: m.group(0)[1:], text)
 
 
@@ -366,10 +373,10 @@ def _clean(value: str) -> str:
 
     Four rules, and each was learned from a blocked commit:
 
-    The underscore escape applies OUTSIDE code spans only. Markdown does not process a
-    backslash inside a span, so escaping there wrote the backslash into the record - every
-    identifier a reviewer named came out wrong in the three files this project uses as its
-    account of what review found.
+    The underscore and asterisk escapes apply OUTSIDE code spans only. Markdown does not
+    process a backslash inside a span, so escaping there wrote the backslash into the record -
+    every identifier a reviewer named came out wrong in the three files this project uses as
+    its account of what review found.
 
     The pipe and line-break substitutions apply EVERYWHERE, span interiors included. These rows
     are built by f-string rather than by a row joiner, so this function is the only thing
@@ -2803,13 +2810,18 @@ A repair that changes behaviour carries a test asserting that behaviour; where i
 report the missing regression cover as a finding: an unpinned repair is one a later edit
 reverts with the suite still green, and a shipped repair was lost exactly that way.
 
-Mutate in an ISOLATED CHECKOUT of your own, never the author's working tree - in this harness,
-`Agent(isolation: 'worktree')`. Do NOT use `git stash` or `git checkout --` to clean up: both
-are tree-wide, so either one silently reverts a concurrent reviewer's mutant mid-run and a
-result reported SURVIVED may never have been on disk when its test ran. Four reviewers were
-once dispatched over one shared tree and a live mutant was left behind in it; it was caught
-only because the tree was otherwise clean, and over uncommitted work it would have been
-indistinguishable from that work.
+Mutate in an ISOLATED CHECKOUT of your own, never the author's working tree - a detached worktree
+under your scratchpad (`git worktree add --detach <scratchpad>/<name> HEAD`), or in this harness
+`Agent(isolation: 'worktree')`; never an archive copy of the tree, which keeps no history, so
+suites that read it fail there at the base and the head alike. Run the suites in it the way the
+project's gate runs them, and remove it with `git worktree remove --force <path>` before you
+return your verdict: copies nobody removed once filled the temp volume, and `critic.py record`
+names a detached one still registered there. Do NOT use `git stash` or `git checkout --` to
+clean up: both are tree-wide, so either one silently reverts a concurrent reviewer's mutant
+mid-run and a result reported SURVIVED may never have been on disk when its test ran. Four
+reviewers were once dispatched over one shared tree and a live mutant was left behind in it; it
+was caught only because the tree was otherwise clean, and over uncommitted work it would have
+been indistinguishable from that work.
 
 If you revert IN PLACE anyway - and the manual oracle is the case where a reviewer is most
 tempted to - the obligation is to SNAPSHOT THE BYTES FIRST and restore from that snapshot
@@ -3000,9 +3012,12 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
             f"--claims CLAIMS.json --mutants MUTANTS.json",
             "   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json is [], "
             "the unit declaring no test file."])
-    selectors = _verify_selectors(repo_root, unit)
+    selectors, expressions = _verify_selectors(repo_root, unit)
     named = (f"such as the unit's Verify selectors: {'; '.join(selectors)}" if selectors else
              "the unit's criteria naming no pytest Verify selector to start from")
+    if expressions:
+        named += (f" ({', '.join(expressions)} filters by expression and names no test: give "
+                  f"each mutant the node id of a test it selects)")
     lines += [f"   Let the mutation runner apply and run them: list each mutant in EDITS.json as "
               f"{{mutant, file, old, new, test}}, its test a pytest selector, {named}. Give "
               f"each survivor an answer there, then run:",
@@ -3019,19 +3034,60 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     return "\n".join(lines)
 
 
-def _verify_selectors(repo_root: Path | str, unit: str) -> list[str]:
-    """The pytest selectors the unit's Verify lines run, in criterion order, read through the
-    verifier's own parser; [] when there are none or the unit cannot be parsed."""
+#: The pytest options whose value is an expression over test names, not a test.
+_PYTEST_EXPRESSION_OPTIONS = ("-k", "-m")
+#: The pytest options (and the common plugins') that take the next word as their value, so that
+#: word is not a test to run: `-p no:cacheprovider`, `--deselect <node id>`, `-n 4`.
+_PYTEST_VALUE_OPTIONS = frozenset({
+    "-p", "-c", "-o", "-n", "-W", "--maxfail", "--deselect", "--ignore", "--ignore-glob",
+    "--rootdir", "--tb", "--durations", "--junitxml", "--junit-xml", "--basetemp",
+    "--confcutdir", "--override-ini", "--config-file", "--log-level", "--import-mode",
+    "--numprocesses", "--dist", "--timeout", "--count", "--reruns"})
+
+
+def pytest_targets(verifier: str) -> tuple[list[str], list[str]]:
+    """`(targets, expressions)` of one pytest Verify line, its words read as a shell reads them
+    (word by word, quotes dropped, when a quote is unbalanced): each file, directory or node id
+    it names, and each `-k`/`-m` expression it filters them by, as `-k '<expression>'`. An
+    expression's words are never a target; neither is an option, nor the value of an option in
+    `_PYTEST_VALUE_OPTIONS` given as the next word. Empty for a line not run by pytest."""
+    try:
+        words = shlex.split(verifier or "")
+    except ValueError:
+        words = [w.strip("'\"") for w in (verifier or "").split()]
+    if words[:1] != ["pytest"]:
+        return [], []
+    targets: list[str] = []
+    expressions: list[str] = []
+    rest = iter(words[1:])
+    for word in rest:
+        flag = word[:2]
+        if flag in _PYTEST_EXPRESSION_OPTIONS:
+            value = word[2:] or next(rest, "")
+            if value:
+                expressions.append(f"{flag} {shlex.quote(value)}")
+        elif word in _PYTEST_VALUE_OPTIONS:
+            next(rest, "")
+        elif not word.startswith("-"):
+            targets.append(word)
+    return targets, expressions
+
+
+def _verify_selectors(repo_root: Path | str, unit: str) -> tuple[list[str], list[str]]:
+    """`(selectors, expressions)` the unit's pytest Verify lines run, in criterion order and
+    each once, read through the verifier's own parser and `pytest_targets`; ([], []) when there
+    are none or the unit cannot be parsed."""
     found = sdlc_md.find_by_id(Path(repo_root), unit)
     if not found:
-        return []
+        return [], []
     import verify_ac  # noqa: PLC0415 - sibling; its AC parser is the one the criteria run by
     out: list[str] = []
+    exprs: list[str] = []
     for block in verify_ac.parse_story(sdlc_md.read_text_safe(found[0])):
-        words = (block.verifier or "").split()
-        if words[:1] == ["pytest"]:
-            out += [w for w in words[1:] if not w.startswith("-") and w not in out]
-    return out
+        targets, expressions = pytest_targets(block.verifier or "")
+        out += [t for t in targets if t not in out]
+        exprs += [e for e in expressions if e not in exprs]
+    return out, exprs
 
 
 def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list[str], list[str]]:
@@ -3070,17 +3126,19 @@ def vocabulary_refusals(named: dict, claims: list[dict], mutants: list[dict]) ->
     ruling outside `CLAIM_RULINGS`, read in any case as the record reads it, and a mutant's
     result outside `MUTANT_RESULTS`, word for word. An absent or blank ruling or result is left
     to the checks that name it, a ruling as unruled and a result as `none`; [] when every value
-    given is one the record accepts."""
+    given is one the record accepts. A ruling is read through `split_ruling`, so `TRUE: <the
+    evidence>` is the ruling TRUE."""
     out = []
     for n, entry in enumerate(claims, 1):
         surface = entry.get("surface")
         if _surface_key(surface) not in named:
             out.append(f"claim {n} names the surface {surface!r}, which the self-check does not "
                        f"name - use one of: {'; '.join(named.values())}")
-        ruling = str(entry.get("ruling") or "").strip()
+        ruling = split_ruling(entry.get("ruling"))[0]
         if ruling and ruling.upper() not in CLAIM_RULINGS:
             out.append(f"claim {n} has the ruling {ruling!r} - use one of: "
-                       f"{', '.join(CLAIM_RULINGS)}, bare, with the evidence in the claim")
+                       f"{', '.join(CLAIM_RULINGS)}, bare or followed by a colon and the "
+                       f"evidence")
     for n, entry in enumerate(mutants, 1):
         name = str(entry.get("mutant") or "").strip()
         result = str(entry.get("result") or "").strip()
@@ -3119,10 +3177,11 @@ _SELF_CHECK_HEADER = (
     "| --- | --- | --- | --- | --- | --- |\n")
 _DIGEST_SKIP = (".git", "__pycache__")
 #: What the review tooling itself writes while a unit is reviewed: the self-check log
-#: (`self-check record`), the verdict log (`record`), and the runtime notes under
-#: `sdlc-studio/.local` (`brief` notes each fingerprint there, `record` fixes the review base).
-#: No unit's change is made of them, so the digest leaves them out; a unit declaring one, or a
-#: directory holding one, would otherwise be staled by every record and every brief.
+#: (`self-check record`), the verdict log (`record`), the verdict files a reviewer writes under
+#: `VERDICTS_DIR_REL` (each named by a brief), and the runtime notes under `sdlc-studio/.local`
+#: (`brief` notes each fingerprint there, `record` fixes the review base). No unit's change is
+#: made of them, so the digest leaves them out; a unit declaring one, or a directory holding
+#: one, would otherwise be staled by every record, every verdict file and every brief.
 _REVIEW_TOOL_WRITES = frozenset(f"sdlc-studio/reviews/{name}"
                                 for name in (SELF_CHECK_FILE, _FILE["delivery"]))
 _REVIEW_TOOL_RUNTIME = "sdlc-studio/.local/"
@@ -3139,10 +3198,11 @@ def self_checks_path(repo_root: Path | str) -> Path:
 
 
 def _review_tool_write(rel: str) -> bool:
-    """True for a path the review tooling writes (`_REVIEW_TOOL_WRITES`, the kept mutant lists
-    and the runtime notes), relative to the root."""
+    """True for a path the review tooling writes (`_REVIEW_TOOL_WRITES`, the kept mutant lists,
+    the verdict files under `VERDICTS_DIR_REL` and the runtime notes), relative to the root."""
     return (rel in _REVIEW_TOOL_WRITES or rel.startswith(_REVIEW_TOOL_RUNTIME)
-            or rel.startswith(f"sdlc-studio/reviews/{AUTHOR_MUTANTS_DIR}/"))
+            or rel.startswith(f"sdlc-studio/reviews/{AUTHOR_MUTANTS_DIR}/")
+            or rel.startswith(f"{VERDICTS_DIR_REL.as_posix()}/"))
 
 
 def _working_members(root: Path, rel: str) -> list[str]:
@@ -3186,18 +3246,21 @@ class _GitUnreadable(RuntimeError):
     """Git could not answer a question the own-change view asked of it."""
 
 
-def _git(root: Path, *args: str):
+def _git(root: Path, *args: str, index: str | None = None):
     """`git -C <root> <args>` with bytes out, or None when git cannot be run at all. It runs
     under the criteria runner's environment (`verify_ac._git_env`), which drops the variables a
     hook exports that would make git answer for another repository; reusing it adds no copy of
-    that list for a test to hold equal to the others."""
+    that list for a test to hold equal to the others. `index`, when given, is put back as
+    `GIT_INDEX_FILE`, for a caller that has checked it is this repository's (`_hook_index`)."""
     import subprocess  # noqa: PLC0415 - local; only the own-change view runs git
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import verify_ac  # noqa: PLC0415 - sibling; its scrubbed environment is the shared one
+    env = verify_ac._git_env()
+    if index:
+        env["GIT_INDEX_FILE"] = index
     try:
         return subprocess.run(["git", "-C", str(root), "--literal-pathspecs", *args],
-                              capture_output=True, timeout=60, env=verify_ac._git_env(),
-                              check=False)
+                              capture_output=True, timeout=60, env=env, check=False)
     except (OSError, subprocess.SubprocessError):
         return None
 
@@ -3344,10 +3407,11 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
     refuses; otherwise the counts its row records.
 
     Claims: each names a surface the author self-check section names, every one is ruled
-    through `validate_claim_inventory`, none is FALSE (the author corrects it before review),
-    at least one was checked (`summarise_claim_pass`: an all-UNVERIFIABLE inventory checked
-    nothing), and the commit message and each changelog fragment the unit's Affects declares
-    carry a claim. Docstrings, comments, Resolutions and CHANGELOG are named and optional, since
+    through `validate_claim_inventory` (its ruling read by `split_ruling`, so evidence after a
+    colon is kept with the claim and named in a refusal), none is FALSE (the author corrects it
+    before review), at least one was checked (`summarise_claim_pass`: an all-UNVERIFIABLE
+    inventory checked nothing), and the commit message and each changelog fragment the unit's
+    Affects declares carry a claim. Docstrings, comments, Resolutions and CHANGELOG are named and optional, since
     no command can tell which claims a diff's docstrings make.
 
     Mutants: each names a test in a test file the unit's Affects declares and a result of
@@ -3367,14 +3431,15 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
         raise ValueError(f"the claims file lists no claim - inventory the claims made by "
                          f"{', '.join(required)}")
     keys, rulings, covered = [], {}, set()
-    for n, entry in enumerate(claims, 1):
+    for n, entry in enumerate(ruled_claims(claims), 1):
         surface, text = _surface_key(entry.get("surface")), str(entry.get("claim") or "").strip()
         if surface not in named:
             raise ValueError(f"claim {n} names the surface {entry.get('surface')!r}, which the "
                              f"self-check does not name - use one of: {'; '.join(named.values())}")
         if not text:
             raise ValueError(f"claim {n} ({named[surface]}) states no claim")
-        key = f"{n} ({named[surface]}): {text}"
+        key = f"{n} ({named[surface]}): {text}" + (f" [evidence: {entry['evidence']}]"
+                                                   if entry["evidence"] else "")
         keys.append(key)
         if (ruling := str(entry.get("ruling") or "").strip()):
             rulings[key] = ruling
@@ -3426,11 +3491,14 @@ def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
                       by_hand: list[dict] = ()) -> Path:
     """Append the author's self-check for a unit to the committed log, once `check_self_check`
     admits it, with the digest of its Affects content as it stands and the commit it was taken
-    at (none outside a repository). Nothing is written on a refusal.
+    at (none outside a repository). Nothing is written on a refusal. The kept list below is
+    written (or removed) before the row is appended: one that cannot be raises ValueError with
+    no row added, and a row that cannot be appended puts the list back as it was.
 
     With `report`, the path of the runner's report `mutants` was read from
     (`mutants_from_report`), the whole list is kept beside the row in the unit's committed file
-    under `AUTHOR_MUTANTS_DIR`, naming the row's digest cell, so `critic.py brief` replays it.
+    under `AUTHOR_MUTANTS_DIR`, naming the row's digest cell and the report by its path relative
+    to the root (`_kept_report_path`), so `critic.py brief` replays it.
     Without one, that file is removed: a list kept for an earlier row is never read as this
     one's. `by_hand`, the mutants listed by hand beside a report (ones the runner cannot run),
     is judged and counted with the report's rows; it is not kept, carrying no edit to replay."""
@@ -3439,17 +3507,44 @@ def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
     cell = f"{digest}{_DIGEST_AT}{commit}" if commit else digest
     cells = (sdlc_md.norm_id(unit), _clean(author) or "-", sdlc_md.now_date(),
              counts["claims"], counts["mutants"], cell)
-    path = _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
     kept = author_mutants_path(repo_root, unit)
-    if report is None:
-        kept.unlink(missing_ok=True)
-    else:
-        kept.parent.mkdir(parents=True, exist_ok=True)
-        sdlc_md.atomic_write(kept, json.dumps(
-            {"unit": sdlc_md.norm_id(unit), "digest": cell, "report": str(report),
-             "mutants": [{k: m.get(k, "") for k in _KEPT_MUTANT_KEYS} for m in mutants]},
-            indent=2) + "\n")
-    return path
+    try:
+        before = kept.read_bytes()
+    except FileNotFoundError:
+        before = None
+    try:
+        if report is None:
+            kept.unlink(missing_ok=True)
+        else:
+            kept.parent.mkdir(parents=True, exist_ok=True)
+            sdlc_md.atomic_write(kept, json.dumps(
+                {"unit": sdlc_md.norm_id(unit), "digest": cell,
+                 "report": _kept_report_path(repo_root, report),
+                 "mutants": [{k: m.get(k, "") for k in _KEPT_MUTANT_KEYS} for m in mutants]},
+                indent=2) + "\n")
+    except OSError as exc:
+        done = "written" if report is not None else "removed (it was kept for an earlier row)"
+        raise ValueError(f"the kept mutant list {kept} was not {done}: {exc}") from None
+    try:
+        return _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
+    except OSError:
+        # the row was not written, so no list may name it: put back what was there
+        if before is None:
+            kept.unlink(missing_ok=True)
+        else:
+            sdlc_md.atomic_write(kept, before.decode("utf-8"))
+        raise
+
+
+def _kept_report_path(repo_root: Path | str, report: str | Path) -> str:
+    """How a kept list names the runner's report: its path relative to the root, POSIX
+    separators, or its name alone when it lies outside the root, so a committed file carries no
+    local absolute path."""
+    path = Path(report).resolve()
+    try:
+        return path.relative_to(Path(repo_root).resolve()).as_posix()
+    except ValueError:
+        return path.name
 
 
 # --- The runner's report, recorded whole ----------------------------------------------------
@@ -3513,18 +3608,35 @@ def mutants_from_report(path: str | Path, unit: str) -> list[dict]:
 
 def recorded_mutants(repo_root: Path | str, unit: str) -> list[dict] | None:
     """The mutant list kept with the unit's latest self-check row, or None when that row was
-    recorded with no runner report (or there is no row, or the kept file names another row)."""
+    recorded with no runner report (no kept file, or no row, or the kept file names another
+    row). A kept file that cannot be read as a list of mutants - not JSON, not an object, its
+    mutants not a list of objects whose `_KEPT_MUTANT_KEYS` hold text - raises ValueError
+    naming it, so the brief replaying it refuses rather than crashes."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
+    path = author_mutants_path(repo_root, unit)
     try:
-        kept = json.loads(author_mutants_path(repo_root, unit).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        kept = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
         return None
-    if not rows or not isinstance(kept, dict) or not isinstance(kept.get("mutants"), list):
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"the kept mutant list {path} is malformed: {exc}") from None
+    if not isinstance(kept, dict):
+        raise ValueError(f"the kept mutant list {path} is malformed: not a JSON object")
+    if not rows:
         return None
     last = rows[-1]
     cell = f"{last['digest']}{_DIGEST_AT}{last['commit']}" if last["commit"] else last["digest"]
-    return kept["mutants"] if kept.get("digest") == cell else None
+    if kept.get("digest") != cell:
+        return None
+    mutants = kept.get("mutants")
+    if not isinstance(mutants, list) or not all(
+            isinstance(m, dict) and all(isinstance(m.get(k, ""), str) for k in _KEPT_MUTANT_KEYS)
+            for m in mutants):
+        raise ValueError(f"the kept mutant list {path} is malformed: its mutants are not a list "
+                         f"of objects holding text under {', '.join(_KEPT_MUTANT_KEYS)} - record "
+                         f"the self-check again with --mutants-from")
+    return mutants
 
 
 # --- The author's recorded mutants, replayed in the brief -----------------------------------
@@ -4193,9 +4305,10 @@ def brief_diff_cap(repo_root: Path | str, tier: str) -> int:
     return BRIEF_DIFF_LINES[tier]
 
 
-def _git_text(root: Path, *args: str) -> bytes:
-    """`git <args>`'s stdout, or ValueError carrying the first line git wrote on stderr."""
-    cp = _git(root, *args)
+def _git_text(root: Path, *args: str, index: str | None = None) -> bytes:
+    """`git <args>`'s stdout, or ValueError carrying the first line git wrote on stderr. The
+    index is passed on only when one is named, so `_git` keeps its two-argument call."""
+    cp = _git(root, *args, index=index) if index else _git(root, *args)
     if cp is None:
         raise ValueError("git could not be run")
     if cp.returncode != 0:
@@ -4204,39 +4317,74 @@ def _git_text(root: Path, *args: str) -> bytes:
     return cp.stdout
 
 
-def _unit_diff_section(root: Path, base: str, affects: list[str], tier: str) -> str:
+def _unit_diff_section(root: Path, base: str, affects: list[str], tier: str,
+                       unit: str | None = None) -> str:
     """The UNIT DIFF section: each changed Affects file's `git diff <base> HEAD -- <file>`, in
     git's order, held to the tier's line cap. Base to HEAD, never the working tree: a reviewer's
     isolated checkout cannot see uncommitted work. Past the cap, one remainder line names each
-    file cut or left out, how many of its lines are not shown and the command that prints it."""
+    file cut or left out, how many of its lines are not shown and the command that prints it.
+
+    The unit's own commits only, when `unit` is given and the commits since the base that change
+    these files include both commits naming it (its subject or a `Refs:` line, as the criteria
+    runner reads them) and commits that do not, as when two units of one run change one file:
+    each of its commits, oldest first, as a `commit <sha> <subject>` line and its
+    `git diff <sha>^ <sha> -- <file>` (a merge against its first parent), under the same cap,
+    then a line naming the commits left out. When all of those commits name the unit, or none
+    does, the section is the whole diff from the base."""
     cap = brief_diff_cap(root, tier)
-    head = (f"--- UNIT DIFF (git diff {base} HEAD -- "
-            f"{' '.join(shlex.quote(a) for a in affects)}) ---")
+    paths = " ".join(shlex.quote(a) for a in affects)
+    head = f"--- UNIT DIFF (git diff {base} HEAD -- {paths}) ---"
     lines: list[str] = []
-    left: list[tuple[str, int]] = []
+    left: list[tuple[str, int, str, str]] = []
+    import verify_ac  # noqa: PLC0415 - sibling; its reading of a unit's commits is the one kept
     try:
-        listed = _git_text(root, "diff", "--no-renames", "--name-only", "-z", base, "HEAD",
-                           "--", *affects)
-        for name in (os.fsdecode(n) for n in listed.split(b"\0") if n):
-            text = _git_text(root, "diff", "--no-color", "--no-ext-diff", base, "HEAD", "--",
-                             name).decode("utf-8", "replace")
-            own = text.split("\n")
-            if own[-1] == "":
-                own.pop()
-            room = max(cap - len(lines), 0)
-            lines.extend(own[:room])
-            if len(own) > room:
-                left.append((name, len(own) - room))
-    except ValueError as exc:
+        spans: list[tuple[str, str, str]] = [(base, "HEAD", "")]
+        left_out: list[str] = []
+        if unit:
+            log = _git_text(root, "log", "--reverse", "--format=%H%x1f%s", f"{base}..HEAD", "--",
+                            *affects).decode("utf-8", "replace")
+            touching = [ln.split("\x1f", 1) + [""] for ln in log.splitlines() if ln.strip()]
+            mine = verify_ac._unit_commit_shas(root, base, unit) if touching else set()
+            foreign = [sha for sha, *_ in touching if sha not in mine]
+            if foreign and len(foreign) < len(touching):
+                spans = [(f"{sha[:12]}^", sha[:12], f"commit {sha[:12]} {subject}")
+                         for sha, subject, *_ in touching if sha in mine]
+                many = "s" if len(spans) > 1 else ""
+                head = (f"--- UNIT DIFF (the {len(spans)} commit{many} since {base} naming "
+                        f"{unit}: git diff <commit>^ <commit> -- {paths}) ---")
+                left_out = foreign
+        for old, new, marker in spans:
+            listed = _git_text(root, "diff", "--no-renames", "--name-only", "-z", old, new,
+                               "--", *affects)
+            if marker and len(lines) < cap:
+                lines.append(marker)
+            for name in (os.fsdecode(n) for n in listed.split(b"\0") if n):
+                text = _git_text(root, "diff", "--no-color", "--no-ext-diff", old, new, "--",
+                                 name).decode("utf-8", "replace")
+                own = text.split("\n")
+                if own[-1] == "":
+                    own.pop()
+                room = max(cap - len(lines), 0)
+                lines.extend(own[:room])
+                if len(own) > room:
+                    left.append((name, len(own) - room, old, new))
+    except (ValueError, verify_ac.CoverageUnavailable) as exc:
         return f"{head}\n(git could not take this diff: {exc})"
     if not lines:
         return f"{head}\n(no committed change to these files since the base)"
     body = "\n".join(lines)
     if left:
         named = "; ".join(f"{name}, {count} of its lines "
-                          f"(git diff {base} HEAD -- {shlex.quote(name)})" for name, count in left)
+                          f"(git diff {old} {new} -- {shlex.quote(name)})"
+                          for name, count, old, new in left)
         body += (f"\nDiff cut at the {cap}-line cap for the {tier} tier "
                  f"(review.brief_diff_lines). Not shown: {named}")
+    if left_out:
+        one = len(left_out) == 1
+        body += (f"\nLeft out: {len(left_out)} commit{'' if one else 's'} since the base "
+                 f"change{'s' if one else ''} these files without naming {unit} in its subject "
+                 f"or a Refs: line ({', '.join(sha[:12] for sha in left_out)}); git diff {base} "
+                 f"HEAD -- {paths} shows {'it' if one else 'them'} with this unit's.")
     return f"{head}\n{body}"
 
 
@@ -4442,7 +4590,7 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> tuple[str,
     verify = f"{_verify_section(shown)}\n\n" if "VERIFY COMMAND" in sections else ""
     # THE UNIT'S OWN DIFF, so the seat spends its turns judging the change rather than finding
     # it. Bounded to the Affects: with none declared there is no bound, so no diff.
-    diff = (f"{_unit_diff_section(root, base, affects, tier)}\n\n"
+    diff = (f"{_unit_diff_section(root, base, affects, tier, shown)}\n\n"
             if base and affects and "UNIT DIFF" in sections else "")
     # THE FILES' HISTORY: the delivered units that changed them and what their reviews caught,
     # so the seat looks first for a repeat the record already holds. Light skips the corpus walk.
@@ -4509,14 +4657,16 @@ def checked_rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
                             prior_verdict_text: str, tier: str = "full",
                             rebuilt: bool = False) -> tuple[str, str]:
     """`rejoinder_brief`'s text, and the text its checks read: the same re-review over the base
-    brief less its UNIT DIFF (`checked_brief`)."""
+    brief less its UNIT DIFF (`checked_brief`), and less the quoted prior verdict. The quote is
+    the earlier reviewer's words, as the diff is the tree's, so a practice or surface it names
+    would otherwise satisfy the check this brief's own sections fail."""
     parse_verdict_block(prior_verdict_text, strict=False)  # form only; ValueError on malformed
     base, checked = checked_brief(repo_root, unit, seat, tier)
     # The earlier file's UNIT/BRIEF header is dropped from the quote: it is not the verdict, and
     # a reviewer copying it would head the new file with the earlier brief's name.
     prior = _VERDICT_HEADER_RE.sub("", prior_verdict_text, count=1).strip()
     how = REBUILT_QUOTE if rebuilt else "verbatim"
-    return _rejoinder_text(base, prior, how), _rejoinder_text(checked, prior, how)
+    return _rejoinder_text(base, prior, how), _rejoinder_text(checked, "", how)
 
 
 def _rejoinder_text(base: str, prior: str, how: str) -> str:
@@ -4847,6 +4997,32 @@ def repair_open_findings(rulings: dict) -> list[str]:
 # before the logic review. A claim silently ruled TRUE because nothing contradicted it is the
 # failure this surfaces, so UNVERIFIABLE is its own category and an absent ruling is refused.
 CLAIM_RULINGS = ("TRUE", "FALSE", "UNVERIFIABLE")
+#: A ruling written with its evidence: the ruling word, a colon, then the evidence.
+_RULING_WITH_EVIDENCE = re.compile(r"([A-Za-z]+)\s*:(.*)", re.S)
+
+
+def split_ruling(raw) -> tuple[str, str]:
+    """`(ruling, evidence)` of a claim's ruling as written: a bare word, or a word of
+    `CLAIM_RULINGS` (any case), a colon and the evidence after it (`TRUE: grep finds it`), the
+    evidence stripped and kept. Anything else is the whole stripped value with no evidence, so
+    the vocabulary check names it as written: prose after the word with no colon (`TRUE in
+    substance`) qualifies the ruling rather than evidencing it."""
+    text = str(raw or "").strip()
+    m = _RULING_WITH_EVIDENCE.fullmatch(text)
+    if m and m.group(1).upper() in CLAIM_RULINGS:
+        return m.group(1), m.group(2).strip()
+    return text, ""
+
+
+def ruled_claims(claims: list[dict]) -> list[dict]:
+    """Each claim as the self-check reads it: a copy holding its fields as given, its `ruling`
+    the word `split_ruling` reads and its `evidence` what followed the colon ("" for a bare
+    ruling)."""
+    out = []
+    for entry in claims:
+        ruling, evidence = split_ruling(entry.get("ruling"))
+        out.append({**entry, "ruling": ruling, "evidence": evidence})
+    return out
 
 
 def validate_claim_inventory(claims: list[str], rulings: dict) -> bool:
@@ -5292,7 +5468,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             text, checked = checked_rejoinder_brief(args.root, args.unit, args.seat, prior,
                                                     tier, rebuilt)
             # The re-review brief carries the same blocks as the first one, so it is refused on
-            # the same terms, over the same text less its diff, before anything reaches stdout.
+            # the same terms, over its text less its diff and the prior verdict it quotes,
+            # before anything reaches stdout.
             assert_brief_practices(checked, tier)
             if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
                 assert_brief_claim_pass(checked)
@@ -5414,8 +5591,9 @@ def missing_arguments(args: argparse.Namespace, verb: str) -> list[str]:
             if not str(getattr(args, attr, "") or "").strip()]
 
 
-def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
-    """Resolve the batch, refuse ONCE for anything missing, then write every unit.
+def _run_batch(args: argparse.Namespace, verb: str, write, done: str = "written") -> int:
+    """Resolve the batch, refuse ONCE for anything missing, then write every unit; `done` is
+    the word the summary line uses for a unit `write` handled.
 
     Both refusals happen before the first write, so a bad invocation costs one message rather
     than a half-written batch. After that a per-unit failure is reported and the remaining
@@ -5460,7 +5638,7 @@ def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
             print(f"{verb} refused for {unit}: {exc}", file=sys.stderr)
         else:
             written.append(unit)
-    print(f"{verb}: {len(written)} unit(s) written"
+    print(f"{verb}: {len(written)} unit(s) {done}"
           + (f" ({', '.join(written)})" if written else "")
           + (f"; {len(failed)} REFUSED ({', '.join(failed)})" if failed else ""))
     if not failed:
@@ -5536,6 +5714,9 @@ def cmd_record(args: argparse.Namespace) -> int:
               "[pre-existing] BG0123 slow gate\"", file=sys.stderr)
         return 2
 
+    if getattr(args, "dry_run", False):
+        return _run_batch(args, "record", lambda unit: _dry_run_verdict(args, unit, brief),
+                          done="checked")
     carry_failed: list[str] = []
     # Who wrote the file, read from the harness's transcripts once, for the first bound unit.
     provenance: dict = {}
@@ -5597,7 +5778,50 @@ def cmd_record(args: argparse.Namespace) -> int:
             print(shallow, file=sys.stderr)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
+    for left in leftover_scratch_worktrees(args.root):
+        print(f"note: a detached worktree is still registered under the scratch area: {left} - "
+              f"remove it with `git worktree remove --force {left}`", file=sys.stderr)
     return rc
+
+
+#: The folder name a harness gives its session scratch area, where a reviewer mutates.
+SCRATCH_FOLDER = "scratchpad"
+
+
+def leftover_scratch_worktrees(repo_root: Path | str) -> list[str]:
+    """The detached worktrees of `repo_root`'s repository still registered under a scratch area:
+    the system temporary directory (`tempfile.gettempdir()`) or a folder named `SCRATCH_FOLDER`,
+    where the review practices tell a reviewer to mutate and to remove the worktree before its
+    verdict. Neither the main worktree nor one on a branch (a lane's) is named; [] when git
+    cannot list them."""
+    cp = _git(Path(repo_root), "worktree", "list", "--porcelain")
+    if cp is None or cp.returncode != 0:
+        return []
+    temp = Path(tempfile.gettempdir()).resolve()
+    found = []
+    for n, block in enumerate(cp.stdout.decode("utf-8", "replace").strip().split("\n\n")):
+        lines = block.splitlines()
+        path = next((ln[len("worktree "):] for ln in lines if ln.startswith("worktree ")), "")
+        if n == 0 or "detached" not in lines or not path:
+            continue
+        if SCRATCH_FOLDER in Path(path).parts or Path(path).resolve().is_relative_to(temp):
+            found.append(path)
+    return found
+
+
+def _dry_run_verdict(args: argparse.Namespace, unit: str, brief: str) -> None:
+    """`record --dry-run` for one unit: the checks `_write_verdict` makes before it writes that
+    the parser has not already made (it takes only a known verdict word and tier, from the flags
+    or the verdict block) - every cell `_clean` would write and the review round
+    (`round_refusal`) - raising ValueError on the first refusal, and writing nothing."""
+    verdict = str(args.verdict or "").upper()
+    for value in (args.reviewer, args.author, brief, _code_urls(args.issues)):
+        _clean(value)
+    if why := round_refusal(args.root, unit, args.reviewer, verdict,
+                            getattr(args, "ruling", None)):
+        raise ValueError(why)
+    print(f"dry run: {sdlc_md.norm_id(unit)} {verdict} would be recorded [delivery]; "
+          f"nothing was written")
 
 
 #: Statuses that mean "delivered, awaiting the reviewer of record" - the state a sign-off EXISTS
@@ -5612,6 +5836,27 @@ def is_awaiting_signoff(status: str) -> bool:
 
 
 def cmd_show(args: argparse.Namespace) -> int:
+    """The verdict listing, read inside `sdlc_md.corpus_cache()`. Each row bound to an issued
+    file names its unit's folder through `sdlc_md.display_id`, twice a row, and outside the
+    cache every call walked the whole artefact tree; inside it the tree is walked at most
+    once per artefact type for the invocation. `show` writes nothing, so the cache cannot serve it a
+    stale view, and it closes as the listing returns."""
+    with sdlc_md.corpus_cache():
+        return _show(args)
+
+
+def _show(args: argparse.Namespace) -> int:
+    """`cmd_show`'s body, run with the corpus cache open."""
+    if getattr(args, "unrecorded_staged", False):
+        try:
+            refused = unrecorded_staged_verdicts(args.root)
+        except ValueError as exc:
+            print(f"show --unrecorded-staged: git could not read the staged verdict files "
+                  f"({exc})", file=sys.stderr)
+            return 2
+        for line in refused:
+            print(line, file=sys.stderr)
+        return 1 if refused else 0
     if getattr(args, "format", "text") == "json":
         if args.unit:
             print(json.dumps({"unit": args.unit, "verdict": verdict_for(
@@ -5638,6 +5883,62 @@ def cmd_show(args: argparse.Namespace) -> int:
                   f"{f': {named}' if named else ''}{f' ({note})' if note else ''}"
                   f"{_superseded_suffix(v)}")
     return 0
+
+
+def _hook_index(root: Path) -> str | None:
+    """The index a commit hook names in `GIT_INDEX_FILE` when it lies in `root`'s own git
+    directory (`git commit -a` and `git commit <paths>` stage into a temporary index there), or
+    None: an index naming another repository's, as a hook running this repository's tests
+    exports, is never read for this one."""
+    named = os.environ.get("GIT_INDEX_FILE")
+    cp = _git(root, "rev-parse", "--absolute-git-dir") if named else None
+    if cp is None or cp.returncode != 0:
+        return None
+    gitdir = Path(cp.stdout.decode("utf-8", "replace").strip()).resolve()
+    index = (root / named).resolve() if not Path(named).is_absolute() else Path(named).resolve()
+    return str(index) if index.parent == gitdir else None
+
+
+def unrecorded_staged_verdicts(repo_root: Path | str) -> list[str]:
+    """One refusal line for each verdict file staged under `VERDICTS_DIR_REL` whose staged bytes
+    no recorded review row cites, naming the file and the `critic.py record` command that would
+    bind it; [] when every staged one is cited. A row cites a file when its `Source` cell names
+    the file's basename and the SHA-256 prefix of those exact bytes (`source_cell`) and its unit
+    is the file's folder, so a file still being written, or edited after its row was recorded,
+    is refused. A deleted file is not judged. The index read is the one a commit hook names
+    for this repository (`_hook_index`), else the repository's own. Raises ValueError when git
+    cannot list or show the staged files."""
+    root = Path(repo_root)
+    index = _hook_index(root)
+    listed = _git_text(root, "-c", "core.quotePath=false", "diff", "--cached", "--name-only",
+                       "-z", "--relative", "--diff-filter=ACMRT", "--",
+                       VERDICTS_DIR_REL.as_posix(), index=index)
+    staged = [os.fsdecode(n) for n in listed.split(b"\0") if n]
+    if not staged:
+        return []
+    cited: dict[tuple[str, str], set[str]] = {}
+    for row in read_verdicts(root):
+        if tokens := _source_tokens(row):
+            key = (sdlc_md.norm_id(str(row.get("unit") or "")), tokens[1])
+            cited.setdefault(key, set()).add(tokens[0])
+    depth = len(VERDICTS_DIR_REL.parts) + 2  # sdlc-studio/reviews/verdicts/<UNIT>/<file>
+    out = []
+    for rel in staged:
+        parts = PurePosixPath(rel).parts
+        unit = parts[-2] if len(parts) >= depth else "<UNIT>"
+        digest = source_cell(rel, _git_text(root, "show", f":./{rel}", index=index)).split()[0]
+        hashes = cited.get((sdlc_md.norm_id(unit), parts[-1]), set())
+        if digest in hashes:
+            continue
+        why = ("a recorded review row cites it, but not these bytes: it changed after its row "
+               "was recorded" if hashes else "no recorded review row cites it")
+        fp = PurePosixPath(rel).stem.rsplit("-", 1)[0]
+        out.append(f"{rel}: {why}, so it is a verdict still being written, not a record. "
+                   f"Record it once the reviewer has finished, with: critic.py record --unit "
+                   f"{unit} --from-verdict {shlex.quote(rel)} --brief {fp} --author <the seat "
+                   f"that built {unit}>; or unstage it with: git restore --staged -- "
+                   f"{shlex.quote(rel)}")
+    return out
 
 
 def _file_states(root: Path | str, rows: list[dict]):
@@ -5739,6 +6040,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "historical verdict is retrospectively downgraded")
     r.add_argument("--tier-explicit", action="store_true",
                    help="mark the tier as an operator's choice rather than a derived one")
+    r.add_argument("--dry-run", dest="dry_run", action="store_true",
+                   help="check the verdict as record would, every refusal included, and write "
+                        "nothing")
     r.add_argument("--root", default=".")
     r.set_defaults(func=cmd_record)
     b = sub.add_parser("brief", help="Print the assembled seat-review prompt for a unit "
@@ -5841,6 +6145,11 @@ def build_parser() -> argparse.ArgumentParser:
     scr.set_defaults(func=cmd_self_check_record)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
+    s.add_argument("--unrecorded-staged", dest="unrecorded_staged", action="store_true",
+                   help="instead of the listing, refuse each verdict file staged under "
+                        "sdlc-studio/reviews/verdicts/ that no recorded review row cites, naming "
+                        "it and the record command that binds it (exit 1); the pre-commit hook's "
+                        "gate lane runs it")
     s.add_argument("--root", default=".")
     sdlc_md.add_format_arg(s)
     s.set_defaults(func=cmd_show)
