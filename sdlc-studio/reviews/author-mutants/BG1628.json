@@ -1,0 +1,52 @@
+{
+  "unit": "BG1628",
+  "digest": "90c12d177540d2f5 at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1628-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the asterisk left bare",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_BARE_ASTERISK.sub(r\"\\\\*\", ",
+      "new": "(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticRecordAsteriskEscapeTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the asterisk escape not undone",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_MD_ESCAPED = re.compile(r\"\\\\[_*]|(?<=[\\])])\\\\(?=\\\\*\\[)\")",
+      "new": "_MD_ESCAPED = re.compile(r\"\\\\_|(?<=[\\])])\\\\(?=\\\\*\\[)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticRecordAsteriskEscapeTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an escaped asterisk escaped again",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_BARE_ASTERISK = re.compile(r\"(?<!\\\\)\\*\")",
+      "new": "_BARE_ASTERISK = re.compile(r\"\\*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticRecordAsteriskEscapeTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "MD037 still disabled",
+      "file": "sdlc-studio/reviews/critic-verdicts.md",
+      "old": "<!-- markdownlint-disable MD034 -->",
+      "new": "<!-- markdownlint-disable MD034 MD037 -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticLedgerMd037Tests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the US1202 row left bare",
+      "file": "sdlc-studio/reviews/critic-verdicts.md",
+      "old": "author\\_mutants\\_\\* or mutation\\_edits\\_\\*",
+      "new": "author\\_mutants\\_* or mutation\\_edits\\_*",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticLedgerMd037Tests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 299 |
+| Open | 298 |
 | In Progress | 0 |
-| Fixed | 1071 |
+| Fixed | 1072 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -703,7 +703,7 @@
 | [BG1625](BG1625-the-recorded-runner-report-and-the-replayed-mutants.md) | The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Fixed | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1630](BG1630-lessons-add-global-writes-only-the-lesson-section.md) | lessons add --global writes only the Lesson section and ships the template's other sections as placeholders | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1631](BG1631-install-ps1-uninstall-deletes-any-folder-named-sdlc.md) | install.ps1 -Uninstall deletes any folder named sdlc-studio under a target, with none of the guard BG1547 gives install.sh | Fixed | Medium | 2026-11-19 | 2026-11-19 |

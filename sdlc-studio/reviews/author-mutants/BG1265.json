@@ -1,0 +1,88 @@
+{
+  "unit": "BG1265",
+  "digest": "8fc7678ebf2e5594 at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1265-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the shipped definition drops the removal",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-reviewer.md",
+      "old": "remove the worktree with `git worktree remove --force <path>` before",
+      "new": "remove the worktree before",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_reviewer_mutates_in_a_worktree_and_removes_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the repository copy drifts from the shipped one",
+      "file": ".claude/agents/sdlc-reviewer.md",
+      "old": "- Mutate in a detached worktree under your scratchpad",
+      "new": "- Mutate in a worktree under your scratchpad",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_reviewer_mutates_in_a_worktree_and_removes_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief drops the removal",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "project's gate runs them, and remove it with `git worktree remove --force <path>` before you",
+      "new": "project's gate runs them, and before you",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefStatesTheIsolatedCheckoutRuleTests::test_the_brief_tells_the_reviewer_to_remove_its_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief drops the detached worktree",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "(`git worktree add --detach <scratchpad>/<name> HEAD`)",
+      "new": "(a copy of the tree)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefStatesTheIsolatedCheckoutRuleTests::test_the_brief_tells_the_reviewer_to_remove_its_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record names no leftover",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    for left in leftover_scratch_worktrees(args.root):",
+      "new": "    for left in []:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the main worktree named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if n == 0 or \"detached\" not in lines or not path:",
+      "new": "if \"detached\" not in lines or not path:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a lane's branch worktree named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if n == 0 or \"detached\" not in lines or not path:",
+      "new": "if n == 0 or not path:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a scratchpad folder outside the temp dir missed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if SCRATCH_FOLDER in Path(path).parts or Path(path).resolve().is_relative_to(temp):",
+      "new": "if Path(path).resolve().is_relative_to(temp):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the temp dir missed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if SCRATCH_FOLDER in Path(path).parts or Path(path).resolve().is_relative_to(temp):",
+      "new": "if SCRATCH_FOLDER in Path(path).parts:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

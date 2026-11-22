@@ -1,0 +1,79 @@
+{
+  "unit": "BG1229",
+  "digest": "240d1f0bfd9c63de at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1229-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the ruling read whole, evidence and all",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "ruling = split_ruling(entry.get(\"ruling\"))[0]",
+      "new": "ruling = entry.get(\"ruling\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RulingWithEvidenceTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any word before a colon read as a ruling",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if m and m.group(1).upper() in CLAIM_RULINGS:",
+      "new": "if m:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RulingWithEvidenceTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a space taken as the separator",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_RULING_WITH_EVIDENCE = re.compile(r\"([A-Za-z]+)\\s*:(.*)\", re.S)",
+      "new": "_RULING_WITH_EVIDENCE = re.compile(r\"([A-Za-z]+)\\s+(.*)\", re.S)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RulingWithEvidenceTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the evidence left out of a refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if entry[\"evidence\"] else \"\")",
+      "new": "if False else \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RulingWithEvidenceTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the dry run writing the row",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if getattr(args, \"dry_run\", False):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RecordDryRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the dry run skipping the round check",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if why := round_refusal(args.root, unit, args.reviewer, verdict,\n                            getattr(args, \"ruling\", None)):\n        raise ValueError(why)\n    print(f\"dry run:",
+      "new": "    print(f\"dry run:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RecordDryRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the dry run skipping the cell checks",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    for value in (args.reviewer, args.author, brief, _code_urls(args.issues)):\n        _clean(value)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::RecordDryRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the asterisk left bare",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_BARE_ASTERISK.sub(r\"\\\\*\", ",
+      "new": "(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py::LedgerAsteriskTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

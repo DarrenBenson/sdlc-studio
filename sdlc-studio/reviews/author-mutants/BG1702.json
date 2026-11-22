@@ -1,0 +1,25 @@
+{
+  "unit": "BG1702",
+  "digest": "2a2cf1fa7cb1429f at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1702-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the checks read the quoted verdict",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, \"\", how)",
+      "new": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, prior, how)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_rejoinder_practices.py::RejoinderQuoteDoesNotSatisfyTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief drops the quote",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, \"\", how)",
+      "new": "return _rejoinder_text(base, \"\", how), _rejoinder_text(checked, \"\", how)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_rejoinder_practices.py::RejoinderBriefStillQuotesTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

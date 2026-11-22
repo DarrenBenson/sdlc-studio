@@ -1,6 +1,6 @@
 # BG1628: critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, sdlc-studio/reviews/critic-verdicts.md, changelog.d/BG1628.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py
@@ -26,9 +26,11 @@ Escape a bare asterisk outside code spans in `_escape_outside_spans` and undo it
 
 - [ ] **AC1** Given a verdict whose findings say `a_* or b_*` outside backticks, when `critic.py record` writes it and markdownlint runs on sdlc-studio/reviews/critic-verdicts.md, then the row passes MD037 and reads back as the original text, asterisks and underscores intact. Fails on: `a\_* or b\_*` read as emphasis, refusing the commit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticRecordAsteriskEscapeTests
+  - **Verified:** yes (2026-11-22)
 
 - [ ] **AC2** Given the ledger's markdownlint disable line, when markdownlint runs on the ledger, then MD037 is no longer disabled and the ledger still passes. Fails on: MD037 disabled as an interim.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_asterisk_escape.py::CriticLedgerMd037Tests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

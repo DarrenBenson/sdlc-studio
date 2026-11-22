@@ -1,0 +1,133 @@
+{
+  "unit": "BG1125",
+  "digest": "aec17828004022a7 at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1125-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "own-commit form taken whenever another commit exists",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if foreign and len(foreign) < len(touching):",
+      "new": "if foreign:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_a_range_of_only_the_units_commits_or_none_keeps_the_whole_diff",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another unit's commits kept in the own form",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "for sha, subject, *_ in touching if sha in mine]",
+      "new": "for sha, subject, *_ in touching]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "commits listed newest first",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"log\", \"--reverse\", \"--format=%H%x1f%s\"",
+      "new": "\"log\", \"--format=%H%x1f%s\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a commit's marker past the cap",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if marker and len(lines) < cap:",
+      "new": "if marker:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_cap_holds_in_the_own_commit_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the remainder names the range, not the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"(git diff {old} {new} -- {shlex.quote(name)})\"",
+      "new": "f\"(git diff {base} HEAD -- {shlex.quote(name)})\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_cap_holds_in_the_own_commit_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the left-out commits unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if left_out:\n        one = len(left_out) == 1",
+      "new": "    if False:\n        one = len(left_out) == 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the other commits never collected",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            foreign = [sha for sha, *_ in touching if sha not in mine]\n",
+      "new": "            foreign = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the left-out commits never kept",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                left_out = foreign\n",
+      "new": "                left_out = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the left-out line in the range form",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            foreign = [sha for sha, *_ in touching if sha not in mine]\n",
+      "new": "            foreign = left_out = [sha for sha, *_ in touching if sha not in mine]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_a_range_of_only_the_units_commits_or_none_keeps_the_whole_diff",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unit's commits never read",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "mine = verify_ac._unit_commit_shas(root, base, unit) if touching else set()",
+      "new": "mine = set()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief passes no unit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_unit_diff_section(root, base, affects, tier, shown)",
+      "new": "_unit_diff_section(root, base, affects, tier)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a commit-listing failure not caught",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "except (ValueError, verify_ac.CoverageUnavailable) as exc:\n        return f\"{head}\\n(git could not",
+      "new": "except (ValueError,) as exc:\n        return f\"{head}\\n(git could not",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_commits_git_cannot_list_are_said",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one commit read as many",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "many = \"s\" if len(spans) > 1 else \"\"",
+      "new": "many = \"s\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one left-out commit read as many",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "one = len(left_out) == 1",
+      "new": "one = False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

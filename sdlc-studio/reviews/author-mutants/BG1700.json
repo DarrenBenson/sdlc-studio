@@ -1,0 +1,16 @@
+{
+  "unit": "BG1700",
+  "digest": "b1006553c4e6452e at 30eb84a51fa4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1700-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the listing read outside the cache",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    with sdlc_md.corpus_cache():\n        return _show(args)",
+      "new": "    return _show(args)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_show_scales.py::CriticShowScalesTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
