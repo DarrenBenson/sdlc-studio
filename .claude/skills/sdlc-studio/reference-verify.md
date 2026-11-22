@@ -128,7 +128,8 @@ test-framework prefixes (`pytest`, `jest`, `vitest`, `go`) for
 behavioural assertions that already have test coverage.
 
 Shell commands run with `cwd` set to `--repo-root` (default: current
-directory). Every verifier has a `--timeout` limit (default 120s).
+directory). Every verifier has a `--timeout` limit (default 120s, or
+`SDLC_VERIFY_TIMEOUT` when that holds a positive integer).
 
 **Reaching a skill script.** A Verify line is committed and shared, so it never names one
 machine's install path. Write `<skill>` for the skill directory, as in

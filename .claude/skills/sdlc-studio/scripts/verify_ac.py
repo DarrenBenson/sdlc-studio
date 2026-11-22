@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import ast
 import contextlib
+import doctest
 import glob
 import tempfile
 import hashlib
@@ -2876,6 +2877,68 @@ def first_red(runs: list[tuple]) -> tuple:
     return next((pair for pair in runs if not pair[1].ok), runs[-1])
 
 
+#: The file each red criterion's own verifier output is appended to when set: one block per
+#: failing criterion on a unit whose status claims completion, as the release gate reads that
+#: claim. The scheduled corpus lane sets it, so a red it reports can be read in its own log.
+RED_DETAIL_ENV = "SDLC_VERIFY_RED_DETAIL"
+#: The per-verifier ceiling a runner sets from its own measured speed, which the release gate
+#: reads too; `run` takes it when `--timeout` is not given.
+VERIFY_TIMEOUT_ENV = "SDLC_VERIFY_TIMEOUT"
+#: `run`'s per-verifier ceiling in seconds when neither `--timeout` nor the budget is set.
+DEFAULT_TIMEOUT = 120
+
+
+def _run_timeout(flag: int | None) -> int:
+    """`run`'s per-verifier ceiling: `--timeout` when given, else `VERIFY_TIMEOUT_ENV` when it
+    holds a positive integer, else `DEFAULT_TIMEOUT`."""
+    if flag is not None:
+        return flag
+    try:
+        budget = int(os.environ.get(VERIFY_TIMEOUT_ENV, ""))
+    except ValueError:
+        return DEFAULT_TIMEOUT
+    return budget if budget > 0 else DEFAULT_TIMEOUT
+
+
+def _record_red(story_path: Path, text: str, ac: str, verifier: str, result: VerifierResult,
+                rerun=None, why: str = "") -> None:
+    """Append criterion `ac`'s red to the file `RED_DETAIL_ENV` names: its `<record>::<AC>` id
+    and verifier, then the verifier's own exit, stdout and stderr under them.
+
+    Nothing is written when the variable is unset, or when the unit's status claims no
+    completion, which the release gate reads as unbuilt rather than red. A red a batch answered
+    carries no output of its own, so `rerun` runs the verifier alone for the record, and the
+    record names the batch's answer above it; the verdict stays the batch's. A file that cannot
+    be opened is named on stderr and the verdict stands. Each block is a
+    single write to a file opened for appending, which keeps the gate's concurrent workers from
+    splitting one another's blocks on a local filesystem."""
+    dest = os.environ.get(RED_DETAIL_ENV)
+    if not dest:
+        return
+    import gate  # noqa: PLC0415 - the release gate's own reading of a completion claim
+    if not gate._claims_completion(sdlc_md.extract_field(text, "Status")):
+        return
+    if rerun is not None:
+        why = f"the batch answered: {result.stderr.strip()}; its own run, for this record:"
+        result = rerun()
+    rec = sdlc_md.extract_record_id(Path(story_path).stem) or Path(story_path).stem
+    lines = [f"red: {rec}::{ac} - {verifier}", *([why] if why else []),
+             f"exit {result.exit_code} after {result.duration_ms} ms"]
+    for label, out in (("stdout", result.stdout), ("stderr", result.stderr)):
+        if out.strip():
+            lines += [f"--- {label}", out.rstrip()]
+    try:
+        fd = os.open(dest, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+    except OSError as exc:
+        print(f"warning: {RED_DETAIL_ENV} names {dest}, which cannot be opened "
+              f"({exc.strerror}); {rec}::{ac}'s output is not recorded", file=sys.stderr)
+        return
+    try:
+        os.write(fd, ("\n".join(lines) + "\n\n").encode("utf-8", "replace"))
+    finally:
+        os.close(fd)
+
+
 def verify_story(
     story_path: Path,
     dry_run: bool,
@@ -2904,6 +2967,11 @@ def verify_story(
     story_allow_shell = shell_allowed_for(text, allow_shell=allow_shell,
                                           allow_external=allow_external)
     pending: list = []  # (block, new_state) - applied bottom-up after the loop
+    batched: set[str] = set()  # the verifier lines a batch answered, not their own run
+
+    def run_alone(verifier: str) -> VerifierResult:
+        return run_verifier(verifier, timeout, repo_root,
+                            allow_shell=story_allow_shell, allow_fallback=allow_fallback)
 
     def run_one(verifier: str) -> VerifierResult:
         result = None
@@ -2912,8 +2980,9 @@ def verify_story(
         if result is None and pytest_cache is not None:
             result = resolve_pytest_from_cache(verifier, pytest_cache, pytest_collected)
         if result is None:
-            result = run_verifier(verifier, timeout, repo_root,
-                                  allow_shell=story_allow_shell, allow_fallback=allow_fallback)
+            result = run_alone(verifier)
+        else:
+            batched.add(verifier)
         return result
 
     for block in blocks:
@@ -2965,6 +3034,8 @@ def verify_story(
                     "score": result.score,
                     "vacuous": result.vacuous,
                 })
+                _record_red(story_path, text, block.ac_id, block.verifier, result,
+                            why=report.failures[-1]["stderr"])
                 continue
             report.verified += 1
             report.passed.append(block.ac_id)
@@ -3001,6 +3072,8 @@ def verify_story(
                     "partly_skipped": result.partly_skipped,
                 }
             )
+            _record_red(story_path, text, block.ac_id, verifier, result,
+                        rerun=(lambda v=verifier: run_alone(v)) if verifier in batched else None)
             if result.vacuous:
                 report.vacuous += 1
             if result.partly_skipped:
@@ -3751,6 +3824,7 @@ def cmd_coverage(args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     """Run verifiers across stories, update files, and write the report."""
     repo_root = resolve_root(args)
+    args.timeout = _run_timeout(args.timeout)
 
     flag = scope_flag(args)
     # `--story` / `--id` narrow the run exactly as the newer scopes do, so they carry exactly the
@@ -4107,33 +4181,92 @@ class _TestTree:
         return self._parsed[path]
 
 
-# A docstring line that opens, after any indent, with the `>>>` prompt that starts an example.
-_DOCTEST_PROMPT = re.compile(r"^[ \t]*>>>", re.M)
+#: A binding whose value this check does not read, such as what an assignment binds: like a base
+#: class defined elsewhere, a doctest it might hold is not reported.
+_UNREAD = object()
 
 
 def _doctest_defined(parsed: tuple, name: str) -> bool:
     """True when `name` has the form of a doctest id pytest's `--doctest-modules` gives, and the
     parsed file holds that doctest.
 
-    The name opens with a module name: the file's stem, alone or after the last one or more of
-    the directories on its path from the root. pytest's import modes name a module in these
-    forms, which one depending on the packages around the file and the rootdir; that choice is
-    not read here, so any of them resolves. After it comes the qualified name of the class,
-    function or method whose docstring holds a `>>>` example, or nothing for the module's own
-    docstring. pytest looks for doctests on the module, its classes and what they define,
-    never inside a function."""
+    The name opens with a module name: the file's stem, or for an `__init__.py` its package's
+    directory, alone or after the last one or more of the directories above it on its path
+    from the root. pytest's import modes name a module in these forms, which one depending on
+    the packages around the file and the rootdir; that choice is not read here, so any of them
+    resolves. After it comes the qualified name of the class, function or method whose
+    docstring holds an example `doctest.DocTestParser` finds, or nothing for the module's own
+    docstring; a prompt holding only a comment or nothing is no example. pytest looks for
+    doctests on what the module binds when it has run, its classes and what they bind, never
+    inside a function, so each name is looked up as `_bindings` reads it."""
     rel, module = parsed[0], parsed[1]
-    parts, dirs = name.split("."), Path(rel).parent.parts
-    for k, part in enumerate(parts):
-        if part != Path(rel).stem or tuple(parts[:k]) != dirs[len(dirs) - k:]:
-            continue
-        node = module
-        for qual in parts[k + 1:]:
-            scope = node.body if isinstance(node, (ast.Module, ast.ClassDef)) else []
-            node = next((n for n in scope if isinstance(n, _TEST_DEFS) and n.name == qual), None)
-        if node is not None and _DOCTEST_PROMPT.search(ast.get_docstring(node, clean=False) or ""):
+    if module is None:
+        return False
+    path = Path(rel)
+    owner = list(path.parent.parts) + ([] if path.stem == "__init__" else [path.stem])
+    parts = name.split(".")
+    for k in range(1, min(len(parts), len(owner)) + 1):
+        if parts[:k] == owner[-k:] and any(_holds_example(node)
+                                           for node in _bindings(module, parts[k:])):
             return True
     return False
+
+
+def _holds_example(node) -> bool:
+    """True when `node`'s docstring holds an example pytest collects, or the binding is unread."""
+    if node is _UNREAD:
+        return True
+    try:
+        return bool(doctest.DocTestParser().get_examples(ast.get_docstring(node, clean=False) or ""))
+    except ValueError:  # pytest's collection of the file fails on the same docstring
+        return False
+
+
+def _bindings(scope, quals: list[str]) -> list:
+    """What the qualified name `quals` may be bound to once `scope` (a module) has run: each a
+    class or function definition, or `_UNREAD`. A name is looked up in the module's body and
+    then in each class it may be."""
+    found = [scope]
+    for qual in quals:
+        found = [b for node in found
+                 for b in ([_UNREAD] if node is _UNREAD else
+                           _bound_after(node.body, qual, []) if isinstance(node, (ast.Module, ast.ClassDef))
+                           else [])]
+    return found
+
+
+def _bound_after(body: list, name: str, bound: list) -> list:
+    """What `name` may be bound to after the statements `body` run, from `bound` before them.
+
+    A def or class statement binds the name, and a later one rebinds it, so the last wins. An
+    import or `del` leaves it holding no doctest of this module's own, and an assignment binds
+    it to `_UNREAD`. Under an `if`, either branch may run; under a `with`, its body does; under
+    a loop, a `try` or a `match`, any block may run or none, and a `finally` block runs after
+    them. Where it depends on which ran, every definition that may be bound counts."""
+    for stmt in body:
+        if isinstance(stmt, _TEST_DEFS):
+            bound = [stmt] if stmt.name == name else bound
+        elif isinstance(stmt, (ast.Import, ast.ImportFrom)):
+            bound = [] if any((a.asname or a.name.split(".")[0]) == name
+                              for a in stmt.names) else bound
+        elif isinstance(stmt, (ast.Assign, ast.AnnAssign, ast.Delete)):
+            targets = stmt.targets if not isinstance(stmt, ast.AnnAssign) else (
+                [stmt.target] if stmt.value is not None else [])
+            if any(isinstance(n, ast.Name) and n.id == name and isinstance(n.ctx, (ast.Store, ast.Del))
+                   for t in targets for n in ast.walk(t)):
+                bound = [] if isinstance(stmt, ast.Delete) else [_UNREAD]
+        elif isinstance(stmt, ast.If):
+            bound = _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)
+        elif isinstance(stmt, (ast.With, ast.AsyncWith)):
+            bound = _bound_after(stmt.body, name, bound)
+        else:
+            blocks = ([getattr(stmt, "body", []), getattr(stmt, "orelse", [])]
+                      + [h.body for h in getattr(stmt, "handlers", []) + getattr(stmt, "cases", [])])
+            for block in blocks:
+                bound = bound + _bound_after(block, name, bound)
+            bound = _bound_after(getattr(stmt, "finalbody", []), name, bound)
+        bound = list(dict.fromkeys(bound))
+    return bound
 
 
 def _names_defined(parsed: tuple, names: list[str]) -> str | None:
@@ -5658,7 +5791,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="rebuild the report from this run only (default merges into it)")
     r.add_argument("--batch", action="store_true",
                    help="run jest once and resolve jest verifiers from the cached result")
-    r.add_argument("--timeout", type=int, default=120, help="Per-verifier timeout in seconds")
+    r.add_argument("--timeout", type=int, default=None,
+                   help=f"Per-verifier timeout in seconds (default: ${VERIFY_TIMEOUT_ENV} when it "
+                        f"holds a positive integer, else {DEFAULT_TIMEOUT})")
     r.add_argument("--coverage", action="store_true",
                    help="after the run, measure which of each unit's OWN added lines its OWN "
                         "verifiers executed, following child interpreters; exit 1 on any "

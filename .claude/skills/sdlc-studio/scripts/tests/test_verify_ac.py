@@ -1095,6 +1095,57 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
              "class ImportedBaseTests(helpers.BaseTests):\n"
              "    pass\n")
 
+    #: One `>>>` example, the docstring body every doctest below carries.
+    EXAMPLE = '"""\n    >>> 1\n    1\n    """'
+    PACKAGE = '"""Package.\n\n>>> 1\n1\n"""\n\n\ndef func():\n    ' + EXAMPLE + "\n"
+    SHAPES = ("import contextlib\nimport sys\n\n"
+              "if sys:\n    def guarded():\n        " + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "try:\n    def in_try():\n        " + EXAMPLE.replace("\n", "\n    ") + "\n"
+              "    import no_such_module_anywhere\n"
+              "except ImportError:\n    def fallback():\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "for _ in range(1):\n    def looped():\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "with contextlib.nullcontext():\n    def within():\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n"
+              "if sys:\n    def either():\n        " + EXAMPLE.replace("\n", "\n    ") + "\n"
+              "else:\n    def either():\n        pass\n\n"
+              "if sys:\n    class Guarded:\n        if sys:\n            def meth(self):\n"
+              "                " + EXAMPLE.replace("\n", "\n            ") + "\n\n\n"
+              'def only_comment():\n    """\n    >>> # nothing runs\n    """\n\n\n'
+              'def only_prompt():\n    """\n    >>>\n    """\n\n\n'
+              "def twice():\n    " + EXAMPLE + "\n\n\ndef twice():\n    pass\n\n\n"
+              "def again():\n    pass\n\n\ndef again():\n    " + EXAMPLE + "\n\n\n"
+              "def replaced():\n    " + EXAMPLE + "\n\n\n"
+              "if sys:\n    def replaced():\n        pass\n"
+              "else:\n    def replaced():\n        pass\n\n\n"
+              "def imported():\n    " + EXAMPLE + "\n\n\n"
+              "from os.path import join as imported\n\n\n"
+              "def deleted():\n    " + EXAMPLE + "\n\n\ndel deleted\n\n\n"
+              "def _make():\n    def made():\n        " + EXAMPLE.replace("\n", "\n    ") + "\n"
+              "    return made\n\n\n"
+              "def assigned():\n    pass\n\n\nassigned = _make()\n\n\n"
+              "def _make_class():\n    class Made:\n        def meth(self):\n            "
+              + EXAMPLE.replace("\n", "\n        ") + "\n    return Made\n\n\n"
+              "Made = _make_class()\n\n\n"
+              "def subscripted():\n    pass\n\n\n"
+              "registry = {}\nregistry[subscripted] = 1\n\n\n"
+              "def ann_set():\n    pass\n\n\nann_set: object = _make()\n\n\n"
+              "if not sys:\n    def other_way():\n        pass\n"
+              "else:\n    def other_way():\n        " + EXAMPLE.replace("\n", "\n    ") + "\n\n\n"
+              "def maybe_looped():\n    " + EXAMPLE + "\n\n\n"
+              "for _ in []:\n    def maybe_looped():\n        pass\n\n\n"
+              "try:\n    pass\nfinally:\n    def in_finally():\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n\n"
+              "match sys.platform:\n    case _:\n        def matched():\n            "
+              + EXAMPLE.replace("\n", "\n        ") + "\n\n\n"
+              "for _ in []:\n    pass\nelse:\n    def loop_else():\n        "
+              + EXAMPLE.replace("\n", "\n    ") + "\n\n\n"
+              "def json():\n    " + EXAMPLE + "\n\n\nimport json.decoder\n\n\n"
+              "def annotated():\n    pass\n\n\nannotated: int\n\n\n"
+              "def rebound_in_with():\n    " + EXAMPLE + "\n\n\n"
+              "with contextlib.nullcontext():\n    def rebound_in_with():\n        pass\n")
+
     def _project(self, root: Path, rows: str) -> Path:
         tests = root / "pkg" / "tests"
         tests.mkdir(parents=True)
@@ -1124,6 +1175,17 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                                 'class U:\n    """Second.\n\t>>> 1\n\t1\n\t"""\n')):
             (root / "pkg" / pkg).mkdir(parents=True)
             (root / "pkg" / pkg / "test_utils.py").write_text(body, encoding="utf-8")
+        # A package, which pytest names by its directory, and a module whose definitions sit
+        # under compound statements, repeat, or are rebound after they are made.
+        (root / "pkg" / "d").mkdir(parents=True)
+        (root / "pkg" / "d" / "__init__.py").write_text(self.PACKAGE, encoding="utf-8")
+        (root / "pkg" / "e" / "f").mkdir(parents=True)
+        (root / "pkg" / "e" / "__init__.py").write_text("", encoding="utf-8")
+        (root / "pkg" / "e" / "f" / "__init__.py").write_text(self.PACKAGE, encoding="utf-8")
+        (root / "pkg" / "c").mkdir(parents=True)
+        (root / "pkg" / "c" / "test_c.py").write_text(self.SHAPES, encoding="utf-8")
+        (root / "pkg" / "c" / "test_bad.py").write_text(
+            'def bad():\n    """\n    >>>1\n    """\n', encoding="utf-8")
         specs = root / "sdlc-studio" / "test-specs"
         specs.mkdir(parents=True)
         spec = specs / "TS0001-x.md"
@@ -1157,13 +1219,27 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0012 | AC1 | no example | pkg/b/test_utils.py::test_utils.T | Pass |\n"
                 "| US0012 | AC2 | method, no example | pkg/a/test_utils.py::test_utils.T.test_a | Pass |\n"
                 "| US0012 | AC3 | nested function | pkg/a/test_utils.py::test_utils.helper.inner | Pass |\n"
-                "| US0012 | AC4 | doctest and test | pkg/a/test_utils.py::test_utils.T::test_a | Pass |\n")
+                "| US0012 | AC4 | doctest and test | pkg/a/test_utils.py::test_utils.T::test_a | Pass |\n"
+                # Doctests pytest refuses: a prompt with nothing to run, a definition the module
+                # rebinds before it ends, a package named by its file, and a parser refusal.
+                "| US0013 | AC1 | comment prompt | test_c.py::test_c.only_comment | Pass |\n"
+                "| US0013 | AC2 | bare prompt | test_c.py::test_c.only_prompt | Pass |\n"
+                "| US0013 | AC3 | first of two | test_c.py::test_c.twice | Pass |\n"
+                "| US0013 | AC4 | both branches rebind | test_c.py::test_c.replaced | Pass |\n"
+                "| US0013 | AC5 | init by stem | pkg/d/__init__.py::__init__.func | Pass |\n"
+                "| US0014 | AC1 | import rebinds | test_c.py::test_c.imported | Pass |\n"
+                "| US0014 | AC2 | deleted | test_c.py::test_c.deleted | Pass |\n"
+                "| US0014 | AC3 | parser refuses | test_bad.py::test_bad.bad | Pass |\n"
+                "| US0014 | AC4 | dotted import | test_c.py::test_c.json | Pass |\n"
+                "| US0014 | AC5 | annotation only | test_c.py::test_c.annotated | Pass |\n"
+                "| US0015 | AC1 | with rebinds | test_c.py::test_c.rebound_in_with | Pass |\n"
+                "| US0015 | AC2 | read, not rebound | test_c.py::test_c.subscripted | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, out = self._ts_check(root, self._project(root, rows))
             self.assertEqual(rc, 1, out)
             self.assertNotIn("ts-check: 0 finding(s)", out)
-            self.assertIn("ts-check: 18 finding(s)", out)
+            self.assertIn("ts-check: 30 finding(s)", out)
             lines = out.splitlines()
             for story, ac, name in (("US0002", "AC4", "DeletedTests"),
                                     ("US0003", "AC2", "test_gone"),
@@ -1186,7 +1262,19 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                                     ("US0012", "AC1", "b/test_utils.py::test_utils.T`"),
                                     ("US0012", "AC2", "a/test_utils.py::test_utils.T.test_a`"),
                                     ("US0012", "AC3", "a/test_utils.py::test_utils.helper.inner`"),
-                                    ("US0012", "AC4", "a/test_utils.py::test_utils.T::test_a`")):
+                                    ("US0012", "AC4", "a/test_utils.py::test_utils.T::test_a`"),
+                                    ("US0013", "AC1", "test_c.py::test_c.only_comment`"),
+                                    ("US0013", "AC2", "test_c.py::test_c.only_prompt`"),
+                                    ("US0013", "AC3", "test_c.py::test_c.twice`"),
+                                    ("US0013", "AC4", "test_c.py::test_c.replaced`"),
+                                    ("US0013", "AC5", "d/__init__.py::__init__.func`"),
+                                    ("US0014", "AC1", "test_c.py::test_c.imported`"),
+                                    ("US0014", "AC2", "test_c.py::test_c.deleted`"),
+                                    ("US0014", "AC3", "test_bad.py::test_bad.bad`"),
+                                    ("US0014", "AC4", "test_c.py::test_c.json`"),
+                                    ("US0014", "AC5", "test_c.py::test_c.annotated`"),
+                                    ("US0015", "AC1", "test_c.py::test_c.rebound_in_with`"),
+                                    ("US0015", "AC2", "test_c.py::test_c.subscripted`")):
                 hit = [ln for ln in lines if story in ln and ln.lstrip().startswith(f"{ac}:")]
                 self.assertEqual(len(hit), 1, f"no single finding names {story} {ac}:\n{out}")
                 self.assertIn(name, hit[0])
@@ -1216,6 +1304,27 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0004 | AC1 | nested by path | "
                 ".claude/worktrees/other/pkg/tests/test_elsewhere.py::ElsewhereTests::test_x | Pass |\n"
                 "| US0004 | AC2 | deps by path | node_modules/x/test_nm.py::E::test_x | Pass |\n"
+                # A package's doctests, named by its directory, after the packages around it.
+                "| US0006 | AC1 | package function | pkg/d/__init__.py::d.func | Pass |\n"
+                "| US0006 | AC2 | package module | pkg/d/__init__.py::d | Pass |\n"
+                "| US0006 | AC3 | nested package | pkg/e/f/__init__.py::e.f.func | Pass |\n"
+                # A definition under a compound statement, or the last of several, is bound.
+                "| US0006 | AC4 | under if | test_c.py::test_c.guarded | Pass |\n"
+                "| US0006 | AC5 | under try | pkg/c/test_c.py::pkg.c.test_c.in_try | Pass |\n"
+                "| US0007 | AC1 | in handler | test_c.py::test_c.fallback | Pass |\n"
+                "| US0007 | AC2 | under for | test_c.py::test_c.looped | Pass |\n"
+                "| US0007 | AC3 | under with | test_c.py::test_c.within | Pass |\n"
+                "| US0007 | AC4 | either branch | test_c.py::test_c.either | Pass |\n"
+                "| US0007 | AC5 | guarded method | test_c.py::test_c.Guarded.meth | Pass |\n"
+                "| US0008 | AC1 | last of two | test_c.py::test_c.again | Pass |\n"
+                "| US0008 | AC2 | assigned | test_c.py::test_c.assigned | Pass |\n"
+                "| US0008 | AC3 | class assigned | test_c.py::test_c.Made.meth | Pass |\n"
+                "| US0009 | AC1 | annotated value | test_c.py::test_c.ann_set | Pass |\n"
+                "| US0009 | AC2 | else branch | test_c.py::test_c.other_way | Pass |\n"
+                "| US0009 | AC3 | loop may not run | test_c.py::test_c.maybe_looped | Pass |\n"
+                "| US0009 | AC4 | in finally | test_c.py::test_c.in_finally | Pass |\n"
+                "| US0009 | AC5 | in a match case | test_c.py::test_c.matched | Pass |\n"
+                "| US0010 | AC1 | loop else | test_c.py::test_c.loop_else | Pass |\n"
                 "| US0002 | AC1 | manual | manual: read the rendered page | Pass |\n"
                 "| US0002 | AC2 | shell | shell grep (see story Verify) | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
@@ -1226,7 +1335,9 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
     def test_an_unreadable_or_broken_test_file_is_a_finding_not_a_crash(self) -> None:
         rows = ("| US0001 | AC1 | binary | test_binary.py::T::test_t | Pass |\n"
                 "| US0001 | AC2 | broken | test_broken.py::T::test_t | Pass |\n"
-                "| US0001 | AC3 | empty | test_empty.py::T::test_t | Pass |\n")
+                "| US0001 | AC3 | empty | test_empty.py::T::test_t | Pass |\n"
+                "| US0001 | AC4 | binary doctest | test_binary.py::test_binary | Pass |\n"
+                "| US0001 | AC5 | broken doctest | test_broken.py::test_broken | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             spec = self._project(root, rows)
@@ -1237,6 +1348,8 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
             self.assertIn("UTF-8", issues.get("AC1", ""), issues)
             self.assertIn("does not parse", issues.get("AC2", ""), issues)
             self.assertIn("no class T", issues.get("AC3", ""), issues)
+            self.assertIn("UTF-8", issues.get("AC4", ""), issues)
+            self.assertIn("does not parse", issues.get("AC5", ""), issues)
 
 
 class ShellExecutionPolicyTests(unittest.TestCase):

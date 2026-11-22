@@ -291,6 +291,11 @@ triage:
   session_cap: 50
   low_consolidation: false
 
+# This project holds its own persona and seat cards, so the upgrade owes it a value here. It is
+# the shipped `block`, which refuses a card that breaks the persona standard, as before.
+personas:
+  standard: block
+
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -
 # the close reported an unattributable refusal while the gate named its failing lane.
 # The cap stays and the divergence detector is untouched; revisit when BG0516 lands.

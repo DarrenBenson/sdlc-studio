@@ -220,7 +220,7 @@ total: pass=7 fail=1 partly_skipped=0 manual=0 unspecified=0
 | `--from-run` | Scope to the open run's approved batch | false |
 | `--fresh` | Rebuild the report from this run only (refused with a scope) | false |
 | `--dry-run` | Do not modify story files | false |
-| `--timeout <n>` | Per-verifier timeout in seconds | 120 |
+| `--timeout <n>` | Per-verifier timeout in seconds | `SDLC_VERIFY_TIMEOUT` when it holds a positive integer, else 120 |
 | `--report <path>` | Report output path | sdlc-studio/.local/verify-report.json |
 | `--repo-root <path>` | Cwd for verifier commands | `.` |
 

@@ -240,9 +240,25 @@ jobs:
         # The ceiling is set from a MEASURED run, recorded here in the form the test reads:
         # measured: US0940::AC1 353 s in run 39322298831, headroom 97 s
         # At 300 s that verifier, 353 s on this runner, read red in the same run (BG1054).
+        # Each red criterion's own verifier output goes to the detail file, which the next step
+        # prints: the lane's own message names a red by id alone.
         env:
           SDLC_VERIFY_TIMEOUT: 450
+          SDLC_VERIFY_RED_DETAIL: ${{ runner.temp }}/corpus-red-detail.log
         run: bash tools/verify-corpus.sh full
+
+      - name: Red criteria, each with its verifier's own output
+        # Runs only when the verification fails, and fails itself when it prints a red, so
+        # `gh run view --log-failed` shows the output beside the ids.
+        if: failure()
+        env:
+          SDLC_VERIFY_RED_DETAIL: ${{ runner.temp }}/corpus-red-detail.log
+        run: |
+          if [ -s "$SDLC_VERIFY_RED_DETAIL" ]; then
+            cat "$SDLC_VERIFY_RED_DETAIL"
+            exit 1
+          fi
+          echo "red-detail: no criterion on a unit claiming completion failed in this run"
 
   windows-smoke:
     runs-on: windows-latest
