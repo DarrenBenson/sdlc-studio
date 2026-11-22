@@ -57,9 +57,12 @@ def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
 
     `git ls-tree` names the paths HEAD tracks, and one `git log --name-only` walks the history
     newest first, under the parent folders of those paths, keeping for each the time of the
-    first commit in that walk whose change names it (a merge commit names no path, so its time
-    is never taken). A path HEAD does not track is absent from the result, as is every path when
-    git is unavailable or fails; with no path tracked, no history is walked.
+    first commit in that walk whose change names it. By `-c` a merge names each path whose
+    content differs from every parent's, as a conflict's resolution does, so its time is taken
+    where `git log -1 -- <path>` takes it; by `--relative` the walk names paths from `repo_root`,
+    as `ls-tree` does, when that is a folder of the repository. A path HEAD does not track is
+    absent from the result, as is every path when git is unavailable or fails; with no path
+    tracked, no history is walked.
     """
     def run(*args: str) -> str | None:
         try:
@@ -74,7 +77,7 @@ def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
     tracked = set((listed or "").splitlines()) & rels
     if not tracked:
         return {}
-    walked = run("log", "--relative", "--name-only", "--format=%x00%cI", "--", *folders)
+    walked = run("log", "-c", "--relative", "--name-only", "--format=%x00%cI", "--", *folders)
     times: dict[str, str] = {}
     when = ""
     for line in (walked or "").splitlines():

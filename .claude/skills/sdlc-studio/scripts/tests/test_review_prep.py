@@ -134,6 +134,85 @@ class StalenessTests(unittest.TestCase):
         self.assertEqual("mtime", got["BG0003"]["modified_method"], got["BG0003"])
         self.assertEqual(datetime.fromtimestamp(1_700_000_000, timezone.utc), stamp("BG0003"))
 
+    def test_a_conflict_resolved_in_a_merge_reads_the_merge_time(self) -> None:
+        """A merge that resolves a conflict is the file's last change, as `git log -1 -- <path>`
+        reads it: a review between the earlier parent and the merge is not current."""
+        t1, t2, t3, t4 = ("2026-01-01T10:00:00+00:00", "2026-02-01T10:00:00+00:00",
+                          "2026-03-01T10:00:00+00:00", "2026-04-01T10:00:00+00:00")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q", "-b", "main"], root)
+            one = self._bug(root, 1)
+            self._commit(root, t1, one)
+            gitutil.git(["checkout", "-q", "-b", "side"], root)
+            self._bug(root, 1, "the side's change\n")
+            self._commit(root, t2, one)
+            gitutil.git(["checkout", "-q", "main"], root)
+            self._bug(root, 1, "main's change\n")
+            self._commit(root, t3, one)
+            merged = gitutil.git(["merge", "-q", "side"], root, check=False)
+            self.assertNotEqual(0, merged.returncode, "the fixture's merge did not conflict")
+            self._bug(root, 1, "the resolution\n")
+            self._commit(root, t4, one)
+            _base(root).joinpath(".local").mkdir(exist_ok=True)
+            (_base(root) / ".local" / "review-state.json").write_text(json.dumps(
+                {"artifacts": {"BG0001": {"last_reviewed": "2026-03-15T00:00:00+00:00"}}}),
+                encoding="utf-8")
+            got, _ = self._git_processes(root)
+        self.assertEqual(review_prep._parse_dt(t4),
+                         review_prep._parse_dt(got["BG0001"]["last_modified"]), got["BG0001"])
+        self.assertEqual("git", got["BG0001"]["modified_method"], got["BG0001"])
+        self.assertTrue(got["BG0001"]["needs_review"], got["BG0001"])
+
+    def test_a_clean_merge_is_read_as_git_log_reads_each_path(self) -> None:
+        """A clean merge of two sides that each changed the file is its last change; a file only
+        one side changed keeps that side's commit, as `git log -1 -- <path>` reads them."""
+        t1, t2, t3, t4 = ("2026-01-01T10:00:00+00:00", "2026-02-01T10:00:00+00:00",
+                          "2026-03-01T10:00:00+00:00", "2026-04-01T10:00:00+00:00")
+        lines = "top\nmiddle 1\nmiddle 2\nmiddle 3\nbottom\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q", "-b", "main"], root)
+            both, one = self._bug(root, 1, lines), self._bug(root, 2)
+            self._commit(root, t1, both, one)
+            gitutil.git(["checkout", "-q", "-b", "side"], root)
+            self._bug(root, 1, lines.replace("top", "top, the side's"))
+            self._bug(root, 2, "the side's change\n")
+            self._commit(root, t2, both, one)
+            gitutil.git(["checkout", "-q", "main"], root)
+            self._bug(root, 1, lines.replace("bottom", "bottom, main's"))
+            self._commit(root, t3, both)
+            gitutil.git(["merge", "-q", "--no-edit", "side"], root,
+                        env_extra={"GIT_COMMITTER_DATE": t4, "GIT_AUTHOR_DATE": t4})
+            want = {key: gitutil.git(["log", "-1", "--format=%cI", "--", str(path)], root,
+                                     text=True).stdout.strip()
+                    for key, path in (("BG0001", both), ("BG0002", one))}
+            got, _ = self._git_processes(root)
+        stamp = lambda key: review_prep._parse_dt(got[key]["last_modified"])  # noqa: E731
+        self.assertEqual(review_prep._parse_dt(t4), review_prep._parse_dt(want["BG0001"]))
+        self.assertEqual(review_prep._parse_dt(t2), review_prep._parse_dt(want["BG0002"]))
+        self.assertEqual(review_prep._parse_dt(t4), stamp("BG0001"), got["BG0001"])
+        self.assertEqual(review_prep._parse_dt(t2), stamp("BG0002"), got["BG0002"])
+
+    def test_a_project_below_the_repository_root_reads_its_commit_times(self) -> None:
+        """A project root that is a folder of the repository reads each artefact's commit
+        time from git, not its file time."""
+        t1 = "2026-01-01T10:00:00+00:00"
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            gitutil.git(["init", "-q"], repo)
+            root = repo / "projects" / "one"
+            paths = [self._bug(root, 1), self._bug(root, 2)]
+            self._commit(repo, t1, *paths)
+            for path in paths:
+                os.utime(path, (1_700_000_000, 1_700_000_000))
+            got, _ = self._git_processes(root)
+        for key in ("BG0001", "BG0002"):
+            with self.subTest(key=key):
+                self.assertEqual("git", got[key]["modified_method"], got[key])
+                self.assertEqual(review_prep._parse_dt(t1),
+                                 review_prep._parse_dt(got[key]["last_modified"]), got[key])
+
     def test_no_history_is_walked_when_nothing_is_tracked(self) -> None:
         """Every artefact untracked: each reads its file time, and no `git log` walks a history
         that can name none of them."""

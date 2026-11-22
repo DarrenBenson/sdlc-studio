@@ -11293,17 +11293,18 @@ class CloseProgressTests(unittest.TestCase):
     CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
              "persona-memory", "lessons-summary", "checklist", "reconcile", "review-anchor")
 
-    def test_the_close_names_each_step_as_it_starts(self) -> None:
+    def _dry_run(self, *argv: str) -> tuple[str, str, dict[str, tuple[str, str]]]:
+        """`close --dry-run` through `sprint.main`: its stdout, its stderr, and what each of
+        the two held as each watched step was entered."""
         import functools
         sprint = _load()
-        root = CloseDryRunTests._repo(self)
-        out = io.StringIO()
-        seen: dict[str, str] = {}
+        out, err = io.StringIO(), io.StringIO()
+        seen: dict[str, tuple[str, str]] = {}
 
         def watch(name, fn):
             @functools.wraps(fn)
             def wrapper(*a, **kw):
-                seen[name] = out.getvalue()  # what was printed when the step was entered
+                seen[name] = (out.getvalue(), err.getvalue())  # each stream at the entry
                 return fn(*a, **kw)
             return wrapper
 
@@ -11320,23 +11321,43 @@ class CloseProgressTests(unittest.TestCase):
             for patch in patches:
                 stack.enter_context(patch)
             stack.enter_context(contextlib.redirect_stdout(out))
-            stack.enter_context(contextlib.redirect_stderr(out))
-            sprint.main(["close", "--dry-run", "--root", str(root)])
-        text = out.getvalue()
-        lines = text.splitlines()
+            stack.enter_context(contextlib.redirect_stderr(err))
+            sprint.main(["close", "--dry-run", *argv])
+        return out.getvalue(), err.getvalue(), seen
+
+    @staticmethod
+    def _result(step: str, report: str) -> bool:
+        """Whether the report holds `step`'s result line."""
+        return any(re.match(rf"\s+\S+\s+{re.escape(step)}: ", ln) for ln in report.splitlines())
+
+    def test_the_close_names_each_step_as_it_starts(self) -> None:
+        """Each start is named on stderr, apart from the report on stdout, before the step is
+        entered and so before its result."""
+        report, _, seen = self._dry_run("--root", str(CloseDryRunTests._repo(self)))
         self.assertIn("close --dry-run: running prerequisites and gate",
-                      seen["preflight"].splitlines(),
+                      seen["preflight"][1].splitlines(),
                       "the preflight, which runs the gate, started unannounced")
+        self.assertNotIn("close --dry-run: running", report,
+                         "a step's start was named on stdout, among the report's lines")
         for step in ("retro-scaffold", *self.CHAIN):
             with self.subTest(step=step):
                 self.assertIn(step, seen, f"{step} never ran, so this proves nothing of it")
-                start = f"close --dry-run: running {step}"
-                self.assertIn(start, seen[step].splitlines(),
-                              f"{step} started before any line named it")
-                # the step's result is the report's line for it, printed after its start
-                result = next(n for n, ln in enumerate(lines)
-                              if re.match(rf"\s+\S+\s+{re.escape(step)}: ", ln))
-                self.assertLess(lines.index(start), result, text)
+                self.assertIn(f"close --dry-run: running {step}", seen[step][1].splitlines(),
+                              f"{step} started before any line on stderr named it")
+                self.assertFalse(self._result(step, seen[step][0]), seen[step][0])
+                self.assertTrue(self._result(step, report), f"{step} has no result:\n{report}")
+
+    def test_a_named_retro_announces_no_scaffold(self) -> None:
+        """Given `--retro`, no retro is scaffolded, so no line names a scaffold as running."""
+        root = CloseDryRunTests._repo(self)
+        retro = CloseDryRunTests._broken_retro(self, root)
+        _, said, seen = self._dry_run("--retro", retro, "--root", str(root))
+        lines = said.splitlines()
+        self.assertNotIn("retro-scaffold", seen, "the fixture scaffolded a retro it was given")
+        self.assertNotIn("close --dry-run: running retro-scaffold", lines, said)
+        # the steps that do run are still named, so the absence above is not a silent close
+        self.assertIn("retro-validate", seen)
+        self.assertIn("close --dry-run: running retro-validate", lines, said)
 
 
 class CloseChainCoverageTests(CloseDryRunTests):

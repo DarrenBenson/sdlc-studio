@@ -9,6 +9,7 @@ step again, which takes up the recorded accept rather than recording it twice. T
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/drive.py
 from __future__ import annotations
 
+import json
 import re
 import shlex
 import subprocess
@@ -20,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_sprint_drive_step as stepped
 from lib import drive, sdlc_md
 
-A, B = stepped.A, stepped.B
+A, B, C = stepped.A, stepped.B, stepped.C
 WARNING = "WARNING the verdict was taken against an earlier Affects scope"
 
 
@@ -113,6 +114,55 @@ class DriveStepAcceptResumeTests(stepped._StepFixture):  # noqa: SLF001
         self.assertEqual(1, len(self.rows(A)), self.rows(A))
         self.assertEqual(self.STATUS, self.status_at(A))
         self.assertFalse(list((self.root / drive.PROMPTS).glob("*-build.txt")), out)
+
+    def test_only_the_recorded_reviewer_takes_up_the_recorded_accept(self) -> None:
+        """A recorded accept is A's reviewer's to resume: another unit's reviewer handing back
+        has its own unit accepted, and naming A it is refused. The lane record and A's move are
+        written as a warned accept and a landing leave them, and `lane accept` and `lane brief`
+        are stood in for by their move and their output's first line, so the case runs in
+        seconds."""
+        story = lambda unit: self.root / f"sdlc-studio/stories/{unit}-drive.md"  # noqa: E731
+
+        def move(unit: str) -> None:
+            text = story(unit).read_text(encoding="utf-8")
+            story(unit).write_text(text.replace(f"**Status:** {self.STATUS}", "**Status:** Done"),
+                                   encoding="utf-8")
+
+        def entry(unit: str, stage: str, builder: str, reviewer) -> dict:
+            verdict = self.root / f"sdlc-studio/reviews/verdicts/{unit}/{unit}-qa.txt"
+            verdict.parent.mkdir(parents=True, exist_ok=True)
+            prompt = drive.PROMPTS / f"{sdlc_md.norm_id(unit)}-review-r1.txt"
+            stepped.walk._write(self.root, prompt.as_posix(),  # noqa: SLF001
+                                f"Review {unit}.\n{verdict}\nUNIT: {unit}\nBRIEF: {unit}-qa\n")
+            return {"unit": unit, "stage": stage, "round": 1, "builder": builder,
+                    "reviewer": reviewer, "verdict": str(verdict), "prompt": prompt.as_posix()}
+
+        def lane(real, root, script, *args, **kw):
+            if args[:2] == ("lane", "accept") and args[3] == B:
+                move(B)
+                return subprocess.CompletedProcess(args, 0, f"{B}: moved to Done\n", "")
+            if args[:2] == ("lane", "brief"):
+                return subprocess.CompletedProcess(args, 0, f"Unit: {args[-1]} - build it\n", "")
+            raise AssertionError(f"drive ran {args}, which this case does not answer")
+
+        stepped.walk._write(self.root, drive.LANES.as_posix(), json.dumps({  # noqa: SLF001
+            sdlc_md.norm_id(A): entry(A, "accepted", "a1", "ra"),
+            sdlc_md.norm_id(B): entry(B, "review", "b1", None)}))
+        self.verdict(A, stepped.APPROVE, by="ra")
+        move(A)  # A's accept moved it under the warning; its paperwork commit is unmade
+        self.verdict(B, stepped.APPROVE, by="rb")
+        rc, out, err = self.run_sprint("drive", "step", "--after", "rb", "--unit", A, wrap=lane)
+        self.assertEqual(2, rc, out + err)
+        self.assertIn(f"{A} awaits no verdict", err)
+        rc, out, err = self.run_sprint("drive", "step", "--after", "rb", wrap=lane)
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"{B} accept: {B}: moved to Done", out)
+        self.assertEqual(("Done", self.STATUS), (self.status_at(B), self.status_at(A)))
+        record = self.lanes()
+        self.assertEqual(("accepted", "ra"), (record[sdlc_md.norm_id(A)]["stage"],
+                                              record[sdlc_md.norm_id(A)]["reviewer"]), record)
+        self.assertEqual("done", record[sdlc_md.norm_id(B)]["stage"], record)
+        self.assertTrue(self.last(out).endswith(f"{sdlc_md.norm_id(C)}-build.txt"), out)
 
 
 if __name__ == "__main__":

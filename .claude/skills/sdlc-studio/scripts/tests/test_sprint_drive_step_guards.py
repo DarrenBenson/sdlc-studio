@@ -29,7 +29,8 @@ import test_sprint_drive_step as stepped
 from lib import drive, sdlc_md
 
 A, B, C, D = stepped.A, stepped.B, stepped.C, stepped.D
-#: The doctrine's order, written out: read from `drive.STEPS`, a reorder there reorders this too.
+#: The doctrine's order, written out, not read from `drive.STEPS`: a reorder there would
+#: otherwise reorder this too.
 ORDER = ("build", "land", "brief", "review", "accept", "return", "paperwork")
 
 
@@ -165,6 +166,47 @@ class _SharingStep(stepped._StepFixture):  # noqa: SLF001
              D: ["src/shared.py"]}
 
 
+class _Lanes:
+    """Stands in for the `sprint.py lane` commands drive runs, each doing only what drive reads
+    of it: a session that staged its change, a landing that wrote the QA brief naming a verdict
+    file, an accept that moved the unit to Done, and a builder brief. The review, the paperwork
+    commit and drive's own walk run for real. A case that ran every command for real took 14
+    to 31 s on a loaded host, so the class ran past the criterion's 120 s ceiling; these take
+    seconds."""
+
+    ACCEPTED = "{unit}: moved to Done\n  lane return: {unit} cleared\n"
+
+    def __init__(self, accepted: str = ACCEPTED) -> None:
+        self.accepted, self.calls = accepted, []
+
+    @staticmethod
+    def move(root: Path, unit: str) -> None:
+        story = root / f"sdlc-studio/stories/{unit}-drive.md"
+        text = story.read_text(encoding="utf-8")
+        story.write_text(text.replace("**Status:** Ready", "**Status:** Done"), encoding="utf-8")
+
+    def __call__(self, real, root, script, *args, **kw) -> subprocess.CompletedProcess:
+        unit = args[args.index("--units" if "--units" in args else "--unit") + 1]
+        self.calls.append((args[1], unit))
+        out = None
+        if args[:2] == ("lane", "run"):
+            out = "  staged: its change\n"
+        elif args[:2] == ("lane", "land"):
+            verdict = Path(root) / "sdlc-studio" / "reviews" / "verdicts" / unit / f"{unit}-qa.txt"
+            brief = (drive.lanes.BRIEFS / f"{unit}-qa.txt").as_posix()
+            walk._write(Path(root), brief,  # noqa: SLF001
+                        f"Unit: {unit} - review it\n{verdict}\nUNIT: {unit}\nBRIEF: {unit}-qa\n")
+            out = f"{unit}: fast-forwarded to main\n"
+        elif args[:2] == ("lane", "accept"):
+            self.move(Path(root), unit)
+            out = self.accepted.format(unit=unit)
+        elif args[:2] == ("lane", "brief"):
+            out = f"Unit: {unit} - build it\n"
+        if out is None:
+            raise AssertionError(f"drive ran {args}, which this case does not answer")
+        return subprocess.CompletedProcess(args, 0, out, "")
+
+
 class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
 
     def _case(self, fixture: type) -> walk._DriveFixture:
@@ -174,14 +216,15 @@ class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
         return case
 
     def test_a_review_that_cannot_start_exits_2_after_work_ran_as_the_help_says(self) -> None:
+        lane = _Lanes()
         with unittest.mock.patch.object(drive.lanes, "BRIEF_MAX_BYTES", 10):
-            rc, out, err = self.drive()
+            rc, out, err = self.drive(wrap=lane)
         self.assertEqual(2, rc, out + err)
         self.assertIn(f"{A} build: ", out)
         self.assertIn(f"{A} land: ", out)
         self.assertIn(f"DRIVE STOPPED: {A} at review, {drive.REFUSAL}", out)
         self.assertIn("the brief is over 10 bytes", out)
-        self.assertEqual(f"feat({A}): {A} lands", self.subjects()[0], "the landing ran")
+        self.assertEqual([("run", A), ("land", A)], lane.calls, "the build and landing ran")
         said = io.StringIO()
         with contextlib.redirect_stdout(said), self.assertRaises(SystemExit):
             walk.sprint.main(["drive", "--help"])
@@ -194,25 +237,17 @@ class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
                               "the size limit", " ".join(text.split()))
 
     def test_the_steps_run_in_the_doctrine_order(self) -> None:
-        rc, out, err = self.drive()
+        rc, out, err = self.drive(wrap=_Lanes())
         self.assertEqual(0, rc, out + err)
         lines = out.splitlines()
         at = [next((n for n, ln in enumerate(lines) if ln.startswith(f"{A} {step}: ")), None)
               for step in ORDER]
         self.assertNotIn(None, at, out)
         self.assertEqual(sorted(at), at, f"the steps ran out of the doctrine's order:\n{out}")
+        self.assertEqual("Done", self.status_at(A), "the paperwork commit was not made")
 
     def test_a_return_the_accept_did_not_print_stops_the_unit(self) -> None:
-        def cut(real, root, script, *args, **kw):
-            done = real(root, script, *args, **kw)
-            if args[:2] == ("lane", "accept") and done.returncode == 0:
-                lines = done.stdout.splitlines(keepends=True)
-                at = next(n for n, ln in enumerate(lines) if ln.startswith(f"{A}: moved to"))
-                done = subprocess.CompletedProcess(done.args, 0, "".join(lines[:at + 1]),
-                                                   done.stderr)
-            return done
-
-        rc, out, err = self.drive(wrap=cut)
+        rc, out, err = self.drive(wrap=_Lanes(accepted="{unit}: moved to Done\n"))
         self.assertEqual(1, rc, out + err)
         text = "\n".join(self.record_of(out))
         self.assertIn(f"DRIVE STOPPED: {A} at return, {drive.REFUSAL}", text)
@@ -223,18 +258,19 @@ class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
 
     def test_landings_take_the_root_one_at_a_time(self) -> None:
         case = self._case(_Pair)
+        lane = _Lanes()
         cond, built = threading.Condition(), set()
         seen = {"inside": 0, "most": 0, "entries": 0}
 
         def watch(real, root, script, *args, **kw):
             if args[:2] == ("lane", "run"):
-                done = real(root, script, *args, **kw)
+                done = lane(real, root, script, *args, **kw)
                 with cond:
                     built.add(args[3])
                     cond.notify_all()
                 return done
             if args[:2] != ("lane", "land"):
-                return real(root, script, *args, **kw)
+                return lane(real, root, script, *args, **kw)
             with cond:
                 seen["inside"] += 1
                 seen["entries"] += 1
@@ -243,10 +279,10 @@ class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
                 if seen["entries"] == 1:
                     # both builds done, the other landing has had its chance to start beside
                     # this one, which it takes unless the root is held
-                    cond.wait_for(lambda: len(built) == 2, timeout=120)
+                    cond.wait_for(lambda: len(built) == 2, timeout=60)
                     cond.wait_for(lambda: seen["inside"] > 1, timeout=3)
             try:
-                return real(root, script, *args, **kw)
+                return lane(real, root, script, *args, **kw)
             finally:
                 with cond:
                     seen["inside"] -= 1
@@ -258,20 +294,26 @@ class DriveGuardCoverageTests(walk._DriveFixture):  # noqa: SLF001
         self.assertEqual({A, B}, built, "the two lanes did not both build")
         self.assertEqual(2, seen["entries"], out + err)
         self.assertEqual(1, seen["most"], "two landings held the root at once")
-        self.assertEqual({f"feat({A}): {A} lands", f"feat({B}): {B} lands"},
-                         set(case.subjects()[:2]), "both lanes did not land")
+        self.assertEqual({A, B}, {u for verb, u in lane.calls if verb == "land"},
+                         "both lanes did not land")
 
     def test_a_unit_sharing_a_file_with_one_building_is_given_no_prompt(self) -> None:
         case = self._case(_SharingStep)
-        # drive gave B its builder prompt, and B is building: C shares src/b.py with it
-        walk._write(case.root, drive.LANES.as_posix(), json.dumps(  # noqa: SLF001
-            {sdlc_md.norm_id(B): {"unit": B, "stage": "build",
-                                  "prompt": (drive.PROMPTS / f"{B}-build.txt").as_posix()}}))
-        case.builder("a1", A, "A = 2\n")
-        rc, out, err = case.step("a1")
-        self.assertEqual(0, rc, out + err)
+        # A landed and awaits the verdict reviewer ra writes; drive gave B its builder prompt,
+        # and B is building: C shares src/b.py with it
+        verdict = case.root / "sdlc-studio" / "reviews" / "verdicts" / A / f"{A}-qa.txt"
+        verdict.parent.mkdir(parents=True)
+        prompt = drive.PROMPTS / f"{sdlc_md.norm_id(A)}-review-r1.txt"
+        walk._write(case.root, prompt.as_posix(),  # noqa: SLF001
+                    f"Review {A}.\n{verdict}\nUNIT: {A}\nBRIEF: {A}-qa\n")
+        walk._write(case.root, drive.LANES.as_posix(), json.dumps({  # noqa: SLF001
+            sdlc_md.norm_id(A): {"unit": A, "stage": "review", "round": 1, "builder": "a1",
+                                 "reviewer": None, "verdict": str(verdict),
+                                 "prompt": prompt.as_posix()},
+            sdlc_md.norm_id(B): {"unit": B, "stage": "build",
+                                 "prompt": (drive.PROMPTS / f"{B}-build.txt").as_posix()}}))
         case.verdict(A, stepped.APPROVE, by="ra")
-        rc, out, err = case.step("ra")
+        rc, out, err = case.run_sprint("drive", "step", "--after", "ra", wrap=_Lanes())
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", case.status_at(A))
         self.assertFalse((case.root / drive.PROMPTS / f"{C}-build.txt").exists(), out)
