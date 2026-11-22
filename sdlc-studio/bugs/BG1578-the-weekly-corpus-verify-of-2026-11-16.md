@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1578.md, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py
+> **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1578.md, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/reference-verify.md
 > **Evidence:** `https://github.com/DarrenBenson/sdlc-studio/actions/runs/43869298579`
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -40,3 +40,4 @@ A weekly red that reads as flake teaches the operator to acknowledge it unread, 
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
 | 2026-11-22 | Claude Sonnet 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-two) |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened in-run on lane V's hand-in: US0926 AC1 stays red because `migrate.py` owes this repository a `personas.standard` value, so `.config.yaml` sets the shipped `block` explicitly and keeps today's behaviour; help/verify.md and reference-verify.md give `run --timeout`'s default without the new SDLC_VERIFY_TIMEOUT override |
