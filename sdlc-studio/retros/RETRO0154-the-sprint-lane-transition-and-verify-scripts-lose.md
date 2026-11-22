@@ -90,13 +90,7 @@ Delivered 31 units, 79 points, all bugs, all Medium; BG1534 (3 points) is carrie
 
 **0 of 31 unit(s) measured; 30 of 31 forecast at plan time.**
 
-**Priced cost: 107,826,355 priced input-equivalent tokens**, 1,364,891 per point over 79 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $288.42, $3.65 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 9,348 x1
-- output: 3,923,725 x5
-- cache write 5m: 12,313,377 x1.25
-- cache write 1h: 681,893 x2
-- cache read: 714,428,746 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 214,283** (16,928,343 tokens over 79 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 

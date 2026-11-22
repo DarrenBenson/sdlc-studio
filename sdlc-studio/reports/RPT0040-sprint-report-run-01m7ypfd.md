@@ -139,7 +139,7 @@ size, plan and added together: 79.
 
 | Signed by | Date | Fingerprint signed |
 | --- | --- | --- |
-| not yet signed | not yet signed | not yet signed |
+| Darren Benson (entered under delegation, authorised by decision D0545) | 2026-11-22T03:55:07Z | 125fd680af35edeb |
 
 Signing records the principal, the date and this report's fingerprint against RUN-01M7YPFD.
 
