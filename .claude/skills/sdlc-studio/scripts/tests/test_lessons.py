@@ -2008,7 +2008,8 @@ class QuietBuildClassTests(unittest.TestCase):
         drops LC-001, the oldest zero-hit trap, from the brief. A retired build class (LC-007) and
         a class injected only at review (LC-008) are not carried. Past any cap, 2 x INJECT_MAX + 1
         live build classes are every one carried too. MUTANT: cap the build digest at
-        INJECT_MAX + 1 - six pass, and of eleven the five oldest zero-hit traps fall out."""
+        INJECT_MAX + 1 - six pass, and of eleven the five oldest fall out: LC-001 to LC-003, the
+        three zero-hit traps, and LC-004 and LC-005, with one hit each."""
         root = self._root()
         rows = [self._row(f"LC-00{n}", ["build"], hits=self._hit(n) if n > 3 else [])
                 for n in range(1, 7)]
@@ -2213,8 +2214,10 @@ class RunRepeatHitTests(unittest.TestCase):
         hits. MUTANT: read the whole retro - LC-003, named in the Cost section and in a comment
         inside Keep, gains a hit too. A second comment follows Stop, in Try. MUTANT: strip from
         the first comment's opening to the last one's close - Stop goes with it, and LC-001
-        gains no hit."""
-        self._retro(keep="landing in order kept LC-002 away <!-- e.g. LC-003 -->",
+        gains no hit. A guidance comment spanning three lines in Keep cites LC-003 on its middle
+        line. MUTANT: strip only a comment on one line - LC-003 gains a hit from the guidance."""
+        self._retro(keep="landing in order kept LC-002 away <!-- e.g. LC-003 -->\n\n<!--\n"
+                         "Guidance: cite a repeated class as LC-003 here.\n-->",
                     stop="stop skipping the boundary run (LC-001)",
                     cost="LC-003 cost a repair round",
                     try_="run the preflight first <!-- as LC-003 says -->")

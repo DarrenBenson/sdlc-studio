@@ -307,20 +307,33 @@ class SeatMissTests(unittest.TestCase):
         approved it only after the bug. A seat did approve before the bug, so the approval does
         not post-date it, and the reason says no seat's latest verdict approves it. MUTANT: read
         the latest dated approval - product's 2026-10-08 - and the reason says the approval
-        post-dates the bug while naming 2026-09-10, a day before it, as the earliest."""
+        post-dates the bug while naming 2026-09-10, a day before it, as the earliest. Only a
+        seated approval places a seat's approval: on US0012 a reviewer naming no seat approved
+        before BG0031 and qa only after it, so qa's approval post-dates the bug. MUTANT: read the
+        days of every approval, seated or not - the seatless 2026-09-10 comes first and the
+        reason says no seat's latest verdict on US0012 approves it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _project(root, [("US0010", "APPROVE", QA, BUILDER, "2026-09-10", "none"),
                             ("US0010", "REJECT", QA, BUILDER, "2026-09-12",
                              "[new] the total is wrong (scripts/a.py:9)"),
                             ("US0010", "APPROVE", PRODUCT, BUILDER, "2026-10-08", "none"),
+                            ("US0012", "APPROVE", "general-purpose agent", BUILDER,
+                             "2026-09-10", "none"),
+                            ("US0012", "APPROVE", QA, BUILDER, "2026-10-08", "none"),
                             ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
-                     units=("US0002", "US0010"), retros=RETROS)
+                     units=("US0002", "US0010", "US0012"), retros=RETROS)
             _bug(root, "BG0029", "2026-10-06", "the total is wrong again", "scripts/a.py",
                  "It totals wrongly.", escaped="US0010")
+            _bug(root, "BG0031", "2026-10-06", "the sum is wrong again", "scripts/a.py",
+                 "It sums wrongly.", escaped="US0012")
             out, _text = _record(root)
+            uncharged = self._uncharged(out)
             self.assertEqual("no seat's latest verdict on US0010 on or before 2026-10-06 "
-                             "approves it", self._uncharged(out)["BG0029"]["reason"])
+                             "approves it", uncharged["BG0029"]["reason"])
+            self.assertEqual("the approval of US0012 post-dates the bug: its earliest dated "
+                             "approval is 2026-10-08, after the bug was created on 2026-10-06",
+                             uncharged["BG0031"]["reason"])
 
     def test_an_escaped_via_unit_no_seat_still_approves_is_named_uncharged(self) -> None:
         """The rest of the uncharged cases: qa approved US0005 and then rejected it before the
