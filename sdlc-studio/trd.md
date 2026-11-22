@@ -319,9 +319,11 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    `sdlc_md.allocation_lock`, so neither a crash nor a concurrent writer leaves a shared file
    half-written. A write to a temporary directory or the untracked `.local/`, or one that
    creates a file only where none exists, rewrites no shared file.
-   `scripts/tests/test_confinement.py` names every `write_text` site with the kind of its
-   target, so a new whole-file rewrite fails there until it goes through `atomic_write` or
-   is listed here. The writers left outside the guarantee, each with its reason:
+   `scripts/tests/test_confinement.py` names every `write_text` and `write_bytes` call, and
+   every `open` given a literal mode holding `w`, with the kind of its target, so a new rewrite
+   made by one of them fails there until it goes through `atomic_write`, its target is shown to
+   be scratch, untracked or new, or its script is listed here. The writers left outside the
+   guarantee, each with its reason:
 
    - The append-only ledgers, `critic`'s verdict log, the actuals and forecast shards and
      `verify-history.jsonl`: each grows by a single `O_APPEND` row write rather than a
@@ -333,13 +335,21 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    - `provenance.py` (`remake`): a backfill that writes the provenance stamp into the
      artefacts that carry none.
    - `docgen.py`: the pages it rewrites are generated, and a rerun derives each whole again.
+   - `pvd.py` (`sync`): it replaces a read-only copy of the master PVD whole in the target
+     repository it projects to, and a rerun copies it again.
+   - `mutation.py` (`applied` and its restores): it writes each mutant into a tracked source
+     file in place, so the tests import it, and restores the original bytes, which it first
+     keeps in a `.local` sidecar that the next run restores from if a run is cut short.
    - `init.py`: it seeds the project tree it initialises, over an existing file only with
      `--force`, and with accepted tailoring adds a criterion to a definition document.
-   - `close_owed.py` (`stamp_baseline`), `command_audit.py` (`file_coverage_findings`),
-     `refine.py` (`_fill_user_story`), `retro.py` (`cmd_cost_baseline`), `sprint.py`
-     (`record_charter_review`) and `triage_noise.py` (`_append_finding`): each rewrites a
-     tracked file whole and is not yet moved onto `atomic_write`; the sweep holds each to
-     this list until it is.
+   - `artifact.py` (`_WriteJournal.rollback`), `close_owed.py` (`stamp_baseline`),
+     `command_audit.py` (`file_coverage_findings`), `refine.py` (`_fill_user_story`),
+     `retro.py` (`cmd_cost_baseline`), `sprint.py` (`record_charter_review`),
+     `triage_noise.py` (`_append_finding`) and `verify_ac.py` (`revert_check`,
+     `revert_check.restore`): each rewrites a tracked file whole, the retitle rollback and
+     `revert_check` putting back bytes they read before, and is not yet moved onto
+     `atomic_write` or another temp-then-replace write; the sweep lists each apart from the
+     targets it excuses, in `NOT_YET_MOVED`, until it is.
 
    The scripts are NOT read-only over the workspace; the guarantee is that every write is
    tested and bounded.

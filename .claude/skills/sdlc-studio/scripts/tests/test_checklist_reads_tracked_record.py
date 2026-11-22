@@ -163,18 +163,61 @@ class ChecklistTrackedRecordTests(unittest.TestCase):
         self._track(_record("RUN-BBBB01", "the committed older run"))
         self.assertIn("the archived newer run", self._impediments(self.root)["detail"])
 
-    def test_a_tie_in_start_keeps_the_archive_s_newest_cycle(self) -> None:
-        """Two archived runs starting in the same second: the higher cycle index wins, as it
-        did before committed records were read, because the archive orders a tie by it."""
-        older = _record("RUN-BBBB01", "the earlier cycle")
-        older["cycle"] = {"index": 1}
-        newer = _record("RUN-AAAA01", "the later cycle")
-        newer["cycle"] = {"index": 2}
-        self._archive(older)
-        self._archive(newer)
-        detail = self._impediments(self.root)["detail"]
-        self.assertIn("the later cycle", detail)
-        self.assertNotIn("the earlier cycle", detail)
+    def _hold(self, recs: dict[str, dict], where: dict[str, str]) -> None:
+        """Lay each record down afresh where `where` names: archived, committed or both."""
+        for d in (run_state.archive_dir(self.root), self.root / run_state.TRACKED_REL):
+            for old in (d.glob("*.json") if d.is_dir() else ()):
+                old.unlink()
+        for rid, copies in where.items():
+            if copies in ("archived", "both"):
+                self._archive(recs[rid])
+            if copies in ("committed", "both"):
+                self._track(recs[rid])
+
+    def test_a_tie_in_start_reads_the_same_run_in_every_clone(self) -> None:
+        """Two runs starting in the same second, held archived only, archived and committed
+        (the closing machine), committed only (a clean clone) and split between the two: every
+        holding reads the same run. The higher cycle index wins, and with no cycle index the
+        higher run id, both read from the record itself rather than from which copy holds it."""
+        earlier, later = (_record("RUN-BBBB01", "the earlier cycle"),
+                          _record("RUN-AAAA01", "the later cycle"))
+        earlier["cycle"], later["cycle"] = {"index": 1}, {"index": 2}
+        plain = {"RUN-AAAA01": _record("RUN-AAAA01", "the lower id"),
+                 "RUN-BBBB01": _record("RUN-BBBB01", "the higher id")}
+        cases = (({"RUN-BBBB01": earlier, "RUN-AAAA01": later}, "the later cycle"),
+                 (plain, "the higher id"))
+        holdings = ("archived", "both", "committed")
+        for recs, want in cases:
+            for a in holdings:
+                for b in holdings:
+                    with self.subTest(want=want, AAAA01=a, BBBB01=b):
+                        self._hold(recs, {"RUN-AAAA01": a, "RUN-BBBB01": b})
+                        detail = self._impediments(self.root)["detail"]
+                        asked = [r["pending_decisions"][0]["question"] for r in recs.values()]
+                        self.assertEqual([q for q in asked if q in detail], [want])
+
+    def test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order(
+            self) -> None:
+        """A committed record whose start is a number, whose cycle is not an object, or whose
+        cycle index will not convert to a whole number sorts beside readable ones rather than
+        raising, its index read as 0, and the readable record (index 1) is still read. A cycle
+        index of "3" reads as 3, as the archive reads it, so that record wins."""
+        good = _record("RUN-GOOD01", "the readable record")
+        good["cycle"] = {"index": 1}
+        odd = {"start": ({"started_at": 5}, "the readable record"),
+               "cycle": ({"cycle": "x"}, "the readable record"),
+               "index": ({"cycle": {"index": "x"}}, "the readable record"),
+               "list": ({"cycle": {"index": [3]}}, "the readable record"),
+               "infinite": ({"cycle": {"index": float("inf")}}, "the readable record"),
+               "digits": ({"cycle": {"index": "3"}}, "the odd record")}
+        for name, (fields, want) in odd.items():
+            with self.subTest(shape=name):
+                self._hold({}, {})
+                self._track(good)
+                self._track({**_record("RUN-ODD001", "the odd record"), **fields})
+                detail = self._impediments(self.root)["detail"]
+                self.assertEqual([q for q in ("the readable record", "the odd record")
+                                  if q in detail], [want])
 
     def test_an_unreadable_live_record_falls_back_to_the_committed_one(self) -> None:
         """A live record that does not parse is passed over, as before, and the committed

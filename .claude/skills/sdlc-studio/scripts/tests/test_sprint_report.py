@@ -5303,6 +5303,32 @@ class ReportWriteIsAtomicTests(ReportOfRecordBase):
                          "a second signer")
         self.assertIn("a second signer", md.read_text(encoding="utf-8"))
 
+    def test_a_failure_between_the_renames_leaves_each_file_whole(self) -> None:
+        """Both files are staged before either is renamed, but two renames are not one: a
+        failure on the twin's rename leaves the JSON new and the twin the previous rendering,
+        each whole, with nothing left beside them. This is the window the docstring names."""
+        rid, data = self._signed()
+        js, md = self._files(rid, data)
+        old_md = md.read_text(encoding="utf-8")
+        listing = sorted(p.name for p in js.parent.iterdir())
+        resigned = {**data, "signature": {**data["signature"], "principal": "a second signer"}}
+        real, calls = Path.replace, []
+
+        def replace(self_, target):
+            calls.append(Path(target).name)
+            if len(calls) == 2:
+                raise OSError("interrupted between the renames")
+            return real(self_, target)
+
+        with mock.patch.object(Path, "replace", replace), self.assertRaises(OSError):
+            sr.write_report(self.root, resigned)
+        self.assertEqual(calls, [js.name, md.name], "the JSON is renamed first, then the twin")
+        self.assertEqual(json.loads(js.read_text(encoding="utf-8"))["signature"]["principal"],
+                         "a second signer")
+        self.assertEqual(md.read_text(encoding="utf-8"), old_md)
+        self.assertEqual(sorted(p.name for p in js.parent.iterdir()), listing,
+                         "a failed rename left a staged file beside the report")
+
     def test_a_rewrite_keeps_each_file_s_mode(self) -> None:
         """The files are replaced, not rewritten in place, so the mode they had is carried."""
         rid, data = self._signed()

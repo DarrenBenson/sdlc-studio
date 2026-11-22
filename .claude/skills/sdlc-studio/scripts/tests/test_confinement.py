@@ -682,17 +682,17 @@ class ConfinementRosterSweepTests(unittest.TestCase):
 # Shared-file sweep: a tracked file rewritten whole goes through atomic_write
 # --------------------------------------------------------------------------
 
-#: The kinds of target a `write_text` site may have. SCRATCH is a temporary directory the call
-#: made; UNTRACKED is under a gitignored `.local/`, or a directory the operator names for an
-#: export; NEW creates a file only where none exists, so a torn write loses no previous content;
-#: OUTSIDE rewrites a tracked file whole and is a writer TRD §5 rule 5 lists as left outside the
-#: atomic-write guarantee, with its reason.
+#: The kinds of target a rewrite site may have. SCRATCH is a temporary directory or scratch copy
+#: the call made; UNTRACKED is under a gitignored `.local/`, or a directory the operator names for
+#: an export; NEW creates a file only where none exists, so a torn write loses no previous
+#: content; OUTSIDE rewrites a tracked file whole and is a writer TRD §5 rule 5 lists as left
+#: outside the atomic-write guarantee by design, with its reason.
 SCRATCH, UNTRACKED, NEW, OUTSIDE = "scratch", "untracked", "new", "outside"
 
-#: Every `write_text` site in the shipped scripts, as `<script>::<function>::<receiver>`, with
-#: the kind of its target and why. A shared file, any tracked workspace file a script rewrites
-#: whole, is rewritten through `sdlc_md.atomic_write`, so no site writing one is here except
-#: as OUTSIDE.
+#: Every rewrite site in the shipped scripts (`_rewrite_sites`) but those in `NOT_YET_MOVED`, as
+#: `<script>::<function>::<target>`, with the kind of its target and why. A shared file, any
+#: tracked workspace file a script rewrites whole, is rewritten through `sdlc_md.atomic_write`,
+#: so no site writing one is here except as OUTSIDE.
 SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
     "critic.py::_replay_author_mutants::edits": (SCRATCH, "the edits file in a mkdtemp directory"),
     "file_finding.py::grooming_gaps::preview": (SCRATCH, "a preview in a TemporaryDirectory"),
@@ -706,6 +706,16 @@ SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
     "github_sync.py::save_state::path": (UNTRACKED,
                                          "sdlc-studio/.local/github-sync-state.json"),
     "lib/lanes.py::_commit::log": (UNTRACKED, "the hook output in the lane's kept .local folder"),
+    "lib/lanes.py::_landed_affects_in::scratch / rel": (SCRATCH, "a staged file in the scratch "
+                                                                 "checkout the caller made"),
+    "lib/sdlc_md.py::allocation_lock::lock_file": (UNTRACKED,
+                                                   "sdlc-studio/.local/allocation.lock"),
+    "mutation.py::_restore_scratch::p": (SCRATCH, "an edited file in the run's scratch copy"),
+    "mutation.py::run_edits::target": (SCRATCH, "an edited file in the run's scratch copy"),
+    "verify_ac.py::_run_phase::sink": (SCRATCH, "a phase's output in the batch run's "
+                                                "temporary directory"),
+    "verify_ac.py::_report_lock::path.with_name(path.name + '.lock')": (
+        UNTRACKED, "the lock beside sdlc-studio/.local/verify-report.json"),
     "mutation.py::applied::sidecar": (UNTRACKED, "the in-flight mutant record under .local"),
     "mutation.py::run_gate::out": (UNTRACKED, "sdlc-studio/.local/mutation-report.json"),
     "reconcile.py::cmd_detect::out_path": (UNTRACKED, "sdlc-studio/.local/reconcile-report.json"),
@@ -730,8 +740,6 @@ SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
                                                           "allocated id"),
     "init.py::_seed_singleton::dst": (NEW, "a seed copied only where the target is absent"),
     "backfill_audit_runs.py::apply::path": (OUTSIDE, "a one-off backfill of audit fields"),
-    "close_owed.py::stamp_baseline::root / BASELINE_FILE": (OUTSIDE, "the close-owed baseline"),
-    "command_audit.py::file_coverage_findings::path": (OUTSIDE, "stamps the bug it just filed"),
     "docgen.py::_write::path": (OUTSIDE, "generated pages, re-derived by a rerun"),
     "init.py::_write_definition::path": (OUTSIDE, "seeds the project it initialises"),
     "init.py::stage_agents::p": (OUTSIDE, "seeds the project it initialises"),
@@ -739,16 +747,36 @@ SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
     "init.py::init::doc": (OUTSIDE, "adds a criterion to a seeded definition document"),
     "migrate_v3.py::_stamp_schema_v3::ver": (OUTSIDE, "a one-off migration"),
     "migrate_v3.py::migrate::e['old_path']": (OUTSIDE, "a one-off migration"),
+    "mutation.py::applied::path": (OUTSIDE, "a mutant written in place so the tests import it, "
+                                            "the original first kept in a .local sidecar"),
+    "mutation.py::_restore_applied::Path(p)": (OUTSIDE, "puts back the original bytes"),
+    "mutation.py::_recover_stranded::Path(p)": (OUTSIDE, "puts back the original bytes a cut "
+                                                         "short run kept in its sidecar"),
     "project_upgrade.py::apply::cfg": (OUTSIDE, "the upgrade migration"),
     "project_upgrade.py::apply::ver": (OUTSIDE, "the upgrade migration"),
     "project_upgrade.py::apply::root / seed['target']": (OUTSIDE, "the upgrade migration"),
     "project_upgrade.py::apply::target": (OUTSIDE, "the upgrade migration"),
     "project_upgrade.py::apply::dest / name": (OUTSIDE, "the upgrade migration"),
+    "project_upgrade.py::rebaseline_apply::p": (OUTSIDE, "the upgrade migration"),
     "provenance.py::remake::p": (OUTSIDE, "a one-off provenance remake over the artefacts"),
-    "refine.py::_fill_user_story::story_path": (OUTSIDE, "fills the story refine just created"),
-    "retro.py::cmd_cost_baseline::path": (OUTSIDE, "the cost-baseline history row"),
-    "sprint.py::record_charter_review::path": (OUTSIDE, "the charter's seat review section"),
-    "triage_noise.py::_append_finding::path": (OUTSIDE, "a bullet on a consolidation CR"),
+    "pvd.py::sync::dest": (OUTSIDE, "a read-only copy of the master PVD in a target repository, "
+                                    "copied again by a rerun"),
+}
+
+#: The rewrites of a tracked file that bypass `sdlc_md.atomic_write` for no reason but that
+#: nobody has moved them yet, each `<script>::<function>::<target>` with what it rewrites. They
+#: are no scratch, untracked or new target, so they are kept apart from `SHARED_WRITE_ALLOWLIST`,
+#: and TRD §5 rule 5 lists each as not yet moved.
+NOT_YET_MOVED: dict[str, str] = {
+    "artifact.py::_WriteJournal.rollback::p": "restores a file a failed retitle touched",
+    "close_owed.py::stamp_baseline::root / BASELINE_FILE": "the close-owed baseline",
+    "command_audit.py::file_coverage_findings::path": "stamps the bug it just filed",
+    "refine.py::_fill_user_story::story_path": "fills the story refine just created",
+    "retro.py::cmd_cost_baseline::path": "the cost-baseline history row",
+    "sprint.py::record_charter_review::path": "the charter's seat review section",
+    "triage_noise.py::_append_finding::path": "a bullet on a consolidation CR",
+    "verify_ac.py::revert_check::root / rel": "reverts a unit's change in a working tree file",
+    "verify_ac.py::revert_check.restore::target": "writes the working tree file back",
 }
 
 #: The whole-file rewrites of committed files that went onto `sdlc_md.atomic_write`, each
@@ -760,11 +788,31 @@ NOW_ATOMIC = (("verify_ac.py", "verify_story"), ("lessons.py", "write_project_fi
               ("sprint_report.py", "cmd_render"))
 
 
-def _write_text_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
-    """Every `<receiver>.write_text(...)` call in the Python files under `scripts`, at any
-    depth, as `<script>::<function>::<receiver>` mapped to the lines it is made on, the script
-    named by its path under `scripts`. A nested function is named by its dotted path and a
-    module-level call by `<module>`. The tests are not shipped, so `tests/` is not read."""
+def _rewritten(call: ast.Call) -> ast.AST | None:
+    """The target `call` truncates and writes whole, or None: the receiver of a `write_text`,
+    `write_bytes` or `open` method, or the first argument of the builtin `open`, the two `open`
+    forms counted only in a literal mode holding `w`. An append, a read, a create-only `x` and
+    an `r+` update truncate nothing."""
+    func = call.func
+    if isinstance(func, ast.Attribute) and func.attr in _CONTENT_WRITES:
+        return func.value
+    builtin = isinstance(func, ast.Name) and func.id == "open"
+    if not (builtin or isinstance(func, ast.Attribute) and func.attr == "open"):
+        return None
+    at = 1 if builtin else 0
+    modes = [kw.value for kw in call.keywords if kw.arg == "mode"] + call.args[at:at + 1]
+    if not (modes and isinstance(modes[0], ast.Constant) and "w" in str(modes[0].value)):
+        return None
+    if not builtin:
+        return func.value
+    return call.args[0] if call.args else call    # `open(file=p, mode='w')` names the call
+
+
+def _rewrite_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
+    """Every call in the Python files under `scripts`, at any depth, that rewrites its target
+    whole (`_rewritten`), as `<script>::<function>::<target>` mapped to the lines it is made on,
+    the script named by its path under `scripts`. A nested function is named by its dotted path
+    and a module-level call by `<module>`. The tests are not shipped, so `tests/` is not read."""
     sites: dict[str, list[int]] = {}
 
     def visit(node: ast.AST, rel: str, qual: str) -> None:
@@ -772,9 +820,9 @@ def _write_text_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
             inner = qual
             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 inner = f"{qual}.{child.name}" if qual else child.name
-            if (isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute)
-                    and child.func.attr == "write_text"):
-                key = f"{rel}::{qual or '<module>'}::{ast.unparse(child.func.value)}"
+            target = _rewritten(child) if isinstance(child, ast.Call) else None
+            if target is not None:
+                key = f"{rel}::{qual or '<module>'}::{ast.unparse(target)}"
                 sites.setdefault(key, []).append(child.lineno)
             visit(child, rel, inner)
 
@@ -785,11 +833,13 @@ def _write_text_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
     return sites
 
 
-def _unlisted_writes(scripts: Path = SCRIPTS,
-                     allowlist: dict[str, tuple[str, str]] = SHARED_WRITE_ALLOWLIST) -> list[str]:
-    """The `write_text` sites under `scripts` that `allowlist` does not name, with their lines."""
+def _unlisted_writes(scripts: Path = SCRIPTS, allowlist=SHARED_WRITE_ALLOWLIST,
+                     not_yet_moved=NOT_YET_MOVED) -> list[str]:
+    """The rewrite sites under `scripts` that neither `allowlist` nor `not_yet_moved` names,
+    with their lines."""
     return sorted(f"{site} (line {', '.join(map(str, lines))})"
-                  for site, lines in _write_text_sites(scripts).items() if site not in allowlist)
+                  for site, lines in _rewrite_sites(scripts).items()
+                  if site not in allowlist and site not in not_yet_moved)
 
 
 def _function(script: str, name: str) -> ast.AST:
@@ -808,34 +858,43 @@ def _calls(node: ast.AST) -> set[str]:
 
 class SharedFileWriteSweepTests(unittest.TestCase):
     """A shared file is any tracked workspace file a script rewrites whole, and a truncating
-    `write_text` of one can leave it half-written. Every `write_text` site is named here with
-    the kind of its target, so a new one fails until it is moved onto `sdlc_md.atomic_write`
-    or its target is shown to be scratch, untracked, new or a listed exception."""
+    write of one can leave it half-written. Every `write_text` and `write_bytes` site, and
+    every `open` given a literal mode holding `w`, is named here with the kind of its target, so
+    a new one fails until it is moved onto `sdlc_md.atomic_write`, its target is shown to be
+    scratch, untracked, new or a listed exception, or it is listed apart in `NOT_YET_MOVED`."""
 
     def test_no_tracked_workspace_file_is_rewritten_with_write_text(self) -> None:
-        sites = _write_text_sites()
-        self.assertGreater(len(sites), 20, "the sweep has stopped finding write_text calls")
+        sites = _rewrite_sites()
+        self.assertGreater(len(sites), 20, "the sweep has stopped finding rewrite calls")
         self.assertEqual(_unlisted_writes(), [],
-                         "these write_text calls are on no allowlist: move a shared file's "
-                         "rewrite onto sdlc_md.atomic_write, or list the site with its kind")
-        stale = sorted(set(SHARED_WRITE_ALLOWLIST) - set(sites))
-        self.assertEqual(stale, [], f"allowlisted sites that no longer call write_text: {stale}")
+                         "these rewrites are on no list: move a shared file's rewrite onto "
+                         "sdlc_md.atomic_write, or list the site with its kind")
+        self.assertEqual(sorted(set(SHARED_WRITE_ALLOWLIST) & set(NOT_YET_MOVED)), [],
+                         "a site not yet moved onto atomic_write is no allowlisted target")
+        stale = sorted((set(SHARED_WRITE_ALLOWLIST) | set(NOT_YET_MOVED)) - set(sites))
+        self.assertEqual(stale, [], f"listed sites that no longer rewrite: {stale}")
         for site, (kind, reason) in SHARED_WRITE_ALLOWLIST.items():
             with self.subTest(site=site):
                 self.assertIn(kind, (SCRATCH, UNTRACKED, NEW, OUTSIDE))
                 self.assertTrue(reason.strip(), "an allowlisted site carries no reason")
+        for site, what in NOT_YET_MOVED.items():
+            with self.subTest(not_yet_moved=site):
+                self.assertTrue(what.strip(), "a site not yet moved says nothing of its target")
         for script, name in NOW_ATOMIC:
             with self.subTest(moved=f"{script}::{name}"):
-                self.assertFalse([s for s in SHARED_WRITE_ALLOWLIST
+                self.assertFalse([s for s in (*SHARED_WRITE_ALLOWLIST, *NOT_YET_MOVED)
                                   if s.startswith(f"{script}::{name}::")])
                 calls = _calls(_function(script, name))
                 self.assertIn("atomic_write", calls)
                 self.assertNotIn("write_text", calls)
 
     def test_the_sweep_catches_a_planted_truncating_write(self) -> None:
-        """A planted rewrite of a story file is named, in a script and in any folder under
-        it, in a nested function and at module level; the same call to a scratch path on the
-        allowlist is not, nor is one in the tests, nor one through atomic_write."""
+        """A planted rewrite of a story file is named, through `write_text`, `write_bytes`
+        and each `open` form given a literal `w` mode, in a script and in any folder under it,
+        in a nested function and at module level; the same call to a scratch path on the
+        allowlist is not, nor is one in the tests, one through atomic_write, nor an `open` that
+        truncates nothing (a read, an append, a create-only `x`, an `r+` update, a mode in a
+        name)."""
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
             (d / "lib").mkdir()
@@ -852,7 +911,28 @@ class SharedFileWriteSweepTests(unittest.TestCase):
                 "def outer(root):\n"
                 "    def inner():\n"
                 "        rc.write_text('x')\n"
-                "ROOT.write_text('x')\n", encoding="utf-8")
+                "ROOT.write_text('x')\n"
+                "def as_bytes(story):\n"
+                "    story.write_bytes(b'half')\n"
+                "def builtin(story):\n"
+                "    open(story, 'w').close()\n"
+                "def keyword(story):\n"
+                "    open(story, mode='wb').close()\n"
+                "def by_file(story):\n"
+                "    open(file=story, mode='w').close()\n"
+                "def method(story):\n"
+                "    story.open('w').close()\n"
+                "def method_keyword(story):\n"
+                "    story.open(mode='w').close()\n"
+                "def untruncated(story, m):\n"
+                "    open(story).close()\n"
+                "    open(story, 'a').close()\n"
+                "    open(story, 'x').close()\n"
+                "    open(story, 'r+').close()\n"
+                "    open(story, m).close()\n"
+                "    story.open().close()\n"
+                "    story.open('a').close()\n"
+                "    story.open(mode='rb').close()\n", encoding="utf-8")
             (d / "lib" / "shared.py").write_text("def put(p):\n    p.write_text('x')\n",
                                                  encoding="utf-8")
             (d / "hooks" / "deep").mkdir(parents=True)
@@ -861,13 +941,22 @@ class SharedFileWriteSweepTests(unittest.TestCase):
             (d / "tests" / "test_planted.py").write_text("def t(p):\n    p.write_text('x')\n",
                                                          encoding="utf-8")
             allowlist = {"planted.py::scratch::rc": (SCRATCH, "a temporary directory")}
-            self.assertEqual(_unlisted_writes(d, allowlist), [
+            self.assertEqual(_unlisted_writes(d, allowlist, {}), [
                 "hooks/deep/guard.py::g::p (line 2)",
                 "lib/shared.py::put::p (line 2)",
                 "planted.py::<module>::ROOT (line 12)",
+                "planted.py::as_bytes::story (line 14)",
+                "planted.py::builtin::story (line 16)",
+                "planted.py::by_file::open(file=story, mode='w') (line 20)",
+                "planted.py::keyword::story (line 18)",
+                "planted.py::method::story (line 22)",
+                "planted.py::method_keyword::story (line 24)",
                 "planted.py::outer.inner::rc (line 11)",
                 "planted.py::stamp::story (line 3)"])
-            self.assertIn("planted.py::scratch::rc", _write_text_sites(d),
+            self.assertEqual(_unlisted_writes(d, allowlist, {"lib/shared.py::put::p": "x"})[1],
+                             "planted.py::<module>::ROOT (line 12)",
+                             "a site listed as not yet moved is not named")
+            self.assertIn("planted.py::scratch::rc", _rewrite_sites(d),
                           "the allowlisted scratch write must still be found, then excused")
 
 

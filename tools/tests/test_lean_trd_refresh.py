@@ -662,9 +662,12 @@ class TrdStorageTests(unittest.TestCase):
         """Mutants: the definition of a shared file dropped from rule 5 or from the scripts row
         of the component table; the ledgers called the one exception again; a script the
         shared-file sweep lets rewrite a tracked file whole (`SHARED_WRITE_ALLOWLIST`, kind
-        outside) left off rule 5's list of exceptions, a listed script that is no such writer,
-        or an exception listed with no reason."""
-        from test_confinement import OUTSIDE, SHARED_WRITE_ALLOWLIST  # noqa: PLC0415
+        outside, or `NOT_YET_MOVED`) left off rule 5's list of exceptions, a listed script that
+        is no such writer, or an exception listed with no reason; the not-yet-moved bullet
+        naming a script or function `NOT_YET_MOVED` does not, or leaving one out; the sweep's
+        sentence naming fewer call forms than it sees."""
+        from test_confinement import (  # noqa: PLC0415
+            NOT_YET_MOVED, OUTSIDE, SHARED_WRITE_ALLOWLIST)
         body = _trd_body()
         rule5 = _section(body, "Script CLI contract").split("\n5. ", 1)[1].split("\n6. ", 1)[0]
         flat = " ".join(rule5.split())
@@ -686,8 +689,18 @@ class TrdStorageTests(unittest.TestCase):
                 listed[script] = reason if sep else ""
         outside = {site.split("::", 1)[0] for site, (kind, _why) in SHARED_WRITE_ALLOWLIST.items()
                    if kind == OUTSIDE}
+        moving = {site.split("::", 1)[0] for site in NOT_YET_MOVED}
         self.assertGreater(len(outside), 3, "premise: the sweep names writers left outside")
-        self.assertEqual(sorted(listed), sorted(outside))
+        self.assertEqual(sorted(listed), sorted(outside | moving))
+        pending = [b for b in bullets if "not yet moved" in b.partition(": ")[2]]
+        self.assertEqual(len(pending), 1, "one bullet lists the writers not yet moved")
+        head = pending[0].partition(": ")[0]
+        self.assertEqual(sorted(set(re.findall(r"`([a-z0-9_]+\.py)\b", head))), sorted(moving))
+        for site in NOT_YET_MOVED:
+            with self.subTest(not_yet_moved=site):
+                self.assertIn(f"`{site.split('::')[1]}`", head)
+        self.assertRegex(flat, r"names every `write_text` and `write_bytes` call, and every "
+                               r"`open` given a literal mode holding `w`")
         for script, reason in sorted(listed.items()):
             with self.subTest(script=script):
                 self.assertGreaterEqual(len(reason.split()), 5, f"{script} carries no reason")

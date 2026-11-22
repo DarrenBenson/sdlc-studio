@@ -117,6 +117,23 @@ def _tracked_records(root: Path) -> dict[str, dict]:
     return out
 
 
+def _newest_first(item: tuple[str, dict]) -> tuple[str, int, str]:
+    """The key `_run_record` sorts each `(run id, record)` by, descending, so the newest comes
+    first: the start, then the cycle index, then the run id. Two cycles of a fast run start in
+    the same second, and which copy holds a record differs between clones, so each term is one
+    the record carries and every clone holding the same records orders a tie the same way. The
+    cycle index is read as `run_state.archived` reads it, a whole number, or 0 where it is absent
+    or will not convert, and a start that is not a string sorts as "", so one malformed record
+    cannot raise from the sort."""
+    rid, rec = item
+    start = rec.get("started_at")
+    try:
+        index = int(rec["cycle"]["index"])
+    except (ArithmeticError, LookupError, TypeError, ValueError):
+        index = 0
+    return (start if isinstance(start, str) else "", index, rid)
+
+
 def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
     """The run record that delivered THIS sprint, or None.
 
@@ -136,8 +153,8 @@ def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
     Each run is read from ONE copy, in the order `_run_state_for` reads one: the live record,
     else the record filed at `run_state.tracked_path` that a commit holds (`_tracked_records`),
     else the `.local` archive's. The committed record is what makes a clean clone, which holds
-    no `.local`, see the run at all. Ties keep the live record, then the newest by start of the
-    rest, committed and archived ordered together so a tie reads the same in every clone.
+    no `.local`, see the run at all. Ties keep the live record, then order the rest, committed
+    and archived together, newest first by `_newest_first`, whose key the record itself holds.
     `ended_at` may be None - an open run has a start and no end, and a row after its start
     still belongs to it."""
     want = {sdlc_md.norm_id(u) for u in unit_ids}
@@ -150,16 +167,11 @@ def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
     if live:
         records.append(live)
     # `archived` skips an entry whose JSON does not parse rather than raising, so nothing is
-    # caught here. Archived oldest first; a committed copy replaces this clone's archived copy
-    # of the same run in place.
+    # caught here. A committed copy replaces this clone's archived copy of the same run.
     others = {str(s.get("run_id")): s for s in run_state.archived(root)}
     others.update(_tracked_records(root))
     others.pop(str(live.get("run_id")), None)
-    # Newest start first. Sorting the reversed list keeps the archive's own newest-first order
-    # (its cycle index breaks a tie in start) for records that start in the same second.
-    records.extend(sorted(reversed(list(others.values())), reverse=True,
-                          key=lambda s: s.get("started_at") if isinstance(s.get("started_at"), str)
-                          else ""))
+    records.extend(s for _rid, s in sorted(others.items(), key=_newest_first, reverse=True))
     best = None                   # ((cover, -extraneous), state)
     for state in records:
         batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
@@ -5949,8 +5961,11 @@ def write_report(root, report: dict) -> Path:
     a page and the record it claims to show come to disagree - which is the failure the whole
     fingerprint exists to detect, and it should not be this module that causes it. Both are
     rendered before either is written, and `_write_together` stages both before it replaces
-    either, so a write interrupted part-way leaves the report and its twin as they were. Used by
-    `file_report` when the page is first derived, and by the seal when a signature lands on it.
+    either, so a write interrupted while either is rendered or staged leaves the report and its
+    twin as they were. The two renames that follow are not one step: a failure between them
+    leaves the JSON new and the twin the previous rendering, each whole, until the next write.
+    Used by `file_report` when the page is first derived, and by the seal when a signature lands
+    on it.
     """
     root = Path(root)
     rid = sdlc_md.norm_id(report.get("report_id") or "")
