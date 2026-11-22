@@ -9424,8 +9424,10 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     A return of one unit naming `--agent` and no `--tokens`, whose unit already holds its share
     of a lane split by points read from that same transcript (`_lane_landed_share`: written by
     `lane land`, or by an earlier return of several units), keeps that share rather than
-    re-pricing the unit with the whole transcript. The `--minutes` and `--model` the return
-    supplies are recorded on the kept share; what it does not supply stays as the share holds it.
+    re-pricing the unit with the whole transcript. The `--minutes` the return supplies are the
+    builder's whole, so the kept share records its points' part of them, as a return of several
+    units does; its `--model` is recorded as given; what it does not supply stays as the share
+    holds it.
 
     Otherwise, with the `--agent` transcript read and no `--minutes`, the minutes are the
     transcript's span from its first to its last message time (`_lane_transcript_minutes`),
@@ -9468,11 +9470,19 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
             results[0]["agent_total"] = kept
             return
         if kept is not None:
-            # the share kept, recorded again with what this return supplies beside it
-            said = [f"{minutes:g} minutes" if minutes is not None else "",
-                    f"model {model}" if model is not None else ""]
-            print(f"{results[0]['unit']}: this return's {' and '.join(w for w in said if w)} go "
-                  f"on the kept split")
+            # the share kept, recorded again with what this return supplies beside it: its
+            # minutes are the builder's whole, so they are split by the share's points as a
+            # return of several units splits them (`_lane_shares`)
+            part = kept[run_state.APPORTIONED]
+            said = []
+            if minutes is not None:
+                whole, minutes = minutes, minutes * part["points"] / part["of"]
+                said.append(f"{whole:g} minutes, split by points as {minutes:g} "
+                            f"({part['points']} of {part['of']})")
+            if model is not None:
+                said.append(f"model {model}")
+            print(f"{results[0]['unit']}: the kept split records this return's "
+                  f"{', and '.join(said)}")
             minutes = minutes if minutes is not None else kept.get("minutes")
             model = model if model is not None else kept.get("model")
             shares = [(kept["tokens"], _lane_kept_reading(kept), minutes,

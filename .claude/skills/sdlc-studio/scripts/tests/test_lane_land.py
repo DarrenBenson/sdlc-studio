@@ -71,9 +71,10 @@ def _write(root: Path, rel: str, body: str) -> None:
     path.write_text(body, encoding="utf-8")
 
 
-def _story(root: Path, unit: str, affects: str) -> None:
+def _story(root: Path, unit: str, affects: str, points: int = 2) -> None:
     _write(root, f"sdlc-studio/stories/{unit}-lane.md",
-           f"# {unit}: lane\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"
+           f"# {unit}: lane\n\n> **Status:** Review\n> **Points:** {points}\n"
+           f"> **Epic:** EP0001\n"
            f"> **Affects:** {affects}\n\n## Acceptance Criteria\n\n### AC1: works\n"
            "- **Verify:** shell true\n")
 
@@ -1007,15 +1008,21 @@ class LandPricesTheBuilderTests(_PricedFixture):
                          (recs[0]["tokens"], recs[0]["priced"], recs[0].get(run_state.APPORTIONED)))
         self.assertNotIn("kept the split", done.stdout + done.stderr)
 
-    def _land_two(self, *, timed: bool = False) -> dict[str, dict]:
-        """A two-unit lane of 2 points each landed from this builder's one transcript, split by
-        points; `timed`, its two messages written 20 minutes apart, so each share holds 10 of
-        them. Each unit's landed record."""
+    def _land_two(self, *, timed: bool = False, span: int = 20,
+                  points_b: int = 2) -> dict[str, dict]:
+        """A two-unit lane, A of 2 points and B of `points_b`, landed from this builder's one
+        transcript, split by points; `timed`, its two messages written `span` minutes apart, so
+        each share holds its points' part of them (10 each at the defaults). Each unit's landed
+        record."""
+        if points_b != 2:
+            story = f"sdlc-studio/stories/{B}-lane.md"
+            _story(self.root, B, f"src/b.py, changelog.d/{B}.md", points=points_b)
+            self._move_main(story, (self.root / story).read_text(encoding="utf-8"))
         if timed:
             start = datetime(2026, 11, 20, 9, 0, tzinfo=timezone.utc)
             meter._Transcripts._append(self.builder, [
                 *self.tx._records("msg_t0", BUILD_1, start, str(self.wt)),
-                *self.tx._records("msg_t1", BUILD_2, start + timedelta(minutes=20),
+                *self.tx._records("msg_t1", BUILD_2, start + timedelta(minutes=span),
                                   str(self.wt))])
         else:
             self._builder_says(BUILD_1, BUILD_2)
@@ -1039,21 +1046,22 @@ class LandPricesTheBuilderTests(_PricedFixture):
 
     def test_an_accept_keeping_the_split_records_its_minutes_and_model(self) -> None:
         """The land read no minutes (its transcript carries no message times); the accept that
-        keeps the split records the --minutes and --model it supplies on the kept share, whose
-        tokens and split are unchanged, and says so; a return naming only --model records the
-        model alone and leaves the share without minutes. MUTANTS: the kept split returned as
-        it stands, as it was, so both flags are dropped without a word; the line naming an empty
-        flag; the per-model split lost when the share is recorded again."""
+        keeps the split records the --minutes it supplies split by the share's points, and the
+        --model as given, on the kept share, whose tokens and split are unchanged, and says so;
+        a return naming only --model records the model alone and leaves the share without
+        minutes. MUTANTS: the kept split returned as it stands, as it was, so both flags are
+        dropped without a word; the line naming an empty flag, or a verb whose number depends
+        on how many it names; the per-model split lost when the share is recorded again."""
         landed = self._land_two()
         self.assertNotIn("minutes", landed[A])
         done = self._accept(A, "--agent", self.AGENT, "--minutes", "30", "--model", "claude-x")
         self.assertEqual(0, done.returncode, done.stdout + done.stderr)
         self.assertIn("kept the split", done.stdout)
-        self.assertIn(f"{A}: this return's 30 minutes and model claude-x go on the kept split",
-                      done.stdout)
+        self.assertIn(f"{A}: the kept split records this return's 30 minutes, split by points as "
+                      f"15 (2 of 4), and model claude-x\n", done.stdout)
         recs = self._returns(A)
         self.assertEqual(1, len(recs), done.stdout + done.stderr)
-        self.assertEqual((landed[A]["tokens"], landed[A]["priced"], 30.0, "claude-x",
+        self.assertEqual((landed[A]["tokens"], landed[A]["priced"], 15.0, "claude-x",
                           landed[A][run_state.APPORTIONED]),
                          (recs[0]["tokens"], recs[0]["priced"], recs[0].get("minutes"),
                           recs[0].get("model"), recs[0].get(run_state.APPORTIONED)))
@@ -1063,7 +1071,8 @@ class LandPricesTheBuilderTests(_PricedFixture):
                 self.assertEqual(landed[A].get(key), recs[0].get(key))
         self.assertEqual([landed[B]], self._returns(B), "the other unit's share moved")
         back = self._return("--units", B, "--agent", self.AGENT, "--model", "claude-y")
-        self.assertIn(f"{B}: this return's model claude-y go on the kept split", back.stdout)
+        self.assertIn(f"{B}: the kept split records this return's model claude-y\n",
+                      back.stdout)
         recs = self._returns(B)
         self.assertEqual((1, landed[B]["tokens"], None, "claude-y"),
                          (len(recs), recs[0]["tokens"], recs[0].get("minutes"),
@@ -1071,8 +1080,9 @@ class LandPricesTheBuilderTests(_PricedFixture):
 
     def test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply(self) -> None:
         """An accept naming only --model keeps the minutes the land split, and a later return
-        naming only --minutes keeps that model. MUTANTS: the kept share's minutes dropped when
-        none are given; its model dropped when none is given."""
+        naming only --minutes keeps that model, its minutes split by the share's points.
+        MUTANTS: the kept share's minutes dropped when none are given; its model dropped when
+        none is given."""
         landed = self._land_two(timed=True)
         self.assertAlmostEqual(10.0, landed[A]["minutes"], delta=1 / 60)
         done = self._accept(A, "--agent", self.AGENT, "--model", "claude-x")
@@ -1081,10 +1091,52 @@ class LandPricesTheBuilderTests(_PricedFixture):
         self.assertEqual((landed[A]["minutes"], "claude-x", landed[A]["tokens"]),
                          (rec.get("minutes"), rec.get("model"), rec["tokens"]))
         back = self._return("--units", A, "--agent", self.AGENT, "--minutes", "4")
+        self.assertIn(f"{A}: the kept split records this return's 4 minutes, split by points as "
+                      f"2 (2 of 4)\n", back.stdout)
         rec = self._returns(A)[0]
-        self.assertEqual((4.0, "claude-x", landed[A]["tokens"]),
+        self.assertEqual((2.0, "claude-x", landed[A]["tokens"]),
                          (rec.get("minutes"), rec.get("model"), rec["tokens"]),
                          back.stdout + back.stderr)
+
+    def _minutes_split_like_a_return(self, points_b: int) -> None:
+        """A lane of A (2 points) and B (`points_b`) whose builder transcript spans 30 minutes
+        lands each unit its points' part of them; accepting each with `--minutes 30`, the
+        builder's own whole, records the same part again, as `lane return --units A B --minutes
+        30` does for the lane, so the units' minutes sum to the builder's 30 once."""
+        landed = self._land_two(timed=True, span=30, points_b=points_b)
+        whole = 2 + points_b
+        part = {A: 30 * 2 / whole, B: 30 * points_b / whole}
+        for unit in (A, B):
+            self.assertAlmostEqual(part[unit], landed[unit]["minutes"], delta=1 / 60)
+        accepted = {}
+        for unit in (A, B):
+            with self.subTest(unit=unit):
+                done = self._accept(unit, "--agent", self.AGENT, "--minutes", "30")
+                self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+                recs = self._returns(unit)
+                self.assertEqual(1, len(recs), done.stdout + done.stderr)
+                accepted[unit] = recs[0]
+                self.assertEqual((part[unit], landed[unit]["tokens"],
+                                  landed[unit][run_state.APPORTIONED]),
+                                 (recs[0].get("minutes"), recs[0]["tokens"],
+                                  recs[0].get(run_state.APPORTIONED)))
+        self.assertEqual(30.0, sum(accepted[u]["minutes"] for u in (A, B)))
+        back = self._return("--units", A, B, "--agent", self.AGENT, "--minutes", "30")
+        self.assertEqual(0, back.returncode, back.stdout + back.stderr)
+        for unit in (A, B):
+            with self.subTest(control=unit):
+                self.assertEqual(accepted[unit]["minutes"], self._returns(unit)[-1]["minutes"])
+
+    def test_an_accept_splits_its_minutes_by_the_kept_shares_points(self) -> None:
+        """The reviewer's lane: two units of 2 points, a 30-minute builder. The land records 15
+        and 15; an accept of each with `--minutes 30` records 15 and 15, as the lane's return
+        does. MUTANT: the given minutes recorded whole on the kept split, so 30 and 30."""
+        self._minutes_split_like_a_return(2)
+
+    def test_an_accept_splits_its_minutes_by_unequal_points(self) -> None:
+        """Units of 2 and 3 points: the accept records 12 and 18 of the builder's 30, its
+        points over the lane's. MUTANT: the minutes halved, or split by units, not points."""
+        self._minutes_split_like_a_return(3)
 
     def test_an_accept_naming_another_agent_prices_from_that_agents_transcript(self) -> None:
         """Only a record read from the same transcript is kept: an accept naming another agent
