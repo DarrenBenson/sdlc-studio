@@ -36,14 +36,17 @@ lane and review briefs carry the classes injected at their phase. `lessons class
 code, name, state and hit count, so the code to cite is one command away
 (`reference-retro.md#extraction-a-lesson-must-leave-the-retro`). The close retires a class
 quiet for its last five runs, except one injected at build: a builder trap reaches every lane
-brief, so it is quiet because it works, and it leaves only when its graduation CR closes.
+brief, so it is quiet because it works, and it leaves only when its graduation CR closes. A
+class recorded with no run open, by `class-add` or by a manual `retro.py extract`, takes the
+next run to close as the start of its quiet window, so that close does not retire it.
 
 `retro.py extract` records a `[new: <class name>]` Try item as a class at the close. To record
 one outside a retro, when a finding names a class mid-run, run
 `lessons.py class-add --class <name> --rule <text> --behaviour <text> --phase build --source <text>`
 (repeat `--phase` for each of plan, build and review that should carry it). It appends one active
-row with the next `LC-` code, the open run's id and the source, and refuses a class the store
-already holds, leaving the store untouched. The lane brief reads the store, not the `lessons/`
+row with the next `LC-` code, the open run's id (blank with no run open) and the source. It
+refuses a class the store already holds, a blank field or an unreadable run state, leaving the
+store untouched. The lane brief reads the store, not the `lessons/`
 registry: a class reaches a lane as a row in `sdlc-studio/lessons.jsonl`.
 
 ## You can just ask

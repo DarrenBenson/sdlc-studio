@@ -179,21 +179,25 @@ as a hit on it. An unknown code, an unknown phase, a new class with no behaviour
 item that reads as a tag but does not parse (`[LC 001]`, `[LC-01]`, `(LC-001)`,
 `[new scope drift]`) and an unreadable store are refused by `validate` and `extract`, which
 then writes nothing. The plan output, each lane brief and the review brief (`critic.py brief`)
-carry the active classes injected at their phase, rule plus behaviour, at most five,
-most-repeated first, and no other lessons.
+carry the live classes injected at their phase, rule plus behaviour, most-repeated first, and
+no other lessons. The plan output and the review brief carry at most five and say how many
+they left out. A lane brief carries every live build class, since a build class is never
+retired for being quiet and leaves only when its graduation CR closes.
 
-A hit counts once per retro item: it is keyed on the retro and the unit, never on the run, so a
-manual `extract` followed by the close's own records one repeat. The run a hit names is
-`--run`, else the open run, else the retro id.
+A Try item's hit counts once per retro item: it is keyed on the retro and the unit, not on the
+run, so a manual `extract` followed by the close's own records one repeat. The run a hit names
+is `--run`, else the open run, else the retro id. The close's citation hits (below) are keyed on
+the run instead, one per class.
 
 The close then acts on the store, with no operator step:
 
 | When | The close |
 | --- | --- |
 | a REJECT this run recorded cites a class (`[new] the mutant never landed [LC-003]`) | adds a hit `{run, unit, source: critic:<run>, finding}`, once per run and unit; a hit on a retired class, cited or named again in a Try item, puts it back in force |
+| a bug the report places in the run's window cites a class code in its `## Summary`, or the retro's Stop or Keep section cites one outside an HTML comment | adds a hit `{run, source: cited:<run>, finding}` naming the bug or the retro section, at most one per class per run and none when a REJECT or a Try item already hit the class this run; an unknown code is reported, and a cited retired class is back in force |
 | a class has recurred twice after the run that recorded it (distinct run and unit; a hit naming no unit is one of its run's unit hits) | files one CR, `Prevent or retire lesson <id> (<class>)`, stamped with the closing run, naming the class, its rule and each hit with its finding text; its first criterion asks for the code path each hit names to be fixed, and any check it proposes must name the lane, refusal, baseline or pin it retires. The row reads `graduating` with the CR id |
-| a `graduating` class's CR is at a terminal status in its own vocabulary | moves the row to `graduated` when the CR shipped (`Complete` or `Superseded`), and to `retired` when it was `Rejected`, since nothing was fixed (a later repeat puts it back in force); a CR still open, or a class with a hit recorded in this run (a cited REJECT or a Try item, on any pass of the close), leaves it `graduating` |
-| an active class not injected at build was neither recorded nor hit in the last five runs this clone's archive knows (closing run last), and the archive knows more than five | retires it; a run the archive does not know, such as another clone's, is outside that window, and the class's next hit puts it back in force |
+| a `graduating` class's CR is at a terminal status in its own vocabulary | moves the row to `graduated` when the CR shipped (`Complete` or `Superseded`), and to `retired` when it was `Rejected`, since nothing was fixed (a later repeat puts it back in force); a CR still open, or a class with a hit recorded in this run (a cited REJECT, a Try item or a citation, on any pass of the close), leaves it `graduating` |
+| an active class not injected at build was neither recorded nor hit in the last five runs this clone's archive knows (closing run last), and the archive knows more than five | retires it; a class recorded with no run open (by `class-add`, or a manual `extract`, which names the retro) counts the first close that finds it active, stamped once as its `quiet_from`, as the run that recorded it, so it gets the full five; a run the archive does not know, such as another clone's, is outside that window, and the class's next hit puts it back in force |
 
 A `graduating` class is still injected and is never filed again; it reads `graduated` at the
 first close after its CR ships, or `retired` if the CR is rejected. The sprint report's appendix lists each active or graduating class with its

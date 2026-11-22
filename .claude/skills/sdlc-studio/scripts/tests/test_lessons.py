@@ -1998,6 +1998,54 @@ class QuietBuildClassTests(unittest.TestCase):
         self.assertEqual({"LC-001": "graduated"}, self._states(root))
         self.assertEqual(["LC-001"], res["graduated"])
 
+    @staticmethod
+    def _hit(n: int) -> list[dict]:
+        return [{"run": "RUN-6", "unit": f"US000{n}", "source": "critic:RUN-6"}]
+
+    def test_no_live_build_class_falls_out_of_the_lane_brief(self):
+        """BG1482 AC1. Six live build classes, the oldest three with no hit: a build class leaves
+        only by graduating, so the lane brief carries every one. MUTANT: HEAD - the cap of five
+        drops LC-001, the oldest zero-hit trap, from the brief. A retired build class (LC-007) and
+        a class injected only at review (LC-008) are not carried."""
+        root = self._root()
+        rows = [self._row(f"LC-00{n}", ["build"], hits=self._hit(n) if n > 3 else [])
+                for n in range(1, 7)]
+        rows += [self._row("LC-007", ["build"], state="retired"),
+                 self._row("LC-008", ["review"])]
+        (root / lessons.STORE_FILE).write_text("".join(json.dumps(r) + "\n" for r in rows),
+                                               encoding="utf-8")
+        digest = lessons.phase_digest(root, "build")
+        self.assertEqual([f"LC-00{n}" for n in (6, 5, 4, 3, 2, 1)],
+                         [r["id"] for r in digest["lessons"]], "most-repeated first, all six")
+        self.assertEqual(6, digest["active"])
+        block = "\n".join(lessons.render_phase(digest))
+        for n in range(1, 7):
+            self.assertIn(f"Rule of LC-00{n}", block)
+        self.assertIn("Lessons for build (6 of 6 active)", block)
+        self.assertNotIn("more active", block)
+        self.assertNotIn("LC-007", block)
+        self.assertNotIn("LC-008", block)
+
+    def test_a_phase_other_than_build_is_still_capped(self):
+        """BG1482 AC2. Seven live classes injected at plan and review: each of those digests
+        carries INJECT_MAX, most-repeated first, and says how many it dropped. MUTANT: lift the cap
+        for every phase. MUTANT: cap plan alone - review carries all seven."""
+        root = self._root()
+        rows = [self._row(f"LC-00{n}", ["plan", "review"], hits=self._hit(n) if n > 5 else [])
+                for n in range(1, 8)]
+        (root / lessons.STORE_FILE).write_text("".join(json.dumps(r) + "\n" for r in rows),
+                                               encoding="utf-8")
+        for phase in ("plan", "review"):
+            with self.subTest(phase=phase):
+                digest = lessons.phase_digest(root, phase)
+                self.assertEqual(lessons.INJECT_MAX, len(digest["lessons"]))
+                self.assertEqual(["LC-007", "LC-006", "LC-005", "LC-004", "LC-003"],
+                                 [r["id"] for r in digest["lessons"]])
+                self.assertEqual(7, digest["active"])
+                block = "\n".join(lessons.render_phase(digest))
+                self.assertIn(f"Lessons for {phase} (5 of 7 active)", block)
+                self.assertIn("(+2 more active, fewer hits)", block)
+
 
 class ClassFilesAndEvidenceTests(unittest.TestCase):
     """A class may carry the files it applies to and the evidence it was found from. Both are
@@ -2059,6 +2107,149 @@ class ClassFilesAndEvidenceTests(unittest.TestCase):
                               files=["scripts/a.py"])
         self.assertEqual((root / lessons.STORE_FILE).read_bytes(), before)
 
+
+
+class RunRepeatHitTests(unittest.TestCase):
+    """BG1483. The close counted a class's hits only from cited REJECTs and retro Try items, so
+    run thirteen's repeats of LC-019 and LC-021, caught by the land and the push gate and filed as
+    BG1468, left both classes at 0 hits, and a recurring build trap could never graduate. A bug
+    filed in the run whose Summary cites a class, and a retro Stop or Keep item that cites one,
+    now count: one hit per class per run, through the close's retro-extract step."""
+
+    RUN = "RUN-7"
+    RID = "RETRO9999"
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(SCRIPT_PATH.parent))
+        import sprint  # noqa: PLC0415 - the close step whose pass this counts through
+        self.sprint = sprint
+        self.root = Path(tempfile.mkdtemp(prefix="run_repeat_"))
+        self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        for sub in ("retros", "bugs"):
+            (self.root / "sdlc-studio" / sub).mkdir(parents=True)
+        (self.root / lessons.STORE_FILE).write_text("".join(json.dumps(
+            {"id": code, "class": f"class {code}", "rule": "A rule.", "behaviour": "Do it.",
+             "inject": ["build"], "hits": [], "state": "active", "recorded_run": "RUN-1"})
+            + "\n" for code in ("LC-001", "LC-002", "LC-003")), encoding="utf-8")
+        self.state = {"run_id": self.RUN, "outcome": "running", "batch": [],
+                      "started_at": "2026-11-22T09:00:00Z"}
+
+    def _bug(self, bid: str, summary: str, moment: str = "2026-11-22T10:00:00Z") -> None:
+        (self.root / "sdlc-studio" / "bugs" / f"{bid}-defect.md").write_text(
+            f"# {bid}: a defect citing LC-003 in its title\n\n> **Status:** Open\n"
+            f"> **Raised-in-batch:** none open - raised outside a delivery batch, {moment}\n"
+            f"> **Created:** {moment[:10]}\n\n## Summary\n\n{summary}\n\n"
+            "## Steps to Reproduce\n\nLC-003 is named here, outside the Summary.\n",
+            encoding="utf-8")
+
+    def _retro(self, keep: str = "the gate held", stop: str = "the wait",
+               cost: str = "") -> None:
+        (self.root / "sdlc-studio" / "retros" / f"{self.RID}-a-run.md").write_text(
+            f"# RETRO-9999: a run\n\n> **Date:** 2026-11-22\n> **Run:** {self.RUN}\n"
+            f"> **Batch:** US0001\n\n## Keep\n\n- {keep}\n\n## Stop\n\n- {stop}\n\n"
+            f"## Try\n\n- run the preflight first\n\n## Cost\n\n- {cost or 'repairs'}\n",
+            encoding="utf-8")
+
+    def _close(self) -> tuple:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            res = self.sprint._close_retro_extract(self.root, self.RID, self.state)
+        return res, out.getvalue() + err.getvalue()
+
+    def _hits(self, code: str) -> list[dict]:
+        row = next(r for r in lessons.load_store(self.root) if r["id"] == code)
+        return [h for h in row.get("hits") or () if h.get("run") == self.RUN]
+
+    def test_a_bug_filed_in_the_run_citing_a_class_is_a_hit(self) -> None:
+        """AC1. MUTANT: HEAD - LC-001 stays at no hits though BG0001, filed in the run, names it.
+        A code named outside the Summary (LC-003, in the title and the steps) is not a citation,
+        nor a code inside a longer token (XLC-002), nor a CR's Summary (CR0001 cites LC-002); a
+        bug with no Summary section is read as citing nothing."""
+        self._bug("BG0001", "The land refused a selection again (LC-001), not the XLC-002 flag.")
+        (self.root / "sdlc-studio" / "bugs" / "BG0003-defect.md").write_text(
+            "# BG0003: LC-003 in a title alone\n\n> **Status:** Open\n> **Raised-in-batch:** "
+            "none open - raised outside a delivery batch, 2026-11-22T10:00:00Z\n", encoding="utf-8")
+        crs = self.root / "sdlc-studio" / "change-requests"
+        crs.mkdir(parents=True)
+        (crs / "CR0001-a-request.md").write_text(
+            "# CR0001: a request\n\n> **Status:** Proposed\n> **Raised-in-batch:** none open - "
+            "raised outside a delivery batch, 2026-11-22T10:00:00Z\n\n## Summary\n\nLC-002.\n",
+            encoding="utf-8")
+        self._retro()
+        (ok, detail, _remedy), said = self._close()
+        self.assertTrue(ok, detail + said)
+        hits = self._hits("LC-001")
+        self.assertEqual(1, len(hits), hits)
+        self.assertEqual("BG0001", hits[0]["finding"])
+        self.assertIn("1 repeat(s) cited by the run's bugs or retro: LC-001 (BG0001)", detail)
+        self.assertEqual([], self._hits("LC-003"))
+        self.assertEqual([], self._hits("LC-002"))
+        res = lessons.close_pass(self.root, self.RUN, self.state, retro_id=self.RID)
+        self.assertEqual([], res["repeats"], "a re-run pass counts nothing again")
+
+    def test_a_stop_or_keep_item_citing_a_class_is_a_hit(self) -> None:
+        """AC2. MUTANT: HEAD - only Try items and REJECTs count, so LC-001 and LC-002 stay at no
+        hits. MUTANT: read the whole retro - LC-003, named in the Cost section and in a comment
+        inside Keep, gains a hit too."""
+        self._retro(keep="landing in order kept LC-002 away <!-- e.g. LC-003 -->",
+                    stop="stop skipping the boundary run (LC-001)",
+                    cost="LC-003 cost a repair round")
+        (ok, detail, _remedy), said = self._close()
+        self.assertTrue(ok, detail + said)
+        self.assertEqual([f"{self.RID} Stop"], [h["finding"] for h in self._hits("LC-001")])
+        self.assertEqual([f"{self.RID} Keep"], [h["finding"] for h in self._hits("LC-002")])
+        self.assertEqual([], self._hits("LC-003"))
+
+    def test_a_repeat_is_counted_once_and_only_from_this_run(self) -> None:
+        """AC3. BG0001 and the retro's Stop cite LC-001 for one repeat; BG0002, filed the day
+        before the run opened, cites it too. MUTANT: count each citation - two hits for the run.
+        MUTANT: read every bug - BG0002 adds a hit. MUTANT: no per-run guard - the second close
+        adds the retro's citation again."""
+        self._bug("BG0001", "The push gate caught a boundary-only red (LC-001).")
+        self._bug("BG0002", "An older repeat (LC-001).", moment="2026-11-21T10:00:00Z")
+        self._retro(stop="stop skipping the boundary run (LC-001)")
+        for _ in range(2):
+            (ok, detail, _remedy), said = self._close()
+            self.assertTrue(ok, detail + said)
+        hits = self._hits("LC-001")
+        self.assertEqual(1, len(hits), hits)
+        self.assertNotIn("BG0002", json.dumps(hits))
+        row = next(r for r in lessons.load_store(self.root) if r["id"] == "LC-001")
+        self.assertEqual(1, lessons.repeats_after_recording(row))
+
+    def test_a_class_the_run_already_hit_gains_no_second_hit(self) -> None:
+        """A class a REJECT or a Try item already hit this run has its repeat; a bug citing it
+        adds nothing. MUTANT: drop the per-run check - LC-001 holds two hits for the run."""
+        self._bug("BG0001", "The same trap again (LC-001).")
+        self._retro()
+        rows = lessons.load_store(self.root)
+        lessons.add_hit(rows[0], self.RUN, "US0001", f"critic:{self.RUN}", "[new] x [LC-001]")
+        lessons.save_store(self.root, rows)
+        (ok, detail, _remedy), said = self._close()
+        self.assertTrue(ok, detail + said)
+        self.assertEqual([f"critic:{self.RUN}"], [h["source"] for h in self._hits("LC-001")])
+
+    def test_a_cited_code_the_store_does_not_hold_is_named_and_a_retired_class_returns(self):
+        """A bug citing a code the store lacks is reported as unknown, never written; a cited
+        retired class is back in force, as a cited REJECT puts it back."""
+        rows = lessons.load_store(self.root)
+        rows[1]["state"] = "retired"
+        lessons.save_store(self.root, rows)
+        self._bug("BG0001", "Two traps: LC-002 and LC-099.")
+        res = lessons.close_pass(self.root, self.RUN, self.state)
+        self.assertIn("LC-099", res["unknown"])
+        self.assertEqual(["LC-002"], res["reactivated"])
+        self.assertEqual("active", next(r for r in lessons.load_store(self.root)
+                                        if r["id"] == "LC-002")["state"])
+        self.assertEqual([("LC-002", "BG0001")], res["repeats"])
+        self.assertIn("1 repeat(s) cited by the run's bugs or retro: LC-002 (BG0001)",
+                      lessons.close_pass_line(res))
+
+    def test_a_run_with_no_start_reads_no_bug(self) -> None:
+        """With no recorded start no bug can be placed in the run, so none is read."""
+        self._bug("BG0001", "The same trap again (LC-001).")
+        res = lessons.close_pass(self.root, self.RUN, {"run_id": self.RUN, "batch": []})
+        self.assertEqual([], res["repeats"])
 
 if __name__ == "__main__":
     unittest.main()

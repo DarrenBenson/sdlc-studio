@@ -13,8 +13,9 @@ Judgement is reserved for what a lesson MEANS, never for whether the plumbing ra
 
 Subcommands:
 
-  validate  content check - required sections, at least one real lesson, and every
-            finding dispositioned. This is what the gate calls instead of a glob.
+  validate  content check - required sections, at least one real lesson, every finding
+            dispositioned, and a Batch field omitting no unit of the batch of its run, where
+            that run is on record here. This is what the gate calls instead of a glob.
   extract   lift the Try items (an older retro's `## Lessons`) into the lessons stores: a
             classed item (`[LC-003]`, `[new: <class>]`) counts on `lessons.jsonl`, an
             untagged one goes to the project lessons log (`lessons add`).
@@ -27,6 +28,9 @@ Subcommands:
   velocity  print the accumulated velocity history - POINTS DELIVERED PER SPRINT, and the
             tokens-per-point rate derived from it - so the next plan can see how the estimator
             has actually performed rather than trusting a constant.
+  known-issues  one row per open finding the retro's run raised, written inside its
+            `## Known issues carried` table with the ruling left to the operator; a row
+            already there is kept as written. Read-only without `--write`.
 
 The disposition rule. A finding is dispositioned when it is filed as an artefact
 (`CR0123` / `BG0045`), recorded FIXED IN-SPRINT with the commit or unit that fixed it
@@ -399,6 +403,92 @@ def fill_run_scaffold(text: str, run_id: str) -> str:
             .replace("{{known_issues_table}}", known_issues_table()))
 
 
+def _blank_known_row(uid: str) -> str:
+    """A `## Known issues carried` row naming `uid` with its ruling, ruler and date blank, so the
+    close reads it as a finding nobody has ruled on until the operator fills them in."""
+    return "| " + " | ".join([uid, *("" for _ in KNOWN_ISSUES_COLUMNS[1:])]) + " |"
+
+
+def run_known_issue_ids(root, record: dict) -> list[str] | None:
+    """The open findings the run in `record` raised, by id: each one the report places in the
+    run's window by its `Raised-in-batch` moment (`sprint_report._open_findings`, the placement
+    the close's known-issues row reads), not at a terminal status, and not stamped with another
+    run's id alone. None when the run records no start, so nothing can be placed in it."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling; it owns finding placement
+    _filed, still_open = sprint_report._open_findings(Path(root), record, at_the_close=True)
+    if still_open is None:
+        return None
+    run_id = str(record.get("run_id") or "")
+    out = []
+    for uid in still_open:
+        found = sdlc_md.find_by_id(root, uid)
+        text = sdlc_md.read_text_safe(Path(found[0])) if found else ""
+        named = set(sprint_report._STAMP_RUN_RE.findall(
+            sdlc_md.extract_field(text, "Raised-in-batch") or ""))
+        if named and run_id not in named:
+            continue
+        out.append(uid)
+    return out
+
+
+def _insert_known_rows(text: str, ids: list[str]) -> str:
+    """`text` with a blank row for each of `ids` inside its `## Known issues carried` table,
+    after the table's last row, so no row lands after a later section, where the close's reader
+    does not look. A section with no table gets the header and the rows under its heading; a
+    retro with no section gets one at its end."""
+    rows = [_blank_known_row(uid) for uid in ids]
+    lines = text.split("\n")
+    head = next((i for i, line in enumerate(lines) if (m := SECTION_RE.match(line))
+                 and m.group(1).strip() == KNOWN_ISSUES_SECTION), None)
+    if head is None:
+        return (text.rstrip("\n") + f"\n\n## {KNOWN_ISSUES_SECTION}\n\n{known_issues_table()}\n"
+                + "\n".join(rows) + "\n")
+    end = next((i for i in range(head + 1, len(lines)) if SECTION_RE.match(lines[i])),
+               len(lines))
+    table = [i for i in range(head + 1, end) if lines[i].lstrip().startswith("|")]
+    if table:
+        lines[table[-1] + 1:table[-1] + 1] = rows
+    else:
+        lines[head + 1:head + 1] = ["", *known_issues_table().split("\n"), *rows]
+    return "\n".join(lines)
+
+
+def known_issues(root, retro_id: str, write: bool = False) -> dict:
+    """The rows the retro's `## Known issues carried` table owes its run: one per open finding
+    the run raised (`run_known_issue_ids`) that no row already names, a row ruling a lesson
+    class counting for its graduation CR. With `write`, each is added blank inside the table and
+    every row already there is kept as written. Returns `{id, path, run, added, present,
+    written}`. Raises ValueError naming why when the retro is missing or unreadable, names no
+    run, or its run is recorded nowhere here, records no start, or sits in an unreadable run
+    state; nothing is written then."""
+    path = find_retro(root, retro_id)
+    if path is None:
+        raise ValueError(f"{retro_id} not found in {RETRO_DIR}/")
+    text = path.read_text(encoding="utf-8")
+    rid = path.name.split("-", 1)[0]
+    run_id = retro_run_id(text)
+    if not run_id:
+        raise ValueError(f"{rid} names no run in its `> **Run:**` field, so no finding can be "
+                         f"placed in one")
+    try:
+        record = run_record(root, run_id)
+    except run_state.RunStateError as exc:
+        raise ValueError(f"the run state cannot be read, so run {run_id}'s findings cannot be "
+                         f"placed: {exc}") from exc
+    if not record:
+        raise ValueError(f"run {run_id} is neither open nor archived here, so its findings "
+                         f"cannot be placed")
+    ids = run_known_issue_ids(root, record)
+    if ids is None:
+        raise ValueError(f"run {run_id} records no start time, so no finding can be placed in it")
+    present = {r["id"] for r in carried_issues(text, root=root) if r["id"]}
+    added = [uid for uid in ids if uid not in present]
+    if write and added:
+        sdlc_md.atomic_write(path, _insert_known_rows(text, added))
+    return {"id": rid, "path": str(path), "run": run_id, "added": added,
+            "present": [uid for uid in ids if uid in present], "written": bool(write and added)}
+
+
 def _artefact_status(root, uid: str) -> tuple[str | None, bool, str | None]:
     """`(status, unreadable, type)` for the artefact a carried row names.
 
@@ -730,7 +820,8 @@ def validate(root, retro_id: str) -> dict:
         # reports the rows read here. Without the section there is nothing to disposition.
         rows = dispositions_in(text)
         errors = (three_line_errors(text) + class_errors(root, lessons_in(text))
-                  + _undecided_errors(rows) + cost_cause_errors(root, retro_id, text))
+                  + _undecided_errors(rows) + cost_cause_errors(root, retro_id, text)
+                  + run_batch_errors(root, text))
         return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
                 "demonstration": [], "lessons": lessons_in(text), "carried": [],
                 **_disposed(rows)}
@@ -761,6 +852,8 @@ def validate(root, retro_id: str) -> dict:
     errors.extend(_undecided_errors(rows))
     # Demanded only of a run the close found over its cost baseline, read from the run's record.
     errors.extend(cost_cause_errors(root, retro_id, text))
+    # A unit that joined the run after the retro was scaffolded, which the Batch field omits.
+    errors.extend(run_batch_errors(root, text))
 
     return {
         "ok": not errors,
@@ -1020,6 +1113,56 @@ def batch_ids(text: str) -> list[str]:
         if rid not in out:
             out.append(rid)
     return out
+
+
+# `> **Run:** RUN-01M7YPFD` - the run the retro was scaffolded for, or `-` outside a run.
+RUN_RE = re.compile(r"(?m)^>?\s*\*\*Run:\*\*\s*(.*?)\s*$")
+
+
+def retro_run_id(text: str) -> str | None:
+    """The run the retro's `> **Run:**` field names, or None when it has no such field, names
+    `-` (a retro made outside a run) or still holds the template's `{{run_id}}`."""
+    m = RUN_RE.search(text or "")
+    value = PLACEHOLDER_RE.sub("", m.group(1)).strip() if m else ""
+    return value if value and value != "-" else None
+
+
+def run_record(root, run_id: str) -> dict:
+    """The record of `run_id` where the close keeps it: the live run state when it is that run,
+    else the run archive; `{}` when neither holds it (another clone's run). Raises
+    `run_state.RunStateError` when the live run state cannot be read: unreadable is not absent."""
+    live = run_state.read(root)
+    return live if live.get("run_id") == run_id else run_state.read_archived(root, run_id)
+
+
+def run_batch_errors(root, text: str) -> list[str]:
+    """One error naming each unit of the named run's batch that the Batch field omits, or none.
+
+    The run is read through `run_record`. A run recorded nowhere here has no batch to compare
+    with, and a batch that is not a list, or an entry that is blank or not a string, is not read
+    as units, so neither refuses. A live run state that cannot be read refuses by name. Only an
+    omission refuses; a unit the field names that the batch does not is left as written."""
+    run_id = retro_run_id(text)
+    if not run_id:
+        return []
+    try:
+        record = run_record(root, run_id)
+    except run_state.RunStateError as exc:
+        return [f"the Batch field cannot be compared with run {run_id}'s batch: {exc}"]
+    batch = record.get("batch")
+    if not isinstance(batch, list):
+        return []
+    named = set(batch_ids(text))
+    omitted = list(dict.fromkeys(uid for uid in (sdlc_md.norm_id(u) for u in batch
+                                                 if isinstance(u, str))
+                                 if uid and uid not in named))
+    if not omitted:
+        return []
+    return [f"the Batch field omits {len(omitted)} unit(s) of run {run_id}'s batch: "
+            f"{', '.join(omitted)} - a unit that joined the run after the retro was scaffolded "
+            f"(`sprint.py batch add`) is measured, reported and closed only if the field names "
+            f"it. Add each to the `> **Batch:**` field (and any `Delivered: N / M` count), then "
+            f"re-run"]
 
 
 def _sample_of(retro_id: str, constants) -> str:
@@ -1585,12 +1728,15 @@ def miss_window(root, retro_path) -> dict:
     return {"since": max(earlier)[0] if earlier else None, "until": here[0]}
 
 
-def _charged_units(root, text: str, own: str, reviewed) -> list:
+def _charged_units(root, text: str, own: str, reviewed, affects: dict | None = None) -> list:
     """(unit, basis) for each unit a bug is charged to. A recorded `Escaped-via` unit is the
     strongest evidence and stands alone. Otherwise the narrow rule: the bug cites the unit,
     shares an Affects file with it, and cites `MISS_ID_CAP` ids or fewer above its Revision
     History, its own id aside. The narrow rule looks up only units in `reviewed`, though the
-    rest still count; a recorded `Escaped-via` unit is returned whether reviewed or not."""
+    rest still count; a recorded `Escaped-via` unit is returned whether reviewed or not.
+    `affects` maps a unit id to its Affects files: a unit is looked up only when the map lacks
+    it, so one map shared across a call resolves each unit once (none is a fresh map)."""
+    affects = {} if affects is None else affects
     escaped = _ids_in(sdlc_md.extract_field(text, "Escaped-via") or "")
     if escaped:
         return [(escaped[0], {"rule": "escaped-via", "shared": [], "ids": None,
@@ -1601,9 +1747,11 @@ def _charged_units(root, text: str, own: str, reviewed) -> list:
         return []
     fix, out = set(sdlc_md.affects_files(text)), []
     for uid in (u for u in cited if u in reviewed):
-        hit = sdlc_md.find_by_id(root, uid)
-        shared = sorted(fix & set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0])))) \
-            if hit else []
+        if uid not in affects:
+            hit = sdlc_md.find_by_id(root, uid)
+            affects[uid] = set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0]))) \
+                if hit else set()
+        shared = sorted(fix & affects[uid])
         if shared:
             out.append((uid, {"rule": "narrow", "shared": shared, "ids": len(cited),
                               "basis": f"cites {uid} among {len(cited)} id(s) and shares "
@@ -1623,6 +1771,24 @@ def _own_finding(evidence: str, unit: str, role: str, row: dict, roles: set) -> 
     return None if named and role not in named else findings[0]["text"]
 
 
+def _uncharged_reason(unit: str, unit_rows: list, created: str) -> str:
+    """Why an `Escaped-via` unit with live verdicts charges no seat for a bug created on
+    `created`: no live verdict on it approves, its approval names no seat, a seat approved it
+    only after the bug, or no seat's latest verdict on or before that day approves it."""
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
+    approvals = [r for r in unit_rows if str(r.get("verdict") or "").strip().upper() == "APPROVE"]
+    if not approvals:
+        return f"no review approved {unit}"
+    seated = [r for r in approvals if critic.recorded_seat(r.get("reviewer") or "")]
+    if not seated:
+        return f"the approval of {unit} names no seat"
+    days = sorted(day for day in (_day(r.get("date")) for r in seated) if day)
+    if days and days[0] > created:
+        return (f"the approval of {unit} post-dates the bug: its earliest dated approval is "
+                f"{days[0]}, after the bug was created on {created}")
+    return f"no seat's latest verdict on {unit} on or before {created} approves it"
+
+
 def seat_misses(root, retro_path) -> dict:
     """The later bugs charged to the seats whose approvals missed them, over the retro's
     window: {window: {since, until, undated}, seats: {role: {missed, approved_over_own_finding}},
@@ -1633,9 +1799,11 @@ def seat_misses(root, retro_path) -> dict:
     before the bug's Created day, approves, in whichever run that was: a seat is charged though
     it reviewed nothing in the batch. Where `_own_finding` holds it is listed as approved over
     the seat's own finding, not as a miss. A bug with no Created date sits in no window and is
-    named in `undated`; a retro with no Date reads no bug at all. A charged unit with no live
-    ledger row (an `Escaped-via` unit no review approved, or whose rows are all superseded)
-    charges no seat and is named in `uncharged` with the reason."""
+    named in `undated`; a retro with no Date reads no bug at all. An `Escaped-via` unit that
+    charges no seat is named in `uncharged` with the reason: it has no live ledger row (no review
+    recorded, or every row superseded), or `_uncharged_reason` says why its live rows charge
+    none. A unit read by the narrow rule that charges no seat is weaker evidence and is not
+    named. Each unit's Affects files are read once per call, however many bugs cite it."""
     import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
     window = miss_window(root, retro_path)
     out: dict = {"window": {**window, "undated": []}, "seats": {}, "uncharged": []}
@@ -1648,6 +1816,7 @@ def seat_misses(root, retro_path) -> dict:
             rows.setdefault(sdlc_md.norm_id(row.get("unit", "")), []).append(row)
     roles = {critic.recorded_seat(r.get("reviewer") or "") for rs in rows.values() for r in rs}
     roles.discard(None)
+    affects: dict = {}
     for path in sdlc_md.artifact_files("bug", Path(root)):
         text = sdlc_md.read_text_safe(path)
         bid = sdlc_md.extract_record_id(path.stem) or path.stem
@@ -1659,7 +1828,7 @@ def seat_misses(root, retro_path) -> dict:
                 or _UNCONVERGED_RE.search(sdlc_md.extract_h1_title(text) or ""):
             continue
         evidence = sdlc_md.extract_field(text, "Evidence") or ""
-        for unit, basis in _charged_units(root, text, sdlc_md.norm_id(bid), rows):
+        for unit, basis in _charged_units(root, text, sdlc_md.norm_id(bid), rows, affects):
             if unit not in rows:
                 out["uncharged"].append({"bug": bid, "unit": unit, **basis,
                                          "reason": f"{unit} has no live verdict in the ledger"})
@@ -1669,9 +1838,11 @@ def seat_misses(root, retro_path) -> dict:
                 role, day = critic.recorded_seat(row.get("reviewer") or ""), _day(row.get("date"))
                 if role and day and day <= created:
                     latest[role] = row
+            charged = False
             for role, row in sorted(latest.items()):
                 if str(row.get("verdict") or "").strip().upper() != "APPROVE":
                     continue
+                charged = True
                 entry = {"bug": bid, "unit": unit, "created": created,
                          "approved": _day(row.get("date")), "reviewer": row.get("reviewer") or "",
                          **basis}
@@ -1682,6 +1853,9 @@ def seat_misses(root, retro_path) -> dict:
                 else:
                     s["approved_over_own_finding"].append({**entry, "finding": own,
                                                            "evidence": evidence})
+            if not charged and basis["rule"] == "escaped-via":
+                out["uncharged"].append({"bug": bid, "unit": unit, **basis,
+                                         "reason": _uncharged_reason(unit, rows[unit], created)})
     return out
 
 
@@ -4479,6 +4653,32 @@ def cmd_collate(args) -> int:
     return 0
 
 
+def cmd_known_issues(args) -> int:
+    """Report, or with --write add, one row per open finding the retro's run raised in its
+    `## Known issues carried` table (`known_issues`)."""
+    try:
+        res = known_issues(args.root, args.retro, write=args.write)
+    except (OSError, ValueError) as exc:
+        print(f"retro {args.retro}: refused: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(res, indent=2))
+        return 0
+    section = f"'## {KNOWN_ISSUES_SECTION}'"
+    if not res["added"]:
+        print(f"retro {res['id']}: all {len(res['present'])} open finding(s) run {res['run']} "
+              f"raised are already in {section}" if res["present"] else
+              f"retro {res['id']}: run {res['run']} raised no open finding, so {section} owes "
+              f"no row")
+        return 0
+    kept = f"; {len(res['present'])} already in the table" if res["present"] else ""
+    verb = "wrote" if res["written"] else "would write"
+    print(f"retro {res['id']}: {verb} {len(res['added'])} row(s) into {section} for run "
+          f"{res['run']}: {', '.join(res['added'])}{kept} - rule each one (ruling, ruled by, "
+          f"date)" + ("" if res["written"] else "; pass --write to write them"))
+    return 0
+
+
 def cmd_validate(args) -> int:
     res = validate(args.root, args.id)
     if args.format == "json":
@@ -4642,6 +4842,30 @@ def _extract_classes(args, retro_id: str, tags: list[dict], run: str) -> str:
     return f"; {lessons.STORE_FILE}: {verb} {new} new class(es), {hits} repeat hit(s)"
 
 
+def _log_fork_refusal(root, log: Path) -> str | None:
+    """Why `extract` must not start `log`, the absent project lessons log, or None when it may.
+
+    The committed digest is the only other record of what the log held. When it lists lessons,
+    a log started here holds only this retro's, so it is not the log the digest came from: it
+    forks the record, and the next `lessons summary` refuses it. A digest that cannot be read
+    cannot say what it lists, so it refuses too. An absent or empty digest lists nothing."""
+    summary = lessons.default_summary_path(root)
+    try:
+        listed = lessons.lessons_the_log_lacks(summary, [])
+    except (OSError, ValueError) as exc:   # UnicodeDecodeError is a ValueError
+        return (f"refused: the project lessons log {log} does not exist and the digest "
+                f"{summary} cannot be read ({exc}), so whether a new log would fork the record "
+                f"cannot be told. Restore the log or repair the digest, then run this again. "
+                f"Nothing was written.")
+    if not listed:
+        return None
+    return (f"refused: the project lessons log {log} does not exist, but the digest {summary} "
+            f"lists {len(listed)} lesson(s), so a log started here would hold only this retro's "
+            f"lessons and fork the record the digest came from. Restore the log (from git, or "
+            f"from the machine that ran the last close), then run this again. Nothing was "
+            f"written.")
+
+
 def cmd_extract(args) -> int:
     """Lift the retro's lessons into the project store, so a lesson written in a retro
     reaches the digest the next sprint plan prints. Without this the retro is a diary.
@@ -4656,7 +4880,9 @@ def cmd_extract(args) -> int:
 
     A Try item tagged with its failure class (TRY_TAG_RE) goes to the class store instead: a
     known class gains a hit for `--run`, a new class writes a new row. Nothing is written while
-    any tag is malformed or names a code the store does not hold.
+    any tag is malformed or names a code the store does not hold, nor, when an untagged lesson
+    is to be recorded, while the project log is absent and the committed digest lists lessons
+    (`_log_fork_refusal`).
     """
     res = validate(args.root, args.id)
     if res["path"] is None:
@@ -4687,9 +4913,13 @@ def cmd_extract(args) -> int:
         print(f"retro {args.id}: {lessons.migration_message(mig)}", file=sys.stderr)
     if mig.get("conflict"):
         return 1
+    log = lessons.default_project_file(args.root)
+    refusal = _log_fork_refusal(args.root, log) if found and not log.is_file() else None
+    if refusal:
+        print(f"retro {args.id}: {refusal}", file=sys.stderr)
+        return 1
     counted = _extract_classes(args, res["id"], tags, run)
 
-    log = lessons.default_project_file(args.root)
     existing_text = log.read_text(encoding="utf-8") if log.is_file() else lessons.PROJECT_HEADER
     existing = lessons.parse_project_lessons(existing_text)
 
@@ -4838,6 +5068,16 @@ def build_parser() -> argparse.ArgumentParser:
                                 "sprint whose run-state has no clean elapsed; descriptive, never a "
                                 "target")
         p.set_defaults(func=fn)
+
+    known = sub.add_parser("known-issues", help="one row per open finding the retro's run "
+                                                "raised, written inside its 'Known issues "
+                                                "carried' table; every recorded ruling is kept")
+    known.add_argument("--retro", required=True, help="the retro whose table is written, e.g. "
+                                                      "RETRO0022")
+    known.add_argument("--write", action="store_true",
+                       help="add the rows to the retro (default: report them, write nothing)")
+    known.add_argument("--format", choices=("text", "json"), default="text")
+    known.set_defaults(func=cmd_known_issues)
 
     cost = sub.add_parser("cost-baseline", help="the past runs the close's cost check is "
                                                 "measured against, kept in COST-BASELINE.md")

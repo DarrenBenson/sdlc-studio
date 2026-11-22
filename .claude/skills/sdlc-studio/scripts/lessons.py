@@ -1915,7 +1915,9 @@ GRADUATE_AT = 2
 #: build: a builder trap reaches every lane brief, so it is quiet because it works, and it leaves
 #: the briefs only when its graduation CR closes.
 QUIET_RUNS = 5
-#: How many lessons one phase's output carries. Five is what a reader holds while working.
+#: How many lessons the plan and review output carry. Five is what a reader holds while working.
+#: The lane brief is not capped: a build class leaves only when its graduation CR closes, so a cap
+#: would drop the oldest builder traps from the brief while they are still live.
 INJECT_MAX = 5
 CLASS_CODE_RE = re.compile(r"^LC-(\d{3,})$")
 
@@ -2023,16 +2025,18 @@ def active_for(repo_root, phase: str) -> list[dict]:
 
 
 def phase_digest(repo_root, phase: str) -> dict:
-    """What `phase`'s output carries: `{phase, lessons, active, source, error}`, capped at
-    INJECT_MAX. An unreadable store is reported in `error`, never read as a store with nothing
-    in it."""
+    """What `phase`'s output carries: `{phase, lessons, active, source, error}`. Plan and review
+    carry at most INJECT_MAX; build carries every live class injected at build, since a build
+    class is never retired for being quiet and leaves only when its graduation CR closes
+    (`close_pass`). An unreadable store is reported in `error`, never read as a store with
+    nothing in it."""
     source = store_source(repo_root)
     try:
         rows = active_for(repo_root, phase)
     except (OSError, ValueError) as exc:
         return {"phase": phase, "lessons": [], "active": 0, "source": source, "error": str(exc)}
-    return {"phase": phase, "lessons": rows[:INJECT_MAX], "active": len(rows),
-            "source": source, "error": ""}
+    return {"phase": phase, "lessons": rows if phase == "build" else rows[:INJECT_MAX],
+            "active": len(rows), "source": source, "error": ""}
 
 
 def render_phase(digest: dict) -> list[str]:
@@ -2119,6 +2123,50 @@ def _graduation_cr(row: dict, run: str) -> tuple[str, dict]:
         "_batch": f"{run} close, {sdlc_md.now_iso8601()}"})
 
 
+#: A class code cited in prose (`LC-019`, `(LC-021)`), not the tail of a longer token.
+CITED_CLASS_RE = re.compile(r"(?<![\w-])LC-\d{3,}")
+#: A bug's `## Summary` section, to the next heading.
+_SUMMARY_RE = re.compile(r"(?ms)^##\s+Summary\s*$(.*?)(?=^##\s|\Z)")
+#: The retro sections whose items state a repeat in prose; a Try item is counted by its tag.
+CITING_SECTIONS = ("Stop", "Keep")
+
+
+def run_citations(repo_root, state: dict, retro_id: str | None = None) -> list[tuple[str, str]]:
+    """`(class code, finding)` for each class the run's own records cite outside a REJECT: a bug
+    filed in the run whose Summary cites it (the finding is the bug's id), and the retro's Stop
+    or Keep section citing it outside an HTML comment (the finding is `<retro> Stop|Keep`).
+
+    A bug is the run's when the report places it in the run's window by its `Raised-in-batch`
+    moment (`sprint_report._open_findings`, the placement the close reads); a run with no
+    recorded start places none, so no bug is read."""
+    import sprint_report  # noqa: PLC0415 - deferred: the sibling that owns finding placement
+    out: list[tuple[str, str]] = []
+    filed, _open = sprint_report._open_findings(Path(repo_root), state or {})
+    placed = set(filed or ())
+    for path in sdlc_md.artifact_files("bug", Path(repo_root)):
+        bid = sdlc_md.extract_record_id(path.stem) or path.stem
+        if sdlc_md.norm_id(bid) not in placed:
+            continue
+        m = _SUMMARY_RE.search(sdlc_md.read_text_safe(path))
+        out += [(code, bid) for code in CITED_CLASS_RE.findall(m.group(1) if m else "")]
+    if retro_id:
+        import retro  # noqa: PLC0415 - deferred: retro imports this module at its top
+        path = retro.find_retro(repo_root, retro_id)
+        text = re.sub(r"<!--.*?-->", "", sdlc_md.read_text_safe(path) if path else "",
+                      flags=re.S)
+        found_in = retro.sections(text)
+        for name in CITING_SECTIONS:
+            out += [(code, f"{retro_id} {name}")
+                    for code in CITED_CLASS_RE.findall("\n".join(found_in.get(name, [])))]
+    return out
+
+
+def names_a_run(value) -> bool:
+    """Does a class's `recorded_run` name a run (`RUN-...`)? A class recorded with no run open
+    carries none: `class-add` stamps "" and a manual `retro.py extract` the retro's id."""
+    return str(value or "").startswith("RUN-")
+
+
 def recent_runs(repo_root, run: str) -> list[str]:
     """Every run on record, oldest first, ending with `run`: the run archive (the cheapest
     source that names runs rather than retros), with the closing run last whether or not it
@@ -2150,17 +2198,20 @@ def _graduation_cr_closed(repo_root, row: dict) -> tuple[str, str] | None:
     return sdlc_md.extract_record_id(Path(path).stem) or str(row["cr"]), status
 
 
-def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
+def close_pass(repo_root, run: str, state: dict | None = None,
+               retro_id: str | None = None) -> dict:
     """What the close does to the store, with no operator step: count each REJECT this run
-    recorded that cites a class as a hit (a hit on a retired class puts it back in force), file
+    recorded that cites a class as a hit (a hit on a retired class puts it back in force), count
+    a class a bug filed in the run or the retro's Stop or Keep section cites (`run_citations`)
+    as one hit for the run, unless something already hit it this run, file
     ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
     `graduating`), close a `graduating` class whose CR reached a terminal status - `graduated`
     when the CR shipped (Complete or Superseded), `retired` when it was Rejected - and retire an
     active class quiet for the last QUIET_RUNS runs unless it is injected at build (a builder
-    trap reaches every brief, so quiet is no sign it is obsolete: it leaves only when its
+    trap reaches every lane brief, so quiet is no sign it is obsolete: it leaves only when its
     graduation CR closes). A class with a hit recorded in this run - by a cited REJECT, by a
-    retro Try item the close's extract lifted, or on an earlier pass of this same close - stays
-    `graduating`: the repeat is evidence the fix has not held.
+    retro Try item the close's extract lifted, by a bug or retro citation, or on an earlier pass
+    of this same close - stays `graduating`: the repeat is evidence the fix has not held.
     Idempotent: a re-run close adds no hit, files no CR and moves nothing twice.
 
     Quiet is judged on the last QUIET_RUNS runs THIS clone's archive knows, and only once it
@@ -2172,11 +2223,18 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     left the digest. A retirement made on another clone's evidence is undone by the next
     repeat: a hit on a retired class puts it back in force (`add_hit`).
 
-    Returns `{hits, unknown, reactivated, graduating: [(code, cr)], graduated, retired,
-    closed_by: {code: "<CR> <status>"}, errors}`; a class retired by a Rejected CR is in
-    `retired` and `closed_by`."""
-    res = {"hits": 0, "unknown": [], "reactivated": [], "graduating": [], "graduated": [],
-           "retired": [], "closed_by": {}, "errors": []}
+    A class recorded with no run open (`names_a_run`) is recorded at the next run to close: the
+    first close that finds it active stamps that run as its `quiet_from`, once, and the window
+    counts it as one of the class's runs, so the class gets its full QUIET_RUNS rather than
+    retiring at that close for naming no run this archive knows.
+
+    Returns `{hits, repeats: [(code, finding)], unknown, reactivated, quiet_from, graduating:
+    [(code, cr)], graduated, retired, closed_by: {code: "<CR> <status>"}, errors}`: `hits`
+    counts the cited REJECTs, `repeats` the classes a bug or the retro cited, `quiet_from` names
+    each class this close stamped; a class retired by a Rejected CR is in `retired` and
+    `closed_by`."""
+    res = {"hits": 0, "repeats": [], "unknown": [], "reactivated": [], "quiet_from": [],
+           "graduating": [], "graduated": [], "retired": [], "closed_by": {}, "errors": []}
     rows = load_store(repo_root)
     if not rows:
         return res
@@ -2193,10 +2251,30 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
             hit_now.add(row["id"])
             if was == "retired":
                 res["reactivated"].append(row["id"])
-    # Every class this run hit, whichever path recorded the hit - a REJECT just above, a retro
-    # Try item the close's extract lifted before this pass, or an earlier pass of this same close
-    # (a re-run adds no hit, but the class was still hit this run).
+    # A repeat the land, the push gate or the retro caught rather than a REJECT. One hit per
+    # class per run, so a bug and the retro citing one repeat count it once, a re-run close adds
+    # nothing, and a class a REJECT or a Try item already hit this run keeps the hit it has.
+    for code, finding in run_citations(repo_root, state or {}, retro_id):
+        row = find_class(rows, code)
+        if row is None:
+            res["unknown"].append(code)
+            continue
+        if any(h.get("run") == run for h in row.get("hits") or ()):
+            continue
+        was = row.get("state")
+        add_hit(row, run, "", f"cited:{run}", finding)
+        res["repeats"].append((row["id"], finding))
+        if was == "retired":
+            res["reactivated"].append(row["id"])
+    # Every class this run hit, whichever path recorded the hit - a REJECT or a citation just
+    # above, a retro Try item the close's extract lifted before this pass, or an earlier pass of
+    # this same close (a re-run adds no hit, but the class was still hit this run).
     hit_now |= {r["id"] for r in rows if any(h.get("run") == run for h in r.get("hits") or ())}
+    for row in rows:
+        if (row.get("state") == "active" and not row.get("quiet_from")
+                and not names_a_run(row.get("recorded_run"))):
+            row["quiet_from"] = run
+            res["quiet_from"].append(row["id"])
     known = recent_runs(repo_root, run)
     window = set(known[-QUIET_RUNS:])
     for row in rows:
@@ -2204,7 +2282,8 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
             continue
         if "build" in (row.get("inject") or ()):
             continue
-        named = {row.get("recorded_run")} | {h.get("run") for h in row.get("hits") or ()}
+        named = ({row.get("recorded_run"), row.get("quiet_from")}
+                 | {h.get("run") for h in row.get("hits") or ()})
         if not (named & window):
             row["state"], row["retired_run"] = "retired", run
             res["retired"].append(row["id"])
@@ -2220,7 +2299,7 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
         else:
             row["state"], row["retired_run"] = "retired", run
             res["retired"].append(row["id"])
-    if res["hits"] or res["retired"] or res["graduated"]:
+    if res["hits"] or res["repeats"] or res["retired"] or res["graduated"] or res["quiet_from"]:
         save_store(repo_root, rows)
     import file_finding  # noqa: PLC0415 - deferred: the filer imports the world, this does not
     for row in rows:
@@ -2242,10 +2321,16 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
 def close_pass_line(res: dict) -> str:
     """The close pass as one line of the close's output."""
     parts = [f"{res['hits']} hit(s) from cited REJECTs"]
+    if res.get("repeats"):
+        parts.append(f"{len(res['repeats'])} repeat(s) cited by the run's bugs or retro: "
+                     + ", ".join(f"{code} ({finding})" for code, finding in res["repeats"]))
     if res["unknown"]:
         parts.append(f"cited but not in {STORE_FILE}: {', '.join(sorted(set(res['unknown'])))}")
     if res.get("reactivated"):
         parts.append(f"hit again, back in force: {', '.join(res['reactivated'])}")
+    if res.get("quiet_from"):
+        parts.append(f"recorded with no run, quiet window from this run: "
+                     f"{', '.join(res['quiet_from'])}")
     parts += [f"{code} graduating -> {cr}" for code, cr in res["graduating"]]
     closed_by = res.get("closed_by") or {}
     parts += [f"{code} graduated ({closed_by.get(code, '')})"

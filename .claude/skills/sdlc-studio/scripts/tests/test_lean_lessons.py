@@ -4,7 +4,8 @@ The store is one committed file, `sdlc-studio/lessons.jsonl`, one row per failur
 Try item names its class - `[LC-003]` for a class already recorded, `[new: <class name>]` for a
 new one - and the close counts a repeat as a hit on the class instead of writing the lesson again.
 The plan output, a build brief and a review brief each carry the active lessons injected at that
-phase, as rule plus behaviour, at most five, and no other lessons.
+phase, as rule plus behaviour, and no other lessons: at most five at plan and review, and every
+live build class in a build brief.
 
 US0888: the close measures and acts on the store. A REJECT whose findings cite a class code
 (`[LC-003]`) is a hit for the run; a class repeated twice after it was recorded files one CR
@@ -247,8 +248,8 @@ class LessonStoreTests(unittest.TestCase):
             "critic": critic.brief(self.root, "BG0001", "qa"),
         }
         expect = {"plan": ["LC-007"], "review": ["LC-008"], "critic": ["LC-008"],
-                  # the five most-hit build lessons; LC-001 is the sixth, and the cap drops it
-                  "build": ["LC-006", "LC-005", "LC-004", "LC-003", "LC-002"]}
+                  # all six live build lessons, most-hit first: a build brief has no cap
+                  "build": ["LC-006", "LC-005", "LC-004", "LC-003", "LC-002", "LC-001"]}
         for phase, text in rendered.items():
             with self.subTest(phase=phase):
                 shown = re.findall(r"\bLC-\d{3}\b", text)
@@ -263,7 +264,7 @@ class LessonStoreTests(unittest.TestCase):
                 self.assertNotIn("A frozen carried title", text)
                 self.assertNotIn("A prose digest title", text)
                 self.assertNotRegex(text, r"\bLL\d{4}\b")
-        self.assertIn("+1 more", rendered["build"], "the cap dropped a lesson silently")
+        self.assertNotIn("more active", rendered["build"], "a build brief dropped a live class")
         self.assertIn("cites its class code", rendered["critic"])
 
 

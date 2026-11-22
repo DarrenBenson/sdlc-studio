@@ -261,11 +261,13 @@ lists every script with a one-line summary; open the linked page for the full en
 - `digest.py` - Context tiering - mechanical, drift-checked digests of closed (terminal) artefacts so
 - `plan.py` - Claude Code plan-file manager for `~/.claude/plans/`.
 - `lessons.py` - Lessons manager for both tiers: the project's `sdlc-studio/retros/LESSONS.md`
-  and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop
+  and the skill's cross-project registry; `revalidate` + `summary` are the gated sprint-close loop.
   `classes` lists the failure-class store, `sdlc-studio/lessons.jsonl`; `retro.py extract` records a
   `[new: <class name>]` Try item there at the close, and outside a retro
   `lessons.py class-add --class <name> --rule <text> --behaviour <text> --phase build --source <text>`
-  appends one row (refusing a class already held). The lane brief reads the store, not the `lessons/` registry
+  appends one row (refusing a class already held, a blank field or an unreadable run state). A class
+  recorded with no run open takes the next run to close as the start of its quiet window. The lane
+  brief reads the store, not the `lessons/` registry
 - `sprint.py` - The Goal-Driven Development loop's planner. `plan <query> --order priority|wsjf` selects + dependency-orders...; `plan` refuses an ungroomed batch, `breakdown` reports the same census read-only...
 - `autosprint.py` - Deprecated re-exporting alias for `sprint.py` (the old name); prefer `sprint`.
 - `sprint_report.py` - The end-of-sprint page and the compulsory checklist, which are ONE document.

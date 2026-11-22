@@ -3960,5 +3960,246 @@ class CarriedIssueStatusTests(unittest.TestCase):
         self.assertTrue(rows["BG9101"].get("unreadable"))
 
 
+
+
+class KnownIssuesWriteTests(unittest.TestCase):
+    """BG1332. retro.py read the 'Known issues carried' table and no verb wrote it, so the
+    orchestrator wrote each row by hand; in run nine two rows were appended after the accuracy
+    section, where the close's reader does not look, and the report read them as unruled.
+    `retro.py known-issues --write --retro <id>` writes one row per open finding the run raised,
+    inside the table, keeping every ruling already recorded."""
+
+    RUN = "RUN-01KNOWNRUN1"
+    RID = "RETRO9999"
+
+    def setUp(self) -> None:
+        self.root = Path(tempfile.mkdtemp(prefix="known_issues_"))
+        self.addCleanup(__import__("shutil").rmtree, self.root, ignore_errors=True)
+        (self.root / "sdlc-studio" / "retros").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        run_state.write(self.root, {"run_id": self.RUN, "outcome": run_state.RUNNING,
+                                    "started_at": "2026-11-22T09:00:00Z", "batch": ["US0001"]})
+
+    def _bug(self, bid: str, status: str = "Open",
+             stamp: str = "none open - raised outside a delivery batch, 2026-11-22T10:00:00Z"):
+        (self.root / "sdlc-studio" / "bugs" / f"{bid}-defect.md").write_text(
+            f"# {bid}: a defect\n\n> **Status:** {status}\n> **Severity:** Medium\n"
+            f"> **Raised-in-batch:** {stamp}\n> **Created:** 2026-11-22\n\n## Summary\n\nx\n",
+            encoding="utf-8")
+
+    def _retro(self, rows: str = "") -> Path:
+        path = self.root / "sdlc-studio" / "retros" / f"{self.RID}-a-run.md"
+        path.write_text(
+            f"# RETRO-9999: a run\n\n> **Date:** 2026-11-22\n> **Run:** {self.RUN}\n"
+            "> **Batch:** US0001\n\n## Keep\n\n- the gate\n\n## Stop\n\n- the wait\n\n"
+            "## Try\n\n- the preflight\n\n## Known issues carried\n\n"
+            f"{retro.known_issues_table()}\n{rows}\n"
+            "## Estimate vs actual\n\n" + retro.ACCURACY_BEGIN + "\n| a | b |\n| --- | --- |\n"
+            "| 1 | 2 |\n" + retro.ACCURACY_END + "\n", encoding="utf-8")
+        return path
+
+    def _run(self, *extra: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = retro.main(["--root", str(self.root), "known-issues", "--retro", self.RID,
+                             *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _section(self, text: str) -> str:
+        return text.split("## Known issues carried", 1)[1].split("\n## ", 1)[0]
+
+    def test_one_row_per_open_bug_of_the_run_is_written_inside_the_table(self) -> None:
+        """AC1. MUTANT: append the rows at the end of the file - they land in the accuracy
+        section, the close's reader returns none of them, and the report reads both unruled.
+        MUTANT: treat a section holding a table as one with none - a second header lands above
+        the first."""
+        self._bug("BG0001")
+        self._bug("BG0002")
+        path = self._retro()
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        text = path.read_text(encoding="utf-8")
+        section = self._section(text)
+        for bid in ("BG0001", "BG0002"):
+            self.assertEqual(1, section.count(f"| {bid} |"), section)
+            self.assertNotIn(bid, text.split("## Estimate vs actual", 1)[1],
+                             "a row after a later section is a row the close never reads")
+        ids = sorted(r["id"] for r in retro.carried_issues(text, root=self.root))
+        self.assertEqual(["BG0001", "BG0002"], ids)
+        self.assertIn(retro.known_issues_table() + "\n| BG0001 |  |  |  |\n| BG0002 |  |  |  |\n",
+                      text, "the rows extend the one table, straight after its last row")
+        self.assertEqual(1, section.count(retro.known_issues_table()), "one table, one header")
+        import sprint_report  # noqa: PLC0415 - the close's own reader of the table
+        self.assertEqual(["BG0001", "BG0002"],
+                         sorted(r["id"] for r in sprint_report._carried_issues(self.root,
+                                                                               self.RID)))
+        self.assertIn("BG0001, BG0002", out)
+
+    def test_without_write_the_rows_are_reported_and_nothing_is_written(self) -> None:
+        """The verb is read-only unless told to write. MUTANT: write whatever the flag says."""
+        self._bug("BG0001")
+        path = self._retro()
+        before = path.read_bytes()
+        rc, out, err = self._run()
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(before, path.read_bytes())
+        self.assertIn("would write 1 row(s)", out)
+        self.assertIn("BG0001", out)
+
+    def test_a_recorded_ruling_is_kept_and_a_second_run_adds_nothing(self) -> None:
+        """AC2. MUTANT: rewrite every row the run raised - Maya's ruling is lost. MUTANT: skip the
+        present-row check - BG0001 is doubled and a second run doubles BG0002 too."""
+        self._bug("BG0001")
+        self._bug("BG0002")
+        ruled = "| BG0001 | not-stop-ship | Maya Patel | 2026-11-22 |"
+        path = self._retro(ruled + "\n")
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        once = path.read_text(encoding="utf-8")
+        section = self._section(once)
+        self.assertIn(ruled, section, "the ruling is kept word for word")
+        self.assertIn(ruled + "\n| BG0002 |  |  |  |\n", section, "the new row follows it")
+        self.assertIn("wrote 1 row(s)", out)
+        self.assertIn("BG0002; 1 already in the table", out)
+        self.assertEqual(1, section.count("| BG0001 |"))
+        self.assertEqual(1, section.count("| BG0002 |"))
+        rows = {r["id"]: r for r in retro.carried_issues(once, root=self.root)}
+        self.assertTrue(rows["BG0001"]["ok"])
+        self.assertFalse(rows["BG0002"]["ok"], "the new row is left for the operator to rule")
+        self.assertEqual("", rows["BG0002"]["ruling"])
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(once, path.read_text(encoding="utf-8"), "a second run adds nothing")
+        self.assertIn("already", out)
+
+    def test_a_closed_bug_and_another_runs_bug_get_no_row(self) -> None:
+        """AC3. BG0004 is Fixed; BG0005 is open and stamped in this run's window, but its stamp
+        names another run's close; BG0006 was raised the day before the run opened. MUTANT: drop
+        the terminal-status filter - BG0004 gets a row. MUTANT: place by moment alone - BG0005
+        gets a row. BG0003 is the control."""
+        self._bug("BG0003")
+        self._bug("BG0004", status="Fixed")
+        self._bug("BG0005", stamp="RUN-01OTHERRUN1 close, 2026-11-22T10:30:00Z")
+        self._bug("BG0006", stamp="none open - raised outside a delivery batch, "
+                                  "2026-11-21T10:00:00Z")
+        path = self._retro()
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        section = self._section(path.read_text(encoding="utf-8"))
+        self.assertIn("| BG0003 |", section)
+        for bid in ("BG0004", "BG0005", "BG0006"):
+            self.assertNotIn(bid, section)
+
+    def test_a_run_that_raised_no_open_finding_owes_no_row(self) -> None:
+        """A run with nothing open says so and leaves the retro as it was."""
+        self._bug("BG0004", status="Fixed")
+        path = self._retro()
+        before = path.read_bytes()
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"run {self.RUN} raised no open finding", out)
+        self.assertEqual(before, path.read_bytes())
+
+    def test_a_stamp_naming_this_run_among_others_keeps_its_row(self) -> None:
+        """A stamp that names this run is this run's, whatever else it names. MUTANT: refuse any
+        stamp naming a run - this run's own close finding loses its row."""
+        self._bug("BG0007", stamp=f"{self.RUN} close, 2026-11-22T11:00:00Z")
+        path = self._retro()
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        self.assertIn("| BG0007 |", self._section(path.read_text(encoding="utf-8")))
+
+    def test_a_section_with_no_table_and_a_retro_with_no_section_get_one(self) -> None:
+        """A section holding no table gets the header and the rows under its heading; a retro
+        with no section gets one at its end. Either way the reader returns the row."""
+        self._bug("BG0001")
+        path = self._retro()
+        bare = path.read_text(encoding="utf-8").replace(retro.known_issues_table() + "\n", "")
+        for text in (bare, bare.split("## Known issues carried", 1)[0]):
+            with self.subTest(section="## Known issues carried" in text):
+                path.write_text(text, encoding="utf-8")
+                rc, out, err = self._run("--write")
+                self.assertEqual(0, rc, out + err)
+                done = path.read_text(encoding="utf-8")
+                self.assertEqual(["BG0001"], [r["id"] for r in retro.carried_issues(done)])
+                self.assertIn(retro.known_issues_table(), done)
+                self.assertIn("| BG0001 |", done.split("## Estimate vs actual", 1)[0])
+
+    def test_a_retro_the_writer_cannot_place_is_refused_and_untouched(self) -> None:
+        """No retro, a retro naming no run, a run neither open nor archived, a run with no start
+        and an unreadable run state each refuse, naming why, and write nothing."""
+        self._bug("BG0001")
+        rc, _out, err = self._run("--write")
+        self.assertEqual((1, True), (rc, "not found" in err))
+        path = self._retro()
+        good = path.read_text(encoding="utf-8")
+        cases = (
+            ("names no run", good.replace(f"> **Run:** {self.RUN}", "> **Run:** -"), None),
+            ("neither open nor archived", good.replace(self.RUN, "RUN-01ELSEWHERE1"), None),
+            ("no start time", good, {"run_id": self.RUN, "outcome": run_state.RUNNING}),
+            ("cannot be read", good, "{not json"),
+        )
+        for why, text, state in cases:
+            with self.subTest(why=why):
+                path.write_text(text, encoding="utf-8")
+                if isinstance(state, dict):
+                    run_state.write(self.root, state)
+                elif isinstance(state, str):
+                    run_state.path(self.root).write_text(state, encoding="utf-8")
+                rc, out, err = self._run("--write")
+                self.assertEqual(1, rc, out + err)
+                self.assertIn(why, err)
+                self.assertEqual(text, path.read_text(encoding="utf-8"))
+        path.write_bytes(b"\xff\xfe# not utf-8\n")
+        rc, out, err = self._run("--write")
+        self.assertEqual((1, b"\xff\xfe# not utf-8\n"), (rc, path.read_bytes()), out + err)
+        self.assertIn("refused", err)
+
+    def test_an_archived_run_is_read_once_it_has_closed(self) -> None:
+        """After the close the run is in the archive and a later run may be open."""
+        self._bug("BG0001")
+        run_state.archive(self.root, {"run_id": self.RUN, "started_at": "2026-11-22T09:00:00Z",
+                                      "ended_at": "2026-11-22T18:00:00Z", "batch": []})
+        run_state.write(self.root, {"run_id": "RUN-01LATERRUN1", "outcome": run_state.RUNNING,
+                                    "started_at": "2026-11-23T09:00:00Z", "batch": []})
+        path = self._retro()
+        rc, out, err = self._run("--write", "--format", "json")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(["BG0001"], json.loads(out)["added"])
+        self.assertIn("| BG0001 |", self._section(path.read_text(encoding="utf-8")))
+
+    def test_a_graduation_cr_ruled_by_its_class_code_gets_no_second_row(self) -> None:
+        """A retro rules a graduation CR by its lesson class's code, as the close's reader
+        resolves it. MUTANT: read the present rows without the store's link - CR0001, the CR
+        LC-001's graduation filed in the run, is written again under its own id."""
+        (self.root / "sdlc-studio" / "change-requests").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "change-requests" / "CR0001-fix-the-path.md").write_text(
+            "# CR0001: fix the path\n\n> **Status:** Proposed\n> **Raised-in-batch:** "
+            f"{self.RUN} close, 2026-11-22T11:00:00Z\n> **Created:** 2026-11-22\n",
+            encoding="utf-8")
+        (self.root / "sdlc-studio" / "lessons.jsonl").write_text(json.dumps(
+            {"id": "LC-001", "class": "a trap", "rule": "r", "behaviour": "b",
+             "inject": ["build"], "hits": [], "state": "graduating", "cr": "CR0001",
+             "recorded_run": self.RUN}) + "\n", encoding="utf-8")
+        self._bug("BG0001")
+        path = self._retro("| LC-001 | deferred | Maya Patel | 2026-11-22 |\n")
+        rc, out, err = self._run("--write", "--format", "json")
+        self.assertEqual(0, rc, out + err)
+        res = json.loads(out)
+        self.assertEqual((["BG0001"], ["CR0001"]), (res["added"], res["present"]))
+        self.assertNotIn("| CR0001 |", path.read_text(encoding="utf-8"))
+
+    def test_a_finding_that_cannot_be_reread_keeps_its_row(self) -> None:
+        """A finding the report placed in the run but whose file no longer resolves has no stamp
+        to read another run's id from, so it keeps its row rather than vanishing from the table.
+        MUTANT: drop the guard - the writer dies on the unresolved id."""
+        self._bug("BG0001")
+        path = self._retro()
+        with mock.patch.object(retro.sdlc_md, "find_by_id", return_value=None):
+            rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        self.assertIn("| BG0001 |", self._section(path.read_text(encoding="utf-8")))
+
+
 if __name__ == "__main__":
     unittest.main()

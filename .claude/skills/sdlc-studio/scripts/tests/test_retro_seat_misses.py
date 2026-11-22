@@ -21,11 +21,14 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 from test_retro_seat_evidence import (  # noqa: E402
     BUILDER, CRITIC, PRODUCT, QA, SCRIPTS, _git, _project, _seats, _write)
+
+sys.path.insert(0, str(SCRIPTS))
 
 RETROS = (("RETRO0001", "2026-10-01", "US0002"), ("RETRO0002", "2026-10-08", "US0002"))
 
@@ -219,6 +222,188 @@ class SeatMissTests(unittest.TestCase):
             self.assertEqual("2026-10-08", later["window"]["since"])
             self.assertEqual([], later["seats"]["product"]["missed"])
 
+
+    def _uncharged(self, out: dict) -> dict:
+        return {u["bug"]: u for u in out["uncharged"]}
+
+    def test_an_escaped_via_unit_with_only_a_reject_is_named_uncharged(self) -> None:
+        """BG1463 AC1. US0004's only live verdict rejects, so no seat approved it. MUTANT: HEAD -
+        BG0021 is on no line of the record."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0004", "REJECT", QA, BUILDER, "2026-09-10",
+                             "[new] the total is wrong (scripts/a.py:9)"),
+                            ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
+                     units=("US0002", "US0004"), retros=RETROS)
+            _bug(root, "BG0021", "2026-10-06", "the import drops a field", "scripts/a.py",
+                 "It drops a field.", escaped="US0004")
+            out, text = _record(root)
+            u = self._uncharged(out)["BG0021"]
+            self.assertEqual(("US0004", "escaped-via"), (u["unit"], u["rule"]))
+            self.assertIn("no review approved US0004", u["reason"])
+            self.assertIn("BG0021 is charged to no seat: recorded as Escaped-via US0004, but no "
+                          "review approved US0004", text)
+
+    def test_an_escaped_via_unit_whose_approval_names_no_seat_is_named_uncharged(self) -> None:
+        """BG1463 AC2. The live APPROVE on US0004 was recorded by a reviewer naming no seat.
+        MUTANT: HEAD - the approval charges no seat and the bug drops silently. MUTANT: read the
+        seatless approval as no approval - the reason says no review approved it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0004", "APPROVE", "general-purpose agent", BUILDER,
+                             "2026-09-10", "none"),
+                            ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
+                     units=("US0002", "US0004"), retros=RETROS)
+            _bug(root, "BG0022", "2026-10-06", "the import drops a field", "scripts/a.py",
+                 "It drops a field.", escaped="US0004")
+            out, text = _record(root)
+            reason = self._uncharged(out)["BG0022"]["reason"]
+            self.assertIn("the approval of US0004 names no seat", reason)
+            self.assertIn("BG0022 is charged to no seat", text)
+            self.assertNotIn("BG0022", json.dumps(out["seats"]))
+
+    def test_an_approval_after_the_bug_is_named_uncharged_and_a_charged_bug_is_not(self) -> None:
+        """BG1463 AC3. qa approved US0006 the day after BG0023 was created and US0003 before
+        BG0024 was; US0009's only dated approval is after BG0028, beside an undated one. MUTANT: HEAD - BG0023 is dropped. MUTANT: name every escaped bug uncharged -
+        BG0024, charged to qa, is listed beside it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0006", "APPROVE", QA, BUILDER, "2026-10-07", "none"),
+                            ("US0009", "APPROVE", QA, BUILDER, "", "none"),
+                            ("US0009", "APPROVE", QA, BUILDER, "2026-10-08", "none"),
+                            ("US0003", "APPROVE", QA, BUILDER, "2026-09-10", "none"),
+                            ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
+                     units=("US0002", "US0003", "US0006", "US0009"), retros=RETROS)
+            _bug(root, "BG0023", "2026-10-06", "the count is wrong", "scripts/a.py",
+                 "It counts wrongly.", escaped="US0006")
+            _bug(root, "BG0028", "2026-10-06", "the sum is wrong", "scripts/a.py",
+                 "It sums wrongly.", escaped="US0009")
+            _bug(root, "BG0024", "2026-10-06", "the export drops a field", "scripts/a.py",
+                 "It drops a field.", escaped="US0003")
+            out, text = _record(root)
+            uncharged = self._uncharged(out)
+            self.assertEqual(["BG0023", "BG0028"], sorted(uncharged))
+            self.assertIn("post-dates the bug: its earliest dated approval is 2026-10-08",
+                          uncharged["BG0028"]["reason"], "an undated approval places nothing")
+            self.assertIn("the approval of US0006 post-dates the bug", uncharged["BG0023"]["reason"])
+            self.assertIn("2026-10-07", uncharged["BG0023"]["reason"])
+            self.assertEqual(["BG0024"], [m["bug"] for m in out["seats"]["qa"]["missed"]])
+            self.assertNotIn("BG0024 is charged to no seat", text)
+
+    def test_an_escaped_via_unit_no_seat_still_approves_is_named_uncharged(self) -> None:
+        """The rest of the uncharged cases: qa approved US0005 and then rejected it before the
+        bug, a seat's approval of US0007 carries no date, and qa approved and then rejected US0008
+        on the bug's own day. Each is named with its reason, so no escaped bug the record charges
+        no seat goes unmentioned. MUTANT: read an undated seated approval as post-dating the bug
+        (it dies indexing an empty list of days). MUTANT: an approval on the bug's day post-dates
+        it - US0008 reads as approved late."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0005", "APPROVE", QA, BUILDER, "2026-09-10", "none"),
+                            ("US0005", "REJECT", QA, BUILDER, "2026-09-12",
+                             "[new] the total is wrong (scripts/a.py:9)"),
+                            ("US0007", "APPROVE", QA, BUILDER, "", "none"),
+                            ("US0008", "APPROVE", QA, BUILDER, "2026-10-06", "none"),
+                            ("US0008", "REJECT", QA, BUILDER, "2026-10-06",
+                             "[new] the round is wrong (scripts/a.py:3)"),
+                            ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
+                     units=("US0002", "US0005", "US0007", "US0008"), retros=RETROS)
+            _bug(root, "BG0025", "2026-10-06", "the total is still wrong", "scripts/a.py",
+                 "It totals wrongly.", escaped="US0005")
+            _bug(root, "BG0026", "2026-10-06", "the round is wrong", "scripts/a.py",
+                 "It rounds wrongly.", escaped="US0007")
+            _bug(root, "BG0027", "2026-10-06", "the floor is wrong", "scripts/a.py",
+                 "It floors wrongly.", escaped="US0008")
+            out, _text = _record(root)
+            uncharged = self._uncharged(out)
+            for bid, unit in (("BG0025", "US0005"), ("BG0026", "US0007"), ("BG0027", "US0008")):
+                self.assertIn(f"no seat's latest verdict on {unit} on or before 2026-10-06 "
+                              f"approves it", uncharged[bid]["reason"])
+
+    def test_a_narrow_rule_bug_no_seat_approved_is_not_named_uncharged(self) -> None:
+        """Only an Escaped-via link is named when it charges no seat: a bug read by the narrow
+        rule whose unit's seat approved only after it (US0006) is weaker evidence and stays off
+        the record, as before. MUTANT: name every unit that charges no seat."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0006", "APPROVE", QA, BUILDER, "2026-10-07", "none"),
+                            ("US0002", "APPROVE", PRODUCT, BUILDER, "2026-10-05", "none")],
+                     units=("US0002", "US0006"), retros=RETROS)
+            _bug(root, "BG0018", "2026-10-06", "the count is wrong", "scripts/a.py",
+                 "US0006 counts wrongly.")
+            out, text = _record(root)
+            self.assertEqual([], out["uncharged"])
+            self.assertNotIn("BG0018", text)
+
+    def _window_of_many(self, root: Path) -> None:
+        """Twelve bugs in RETRO0002's window that each cite US0001 and US0002, which affect
+        different files, with one Escaped-via unit no review approved, and one bug citing a
+        reviewed unit whose file is gone (US0008), which shares nothing and charges no seat."""
+        _project(root, [("US0001", "APPROVE", PRODUCT, BUILDER, "2026-09-20", "none"),
+                        ("US0002", "APPROVE", QA, BUILDER, "2026-09-21", "none"),
+                        ("US0008", "APPROVE", QA, BUILDER, "2026-09-21", "none")],
+                 units=("US0001", "US0002", "US0007"), retros=RETROS)
+        _bug(root, "BG0198", "2026-10-04", "the gone widget", "scripts/a.py",
+             "US0008 read it.")
+        _write(root, "sdlc-studio/stories/US0002-widget.md",
+               "# US0002: widget\n\n> **Status:** Done\n> **Points:** 2\n"
+               "> **Affects:** scripts/b.py\n")
+        for n in range(12):
+            affects = ("scripts/a.py", "scripts/b.py", "scripts/a.py, scripts/b.py")[n % 3]
+            _bug(root, f"BG01{n:02d}", "2026-10-04", f"defect {n}", affects,
+                 "US0001 and US0002 both read it.")
+        _bug(root, "BG0199", "2026-10-04", "the total rounds wrongly", "scripts/a.py",
+             "It rounds wrongly.", escaped="US0007")
+
+    def test_each_cited_unit_is_resolved_once_per_call(self) -> None:
+        """BG1465 AC1. MUTANT: HEAD - one `find_by_id` per bug per cited unit, 12 for US0001."""
+        import retro  # noqa: PLC0415 - in process, so the lookup can be counted
+        from collections import Counter  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._window_of_many(root)
+            real, seen = retro.sdlc_md.find_by_id, Counter()
+
+            def counted(r, uid, *a, **k):
+                seen[retro.sdlc_md.norm_id(uid)] += 1
+                return real(r, uid, *a, **k)
+
+            with mock.patch.object(retro.sdlc_md, "find_by_id", side_effect=counted):
+                res = retro.seat_misses(root, root / "sdlc-studio/retros/RETRO0002-run.md")
+            self.assertEqual(1, seen["US0001"], seen)
+            self.assertEqual(1, seen["US0002"], seen)
+            self.assertEqual(1, max(seen.values()), seen)
+            self.assertEqual(8, len(res["seats"]["product"]["missed"]))
+
+    def test_the_charges_are_unchanged_by_the_single_lookup(self) -> None:
+        """BG1465 AC2. `retro.py seats` charges what a lookup made per bug charges: product the
+        eight bugs sharing scripts/a.py with US0001, qa the eight sharing scripts/b.py with
+        US0002, each naming the file it shares, and BG0199 uncharged. MUTANT: cache by the bug
+        rather than the unit, or one Affects set for every unit - a.py bugs are charged to qa."""
+        import retro  # noqa: PLC0415 - in process, for the per-bug reference lookup
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._window_of_many(root)
+            out, _text = _record(root)
+            real = retro._charged_units
+
+            def per_bug(r, text, own, reviewed, affects=None):
+                return real(r, text, own, reviewed)
+
+            with mock.patch.object(retro, "_charged_units", side_effect=per_bug):
+                ref = retro.seat_misses(root, root / "sdlc-studio/retros/RETRO0002-run.md")
+            self.assertEqual(json.loads(json.dumps(ref["seats"])),
+                             {r: {k: out["seats"][r][k] for k in ref["seats"][r]}
+                              for r in ref["seats"]})
+            self.assertEqual(json.loads(json.dumps(ref["uncharged"])), out["uncharged"])
+            shared = {r: sorted({(m["bug"], tuple(m["shared"])) for m in s["missed"]})
+                      for r, s in ref["seats"].items()}
+            a_bugs = [f"BG01{n:02d}" for n in range(12) if n % 3 != 1]
+            b_bugs = [f"BG01{n:02d}" for n in range(12) if n % 3 != 0]
+            self.assertEqual(sorted((b, ("scripts/a.py",)) for b in a_bugs), shared["product"])
+            self.assertEqual(sorted((b, ("scripts/b.py",)) for b in b_bugs), shared["qa"])
+            self.assertEqual(["BG0199"], [u["bug"] for u in out["uncharged"]])
+            self.assertNotIn("BG0198", json.dumps(out["seats"]))
 
 if __name__ == "__main__":
     unittest.main()

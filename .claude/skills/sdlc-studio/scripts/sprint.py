@@ -2846,7 +2846,8 @@ def export_lanes(repo_root: Path | str, batch: list[dict], out_dir: Path | str) 
 # The lessons a phase carries: `lessons.phase_digest(root, "plan"|"build"|"review")`
 # ---------------------------------------------------------------------------
 # The plan output, every lane brief and the review brief each carry the active failure classes
-# injected at their phase, as rule plus behaviour, at most five (`lessons.render_phase`). They
+# injected at their phase, as rule plus behaviour (`lessons.render_phase`): at most five at plan
+# and review, and every live build class in a lane brief (`lessons.phase_digest`). They
 # replaced a curated set of five titles that every brief carried unchanged for eight weeks.
 
 
@@ -5603,7 +5604,8 @@ def _close_retro_validate(root, retro_id, state):
 
 def _close_retro_extract(root, retro_id, state):
     """Lift the retro's Try items into the lessons stores, then act on the class store: a REJECT
-    citing a class is a hit, a class that keeps recurring files a CR asking for its failing
+    citing a class is a hit, and so is a class a bug filed in the run or the retro's Stop or Keep
+    section cites (once per run), a class that keeps recurring files a CR asking for its failing
     path to be fixed or the class retired, and a quiet one retires (`lessons.close_pass`). The pass runs whether or not the extract did, so
     a malformed retro does not also lose the review's evidence."""
     import retro  # noqa: PLC0415
@@ -5611,7 +5613,7 @@ def _close_retro_extract(root, retro_id, state):
     rc, out = _run_cli(retro.main, ["--root", str(root), "extract", "--id", retro_id,
                                     "--run", run])
     try:
-        res = lessons.close_pass(root, run, state)
+        res = lessons.close_pass(root, run, state, retro_id=retro_id)
         passed, errors = lessons.close_pass_line(res), res["errors"]
     except (OSError, ValueError) as exc:
         passed, errors = "", [f"the lesson store could not be acted on: {exc}"]

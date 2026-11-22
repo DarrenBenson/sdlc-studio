@@ -288,10 +288,12 @@ _STOP_CLAIM_RE = re.compile(r"\bStop[- ]hook installer\b|"
 
 def stop_hook_writers(sources: dict[str, str]) -> list[str]:
     """The scripts whose source writes a `Stop` hook entry into a settings file: one that names
-    the `"Stop"` key, a settings file, and a write primitive. The close guard itself only reads."""
+    the `"hooks"` and `"Stop"` keys, a settings file, and a write primitive. A quoted `"Stop"`
+    alone is also a retro section's name, so a script reading a retro's Stop section is not a
+    writer. The close guard itself only reads."""
     return sorted(name for name, src in sources.items()
-                  if re.search(r"""["']Stop["']""", src) and re.search(r"settings(?:\.json)?", src)
-                  and _WRITE_RE.search(src))
+                  if re.search(r"""["']Stop["']""", src) and re.search(r"""["']hooks["']""", src)
+                  and re.search(r"settings(?:\.json)?", src) and _WRITE_RE.search(src))
 
 
 def stop_hook_claims(prd: str) -> list[str]:
@@ -434,6 +436,11 @@ class PrdRefreshTests(unittest.TestCase):
         no_settings = 'a["Stop"] = 1\nPath("f").write_text("x")\n'
         no_stop = 'settings = 1\nPath("f").write_text("x")\n'
         self.assertEqual([], stop_hook_writers({"x.py": no_settings, "y.py": no_stop}))
+        retro_reader = ('SECTIONS = ("Stop", "Keep")\nsettings = load()\n'
+                        'Path("f").write_text("x")\n')
+        self.assertEqual([], stop_hook_writers({"lessons.py": retro_reader}))
+        self.assertEqual(["init.py"], stop_hook_writers({"lessons.py": retro_reader,
+                                                          "init.py": writer}))
         self.assertEqual([], stop_hook_problems(prd, {**sources, "init.py": writer}))
         mutated = prd.replace("reminds once at a turn end and never locks",
                               "`init` installs the Stop hook into settings.json", 1)
