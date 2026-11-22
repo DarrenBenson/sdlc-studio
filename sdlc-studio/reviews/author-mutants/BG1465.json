@@ -1,0 +1,52 @@
+{
+  "unit": "BG1465",
+  "digest": "292abce340219385 at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1465-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "looked up per bug",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        if uid not in affects:\n",
+      "new": "        if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fresh map per call of _charged_units",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    affects = {} if affects is None else affects",
+      "new": "    affects = {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat_misses passes a fresh map per bug",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "_charged_units(root, text, sdlc_md.norm_id(bid), rows, affects)",
+      "new": "_charged_units(root, text, sdlc_md.norm_id(bid), rows, {})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one Affects set for every unit",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        shared = sorted(fix & affects[uid])",
+      "new": "        shared = sorted(fix & next(iter(affects.values())))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a missing unit file unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "affects[uid] = set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0]))) \\\n                if hit else set()",
+      "new": "affects[uid] = set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0])))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

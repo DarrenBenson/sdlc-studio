@@ -1,0 +1,133 @@
+{
+  "unit": "BG1332",
+  "digest": "c1c3c01d237fe56c at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1332-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "another run's stamp kept",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        if named and run_id not in named:\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any named run dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "if named and run_id not in named:",
+      "new": "if named:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unresolved finding unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "text = sdlc_md.read_text_safe(Path(found[0])) if found else \"\"",
+      "new": "text = sdlc_md.read_text_safe(Path(found[0]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-start run unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if still_open is None:\n        return None\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rows appended at the end of the file",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        lines[table[-1] + 1:table[-1] + 1] = rows",
+      "new": "        lines[len(lines):] = rows",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rows put before the next heading",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        lines[table[-1] + 1:table[-1] + 1] = rows",
+      "new": "        lines[end:end] = rows",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a table header written again",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if table:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no section: rows without a table",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        return (text.rstrip(\"\\n\") + f\"\\n\\n## {KNOWN_ISSUES_SECTION}\\n\\n{known_issues_table()}\\n\"",
+      "new": "        return (text.rstrip(\"\\n\") + f\"\\n\\n## {KNOWN_ISSUES_SECTION}\\n\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "present rows read without the store link",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "present = {r[\"id\"] for r in carried_issues(text, root=root) if r[\"id\"]}",
+      "new": "present = {r[\"id\"] for r in carried_issues(text) if r[\"id\"]}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "present rows ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "added = [uid for uid in ids if uid not in present]",
+      "new": "added = list(ids)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "writes without --write",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if write and added:\n",
+      "new": "    if added:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unrecorded run not refused",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if not record:\n        raise ValueError",
+      "new": "    if False:\n        raise ValueError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "always says wrote",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "verb = \"wrote\" if res[\"written\"] else \"would write\"",
+      "new": "verb = \"wrote\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "kept count not said",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "kept = f\"; {len(res['present'])} already in the table\" if res[\"present\"] else \"\"",
+      "new": "kept = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "unit": "BG1483",
+  "digest": "62b4a032eca62521 at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1483-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "close passes no retro",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lessons.close_pass(root, run, state, retro_id=retro_id)",
+      "new": "lessons.close_pass(root, run, state)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no per-run guard",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if any(h.get(\"run\") == run for h in row.get(\"hits\") or ()):\n            continue\n        was = row.get(\"state\")\n        add_hit(row, run, \"\", f\"cited:{run}\", finding)",
+      "new": "        was = row.get(\"state\")\n        add_hit(row, run, \"\", f\"cited:{run}\", finding)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every bug read, placed or not",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if sdlc_md.norm_id(bid) not in placed:\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the whole bug read, not its Summary",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        m = _SUMMARY_RE.search(sdlc_md.read_text_safe(path))\n        out += [(code, bid) for code in CITED_CLASS_RE.findall(m.group(1) if m else \"\")]",
+      "new": "        out += [(code, bid) for code in CITED_CLASS_RE.findall(sdlc_md.read_text_safe(path))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a bug with no Summary unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "CITED_CLASS_RE.findall(m.group(1) if m else \"\")",
+      "new": "CITED_CLASS_RE.findall(m.group(1))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "comments read in the retro",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        text = re.sub(r\"<!--.*?-->\", \"\", sdlc_md.read_text_safe(path) if path else \"\",\n                      flags=re.S)",
+      "new": "        text = sdlc_md.read_text_safe(path) if path else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Stop alone read",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "CITING_SECTIONS = (\"Stop\", \"Keep\")",
+      "new": "CITING_SECTIONS = (\"Stop\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Keep alone read",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "CITING_SECTIONS = (\"Stop\", \"Keep\")",
+      "new": "CITING_SECTIONS = (\"Keep\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a longer token read as a code",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "CITED_CLASS_RE = re.compile(r\"(?<![\\w-])LC-\\d{3,}\")",
+      "new": "CITED_CLASS_RE = re.compile(r\"LC-\\d{3,}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown code dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if row is None:\n            res[\"unknown\"].append(code)\n            continue\n        if any(h.get(\"run\") == run",
+      "new": "        if row is None:\n            continue\n        if any(h.get(\"run\") == run",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "retired class not reported back",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        res[\"repeats\"].append((row[\"id\"], finding))\n        if was == \"retired\":\n            res[\"reactivated\"].append(row[\"id\"])",
+      "new": "        res[\"repeats\"].append((row[\"id\"], finding))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "repeats not saved",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "if res[\"hits\"] or res[\"repeats\"] or res[\"retired\"] or res[\"graduated\"] or res[\"quiet_from\"]:",
+      "new": "if res[\"hits\"] or res[\"retired\"] or res[\"graduated\"] or res[\"quiet_from\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "close line silent on repeats",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        parts.append(f\"{len(res['repeats'])} repeat(s) cited by the run's bugs or retro: \"",
+      "new": "        parts.append(f\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1578: The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1578.md, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/reference-verify.md, sdlc-studio/prd.md
@@ -26,9 +26,11 @@ Make corpus-verify print each red criterion's verifier output, and give US0926 A
 
 - [ ] **AC1** Given a corpus verify run in which a criterion is red, when `bash tools/verify-corpus.sh full` runs, then the job output prints that criterion's id and the verifier's own output under it, so the red can be read without re-running. Fails on: the red criteria named only by id, with no detail in the log.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests
+  - **Verified:** yes (2026-11-22)
 
 - [ ] **AC2** Given US0926 AC1's migrate.py check on a runner slower than the workstation, when `python3 .claude/skills/sdlc-studio/scripts/verify_ac.py run --id US0926` runs, then the check's time budget is the one the runner's measured speed sets, and it passes within it. Fails on: a fixed budget that timed out once under load.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests
+  - **Verified:** yes (2026-11-22)
 
 ## Impact
 

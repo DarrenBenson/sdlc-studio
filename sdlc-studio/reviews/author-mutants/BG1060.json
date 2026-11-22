@@ -1,0 +1,61 @@
+{
+  "unit": "BG1060",
+  "digest": "00a727ab3d47a27d at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1060-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no guard: the log is started",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "refusal = _log_fork_refusal(args.root, log) if found and not log.is_file() else None",
+      "new": "refusal = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard fires with no lesson to log",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "refusal = _log_fork_refusal(args.root, log) if found and not log.is_file() else None",
+      "new": "refusal = _log_fork_refusal(args.root, log) if not log.is_file() else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard fires on a present log",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "refusal = _log_fork_refusal(args.root, log) if found and not log.is_file() else None",
+      "new": "refusal = _log_fork_refusal(args.root, log) if found else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty digest refuses",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if not listed:\n        return None\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unreadable digest passes",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        return (f\"refused: the project lessons log {log} does not exist and the digest \"",
+      "new": "        return None\n        return (f\"refused: the project lessons log {log} does not exist and the digest \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the digest's count not named",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "f\"lists {len(listed)} lesson(s), so a log",
+      "new": "f\"lists some lesson(s), so a log",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

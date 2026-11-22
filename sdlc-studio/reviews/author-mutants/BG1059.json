@@ -1,0 +1,97 @@
+{
+  "unit": "BG1059",
+  "digest": "045f92e719c8149a at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1059-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "three-line branch skips the comparison",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "                  + run_batch_errors(root, text))",
+      "new": "                  )",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "older branch skips the comparison",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    errors.extend(run_batch_errors(root, text))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live state only, archive never read",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "return live if live.get(\"run_id\") == run_id else run_state.read_archived(root, run_id)",
+      "new": "return live",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archive only, live state never read",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "return live if live.get(\"run_id\") == run_id else run_state.read_archived(root, run_id)",
+      "new": "return run_state.read_archived(root, run_id)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable run state passes silently",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        return [f\"the Batch field cannot be compared with run {run_id}'s batch: {exc}\"]",
+      "new": "        return []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "non-list batch iterated",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if not isinstance(batch, list):\n        return []\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank entry read as a unit",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "if uid and uid not in named",
+      "new": "if uid not in named",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dash read as a run id",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "value if value and value != \"-\" else None",
+      "new": "value if value else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder read as a run id",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "value = PLACEHOLDER_RE.sub(\"\", m.group(1)).strip() if m else \"\"",
+      "new": "value = m.group(1).strip() if m else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "omitted ids not named",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "            f\"{', '.join(omitted)} - a unit that joined",
+      "new": "            f\"- a unit that joined",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

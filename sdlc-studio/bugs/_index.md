@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 315 |
 | In Progress | 0 |
-| Fixed | 1046 |
+| Fixed | 1047 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1702** |
+| **Total** | **1703** |
 
 ## All Bugs
 
@@ -653,7 +653,7 @@
 | [BG1575](BG1575-bg0660-s-unscoped-boundary-guard-flags-a-run.md) | BG0660's unscoped-boundary guard flags a --run-tests call that runs no other lane, and is satisfied by an --only that call ignores | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1576](BG1576-the-skill-tests-lane-s-serial-only-collection.md) | The skill-tests lane's serial_only collection may read empty under an inherited -q, so serial tests could be skipped unseen | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1577](BG1577-the-tsd-s-full-suite-row-states-bg1519.md) | The TSD's full-suite row states BG1519's count floor but not that a commit whose selection holds only push-deferred tests is exempt | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
-| [BG1578](BG1578-the-weekly-corpus-verify-of-2026-11-16.md) | The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1578](BG1578-the-weekly-corpus-verify-of-2026-11-16.md) | The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Open | Medium | 2026-11-18 | 2026-11-18 |
@@ -778,6 +778,7 @@
 | [BG1700](BG1700-critic-py-show-takes-over-five-minutes-on.md) | critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

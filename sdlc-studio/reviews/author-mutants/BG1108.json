@@ -1,113 +1,50 @@
 {
   "unit": "BG1108",
-  "digest": "6ce1efeee0776f83 at b2f83d8b2ece",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG1108-mutation-edits.json",
+  "digest": "c9cfb80f7c13dc0e at ac68018d4917",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a83b343ecc8843382/BG1108-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the brief diffs from the later run's base",
+      "mutant": "the unit's latest note read whatever brief cut it, so a second seat's later commit is recorded",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    base = judged or run_state.unit_run_base_ref(root, unit)",
-      "new": "    base = run_state.unit_run_base_ref(root, unit)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
+      "old": "judged = str(((_noted_row(repo_root, uid, fp) if fp else None) or {}).get(\"commit\") or \"\")",
+      "new": "judged = str(((_noted_row(repo_root, uid) if fp else None) or {}).get(\"commit\") or \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the carry records no commit",
+      "mutant": "the briefed id compared as typed in carried_review_base, so bg0001 reads as never carried",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                              review_base=judged or _head_commit(Path(repo_root)))",
-      "new": "                              review_base=\"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
+      "old": "    uid = sdlc_md.norm_id(unit)\n    try:\n        current = run_state.read(repo_root) or {}",
+      "new": "    uid = unit\n    try:\n        current = run_state.read(repo_root) or {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the commit at the carry taken over the brief's",
+      "mutant": "a note naming the fingerprint but recording no commit read as the commit None",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                              review_base=judged or _head_commit(Path(repo_root)))",
-      "new": "                              review_base=_head_commit(Path(repo_root)) or judged)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
+      "old": "or {}).get(\"commit\") or \"\")",
+      "new": "or {}).get(\"commit\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no commit at the carry when no note names the brief",
+      "mutant": "no commit recorded when no note gives one",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                              review_base=judged or _head_commit(Path(repo_root)))",
-      "new": "                              review_base=judged)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carry_with_no_noted_brief_records_the_commit_at_the_carry",
+      "old": "review_base=judged or _head_commit(Path(repo_root)))",
+      "new": "review_base=judged)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the carry bug's brief not reading the carried unit's record",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "            if uid in (carried, _carry_bug(repo_root, change.get(\"reason\"))):",
-      "new": "            if uid == carried:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the carried unit's own redelivery not reading its record",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "            if uid in (carried, _carry_bug(repo_root, change.get(\"reason\"))):",
-      "new": "            if uid == _carry_bug(repo_root, change.get(\"reason\")):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unreadable open run hides the archived carry",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    except run_state.RunStateError:\n        current = {}\n    found",
-      "new": "    except run_state.RunStateError:\n        return (\"\", \"\")\n    found",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the first carry wins",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                found = (str(change[\"review_base\"]), carried)",
-      "new": "                found = found if found[0] else (str(change[\"review_base\"]), carried)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_the_latest_carry_wins_and_a_plain_drop_records_none",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a drop with no commit erases the carry's",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "            if not (isinstance(change, dict) and change.get(\"action\") == \"drop\"\n                    and change.get(\"review_base\")):",
-      "new": "            if not (isinstance(change, dict) and change.get(\"action\") == \"drop\"):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_the_latest_carry_wins_and_a_plain_drop_records_none",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the drop keeps no review base",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        if review_base:\n            entry[\"review_base\"] = review_base\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BatchMutationTests::test_a_drop_keeps_the_review_base_it_is_given_and_no_other",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the drop writes an empty review base",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        if review_base:\n            entry[\"review_base\"] = review_base\n",
-      "new": "        entry[\"review_base\"] = review_base\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::BatchMutationTests::test_a_drop_keeps_the_review_base_it_is_given_and_no_other",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the elsewhere commit dropped",
+      "mutant": "test: the two-seat test expects the second seat's commit",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
-      "old": "        judged = self._round(2, elsewhere=True)",
-      "new": "        judged = self._round(2)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_carried_units_brief_diffs_from_the_commit_its_capping_reject_judged",
+      "old": "        self.assertEqual((qa[\"commit\"], UNIT), critic.carried_review_base(root, UNIT))",
+      "new": "        self.assertEqual((critic._noted_row(root, UNIT)[\"commit\"], UNIT),\n                         critic.carried_review_base(root, UNIT))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
       "result": "killed",
       "answer": ""
     }

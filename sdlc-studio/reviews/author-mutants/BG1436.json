@@ -1,0 +1,79 @@
+{
+  "unit": "BG1436",
+  "digest": "6c68ba58dae24587 at 4d46f94e7b20",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1436-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no window stamped",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "            row[\"quiet_from\"] = run\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "restamped every close",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if (row.get(\"state\") == \"active\" and not row.get(\"quiet_from\")",
+      "new": "        if (row.get(\"state\") == \"active\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any class stamped, run or not",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "                and not names_a_run(row.get(\"recorded_run\"))):",
+      "new": "                ):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "non-active class stamped",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if (row.get(\"state\") == \"active\" and not row.get(\"quiet_from\")",
+      "new": "        if (not row.get(\"quiet_from\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window ignores quiet_from",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        named = ({row.get(\"recorded_run\"), row.get(\"quiet_from\")}",
+      "new": "        named = ({row.get(\"recorded_run\")}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp not saved",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "if res[\"hits\"] or res[\"repeats\"] or res[\"retired\"] or res[\"graduated\"] or res[\"quiet_from\"]:",
+      "new": "if res[\"hits\"] or res[\"repeats\"] or res[\"retired\"] or res[\"graduated\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any label names a run",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "    return str(value or \"\").startswith(\"RUN-\")",
+      "new": "    return bool(value)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "close line silent on the stamp",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        parts.append(f\"recorded with no run, quiet window from this run: \"",
+      "new": "        parts.append(f\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

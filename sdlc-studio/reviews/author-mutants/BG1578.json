@@ -1,248 +1,77 @@
 {
   "unit": "BG1578",
-  "digest": "814007e8aa76a1d6 at 663edcd12fc0",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afd336ca2763eb5c0/BG1578-mutation-edits.json",
+  "digest": "7a707a08b95bf8f8 at 97c0b4ca482f",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a1e02b34da6ad7776/BG1578-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "explicit timeout ignored",
+      "mutant": "the recorded-verdict record names the first line",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if flag is not None:\n        return flag\n    try:\n",
-      "new": "    try:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
+      "old": "_record_red(story_path, text, block.ac_id, verifier, result,\n                            why=",
+      "new": "_record_red(story_path, text, block.ac_id, block.verifier, result,\n                            why=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_recorded_verdict_over_several_green_lines_names_the_line_it_shows",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "non-positive budget taken",
+      "mutant": "the red branch's record names the first line",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "return budget if budget > 0 else DEFAULT_TIMEOUT",
-      "new": "return budget",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
+      "old": "_record_red(story_path, text, block.ac_id, verifier, result,\n                        rerun=",
+      "new": "_record_red(story_path, text, block.ac_id, block.verifier, result,\n                        rerun=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_line_after_a_green_one_is_the_line_recorded",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unreadable budget falls to 1 s",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    except ValueError:\n        return DEFAULT_TIMEOUT\n",
-      "new": "    except ValueError:\n        return 1\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
+      "mutant": "the detail step runs on any earlier failure",
+      "file": ".github/workflows/lint.yml",
+      "old": "if: failure() && steps.verify.outcome == 'failure'",
+      "new": "if: failure()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "budget variable not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "budget = int(os.environ.get(VERIFY_TIMEOUT_ENV, \"\"))",
-      "new": "budget = int(os.environ.get(\"SDLC_UNSET_BUDGET\", \"\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
+      "mutant": "the detail step drops the job-status check",
+      "file": ".github/workflows/lint.yml",
+      "old": "if: failure() && steps.verify.outcome == 'failure'",
+      "new": "if: steps.verify.outcome == 'failure'",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "default moved",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "DEFAULT_TIMEOUT = 120",
-      "new": "DEFAULT_TIMEOUT = 121",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
+      "mutant": "the detail step reads a step that is not the verification",
+      "file": ".github/workflows/lint.yml",
+      "old": "if: failure() && steps.verify.outcome == 'failure'",
+      "new": "if: failure() && steps.other.outcome == 'failure'",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "run does not resolve its budget",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    args.timeout = _run_timeout(args.timeout)\n",
+      "mutant": "the verification step loses its id",
+      "file": ".github/workflows/lint.yml",
+      "old": "        id: verify\n",
       "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a variable the gate does not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "VERIFY_TIMEOUT_ENV = \"SDLC_VERIFY_TIMEOUT\"",
-      "new": "VERIFY_TIMEOUT_ENV = \"SDLC_VERIFY_BUDGET\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "record only without a file",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if not dest:\n        return\n    import gate",
-      "new": "    if dest:\n        return\n    import gate",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "unbuilt units recorded",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if not gate._claims_completion(sdlc_md.extract_field(text, \"Status\")):\n        return\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_nothing_is_recorded_for_a_green_an_unbuilt_unit_or_an_unset_file",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "completion inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if not gate._claims_completion(sdlc_md.extract_field(text, \"Status\")):",
-      "new": "    if gate._claims_completion(sdlc_md.extract_field(text, \"Status\")):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "batch red never run alone",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if rerun is not None:\n",
-      "new": "    if rerun is not None and False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "empty streams labelled",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        if out.strip():\n",
-      "new": "        if True:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "blank why line always written",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "*([why] if why else [])",
-      "new": "why",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every red run again",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "rerun=(lambda v=verifier: run_alone(v)) if verifier in batched else None)",
-      "new": "rerun=(lambda v=verifier: run_alone(v)))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "batched red not run alone",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "rerun=(lambda v=verifier: run_alone(v)) if verifier in batched else None)",
-      "new": "rerun=None)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "batch answers not noted",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        else:\n            batched.add(verifier)\n        return result",
-      "new": "        return result",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "recorded verdict not recorded",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "                _record_red(story_path, text, block.ac_id, block.verifier, result,\n                            why=report.failures[-1][\"stderr\"])\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_recorded_verdict_that_overrides_a_green_is_recorded_with_why",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "recorded verdict without why",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "why=report.failures[-1][\"stderr\"])",
-      "new": "why=\"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_recorded_verdict_that_overrides_a_green_is_recorded_with_why",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "record overwrites",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "os.O_WRONLY | os.O_APPEND | os.O_CREAT",
-      "new": "os.O_WRONLY | os.O_CREAT",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unopenable file crashes the run",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    except OSError as exc:\n        print(f\"warning: {RED_DETAIL_ENV} names {dest}",
-      "new": "    except ValueError as exc:\n        print(f\"warning: {RED_DETAIL_ENV} names {dest}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_detail_file_that_cannot_be_opened_is_named_and_the_verdict_stands",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no blank line between blocks",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "(\"\\n\".join(lines) + \"\\n\\n\")",
-      "new": "(\"\\n\".join(lines) + \"\\n\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_on_a_unit_claiming_completion_is_recorded_once_with_its_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "detail step always runs",
-      "file": ".github/workflows/lint.yml",
-      "old": "        if: failure()\n        env:\n          SDLC_VERIFY_RED_DETAIL",
-      "new": "        if: always()\n        env:\n          SDLC_VERIFY_RED_DETAIL",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "detail step passes",
-      "file": ".github/workflows/lint.yml",
-      "old": "            cat \"$SDLC_VERIFY_RED_DETAIL\"\n            exit 1",
-      "new": "            cat \"$SDLC_VERIFY_RED_DETAIL\"\n            exit 0",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "verification writes no detail",
-      "file": ".github/workflows/lint.yml",
-      "old": "          SDLC_VERIFY_TIMEOUT: 450\n          SDLC_VERIFY_RED_DETAIL: ${{ runner.temp }}/corpus-red-detail.log\n",
-      "new": "          SDLC_VERIFY_TIMEOUT: 450\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "existence for non-empty",
-      "file": ".github/workflows/lint.yml",
-      "old": "if [ -s \"$SDLC_VERIFY_RED_DETAIL\" ]",
-      "new": "if [ -e \"$SDLC_VERIFY_RED_DETAIL\" ]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
-      "result": "survived",
-      "answer": "equivalent: the detail file is created only by `_record_red`'s one write of a non-empty block, so it never exists empty and `-e` and `-s` agree on every file the lane can leave"
-    },
-    {
-      "mutant": "test: the red story made Ready",
+      "mutant": "test: the recorded-verdict record is expected to name the first line",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py",
-      "old": "_story(root, \"US0001\", \"Done\", self.RED)\n            _story(root, \"US0002\"",
-      "new": "_story(root, \"US0001\", \"Ready\", self.RED)\n            _story(root, \"US0002\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_the_job_prints_each_red_criterion_with_its_verifier_output",
+      "old": "r\"\\Ared: US0001::AC1 - shell echo second-marker\\n\"",
+      "new": "r\"\\Ared: US0001::AC1 - shell echo first-marker\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_recorded_verdict_over_several_green_lines_names_the_line_it_shows",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: no batch answer handed in",
+      "mutant": "test: the red line is the first",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py",
-      "old": "log,\n                                  pytest_cache={node: False})",
-      "new": "log)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
+      "old": "_story(root, \"US0001\", \"Done\", \"shell echo ok-marker\",\n                                      f\"- **Verify:** {red}\\n\")",
+      "new": "_story(root, \"US0001\", \"Done\", \"shell echo ok-marker; exit 5\",\n                                      f\"- **Verify:** {red}\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_line_after_a_green_one_is_the_line_recorded",
       "result": "killed",
       "answer": ""
     }

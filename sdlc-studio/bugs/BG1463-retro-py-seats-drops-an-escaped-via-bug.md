@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py, changelog.d/BG1463.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py, changelog.d/BG1463.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/reference-retro.md
 > **Evidence:** QA seat's round-2 review of US1064, run thirteen (sdlc-studio/reviews/verdicts/US1064/5f18b00eea1b-9a8fc9a5.txt), probes of all three cases at e8e66f8d.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -38,3 +38,4 @@ Name every Escaped-via bug in the window that is not charged to a seat in unchar
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened to `reference-retro.md`, whose lines 133-134 describe the reasons this fix changes (qa round one) |

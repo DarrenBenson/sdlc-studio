@@ -1,284 +1,176 @@
 {
   "unit": "BG1534",
-  "digest": "dbbf0a2f4e98cd01 at 663edcd12fc0",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afd336ca2763eb5c0/BG1534-mutation-edits.json",
+  "digest": "5d5c33e6b4dcb435 at 97c0b4ca482f",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a1e02b34da6ad7776/BG1534-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "init named by its stem",
+      "mutant": "a decorated def reads as the def itself, the last one bound (the regression)",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "owner = list(path.parent.parts) + ([] if path.stem == \"__init__\" else [path.stem])",
-      "new": "owner = list(path.parent.parts) + [path.stem]",
+      "old": "bound = _decorated(stmt, bound) if stmt.name == name else bound",
+      "new": "bound = [stmt] if stmt.name == name else bound",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "only the bare module name",
+      "mutant": "a decorated def reads as an unread binding",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "for k in range(1, min(len(parts), len(owner)) + 1):",
-      "new": "for k in range(1, 2):",
+      "old": "    for deco in stmt.decorator_list:\n",
+      "new": "    if stmt.decorator_list:\n        return [_UNREAD]\n    for deco in stmt.decorator_list:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a deleter does not keep the property",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "deco.attr in (\"setter\", \"deleter\")",
+      "new": "deco.attr in (\"setter\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a getter keeps the property too",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "deco.attr in (\"setter\", \"deleter\")",
+      "new": "deco.attr in (\"setter\", \"deleter\", \"getter\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "prefix compared by its last part",
+      "mutant": "the accessor test inverted",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "if parts[:k] == owner[-k:] and any(",
-      "new": "if parts[k - 1] == owner[-1] and any(",
+      "old": "deco.attr in (\"setter\", \"deleter\")",
+      "new": "deco.attr not in (\"setter\", \"deleter\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unparsed module not guarded",
+      "mutant": "the own-name test inverted",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if module is None:\n        return False\n    path = Path(rel)",
-      "new": "    path = Path(rel)",
+      "old": "getattr(deco.value, \"id\", None) == stmt.name",
+      "new": "getattr(deco.value, \"id\", None) != stmt.name",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unread binding refused",
+      "mutant": "a dotted property reads as the def's own name",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if node is _UNREAD:\n        return True\n",
-      "new": "    if node is _UNREAD:\n        return False\n",
+      "old": "getattr(deco.value, \"id\", None)",
+      "new": "getattr(deco.value, \"id\", stmt.name)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another property's accessor reads as the def",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "else [_UNREAD]\n    return [stmt]",
+      "new": "else [stmt]\n    return [stmt]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another property's accessor keeps the earlier binding",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "else [_UNREAD]\n    return [stmt]",
+      "new": "else bound\n    return [stmt]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an own-name accessor reads as the def",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "return bound if getattr",
+      "new": "return [stmt] if getattr",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "parser refusal read as an example",
+      "mutant": "only the outermost decorator is read",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    except ValueError:  # pytest's collection of the file fails on the same docstring\n        return False",
-      "new": "    except ValueError:  # pytest's collection of the file fails on the same docstring\n        return True",
+      "old": "    for deco in stmt.decorator_list:\n",
+      "new": "    for deco in stmt.decorator_list[:1]:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only the innermost decorator is read",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    for deco in stmt.decorator_list:\n",
+      "new": "    for deco in stmt.decorator_list[-1:]:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a non-attribute decorator is read for its attr",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "if isinstance(deco, ast.Attribute) and deco.attr",
+      "new": "if deco.attr",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "any prompt line is an example",
+      "mutant": "a finally block may not run",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "return bool(doctest.DocTestParser().get_examples(ast.get_docstring(node, clean=False) or \"\"))",
-      "new": "return \">>>\" in (ast.get_docstring(node, clean=False) or \"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "old": "bound = _bound_after(getattr(stmt, \"finalbody\", []), name, bound)",
+      "new": "bound = bound + _bound_after(getattr(stmt, \"finalbody\", []), name, bound)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unread intermediate dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "([_UNREAD] if node is _UNREAD else",
-      "new": "([] if node is _UNREAD else",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "function bodies searched",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "_bound_after(node.body, qual, []) if isinstance(node, (ast.Module, ast.ClassDef))",
-      "new": "_bound_after(node.body, qual, []) if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "class bodies not searched",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "_bound_after(node.body, qual, []) if isinstance(node, (ast.Module, ast.ClassDef))",
-      "new": "_bound_after(node.body, qual, []) if isinstance(node, ast.Module)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "first definition kept",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = [stmt] if stmt.name == name else bound",
-      "new": "bound = bound + [stmt] if stmt.name == name else bound",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "import does not rebind",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = [] if any((a.asname or a.name.split(\".\")[0]) == name",
-      "new": "bound = bound if any((a.asname or a.name.split(\".\")[0]) == name",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "dotted import binds its whole name",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "(a.asname or a.name.split(\".\")[0])",
-      "new": "(a.asname or a.name)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "import alias ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "(a.asname or a.name.split(\".\")[0])",
-      "new": "(a.name.split(\".\")[0])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "del binds unread",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = [] if isinstance(stmt, ast.Delete) else [_UNREAD]",
-      "new": "bound = [_UNREAD]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "assignment leaves nothing",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = [] if isinstance(stmt, ast.Delete) else [_UNREAD]",
-      "new": "bound = []",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a read name counts as bound",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": " and isinstance(n.ctx, (ast.Store, ast.Del))",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "bare annotation binds",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "[stmt.target] if stmt.value is not None else []",
-      "new": "[stmt.target]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "if reads only its body",
+      "mutant": "an if with no else drops the earlier binding",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
       "old": "bound = _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)",
-      "new": "bound = _bound_after(stmt.body, name, bound)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "new": "bound = _bound_after(stmt.body, name, bound) + (_bound_after(stmt.orelse, name, bound) if stmt.orelse else [])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "if reads only its else",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)",
-      "new": "bound = _bound_after(stmt.orelse, name, bound)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "if may run neither branch",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)",
-      "new": "bound = bound + _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "with body may not run",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        elif isinstance(stmt, (ast.With, ast.AsyncWith)):\n            bound = _bound_after(stmt.body, name, bound)",
-      "new": "        elif isinstance(stmt, (ast.With, ast.AsyncWith)):\n            bound = bound + _bound_after(stmt.body, name, bound)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "loop block always runs",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "                bound = bound + _bound_after(block, name, bound)",
-      "new": "                bound = _bound_after(block, name, bound)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "finally not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            bound = _bound_after(getattr(stmt, \"finalbody\", []), name, bound)",
-      "new": "            pass",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "loop else not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "getattr(stmt, \"orelse\", [])]",
-      "new": "[]]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "match cases not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "[h.body for h in getattr(stmt, \"handlers\", []) + getattr(stmt, \"cases\", [])]",
-      "new": "[h.body for h in getattr(stmt, \"handlers\", [])]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "handlers not read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "[h.body for h in getattr(stmt, \"handlers\", []) + getattr(stmt, \"cases\", [])]",
-      "new": "[h.body for h in getattr(stmt, \"cases\", [])]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "duplicates kept",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        bound = list(dict.fromkeys(bound))\n    return bound",
-      "new": "    return bound",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "survived",
-      "answer": "equivalent: the dedupe only bounds the list's length; `any` over a list holding a node twice answers as over the list holding it once, and the runner's own run of the selector with it removed shows every row unchanged"
-    },
-    {
-      "mutant": "test: comment prompt made a real example",
+      "mutant": "test: the plain setter loses its decorator",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "'def only_comment():\\n    \"\"\"\\n    >>> # nothing runs\\n    \"\"\"\\n\\n\\n'",
-      "new": "'def only_comment():\\n    \"\"\"\\n    >>> 1\\n    1\\n    \"\"\"\\n\\n\\n'",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "old": "\"    @got.setter\\n    def got(self, value):",
+      "new": "\"    def got(self, value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: package row names a missing function",
+      "mutant": "test: the setter-only property loses its decorator",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "pkg/d/__init__.py::d.func | Pass",
-      "new": "pkg/d/__init__.py::d.nofunc | Pass",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "old": "\"    @set_only.setter\\n    def set_only",
+      "new": "\"    def set_only",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: second twice given the doctest",
+      "mutant": "test: the finally block no longer rebinds",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "\"def twice():\\n    \" + EXAMPLE + \"\\n\\n\\ndef twice():\\n    pass",
-      "new": "\"def twice():\\n    pass\\n\\n\\ndef twice():\\n    \" + EXAMPLE + \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "old": "\"try:\\n    pass\\nfinally:\\n    def rebound_in_finally():\\n        pass\\n\\n\\n\"",
+      "new": "\"try:\\n    pass\\nfinally:\\n    pass\\n\\n\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the stacked setters lose their decorators",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "\"\\n\\n    @_keep\\n    @stacked.setter\\n    def stacked",
+      "new": "\"\\n\\n    def stacked",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     }
