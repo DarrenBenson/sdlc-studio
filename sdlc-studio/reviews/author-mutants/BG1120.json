@@ -1,0 +1,34 @@
+{
+  "unit": "BG1120",
+  "digest": "16b578f8906ba2cb at b2f83d8b2ece",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG1120-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the walk without the combined diff",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"log\", \"-c\", \"--no-renames\", \"--topo-order\",",
+      "new": "\"log\", \"--no-renames\", \"--topo-order\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_an_edit_in_a_merge_resolution_stales_the_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every merge naming a declared file read as the author's",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"log\", \"-c\", \"--no-renames\", \"--topo-order\",",
+      "new": "\"log\", \"-m\", \"--no-renames\", \"--topo-order\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_merge_taking_a_file_whole_from_one_side_does_not_stale_the_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the merge resolved by taking one side whole",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "        _merge(self.root, \"side\", \"def s():\\n    return 2 + 3 + 4\\n\")",
+      "new": "        _merge(self.root, \"side\", \"def s():\\n    return 2\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_an_edit_in_a_merge_resolution_stales_the_record",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

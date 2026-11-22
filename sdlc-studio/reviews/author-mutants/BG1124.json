@@ -1,0 +1,61 @@
+{
+  "unit": "BG1124",
+  "digest": "db2561424f0593c2 at b2f83d8b2ece",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG1124-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the practices check reads the whole brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            # fingerprint.\n            assert_brief_practices(checked, tier)",
+      "new": "            # fingerprint.\n            assert_brief_practices(text, tier)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the re-review practices check reads the whole brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "before anything reaches stdout.\n            assert_brief_practices(checked, tier)",
+      "new": "before anything reaches stdout.\n            assert_brief_practices(text, tier)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the claim pass reads the whole brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                assert_brief_claim_pass(checked)\n            # The author's recorded self-check",
+      "new": "                assert_brief_claim_pass(text)\n            # The author's recorded self-check",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_surface_quoted_only_in_the_diff_does_not_satisfy_the_claim_pass",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the checked text keeps the diff",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return before + diff + after, before + after",
+      "new": "    return before + diff + after, before + diff + after",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the re-review's checked text keeps the diff",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return _rejoinder_text(base, prior, how), _rejoinder_text(checked, prior, how)",
+      "new": "    return _rejoinder_text(base, prior, how), _rejoinder_text(base, prior, how)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the practice left in the patched block",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py",
+      "old": "DROPPED = critic._REVIEW_PRACTICES_BLOCK.replace(f\"\\n\\n{QUOTED}\", \"\")",
+      "new": "DROPPED = critic._REVIEW_PRACTICES_BLOCK",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "unit": "BG0970",
+  "digest": "6fd878c1f009b5e8 at b2f83d8b2ece",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG0970-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the warning never printed on a first brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if unseen:\n                print(unseen, file=sys.stderr)\n            # The author's self-check",
+      "new": "            if False:\n                print(unseen, file=sys.stderr)\n            # The author's self-check",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_warns_on_uncommitted_affects",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the warning never printed on a re-review brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if unseen:\n                print(unseen, file=sys.stderr)\n            # A repair is",
+      "new": "            if False:\n                print(unseen, file=sys.stderr)\n            # A repair is",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_warns_on_uncommitted_affects",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the warning printed to stdout, joining the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if unseen:\n                print(unseen, file=sys.stderr)\n            # The author's self-check",
+      "new": "            if unseen:\n                print(unseen)\n            # The author's self-check",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_warns_on_uncommitted_affects",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "untracked files left out",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"--untracked-files=all\"",
+      "new": "\"--untracked-files=no\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_warns_on_uncommitted_affects",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the review tooling's own writes named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                    if not _review_tool_write(p)}, key=PurePosixPath)",
+      "new": "                    if True}, key=PurePosixPath)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_on_a_clean_tree_is_silent",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a status git could not give read as a clean tree",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return (f\"note: could not read git status ({exc}), so this brief cannot",
+      "new": "        return None\n        return (f\"note: could not read git status ({exc}), so this brief cannot",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_on_a_clean_tree_is_silent",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the check run outside a repository",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not head or not affects:\n        return None\n    shown",
+      "new": "    if not affects:\n        return None\n    shown",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the note keeps no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if commit:\n            row[\"commit\"] = commit\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the note claims an empty commit outside a repository",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if commit:\n            row[\"commit\"] = commit\n",
+      "new": "        row[\"commit\"] = commit\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the footer line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    cut = f\"brief cut at commit: {commit}\\n\" if commit else \"\"",
+      "new": "    cut = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the footer line printed with no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    cut = f\"brief cut at commit: {commit}\\n\" if commit else \"\"",
+      "new": "    cut = f\"brief cut at commit: {commit}\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the first brief's note given no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "explicit=explicit, verdict_file=str(path), commit=head)\n            # Uncommitted",
+      "new": "explicit=explicit, verdict_file=str(path), commit=\"\")\n            # Uncommitted",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the re-review brief's note given no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "explicit=explicit, verdict_file=str(path), commit=head)\n            if unseen:",
+      "new": "explicit=explicit, verdict_file=str(path), commit=\"\")\n            if unseen:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the re-review brief's footer given no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,\n                                 head), file=sys.stderr)\n        else:",
+      "new": "            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,\n                                 \"\"), file=sys.stderr)\n        else:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_records_its_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the AC1 fixture leaves the new file unwritten",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py",
+      "old": "        _write(root, \"src/new.py\", \"y = 1\\n\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py::UncommittedAffectsTests::test_brief_warns_on_uncommitted_affects",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

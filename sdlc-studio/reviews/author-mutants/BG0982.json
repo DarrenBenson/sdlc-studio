@@ -1,0 +1,97 @@
+{
+  "unit": "BG0982",
+  "digest": "4d68f2be308072b5 at b2f83d8b2ece",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG0982-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the block never added to the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        scope += f\"\\n\\n{undeclared}\"",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_undeclared_change_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the workspace's records named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            changed |= {n for n in names if n and not n.startswith(_WORKSPACE)}",
+      "new": "            changed |= {n for n in names if n}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_undeclared_change_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every commit read as the unit's",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if sha.strip() in own:",
+      "new": "        if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_undeclared_change_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "declared files named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    undeclared = sorted((n for n in changed if not _declares(affects, n)), key=PurePosixPath)",
+      "new": "    undeclared = sorted(changed, key=PurePosixPath)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_declared_changes_print_no_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a declared directory's member read as undeclared",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return any(rel == a or rel.startswith(a + \"/\") for a in",
+      "new": "    return any(rel == a for a in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_declared_changes_print_no_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty block printed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not undeclared:\n        return \"\"\n    listed",
+      "new": "    listed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_declared_changes_print_no_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a git failure read as no undeclared change",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except (ValueError, verify_ac.CoverageUnavailable) as exc:\n        return f\"{UNDECLARED_HEADING}: not checked",
+      "new": "    except (ValueError, verify_ac.CoverageUnavailable) as exc:\n        return \"\"\n        return f\"{UNDECLARED_HEADING}: not checked",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_declared_changes_print_no_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the block asks for no correction of Affects",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            f\"they are {shown}'s work, its Affects is wrong; say so, so the author can correct \"\n            f\"its Affects and brief again.\")",
+      "new": "            f\"they are {shown}'s work, say so.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_diff_scope_stays_bounded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the block claims the review widens",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "this block does not widen this review to these files",
+      "new": "these files join this review",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_diff_scope_stays_bounded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the bookkeeping commit leaves the workspace untouched",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py",
+      "old": "        _commit(root, \"docs(RUN-A): US0001 is Done\", {STORY: story})\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py::UndeclaredChangeTests::test_undeclared_change_is_named",
+      "result": "survived",
+      "answer": "Expected to survive: without the fixture's bookkeeping commit nothing under sdlc-studio/ is changed by a commit naming US0001, so the test has no workspace record to leave out and passes either way. The commit is the live input: 'the workspace's records named', killed by this same test, lists the story file once the exclusion is removed."
+    }
+  ]
+}

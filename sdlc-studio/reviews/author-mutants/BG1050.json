@@ -1,0 +1,70 @@
+{
+  "unit": "BG1050",
+  "digest": "582e18b8cf00c9e1 at b2f83d8b2ece",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9494e6b7020e6f52/BG1050-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "only the newline folded",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    text = text.replace(\"|\", \"/\").translate(_LINE_BREAKS).strip()",
+      "new": "    text = text.replace(\"|\", \"/\").replace(\"\\n\", \" \").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_a_reviewer_id_with_every_splitlines_break_reads_back_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a break dropped rather than spaced",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\\u2028\\u2029\"), \" \")",
+      "new": "\\u2028\\u2029\"), \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_a_reviewer_id_with_every_splitlines_break_reads_back_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line separator left out",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "new": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2029\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_a_reviewer_id_with_every_splitlines_break_reads_back_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the file separator left out",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "new": "\"\\n\\r\\x0b\\x0c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_every_character_splitlines_breaks_on_is_folded_to_a_space",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the next-line control left out",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "new": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\u2028\\u2029\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_every_character_splitlines_breaks_on_is_folded_to_a_space",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a tab folded too",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "new": "\"\\t\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_every_character_splitlines_breaks_on_is_folded_to_a_space",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the reviewer id carries no break",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py",
+      "old": "            reviewer = \"qa\\rseat\\x0cone\\u2028two\"",
+      "new": "            reviewer = \"qa seat one two\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_a_reviewer_id_with_every_splitlines_break_reads_back_whole",
+      "result": "survived",
+      "answer": "Expected to survive against the fixed code: the mutant strips the breaks from the test's own input, so it no longer exercises the fold, and passes against the code before the fix too. That the shipped input is the live one is shown by 'only the newline folded', killed by this same test: the carriage return tears the row when only the newline is folded."
+    }
+  ]
+}
