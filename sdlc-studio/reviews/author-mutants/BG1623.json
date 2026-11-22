@@ -1,0 +1,169 @@
+{
+  "unit": "BG1623",
+  "digest": "a6f5c1495e23ae3e at 8560c0b0cddf",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a88f5beabf3df6914/BG1623-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "builder-taken-as-reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    if agent == entry.get(\"builder\"):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any-id-taken-as-reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    if why := _briefed(root, agent, entry.get(\"verdict\")):\n",
+      "new": "    if why := None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any-transcript-taken-as-briefed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    if verdict and any(form in text for form in named):\n",
+      "new": "    if verdict:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused-commit-not-named",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    refused = _refused_paperwork(root, unit)\n",
+      "new": "    refused = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveRerunAfterRefusedPaperworkTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused-commit-log-not-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        kept=refused[1] if refused else None,\n",
+      "new": "        kept=None,\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveRerunAfterRefusedPaperworkTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "later-accept-stop-named-a-refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        if accept.is_file() and accept.stat().st_mtime_ns > log.stat().st_mtime_ns:\n            return None\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveRerunAfterRefusedPaperworkTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "short-log-crashes",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "(said[1].strip() if len(said) > 1 else \"exit unknown\")",
+      "new": "said[1].strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveRerunAfterRefusedPaperworkTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "help-silent-on-exit-2-after-work",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "Exit 2 is a refusal before anything ran, or a review that could not \"\n        \"start after the unit's build and landing ran (its brief over the size limit, or the CLI \"\n        \"gone from PATH). \"",
+      "new": "\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "help-page-silent-on-exit-2-after-work",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "Exit 2 is a refusal before anything ran, or a\nreview that could not start after the unit's build and landing ran (its brief over the size\nlimit, or the CLI gone from PATH); 0",
+      "new": "Exit 2 is a refusal before anything ran; 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "oversized-brief-exits-1",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        raise _Stop(decision_record(unit, \"review\", REFUSAL, quote=[why], resume=w.again), 2)\n",
+      "new": "        raise _Stop(decision_record(unit, \"review\", REFUSAL, quote=[why], resume=w.again), 1)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "return-and-paperwork-swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "STEPS = (\"build\", \"land\", \"brief\", \"review\", \"accept\", \"return\", \"paperwork\")\n",
+      "new": "STEPS = (\"build\", \"land\", \"brief\", \"review\", \"accept\", \"paperwork\", \"return\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "return-step-stop-gone",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "            if not said:\n                raise _Stop(decision_record(unit, step, REFUSAL, quote=[\n",
+      "new": "            if False:\n                raise _Stop(decision_record(unit, step, REFUSAL, quote=[\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "landing-lock-gone",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        elif step == \"land\":\n            with w.root_lock:\n",
+      "new": "        elif step == \"land\":\n            with contextlib.nullcontext():\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "shared-file-hold-gone",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "            and sdlc_md.norm_id(u) not in taken and not (_affects(root, u) & building)]",
+      "new": "            and sdlc_md.norm_id(u) not in taken]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resumed-reviewer-not-taken",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        mine = [k for k, e in waiting.items() if e.get(\"reviewer\") == agent]\n",
+      "new": "        mine = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_repair_hand_back_is_landed_and_the_round_two_prompt_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "escaped-verdict-path-unread",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    named = {str(verdict), json.dumps(str(verdict))[1:-1]}\n",
+      "new": "    named = {str(verdict)}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests::test_a_transcript_is_read_for_the_verdict_files_own_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-verdict-file-named-by-anything",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    if verdict and any(form in text for form in named):\n",
+      "new": "    if any(form in text for form in named):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests::test_a_transcript_is_read_for_the_verdict_files_own_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-briefs-no-builder",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py",
+      "old": "        self.briefed(\"a1\", prompt)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

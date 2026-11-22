@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 311 |
+| Open | 315 |
 | In Progress | 0 |
 | Fixed | 1046 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1698** |
+| **Total** | **1702** |
 
 ## All Bugs
 
@@ -774,6 +774,10 @@
 | [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1698](BG1698-a-unit-approved-in-a-ruled-round-past.md) | A unit approved in a ruled round past the cap stays dropped from the batch, so the close and the report do not credit it | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1699](BG1699-lane-land-s-commit-bound-is-a-fixed.md) | lane land's commit bound is a fixed 1800 seconds that no setting or flag changes, so a lane whose commit selects most of the suite is stopped whenever the host is loaded | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1700](BG1700-critic-py-show-takes-over-five-minutes-on.md) | critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

@@ -1,0 +1,79 @@
+{
+  "unit": "BG1626",
+  "digest": "25361458e50557b9 at 8560c0b0cddf",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a88f5beabf3df6914/BG1626-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "resume-names-lane-accept-again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "                  f\"{paperwork_command(root, unit)}, then {again}\" if warned else\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "accept-not-marked",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "            entry.update(stage=\"accepted\", reviewer=agent)\n",
+      "new": "            entry.update()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rerun-commits-past-the-warning",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        if not _finished(root, unit):\n            raise _Stop(_uncommitted_record(root, unit, again), 1)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_a_rerun_before_the_paperwork_commit_holds_as_drive_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resumed-accept-needs-unit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    elif resumed:\n        return resumed[0]\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resumed-stage-left-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        entry[\"stage\"] = \"done\"\n        _save(root, record)\n        return ([f\"{unit} accept: recorded already",
+      "new": "        _save(root, record)\n        return ([f\"{unit} accept: recorded already",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused-accept-marked-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        warned = done.returncode == 0 and warnings(done.stderr, own)\n",
+      "new": "        warned = warnings(done.stderr, own)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_a_refused_accept_beside_a_warning_still_names_lane_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resumed-accept-refused-with-unit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "        if key in resumed:\n            return key\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_a_rerun_before_the_paperwork_commit_holds_as_drive_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-runs-only-the-step",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py",
+      "old": "        for part in resume.split(\", then \"):\n",
+      "new": "        for part in resume.split(\", then \")[1:]:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
