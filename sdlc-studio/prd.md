@@ -857,6 +857,7 @@ none.
 | 2026-11-20 | 6.4.0 | PyYAML required (US1299): the tech stack bullet, the Performance requirement and the Third-Party Dependencies section name PyYAML as the one required third-party package, which the installers and the gate's prerequisite check refuse a machine without, and the earlier standard-library wording is gone |
 | 2026-11-21 | 6.4.0 | Unparseable Verify lines (BG0981): the Breakdown gate's first criterion says a groomed story or bug carries no `Verify:` line `verify_ac.py run` cannot parse |
 | 2026-11-21 | 6.4.0 | Verify AC (BG1023): the vitest and jest verbs select a test by file and name, so the parse criterion is ticked and the row no longer names BG1023 as holding it; the feature stays Partial, held by BG1063 |
+| 2026-11-22 | 6.4.0 | Environment variables (BG1578): the table gains `SDLC_VERIFY_RED_DETAIL`, the file `verify_ac.py run` appends each red criterion's own verifier output to, which the scheduled corpus lane sets |
 
 ---
 
