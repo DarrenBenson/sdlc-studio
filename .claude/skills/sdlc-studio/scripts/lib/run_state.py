@@ -2420,7 +2420,8 @@ def update(repo_root: Path | str, **fields) -> dict:
     return _mutate(repo_root, apply)
 
 
-def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str) -> dict:
+def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str,
+                    review_base: str = "") -> dict:
     """Remove a unit from the OPEN run's approved batch and record the change.
 
     Drop judges THIS BATCH: the unit leaves `batch`, so the done-gate and sign-off lanes - which
@@ -2429,7 +2430,8 @@ def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str) -> dict:
     batch and still blocks the close. Every drop is recorded in `batch_changes` (action, id,
     reason, timestamp) so the batch a sprint DELIVERED can always be reconstructed against the
     batch it was PLANNED with. A drop needs a reason - it is recorded, not silent - and an open
-    run to drop from; it never fabricates one."""
+    run to drop from; it never fabricates one. A `review_base` is kept on the change too: the
+    commit a carry at the review cap judged, which the redelivery's brief diffs from."""
     if not (reason or "").strip():
         raise RunStateError("a batch drop needs a reason - it is recorded, not silent")
     norm = sdlc_md.norm_id(unit_id)
@@ -2443,8 +2445,11 @@ def drop_from_batch(repo_root: Path | str, unit_id: str, reason: str) -> dict:
         if len(kept) == len(batch):
             raise RunStateError(f"{norm} is not in the open batch - nothing to drop")
         state["batch"] = kept
-        state["batch_changes"] = list(state.get("batch_changes") or []) + [
-            {"action": "drop", "id": norm, "reason": reason.strip(), "at": sdlc_md.now_iso8601()}]
+        entry = {"action": "drop", "id": norm, "reason": reason.strip(),
+                 "at": sdlc_md.now_iso8601()}
+        if review_base:
+            entry["review_base"] = review_base
+        state["batch_changes"] = list(state.get("batch_changes") or []) + [entry]
         return state
 
     return _mutate(repo_root, apply)

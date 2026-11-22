@@ -2186,6 +2186,42 @@ class CallerNamedTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 mod.tree_index(empty)
 
+    def test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script(self) -> None:
+        """BG0999. A consuming project's criterion names a skill command (`decisions.py
+        waive`), and the skill's scripts are no files of the project. Mutants: the skill's
+        scripts directory not consulted; a bare word matched against it, so `decisions waive`
+        resolves; its files matched by stem; its subdirectories read as scripts; a name in
+        neither tree resolving."""
+        mod = _load()
+        skill = Path(mod.__file__).resolve().parent
+        self.assertTrue((skill / "decisions.py").is_file(), "premise: the loaded skill has it")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._file(root, "src/thing.py")
+            index = mod.tree_index(root)
+            self.assertNotIn("decisions.py", index["names"], "premise: not a project file")
+            for named in ("decisions.py waive", "the waiver (scripts/decisions.py waive)"):
+                self.assertTrue(mod.caller_resolves(index, named), named)
+            for unnamed in ("decisions waive", "nosuchscript.py waive", "decisions.waive",
+                            "the helpers (scripts/lib)"):
+                self.assertFalse(mod.caller_resolves(index, unnamed), unnamed)
+            self._file(root, "tests/test_thing.py")
+            self._unit(root, 5, "src/thing.py, tests/test_thing.py",
+                       "### AC1: a waiver consumes the digest\n\n"
+                       "- **Then** the waiver reads it\n"
+                       "- **Verify:** pytest tests/test_thing.py::T::t\n"
+                       "- **Caller:** decisions.py waive\n")
+            self.assertEqual([], mod.caller_findings(root, ["US0005"]),
+                             "the close's caller-check reported a skill command unresolved")
+        # an unreadable skill directory resolves nothing from it, and the scan still answers
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._file(root, "src/thing.py")
+            with unittest.mock.patch.object(mod, "SKILL_SCRIPTS", root / "no-such-dir"):
+                index = mod.tree_index(root)
+            self.assertFalse(mod.caller_resolves(index, "decisions.py waive"))
+            self.assertTrue(mod.caller_resolves(index, "src/thing.py"))
+
 
 class CallerResolverAtScaleTests(unittest.TestCase):
     """A negative control on a four-file tree cannot judge a resolver whose failure mode is a

@@ -357,6 +357,10 @@ def _code_urls(text: str) -> str:
     return file_finding._code_urls(text or "")
 
 
+#: Every character `str.splitlines` ends a line at, each folded to a space in a ledger cell.
+_LINE_BREAKS = dict.fromkeys(map(ord, "\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"), " ")
+
+
 def _clean(value: str) -> str:
     """A free-text value as a ledger cell: escaped for its CONTEXT, and refused if unwritable.
 
@@ -367,9 +371,12 @@ def _clean(value: str) -> str:
     identifier a reviewer named came out wrong in the three files this project uses as its
     account of what review found.
 
-    The pipe and newline substitutions apply EVERYWHERE, span interiors included. These rows
+    The pipe and line-break substitutions apply EVERYWHERE, span interiors included. These rows
     are built by f-string rather than by a row joiner, so this function is the only thing
-    standing between a reviewer's piped shell command and a forged column.
+    standing between a reviewer's piped shell command and a forged column. Every character
+    `str.splitlines` breaks on is folded to a space (`_LINE_BREAKS`), not only the newline: the
+    ledger is read back with universal newlines and `splitlines`, so a carriage return, form
+    feed or line separator left in a cell tore its row, and the reader skipped it as malformed.
 
     An ODD number of backticks is REFUSED rather than balanced. An unbalanced span turns the
     rest of the row into code and markdownlint then refuses the whole file, so the value cannot
@@ -394,8 +401,8 @@ def _clean(value: str) -> str:
             f"span or drop the stray backtick - it is not balanced here, because rewriting "
             f"what a reviewer wrote is worse than refusing it. The stray is at character "
             f"{at} of {len(text)}, here: {_excerpt(text, at)!r}")
-    text = text.replace("|", "/").replace("\n", " ").strip()
-    # Judged AFTER the newline substitution: a span broken across lines renders the break as a
+    text = text.replace("|", "/").translate(_LINE_BREAKS).strip()
+    # Judged AFTER the line-break substitution: a span broken across lines renders the break as a
     # space, so its edge is only visible once the row's own shape has been applied.
     if (found := _edge_whitespace_span(text)) is not None:
         at, span, edge = found
@@ -2079,7 +2086,12 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     """File the findings of a REJECT recorded at the cap as a bug, and drop the unit from the
     open run's batch naming it. Returns the bug id, or None when no open run holds the unit:
     there is then no run to keep going, and the REJECT stands against the unit as it is. The
-    run keeps going: the unit becomes a known issue instead of a third round."""
+    run keeps going: the unit becomes a known issue instead of a third round.
+
+    The drop records the commit the REJECT judged (`carried_review_base` reads it): the commit
+    its brief was cut at, from the brief's note, or the commit checked out now when no note
+    names its fingerprint. A repair that lands before the redelivery's run opens is then in the
+    diff its brief carries, rather than beneath that run's base."""
     uid = sdlc_md.norm_id(unit)
     if not run_state.batch_holds(run_state.read(repo_root) or {}, uid):
         return None
@@ -2107,7 +2119,10 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
         "fix": f"Fix each finding above, then deliver {disp} again in a later run.",
     }, counted=False)  # a review outcome, not a new finding: outside the triage session cap
     bug = res["id"]
-    run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}")
+    fp = _brief_key(row)
+    judged = str(((_noted_row(repo_root, uid, fp) if fp else None) or {}).get("commit") or "")
+    run_state.drop_from_batch(repo_root, uid, f"{CARRIED_REASON}: {bug}",
+                              review_base=judged or _head_commit(Path(repo_root)))
     return bug
 
 
@@ -2163,6 +2178,30 @@ def _carry_bug(repo_root: Path | str, reason: str) -> str | None:
     bug = sdlc_md.norm_id(reason[len(prefix):].strip())
     found = sdlc_md.find_by_id(repo_root, bug) if bug else None
     return bug if found and found[1] == "bug" else None
+
+
+def carried_review_base(repo_root: Path | str, unit: str) -> tuple[str, str]:
+    """`(commit, carried unit)`: the commit the capping REJECT judged, as the batch drop that
+    carried a unit at the review cap recorded it (`carry_at_cap`), when that unit is `unit` or
+    its carry bug is; `("", "")` when no such drop recorded one. The latest such drop wins, read
+    from every archived run and the open one, as `carried_by` reads them, since the redelivery
+    comes in a later run; an open run's record `run_state.read` refuses as unreadable
+    (`RunStateError`) leaves the archived ones to answer."""
+    uid = sdlc_md.norm_id(unit)
+    try:
+        current = run_state.read(repo_root) or {}
+    except run_state.RunStateError:
+        current = {}
+    found = ("", "")
+    for record in [*run_state.archived(repo_root), current]:
+        for change in record.get("batch_changes") or []:
+            if not (isinstance(change, dict) and change.get("action") == "drop"
+                    and change.get("review_base")):
+                continue
+            carried = sdlc_md.norm_id(str(change.get("id") or ""))
+            if uid in (carried, _carry_bug(repo_root, change.get("reason"))):
+                found = (str(change["review_base"]), carried)
+    return found
 
 
 def carried_by(repo_root: Path | str, unit: str) -> str | None:
@@ -3203,14 +3242,17 @@ def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | Non
     touched it, or when the newest that did is not another unit's, or when it differs from HEAD
     (an uncommitted edit, which nothing attributes to another unit). Otherwise it is the content
     after the newest commit that is not another unit's, or at `base` when every one was. A merge
-    commit lists no file here, so an edit made in one can be missed."""
+    commit is read by its combined diff (`git log -c`), so it touches a file only when it left
+    that file differing from every parent: its own content, such as a conflict resolution,
+    which it is held to by its subject like any other commit. A merge that took a file whole
+    from one parent touches nothing, so a clean merge of another unit's branch stays set aside."""
     root = Path(repo_root)
     uid = sdlc_md.norm_id(unit)
     affects = sorted(set(_self_check_scope(root, unit)[0]))
     ancestor = _git(root, "merge-base", "--is-ancestor", base, "HEAD")
     if not affects or ancestor is None or ancestor.returncode != 0:
         return None
-    log = _git(root, "-c", "core.quotePath=false", "log", "--no-renames", "--topo-order",
+    log = _git(root, "-c", "core.quotePath=false", "log", "-c", "--no-renames", "--topo-order",
                "--relative", "--name-only", "--format=%x00%H %s", f"{base}..HEAD", "--", *affects)
     if log is None or log.returncode != 0:
         return None
@@ -3797,14 +3839,19 @@ def _brief_scope(root: Path, unit: str) -> dict:
 
 
 def note_brief(root: Path | str, unit: str, seat: str, tier: str, fp: str,
-               rejoinder: bool, explicit: bool, verdict_file: str | None = None) -> None:
-    """Append what this brief was taken over, and the verdict file it issued, so an issued file
-    can be told from a hand-made one. Best-effort: a brief is never refused for it."""
+               rejoinder: bool, explicit: bool, verdict_file: str | None = None,
+               commit: str = "") -> None:
+    """Append what this brief was taken over, the verdict file it issued, so an issued file can
+    be told from a hand-made one, and the commit it was cut at (none outside a repository), so a
+    verdict recorded against its fingerprint names the revision it judged. Best-effort: a brief
+    is never refused for it."""
     try:
         row = {"fp": fp, "unit": sdlc_md.norm_id(unit), "seat": seat, "tier": tier,
                "explicit": explicit, "rejoinder": rejoinder, **_brief_scope(Path(root), unit)}
         if verdict_file:
             row["verdict_file"] = verdict_file
+        if commit:
+            row["commit"] = commit
         path = Path(root) / BRIEF_NOTES_REL
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as fh:
@@ -4164,6 +4211,80 @@ def _unit_diff_section(root: Path, base: str, affects: list[str], tier: str) -> 
     return f"{head}\n{body}"
 
 
+#: The workspace's records: artefacts, ledgers and run state, which status and review
+#: bookkeeping commits write under a unit's id, so the undeclared-changes block leaves them out.
+_WORKSPACE = "sdlc-studio/"
+#: The heading of the brief's block naming files the unit's commits changed outside its Affects.
+UNDECLARED_HEADING = "Changed but not declared"
+
+
+def _declares(affects: list[str], rel: str) -> bool:
+    """True when `rel` is an Affects path or lies beneath a declared directory."""
+    return any(rel == a or rel.startswith(a + "/") for a in (x.rstrip("/") for x in affects))
+
+
+def _undeclared_block(root: Path, unit: str, shown: str, base: str, affects: list[str]) -> str:
+    """The block naming each file the unit's commits since `base` changed outside its Affects,
+    or "" when there is none. A unit's commits are those `verify_ac` counts as its own (the
+    subject or a `Refs:` line names it); the workspace's records are left out. It informs the
+    reviewer and asks for Affects to be corrected: the diff stays bounded to the Affects. Git
+    unable to list the commits is said in the block, never read as no undeclared change."""
+    import verify_ac  # noqa: PLC0415 - sibling; its reading of a unit's commits is the one kept
+    try:
+        own = verify_ac._unit_commit_shas(root, base, unit)
+        log = _git_text(root, "-c", "core.quotePath=false", "log", "--no-renames",
+                        "--name-only", "--format=%x00%H", f"{base}..HEAD")
+    except (ValueError, verify_ac.CoverageUnavailable) as exc:
+        return f"{UNDECLARED_HEADING}: not checked - git could not list the unit's commits ({exc})"
+    changed: set[str] = set()
+    for chunk in log.decode("utf-8", "replace").split("\0")[1:]:
+        sha, *names = chunk.split("\n")
+        if sha.strip() in own:
+            changed |= {n for n in names if n and not n.startswith(_WORKSPACE)}
+    undeclared = sorted((n for n in changed if not _declares(affects, n)), key=PurePosixPath)
+    if not undeclared:
+        return ""
+    listed = "\n".join(f"- {n}" for n in undeclared)
+    return (f"{UNDECLARED_HEADING} (files {shown}'s commits change outside its Affects: git log "
+            f"{base}..HEAD, the commits whose subject or a Refs: line names {shown}):\n{listed}\n"
+            f"Judge the diff above: this block does not widen this review to these files. If "
+            f"they are {shown}'s work, its Affects is wrong; say so, so the author can correct "
+            f"its Affects and brief again.")
+
+
+#: What the warning says of the unit's uncommitted Affects, and the words its test reads.
+UNCOMMITTED_UNSEEN = "an isolated reviewer will not see"
+
+
+def uncommitted_notice(repo_root: Path | str, unit: str) -> str | None:
+    """The stderr warning naming each of the unit's Affects paths that holds a change HEAD does
+    not (modified, staged, deleted or untracked, a declared directory's files beneath it), less
+    the review tooling's own writes: a reviewer's isolated checkout is made from HEAD and does
+    not see them. A note when git cannot give a status; None over a clean tree, for a unit
+    declaring no Affects, or outside a repository, where there is no HEAD to cut a checkout
+    from."""
+    root = Path(repo_root)
+    head = _head_commit(root)
+    found = sdlc_md.find_by_id(root, unit)
+    affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0])) if found else []
+    if not head or not affects:
+        return None
+    shown = sdlc_md.display_id(root, unit)
+    try:
+        out = _git_text(root, "status", "--porcelain", "-z", "--untracked-files=all",
+                        "--no-renames", "--", *affects)
+    except ValueError as exc:
+        return (f"note: could not read git status ({exc}), so this brief cannot say whether "
+                f"{shown}'s Affects hold uncommitted changes {UNCOMMITTED_UNSEEN}")
+    paths = sorted({p for p in (os.fsdecode(e[3:]) for e in out.split(b"\0") if len(e) > 3)
+                    if not _review_tool_write(p)}, key=PurePosixPath)
+    if not paths:
+        return None
+    return (f"warning: {shown}'s Affects hold uncommitted changes {UNCOMMITTED_UNSEEN}: "
+            f"{', '.join(paths)}. A reviewer's worktree is made from HEAD ({head}) and judges "
+            f"the unit without them: commit them, then brief again.")
+
+
 def _verify_section(unit_id: str) -> str:
     """The VERIFY COMMAND section: the one command that runs the unit's Verify lines, with
     `--dry-run` so a reviewer's run writes nothing to the author's file."""
@@ -4178,7 +4299,8 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
 
     The judgement stays with the seat; this is only the scaffolding every review
     needs - charter, unit ACs, diff scope, tier, the command that runs the unit's
-    Verify lines, its diff since the run's base, and the exact return contract -
+    Verify lines, its diff since the run's base (since the commit its capping REJECT
+    judged, for a carried unit), and the exact return contract -
     so no reviewer starts from a hand-typed, drift-prone brief. The optional
     sections are the ones `TIER_SECTIONS[tier]` lists. Refuses an unknown unit,
     seat or tier loudly.
@@ -4188,12 +4310,20 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     share one read of each artefact type. The brief writes nothing, so the cache cannot serve it
     a stale view; it closes as the brief returns or raises, and a cache the caller holds stays
     open."""
+    return checked_brief(repo_root, unit, seat, tier)[0]
+
+
+def checked_brief(repo_root: Path | str, unit: str, seat: str,
+                  tier: str = "full") -> tuple[str, str]:
+    """`brief`'s text, and the text its practice and claim-inventory checks read: the same brief
+    less its UNIT DIFF section. The diff quotes the tree, so a practice the unit's own commit
+    quotes or removes would otherwise satisfy the check the brief itself fails."""
     with sdlc_md.corpus_cache():
         return _brief(repo_root, unit, seat, tier)
 
 
-def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
-    """`brief`'s body, run with the corpus cache open."""
+def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> tuple[str, str]:
+    """`checked_brief`'s body, run with the corpus cache open."""
     if tier not in TIERS:
         raise ValueError(f"unknown review tier {tier!r} - one of {', '.join(TIERS)}")
     sections = TIER_SECTIONS[tier]
@@ -4213,10 +4343,17 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
              else "(no Affects declared - derive the scope from git status)")
     # THE BASE COMMIT. "At the base ref" names nothing a reviewer can run; the run that holds
     # this unit recorded one, so the brief prints the exact command. No run naming the unit, no
-    # command - a ref from a run about other work is not this unit's base.
-    base = run_state.unit_run_base_ref(root, unit)
-    if base:
-        files = " ".join(shlex.quote(a) for a in affects)
+    # command - a ref from a run about other work is not this unit's base. A unit carried at the
+    # review cap, or its carry bug, diffs from the commit the capping REJECT judged instead: a
+    # repair landed before the redelivery's run opened sits beneath that run's base.
+    files = " ".join(shlex.quote(a) for a in affects)
+    judged, carried = carried_review_base(root, unit)
+    base = judged or run_state.unit_run_base_ref(root, unit)
+    if judged:
+        scope += (f"\nDiff against the commit {sdlc_md.display_id(root, carried)}'s capping "
+                  f"REJECT judged (it was carried at the review cap): git diff {base}"
+                  + (f" -- {files}" if files else ""))
+    elif base:
         scope += (f"\nDiff against the run's base commit: git diff {base}"
                   + (f" -- {files}" if files else ""))
     else:
@@ -4245,6 +4382,11 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
     title = sdlc_md.extract_h1_title(text) or unit_id
     # Printed in the file's spelling; `unit_id` stays the comparison key the reads below take.
     shown = sdlc_md.extract_record_id(path.stem) or unit
+    # FILES THE UNIT CHANGED AND DID NOT DECLARE, beside the scope they fall outside of. Said,
+    # never added to the diff: the review stays bounded to the Affects the unit declares.
+    if base and affects and (undeclared := _undeclared_block(root, unit_id, shown, base,
+                                                             affects)):
+        scope += f"\n\n{undeclared}"
     verify = f"{_verify_section(shown)}\n\n" if "VERIFY COMMAND" in sections else ""
     # THE UNIT'S OWN DIFF, so the seat spends its turns judging the change rather than finding
     # it. Bounded to the Affects: with none declared there is no bound, so no diff.
@@ -4259,7 +4401,8 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
                    f"{reconcile.file_history_section(root, unit_id, affects)}\n")
     # A top-class unit takes two independent seats; the brief says which one this is.
     risk = _risk_class_block(root, text, unit_id, seat)
-    return f"""You are the {seat} review seat. Read and adopt the charter at
+    # Composed in two halves around the diff, so the checks read the brief without it.
+    before = f"""You are the {seat} review seat. Read and adopt the charter at
 {card} (the review render). You did NOT author this diff; your job is
 independent judgement of it against the ACs below - they are law, your stance never
 overrides them.
@@ -4279,13 +4422,15 @@ Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 Tool-call budget: {TIER_TOOL_BUDGET[tier]} tool calls at the {tier} tier; spend them judging the
 change, not finding it.
 
-{verify}{diff}{inventory}{practices}
+{verify}"""
+    after = f"""{inventory}{practices}
 
 {_lessons_block(root)}
 
 {_seat_memory_block(root, seat, affects)}
 
 {_RETURN_CONTRACT}"""
+    return before + diff + after, before + after
 
 
 def _seat_memory_block(root: Path, seat: str, affects: list[str]) -> str:
@@ -4305,12 +4450,25 @@ def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
     verdict is accepted too (a legitimate post-approval re-review). `rebuilt` says the block
     was rebuilt from a ledger row's cells (`rebuild_verdict_block`), and the quote is introduced
     as that, never as the reviewer's own words."""
+    return checked_rejoinder_brief(repo_root, unit, seat, prior_verdict_text, tier, rebuilt)[0]
+
+
+def checked_rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
+                            prior_verdict_text: str, tier: str = "full",
+                            rebuilt: bool = False) -> tuple[str, str]:
+    """`rejoinder_brief`'s text, and the text its checks read: the same re-review over the base
+    brief less its UNIT DIFF (`checked_brief`)."""
     parse_verdict_block(prior_verdict_text, strict=False)  # form only; ValueError on malformed
-    base = brief(repo_root, unit, seat, tier)
+    base, checked = checked_brief(repo_root, unit, seat, tier)
     # The earlier file's UNIT/BRIEF header is dropped from the quote: it is not the verdict, and
     # a reviewer copying it would head the new file with the earlier brief's name.
     prior = _VERDICT_HEADER_RE.sub("", prior_verdict_text, count=1).strip()
     how = REBUILT_QUOTE if rebuilt else "verbatim"
+    return _rejoinder_text(base, prior, how), _rejoinder_text(checked, prior, how)
+
+
+def _rejoinder_text(base: str, prior: str, how: str) -> str:
+    """The re-review brief over `base`, quoting the prior verdict `prior` as `how` says."""
     return f"""{base}
 
 --- RE-REVIEW (rejoinder) ---
@@ -4728,9 +4886,22 @@ _CALLER_TOKEN = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*")
 #: list of "uninteresting" directories is a list of places a caller can hide.
 _TREE_SKIP = (".git", "__pycache__")
 
+#: The loaded skill's scripts directory. A consuming project's criterion names a skill command
+#: (`decisions.py waive`) whose script is no file of the project's tree.
+SKILL_SCRIPTS = Path(__file__).resolve().parent
+
+
+def _skill_script_names() -> set[str]:
+    """The file names in `SKILL_SCRIPTS`, or none when it cannot be read."""
+    try:
+        return {p.name for p in SKILL_SCRIPTS.iterdir() if p.is_file()}
+    except OSError:
+        return set()
+
 
 def tree_index(repo_root: Path | str) -> dict:
-    """Every TRACKED file, indexed by relative path, file name and stem.
+    """Every TRACKED file, indexed by relative path, file name and stem, and the file names of
+    the loaded skill's scripts (`skill_names`), which a path-shaped caller may name.
 
     Tracked, not walked. A filesystem walk pulled in `node_modules` and every vendored artefact,
     which turned the index into a general English vocabulary: against this repo it made
@@ -4771,7 +4942,8 @@ def tree_index(repo_root: Path | str) -> dict:
         raise ValueError(
             f"tree_index of {root} found no tracked files - refusing to report that no caller "
             f"resolves, which is what an unanswered scan would look like")
-    return {"paths": paths, "names": names, "stems": stems, "symbols": symbols}
+    return {"paths": paths, "names": names, "stems": stems, "symbols": symbols,
+            "skill_names": _skill_script_names()}
 
 
 #: A `def` or `class` at any indentation in a tracked source file.
@@ -4798,7 +4970,8 @@ def _defined_symbols(path: Path) -> set[str]:
 
 
 def caller_resolves(index: dict, declaration: str) -> bool:
-    """Whether the consumer named by `declaration` resolves to something tracked in the tree.
+    """Whether the consumer named by `declaration` resolves to something tracked in the tree,
+    or, for a path-shaped token, to a script of the loaded skill by its file name.
 
     A caller is named as a PATH or as a COMMAND, so a token must look like one: it carries a
     separator, or a file extension, or it matches a tracked file's name or stem while being
@@ -4819,6 +4992,10 @@ def caller_resolves(index: dict, declaration: str) -> bool:
                 return True
             tail = Path(cleaned).name
             if tail and (tail in index["names"] or tail in index["stems"]):
+                return True
+            # A skill command: its script is in the skill, not in a consuming project's tree.
+            # By file name only, so a bare word or a stem never reaches the skill's scripts.
+            if tail in index.get("skill_names", ()):
                 return True
             continue
         # A bare word resolves only against a tracked file NAME (not a stem), and only when it
@@ -5012,9 +5189,10 @@ def _print_with_verdict_file(root: Path | str, unit: str, text: str, fp: str) ->
 
 
 def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: str,
-                   path: Path, seat: str) -> str:
-    """The tier and fingerprint lines (`lib/lanes.py` parses both) and the record command, which
-    reads the reviewer's own file, so what is recorded is what the reviewer wrote. The tier is
+                   path: Path, seat: str, commit: str = "") -> str:
+    """The tier and fingerprint lines (`lib/lanes.py` parses both), the commit the brief was cut
+    at (outside a repository there is none, and no line), and the record command, which reads
+    the reviewer's own file, so what is recorded is what the reviewer wrote. The tier is
     carried INTO that command: a tier printed and not recorded is the state this flag was in.
 
     The command names both seats as `<holder> (<role>)`, the form `recorded_seat` reads: the
@@ -5031,8 +5209,9 @@ def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: s
     if reviewer == author:
         notes += (f"\nnote: {reviewer} built {shown} and is the seat briefed to review it, so "
                   f"a verdict recorded as printed is a self-review; brief another seat")
+    cut = f"brief cut at commit: {commit}\n" if commit else ""
     return (f"\nreview tier: {tier} ({how})\n"
-            f"brief fingerprint: {fp}\n"
+            f"brief fingerprint: {fp}\n{cut}"
             f"  record the verdict with:  critic.py record --unit "
             f"{shown} --from-verdict {shlex.quote(str(path))} "
             f"--brief {fp} --tier {tier}{' --tier-explicit' if explicit else ''} "
@@ -5052,52 +5231,62 @@ def cmd_brief(args: argparse.Namespace) -> int:
                          else Path(src).read_text(encoding="utf-8"))
             explicit = args.tier is not None
             tier = args.tier or tier_for(args.root, args.unit)
-            text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier, rebuilt)
+            text, checked = checked_rejoinder_brief(args.root, args.unit, args.seat, prior,
+                                                    tier, rebuilt)
             # The re-review brief carries the same blocks as the first one, so it is refused on
-            # the same terms and before anything reaches stdout.
-            assert_brief_practices(text, tier)
+            # the same terms, over the same text less its diff, before anything reaches stdout.
+            assert_brief_practices(checked, tier)
             if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
-                assert_brief_claim_pass(text)
+                assert_brief_claim_pass(checked)
             notice = _self_check_gate(args.root, args.unit)
+            unseen, head = uncommitted_notice(args.root, args.unit), _head_commit(Path(args.root))
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the reviewer can quote back
             fp = rejoinder_fingerprint(text)
             path = _print_with_verdict_file(args.root, args.unit, text, fp)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=True,
-                       explicit=explicit, verdict_file=str(path))
+                       explicit=explicit, verdict_file=str(path), commit=head)
+            if unseen:
+                print(unseen, file=sys.stderr)
             # A repair is the author's work too, so a re-review is preceded by the same check.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
             for line in (notice, quoted):
                 if line:
                     print(line, file=sys.stderr)
-            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat),
-                  file=sys.stderr)
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,
+                                 head), file=sys.stderr)
         else:
             # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
             # in the parser: a default there is indistinguishable from a choice, and the
             # record has to be able to tell them apart to judge whether the derivation works.
             explicit = args.tier is not None
             tier = args.tier or tier_for(args.root, args.unit)
-            text = brief(args.root, args.unit, args.seat, tier)
+            text, checked = checked_brief(args.root, args.unit, args.seat, tier)
             # The author's recorded mutants, replayed here in the verb rather than in `brief()`,
             # which other readers render through and should not pay a replay for.
             text += "\n\n" + author_mutants_section(args.root, args.unit, tier)
             # The checks run here, in the verb, and never inside `brief()`, which other readers
             # also render through. Each tier is held to the practices and the claim inventory
             # its tables say it carries, so a light brief is asked for neither the mutation
-            # practices nor the inventory. Refused
+            # practices nor the inventory. They read the brief as composed, less its UNIT DIFF
+            # and the author's mutants section: text quoted from the tree or by the author is
+            # not a practice the brief carries. Refused
             # before printing, so a deficient brief never reaches a reviewer and never earns a
             # fingerprint.
-            assert_brief_practices(text, tier)
+            assert_brief_practices(checked, tier)
             if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
-                assert_brief_claim_pass(text)
+                assert_brief_claim_pass(checked)
             # The author's recorded self-check, judged here so a refusal under `block` reaches
             # neither stdout nor the brief notes.
             notice = _self_check_gate(args.root, args.unit)
+            unseen, head = uncommitted_notice(args.root, args.unit), _head_commit(Path(args.root))
             fp = brief_fingerprint(text)
             path = _print_with_verdict_file(args.root, args.unit, text, fp)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=False,
-                       explicit=explicit, verdict_file=str(path))
+                       explicit=explicit, verdict_file=str(path), commit=head)
+            # Uncommitted Affects first, on stderr: the reviewer's checkout will not hold them.
+            if unseen:
+                print(unseen, file=sys.stderr)
             # The author's self-check, on stderr so the brief a reviewer reads from a file
             # carries none of it and its fingerprint is unmoved.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
@@ -5107,8 +5296,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
-            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat),
-                  file=sys.stderr)
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,
+                                 head), file=sys.stderr)
     except (OSError, ValueError, persona_resolve.RenderError) as exc:
         # RenderError: the seat's project card the persona standard refuses, named with the
         # line naming what to run next, before any of the brief reaches stdout.

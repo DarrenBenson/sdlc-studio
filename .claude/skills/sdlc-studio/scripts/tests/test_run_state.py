@@ -818,6 +818,17 @@ class BatchMutationTests(unittest.TestCase):
         self.assertEqual(changes[0]["reason"], "pulled - not started this sprint")
         self.assertTrue(changes[0]["at"], "the drop is timestamped")
 
+    def test_a_drop_keeps_the_review_base_it_is_given_and_no_other(self) -> None:
+        """BG1108. A carry at the review cap names the commit its REJECT judged, and the drop
+        keeps it for the redelivery's brief. Mutants: the value not stored; a key written when
+        none was given, which a reader would take as a recorded commit."""
+        run_state.open_run(self.root, batch=["US0001", "US0002"], goal="g")
+        run_state.drop_from_batch(self.root, "US0001", reason="carried", review_base="abc123")
+        run_state.drop_from_batch(self.root, "US0002", reason="pulled")
+        changes = run_state.read(self.root)["batch_changes"]
+        self.assertEqual("abc123", changes[0]["review_base"])
+        self.assertNotIn("review_base", changes[1])
+
     def test_a_drop_needs_a_reason(self) -> None:
         run_state.open_run(self.root, batch=["US0001"], goal="g")
         with self.assertRaises(run_state.RunStateError):
