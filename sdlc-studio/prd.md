@@ -682,6 +682,7 @@ own `urllib`, and the soft runtime tools are listed in §1.
 | `PYTHONDONTWRITEBYTECODE` | Cleared by `migrate.py` while it collects a project's tests, and restored after | No | unset |
 | `PYTHONPYCACHEPREFIX` | Set by `migrate.py` to a private temporary directory while it collects a project's tests, and restored after | No | unset |
 | `SDLC_VERIFY_TIMEOUT` | The ceiling in seconds for one criterion's verifier | No | 300 |
+| `SDLC_VERIFY_RED_DETAIL` | A file `verify_ac.py run` appends each red criterion's own verifier output to, one block per failing criterion on a unit whose status claims completion; the scheduled corpus lane sets it so a red it reports can be read in its own log | No | unset (no detail is written) |
 | `SDLC_VERIFY_BATCH_TIMEOUT` | The ceiling in seconds for the pytest batch the verify lane runs | No | 3600 |
 | `SDLC_VERIFY_WORKERS` | How many stories the verify lane runs at once | No | the core count, at most 8 |
 | `SDLC_COVERAGE_PYTHON` | The interpreter the coverage measurement runs under | No | the running interpreter |
