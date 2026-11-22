@@ -1,6 +1,6 @@
 # BG1702: critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_rejoinder_practices.py, changelog.d/BG1702.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,8 +26,10 @@ Run the practices and claim-inventory checks over the brief's own sections only,
 
 - [ ] **AC1** Given a recorded REJECT verdict whose text names one of the seat's practices and a seat card naming none, when `critic.py brief --unit <unit> --seat qa --rejoinder` runs, then the practices check refuses the brief. Fails on: the quoted prior verdict's words satisfying the check.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_rejoinder_practices.py::RejoinderQuoteDoesNotSatisfyTests
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** Given a seat card that does name a practice, when the same rejoinder brief runs, then it is issued with the prior verdict still quoted in full. Fails on: the fix dropping the quote from the brief rather than from the checked text.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_rejoinder_practices.py::RejoinderBriefStillQuotesTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

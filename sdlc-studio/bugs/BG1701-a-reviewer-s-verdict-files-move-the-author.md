@@ -1,6 +1,6 @@
 # BG1701: A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py, changelog.d/BG1701.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,8 +26,10 @@ Leave the verdicts directory (sdlc-studio/reviews/verdicts/) out of the digest a
 
 - [ ] **AC1** Given a unit whose Affects declares `sdlc-studio/reviews/` and whose self-check is recorded, when a reviewer writes a verdict file under `sdlc-studio/reviews/verdicts/<unit>/` and `critic.py brief --unit <unit> --seat qa` runs, then the self-check reads as current and the brief is issued. Fails on: the verdict file moving the Affects digest, so the brief refuses a stale self-check.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::VerdictFilesLeaveDigestTests
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** Given the same unit, when a file under `sdlc-studio/reviews/` other than the review tooling's own writes changes, then the self-check still reads as stale. Fails on: the exclusion widened to the whole reviews directory.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::OtherReviewFilesStillStaleTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 300 |
+| Open | 298 |
 | In Progress | 0 |
-| Fixed | 1073 |
+| Fixed | 1078 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1714** |
+| **Total** | **1717** |
 
 ## All Bugs
 
@@ -200,7 +200,7 @@
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Fixed | Medium | 2026-10-22 | 2026-10-22 |
-| [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1128](BG1128-the-close-s-goal-panel-and-the-next.md) | The close's goal panel and the next amendment's carry read only the latest goal-review round, while the plan reads every round on the latest wording, so after an owing seat records alone they disagree on which verdicts stand | Open | Low | 2026-10-22 | 2026-10-22 |
@@ -340,7 +340,7 @@
 | [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Superseded | Low | 2026-11-06 | 2026-11-06 |
 | [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1267](BG1267-sprint-py-lane-return-prints-a-two-model.md) | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1268](BG1268-no-shipped-command-writes-a-row-to-sdlc.md) | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs | Fixed | Medium | 2026-11-06 | 2026-11-06 |
@@ -775,9 +775,9 @@
 | [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1698](BG1698-a-unit-approved-in-a-ruled-round-past.md) | A unit approved in a ruled round past the cap stays dropped from the batch, so the close and the report do not credit it | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1699](BG1699-lane-land-s-commit-bound-is-a-fixed.md) | lane land's commit bound is a fixed 1800 seconds that no setting or flag changes, so a lane whose commit selects most of the suite is stopped whenever the host is loaded | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1700](BG1700-critic-py-show-takes-over-five-minutes-on.md) | critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1700](BG1700-critic-py-show-takes-over-five-minutes-on.md) | critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load | Fixed | Low | 2026-11-22 | 2026-11-22 |
+| [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Fixed | Low | 2026-11-22 | 2026-11-22 |
+| [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Fixed | Low | 2026-11-22 | 2026-11-22 |
 | [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
@@ -790,6 +790,9 @@
 | [BG1712](BG1712-nine-whole-file-rewrites-of-tracked-workspace-files.md) | Nine whole-file rewrites of tracked workspace files still truncate in place instead of going through sdlc_md.atomic_write, so an interrupted write can leave the file half-written | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1713](BG1713-two-lanes-of-one-parallel-drive-wave-create.md) | Two lanes of one parallel drive wave create their worktrees at the same moment, and git's concurrent worktree add can refuse one, stopping that unit at build | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1714](BG1714-bg1532-did-not-converge-in-review-round-2.md) | BG1532 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1715](BG1715-bg1229-did-not-converge-in-review-round-2.md) | BG1229 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

@@ -1,31 +1,40 @@
 {
   "unit": "BG1701",
-  "digest": "53af4475bd52fb24 at 30eb84a51fa4",
-  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1701-mutation-edits.json",
+  "digest": "f6abf3215d0ddc85 at 286a57c63f99",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1c18d144a8ed31f2/BG1701-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "a verdict file stales the self-check",
+      "mutant": "the verdicts folder left out of the working tree's files alone (B6)",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "            or rel.startswith(f\"sdlc-studio/reviews/{AUTHOR_MUTANTS_DIR}/\")\n            or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
-      "new": "            or rel.startswith(f\"sdlc-studio/reviews/{AUTHOR_MUTANTS_DIR}/\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::VerdictFilesLeaveDigestTests",
+      "old": "and not _review_tool_write(t) and not any(",
+      "new": "and not (_review_tool_write(t) and not t.startswith(\"sdlc-studio/reviews/verdicts/\")) and not any(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::VerdictFilesLeaveDigestTests::test_a_verdict_file_committed_after_another_units_commit_leaves_it_current",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a sibling of the verdicts folder excluded",
+      "mutant": "the verdicts folder left in the digest",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
-      "new": "or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}\"))",
+      "old": "\n            or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
+      "new": ")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::VerdictFilesLeaveDigestTests::test_a_verdict_file_leaves_the_self_check_current",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the exclusion widened to the whole reviews folder",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\n            or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
+      "new": "\n            or rel.startswith(\"sdlc-studio/reviews/\"))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::OtherReviewFilesStillStaleTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every review file excluded",
+      "mutant": "the folder matched without its separator",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
-      "new": "or rel.startswith(\"sdlc-studio/reviews/\"))",
+      "old": "\n            or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}/\"))",
+      "new": "\n            or rel.startswith(f\"{VERDICTS_DIR_REL.as_posix()}\"))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_review_writes.py::OtherReviewFilesStillStaleTests",
       "result": "killed",
       "answer": ""

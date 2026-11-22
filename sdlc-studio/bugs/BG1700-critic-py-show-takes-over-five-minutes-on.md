@@ -1,6 +1,6 @@
 # BG1700: critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_show_scales.py, changelog.d/BG1700.md
@@ -26,8 +26,10 @@ The cost is the unit's display id, not the ledger read. `verdict_source` calls `
 
 - [ ] **AC1** Given a ledger of many rows bound to issued files across a few units, when `critic.py show` runs, then the artefact tree is walked a fixed number of times, not once or twice per row: a ledger ten times longer walks it no more often. Fails on: `find_by_id` walking the tree for every row's display id.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_show_scales.py::CriticShowScalesTests
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** Given the same ledger, when `critic.py show` runs in text and in JSON, then each row's unit, label, verdict file and file state read exactly as they do before the change. Fails on: a cached display id naming another unit's file, or a state computed from a stale path.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_show_scales.py::CriticShowOutputUnchangedTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

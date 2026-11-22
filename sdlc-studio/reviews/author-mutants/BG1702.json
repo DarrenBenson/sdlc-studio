@@ -1,10 +1,10 @@
 {
   "unit": "BG1702",
-  "digest": "2a2cf1fa7cb1429f at 30eb84a51fa4",
-  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1702-mutation-edits.json",
+  "digest": "302bd0f5ee60ec40 at 286a57c63f99",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1c18d144a8ed31f2/BG1702-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the checks read the quoted verdict",
+      "mutant": "the rejoinder's checked text keeps the quote",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
       "old": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, \"\", how)",
       "new": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, prior, how)",
@@ -13,7 +13,7 @@
       "answer": ""
     },
     {
-      "mutant": "the brief drops the quote",
+      "mutant": "the quote dropped from the issued brief",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
       "old": "return _rejoinder_text(base, prior, how), _rejoinder_text(checked, \"\", how)",
       "new": "return _rejoinder_text(base, \"\", how), _rejoinder_text(checked, \"\", how)",

@@ -1,104 +1,41 @@
 {
   "unit": "BG1492",
-  "digest": "a00d3009abdd490e at 30eb84a51fa4",
-  "report": "sdlc-studio/.local/lane/landed/agent-a664ad61c1bafdc52/BG1492-mutation-edits.json",
+  "digest": "c8eb3379507271a1 at 286a57c63f99",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1c18d144a8ed31f2/BG1492-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no lane calls the check",
-      "file": ".githooks/pre-commit",
-      "old": "gate_lane() { local verdicts=0; unrecorded_verdicts || verdicts=1",
-      "new": "gate_lane() { local verdicts=0",
-      "test": "tools/tests/test_precommit_unrecorded_verdict.py::UnrecordedVerdictLaneTests::test_a_commit_holding_an_unrecorded_verdict_is_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the lane advisory",
-      "file": ".githooks/pre-commit",
-      "old": "then return \"$verdicts\"; fi",
-      "new": "then return 0; fi",
-      "test": "tools/tests/test_precommit_unrecorded_verdict.py::UnrecordedVerdictLaneTests::test_a_commit_holding_an_unrecorded_verdict_is_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a cited file refused",
+      "mutant": "a staged rename left out of the filter",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        if digest in hashes:\n            continue\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
+      "old": "\"--diff-filter=ACMRT\"",
+      "new": "\"--diff-filter=ACMT\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests::test_a_staged_verdict_no_recorded_row_cites_is_refused_by_name",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "an uncited file passed",
+      "mutant": "every staged verdict passed",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        if digest in hashes:\n            continue\n",
-      "new": "        if digest in hashes or True:\n            continue\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
+      "old": "if digest in hashes:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests::test_a_staged_verdict_no_recorded_row_cites_is_refused_by_name",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the index the hook names ignored",
+      "mutant": "a file edited after its row passing",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    index = _hook_index(root)\n",
-      "new": "    index = None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
+      "old": "if digest in hashes:",
+      "new": "if hashes:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests::test_a_staged_verdict_its_recorded_row_cites_passes",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "another repository's index read",
+      "mutant": "a staged deletion judged",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "return str(index) if index.parent == gitdir else None",
-      "new": "return str(index)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a relative index read from the cwd",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "index = (root / named).resolve() if not Path(named).is_absolute() else Path(named).resolve()",
-      "new": "index = Path(named).resolve()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the check exiting 0 over a refusal",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        return 1 if refused else 0",
-      "new": "        return 0",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a git failure read as clean",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                  f\"({exc})\", file=sys.stderr)\n            return 2",
-      "new": "                  f\"({exc})\", file=sys.stderr)\n            return 0",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the unit folder ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "unit = parts[-2] if len(parts) >= depth else \"<UNIT>\"",
-      "new": "unit = \"<UNIT>\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an index set but not passed to git",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    if index:\n        env[\"GIT_INDEX_FILE\"] = index\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests",
+      "old": "\"--diff-filter=ACMRT\"",
+      "new": "\"--diff-filter=ACMRTD\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::StagedVerdictTests::test_a_staged_verdict_its_recorded_row_cites_passes",
       "result": "killed",
       "answer": ""
     }

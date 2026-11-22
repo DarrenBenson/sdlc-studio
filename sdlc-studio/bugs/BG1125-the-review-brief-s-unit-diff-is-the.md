@@ -1,6 +1,6 @@
 # BG1125: The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py, changelog.d/BG1125.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/help/review.md
@@ -26,6 +26,7 @@ Diff the unit's own commits: those whose subject names the unit id since the run
 
 - [ ] **AC1** Given two units' commits to one Affects file since the run's base, when one is briefed, then its UNIT DIFF holds only the hunks of commits naming that unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py::UnitDiffOwnTests::test_the_diff_holds_only_the_units_own_commits
+  - **Verified:** yes (2026-11-22)
 
 ## Impact
 
