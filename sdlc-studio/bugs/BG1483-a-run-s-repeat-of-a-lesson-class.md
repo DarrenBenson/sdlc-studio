@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, changelog.d/BG1483.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-retro.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, changelog.d/BG1483.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-retro.md, tools/tests/test_lean_prd_refresh.py
 > **Evidence:** sdlc-studio/reviews/verdicts/BG1474/8dc244746ca5-ede8b0eb.txt, finding 4; sdlc-studio/bugs/BG1468.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -37,3 +37,4 @@ Count a hit when a bug filed in the run cites the class (an `LC-xxx` token in it
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
 | 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened in-run on lane R's BLOCKED hand-in: reference-retro.md says a hit is keyed on the retro and the unit, never on the run, which the new run-keyed citation hits make untrue |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened to `tools/tests/test_lean_prd_refresh.py`: the fix's `("Stop", "Keep")` retro sections tripped that test's Stop-hook writer heuristic, which now also requires a `hooks` key |
