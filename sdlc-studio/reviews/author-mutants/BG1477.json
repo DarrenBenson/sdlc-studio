@@ -1,140 +1,140 @@
 {
   "unit": "BG1477",
-  "digest": "95b822c0448f1018 at 77bcc66d0e02",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5688ee956795d00d/BG1477-mutation-edits.json",
+  "digest": "d8a53f2f8cd76cd1 at beaf119a5443",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-af1a9bf8aff25efca/BG1477-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "M1 the transcript match dropped, so a split from another transcript is kept",
+      "mutant": "the given minutes recorded whole on the kept split",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                 and r.get(\"transcript\") == reading.get(\"source\")\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_naming_another_agent_prices_from_that_agents_transcript",
+      "old": "whole, minutes = minutes, minutes * part[\"points\"] / part[\"of\"]",
+      "new": "whole, minutes = minutes, minutes",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_the_kept_shares_points",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M5 `tokens is None` dropped, so an explicit --tokens is overridden by the split",
+      "mutant": "the given minutes halved, not split by points",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if reading is not None and tokens is None and len(results) == 1 and not land:",
-      "new": "    if reading is not None and len(results) == 1 and not land:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_naming_tokens_records_them_over_the_split",
+      "old": "whole, minutes = minutes, minutes * part[\"points\"] / part[\"of\"]",
+      "new": "whole, minutes = minutes, minutes / 2",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_unequal_points",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M3 the grown-transcript warning dropped",
+      "mutant": "the given minutes split by the lane's units, not its points",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if part.get(\"tokens\") != reading.get(\"tokens\"):",
-      "new": "    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_grown_transcript_is_warned_about_and_the_split_kept",
+      "old": "whole, minutes = minutes, minutes * part[\"points\"] / part[\"of\"]",
+      "new": "whole, minutes = minutes, minutes / part[\"units\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_unequal_points",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "K1 the kept split returned as it stands whatever the return supplies (round 1)",
+      "mutant": "the split inverted, the whole over the share's points",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if kept is not None and minutes is None and model is None:",
-      "new": "        if kept is not None:",
+      "old": "whole, minutes = minutes, minutes * part[\"points\"] / part[\"of\"]",
+      "new": "whole, minutes = minutes, minutes * part[\"of\"] / part[\"points\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_the_kept_shares_points",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the share's points read as one",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            part = kept[run_state.APPORTIONED]\n            said = []",
+      "new": "            part = dict(kept[run_state.APPORTIONED], points=1)\n            said = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_the_kept_shares_points",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the minutes guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if minutes is not None:\n                whole, minutes",
+      "new": "            if minutes is None:\n                whole, minutes",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "K2 a return naming only --minutes keeps the split without them",
+      "mutant": "the line names the whole as the split",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if kept is not None and minutes is None and model is None:",
-      "new": "        if kept is not None and model is None:",
+      "old": "split by points as {minutes:g} ",
+      "new": "split by points as {whole:g} ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line drops the share's points of the whole",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"({part['points']} of {part['of']})\")",
+      "new": "f\"\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "K3 a return naming only --model keeps the split without it",
+      "mutant": "the model guard inverted",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if kept is not None and minutes is None and model is None:",
-      "new": "        if kept is not None and minutes is None:",
+      "old": "            if model is not None:\n                said.append",
+      "new": "            if model is None:\n                said.append",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the model left off the line",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "said.append(f\"model {model}\")",
+      "new": "pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the items joined without the serial comma",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "{', and '.join(said)}",
+      "new": "{' and '.join(said)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the old wording, its verb agreeing with nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": ": the kept split records this return's \"\n                  f\"{', and '.join(said)}\")",
+      "new": ": this return's \"\n                  f\"{', and '.join(said)} go on the kept split\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the kept share's minutes dropped when none are given",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "minutes = minutes if minutes is not None else kept.get(\"minutes\")",
+      "new": "minutes = minutes",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "K4 the kept share's minutes dropped when the return gives none",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            minutes = minutes if minutes is not None else kept.get(\"minutes\")",
-      "new": "            minutes = minutes",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "K5 the kept share's model dropped when the return gives none",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            model = model if model is not None else kept.get(\"model\")",
-      "new": "            model = model",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "K6 the line names a flag the return did not supply",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "this return's {' and '.join(w for w in said if w)} go",
-      "new": "this return's {' and '.join(said)} go",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "K7 the transcript read again for the minutes of a share kept",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if shares is None and reading is not None and minutes is None:",
-      "new": "    if reading is not None and minutes is None:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
-      "result": "survived",
-      "answer": "equivalent: with the guard dropped the transcript is read again only for a kept share holding no minutes, but the share's row is already built from the kept record, so the minutes read reach no record, and a return prints nothing for a span it cannot read (the warning is the land's alone); the guard saves a pointless read"
-    },
-    {
-      "mutant": "K8 the kept share discarded and the whole transcript recorded",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    shares = shares or _lane_shares(whole, reading, minutes, weights)",
-      "new": "    shares = _lane_shares(whole, reading, minutes, weights)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "K9 the kept share's per-model split dropped when it is recorded again",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            \"source\": kept.get(\"transcript\"), **({run_state.BY_MODEL: split} if split else {})}",
-      "new": "            \"source\": kept.get(\"transcript\")}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "K10 the kept line says a landing recorded a split a return wrote",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "print(f\"{unit}: kept the split already recorded from",
-      "new": "print(f\"{unit}: kept the split its landing recorded from",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_split_a_return_of_several_units_wrote_is_kept_too",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "T1 test: the accept's --minutes changed, so the test's 30.0 no longer follows",
+      "mutant": "test: the lane's second unit sized 2 whatever points_b says",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py",
-      "old": "        done = self._accept(A, \"--agent\", self.AGENT, \"--minutes\", \"30\", \"--model\", \"claude-x\")",
-      "new": "        done = self._accept(A, \"--agent\", self.AGENT, \"--minutes\", \"31\", \"--model\", \"claude-x\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_keeping_the_split_records_its_minutes_and_model",
+      "old": "        if points_b != 2:\n            story =",
+      "new": "        if False:\n            story =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_unequal_points",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "T2 test: the second agent given the builder's own id, so no other transcript is named",
+      "mutant": "test: the transcript's span fixed at 20 minutes",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py",
-      "old": "        other = \"0a0b0c0d0e0f\"",
-      "new": "        other = self.AGENT",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_naming_another_agent_prices_from_that_agents_transcript",
+      "old": "start + timedelta(minutes=span)",
+      "new": "start + timedelta(minutes=20)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_splits_its_minutes_by_the_kept_shares_points",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 # BG1697: BG1477 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1477.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -37,3 +37,4 @@ Fix each finding above, then deliver BG1477 again in a later run.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-one orchestrator) | Fixed: BG1477 was reviewed again in round three under D0578 and its qa seat (Sam Eriksson) approved, closing the round-two findings this bug carried; BG1477 is Fixed |

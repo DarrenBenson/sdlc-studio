@@ -1,6 +1,6 @@
 # BG1477: lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1477.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

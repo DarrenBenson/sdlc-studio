@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 313 |
+| Open | 311 |
 | In Progress | 0 |
-| Fixed | 1043 |
+| Fixed | 1045 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -552,7 +552,7 @@
 | [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1480](BG1480-docs-engineering-leaders-md-states-three-things-more.md) | docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping | Fixed | Medium | 2026-11-15 | 2026-11-15 |
@@ -772,7 +772,7 @@
 | [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
-| [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 
