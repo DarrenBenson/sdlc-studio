@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 298 |
+| Open | 299 |
 | In Progress | 0 |
 | Fixed | 1072 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1711** |
+| **Total** | **1712** |
 
 ## All Bugs
 
@@ -787,6 +787,7 @@
 | [BG1709](BG1709-bg1463-did-not-converge-in-review-round-2.md) | BG1463 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1712](BG1712-nine-whole-file-rewrites-of-tracked-workspace-files.md) | Nine whole-file rewrites of tracked workspace files still truncate in place instead of going through sdlc_md.atomic_write, so an interrupted write can leave the file half-written | Open | Low | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 
