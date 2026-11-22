@@ -1,6 +1,6 @@
 # BG1012: The sprint checklist reads a run only from .local, so in any other clone a signed run's rows read 'no run record could be read'
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py, changelog.d/BG1012.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,6 +26,7 @@ Resolve the run through `_run_state_for` (live, then tracked, then archive), as 
 
 - [ ] **AC1** `sprint_report.py checklist --id <retro>` in a clean clone holding the run's committed record reads that record, so no row says no run record could be read
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

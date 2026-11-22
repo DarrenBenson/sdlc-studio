@@ -1,7 +1,7 @@
 {
   "unit": "BG1012",
-  "digest": "ddf73240f41c0fce at e80af2d5d875",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad5fbb428c9e2a648/BG1012-mutation-edits.json",
+  "digest": "40440c079a1b53cb at 4eec78c2d095",
+  "report": "sdlc-studio/.local/lane/landed/agent-a4af6f31b63719894/BG1012-mutation-edits.json",
   "mutants": [
     {
       "mutant": "committed-records-not-read",
@@ -18,33 +18,6 @@
       "old": "    others.pop(str(live.get(\"run_id\")), None)\n",
       "new": "",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_the_live_record_wins_over_the_committed_copy_of_its_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "oldest-start-first",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "records.extend(sorted(reversed(list(others.values())), reverse=True,",
-      "new": "records.extend(sorted(reversed(list(others.values())), reverse=False,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_between_committed_records_goes_to_the_newest",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "start-not-sorted",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "key=lambda s: s.get(\"started_at\") if isinstance(s.get(\"started_at\"), str)\n                          else \"\"))",
-      "new": "key=lambda s: \"\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_between_a_committed_and_an_archived_run_goes_to_the_newest",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "archive-order-not-reversed",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "records.extend(sorted(reversed(list(others.values())), reverse=True,",
-      "new": "records.extend(sorted(list(others.values()), reverse=True,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_keeps_the_archive_s_newest_cycle",
       "result": "killed",
       "answer": ""
     },
@@ -117,6 +90,141 @@
       "old": "        self._track(_record(\"RUN-TEST01\", \"which schema wins?\"))\n        row = next(",
       "new": "        self._track(_record(\"RUN-TEST01\", \"which schema wins?\", batch=(\"US0999\",)))\n        row = next(",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rid-not-a-tie-break",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return (start if isinstance(start, str) else \"\", index, rid)",
+      "new": "return (start if isinstance(start, str) else \"\", index, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_reads_the_same_run_in_every_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cycle-index-not-a-tie-break",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return (start if isinstance(start, str) else \"\", index, rid)",
+      "new": "return (start if isinstance(start, str) else \"\", 0, rid)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_reads_the_same_run_in_every_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start-not-in-the-key",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return (start if isinstance(start, str) else \"\", index, rid)",
+      "new": "return (\"\", index, rid)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_between_committed_records_goes_to_the_newest",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "oldest-first",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "key=_newest_first, reverse=True)",
+      "new": "key=_newest_first)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_reads_the_same_run_in_every_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start-guard-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "start if isinstance(start, str) else \"\"",
+      "new": "start or \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start-fallback-another-string",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "start if isinstance(start, str) else \"\"",
+      "new": "start if isinstance(start, str) else \"~\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "survived",
+      "answer": "Equivalent: the fallback only places a record whose start is not a string, and such a record is always passed over in _run_record (telemetry._parse_iso returns None for a start that is not a string, so `if start is None: continue`), so wherever it sorts it is never chosen. Probe: with \"~\" the numeric-start record sorts first and the readable record is still read (this mutant's own run: the test passes)."
+    },
+    {
+      "mutant": "index-not-converted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        index = int(rec[\"cycle\"][\"index\"])\n",
+      "new": "        index = rec[\"cycle\"][\"index\"]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing-cycle-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n",
+      "new": "    except (ArithmeticError, TypeError, ValueError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cycle-of-the-wrong-type-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n",
+      "new": "    except (ArithmeticError, LookupError, ValueError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unconvertible-index-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n",
+      "new": "    except (ArithmeticError, LookupError, TypeError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "infinite-index-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n",
+      "new": "    except (LookupError, TypeError, ValueError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-index-reads-one",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n        index = 0\n",
+      "new": "    except (ArithmeticError, LookupError, TypeError, ValueError):\n        index = 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-tie-without-a-cycle-index",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "        earlier[\"cycle\"], later[\"cycle\"] = {\"index\": 1}, {\"index\": 2}\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_reads_the_same_run_in_every_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-tie-not-in-the-same-second",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "_record(\"RUN-BBBB01\", \"the earlier cycle\")",
+      "new": "_record(\"RUN-BBBB01\", \"the earlier cycle\", started_at=\"2026-03-01T00:00:00Z\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_reads_the_same_run_in_every_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-odd-beside-a-lower-index",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "        good[\"cycle\"] = {\"index\": 1}\n",
+      "new": "        good[\"cycle\"] = {\"index\": 0}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_start_or_cycle_that_is_not_the_expected_type_does_not_break_the_order",
       "result": "killed",
       "answer": ""
     }
