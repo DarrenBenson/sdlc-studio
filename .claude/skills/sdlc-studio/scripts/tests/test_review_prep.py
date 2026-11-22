@@ -7,10 +7,17 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/, for the confined git helper
+import gitutil  # noqa: E402
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "review_prep.py"
 _spec = importlib.util.spec_from_file_location("review_prep", SCRIPT_PATH)
@@ -49,6 +56,98 @@ class StalenessTests(unittest.TestCase):
             )
             stale = review_prep.staleness(root)
             self.assertFalse(stale["prd"]["needs_review"])
+
+    @staticmethod
+    def _bug(root: Path, n: int, body: str = "", slug: str = "b") -> Path:
+        path = root / "sdlc-studio" / "bugs" / f"BG{n:04d}-{slug}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"# BG{n:04d}: b\n\n> **Status:** Open\n{body}", encoding="utf-8")
+        return path
+
+    @staticmethod
+    def _commit(root: Path, when: str, *paths: Path) -> None:
+        gitutil.git(["add", "--", *map(str, paths)], root)
+        gitutil.git(["commit", "-q", "-m", when], root,
+                    env_extra={"GIT_COMMITTER_DATE": when, "GIT_AUTHOR_DATE": when})
+
+    def _git_processes(self, root: Path) -> tuple[dict, list]:
+        """`staleness(root)` and the argv of each git process it started, caught at Popen,
+        which `subprocess.run`, `check_output` and a bare Popen all reach."""
+        real, started = subprocess.Popen, []
+
+        def counting(args, *a, **kw):
+            if isinstance(args, (list, tuple)) and args and Path(str(args[0])).name == "git":
+                started.append(list(args))
+            return real(args, *a, **kw)
+
+        with mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
+                mock.patch.object(subprocess, "Popen", counting):
+            got = review_prep.staleness(root)
+        return got, started
+
+    def test_the_git_calls_do_not_grow_with_the_artefacts(self) -> None:
+        """A close ran half an hour on one `git log -1` per artefact: the count of git processes
+        is the same for two tracked artefacts and for twelve."""
+        counts = {}
+        for many in (2, 12):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                gitutil.git(["init", "-q"], root)
+                paths = [self._bug(root, n) for n in range(1, many + 1)]
+                self._commit(root, "2026-01-01T00:00:00+00:00", *paths)
+                got, started = self._git_processes(root)
+                counts[many] = len(started)
+                self.assertEqual(many, len(got))
+                self.assertEqual({"git"}, {r["modified_method"] for r in got.values()})
+        self.assertGreater(counts[2], 0, "the commit times were not read from git at all")
+        self.assertEqual(counts[2], counts[12],
+                         f"git processes grew with the artefacts: {counts}")
+
+    def test_the_single_pass_reads_each_files_own_commit_time(self) -> None:
+        """Each tracked record carries its OWN last commit (the newest touching it, never a
+        later commit's time nor its first), and an untracked artefact its file time."""
+        t1, t2, t3 = ("2026-01-01T10:00:00+00:00", "2026-02-01T10:00:00+00:00",
+                      "2026-03-01T10:00:00+00:00")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            prd = _base(root) / "prd.md"
+            prd.write_text("# PRD\n", encoding="utf-8")
+            one, two = self._bug(root, 1), self._bug(root, 2)
+            # a name git would quote unless told not to: it is still read from the history
+            accented = self._bug(root, 4, slug="caf\u00e9")
+            self._commit(root, t1, prd, one, two, accented)
+            self._bug(root, 2, "changed\n")
+            self._commit(root, t2, two)
+            self._bug(root, 1, "changed again\n")
+            self._commit(root, t3, one)
+            loose = self._bug(root, 3)
+            os.utime(loose, (1_700_000_000, 1_700_000_000))
+            got, _ = self._git_processes(root)
+        stamp = lambda key: review_prep._parse_dt(got[key]["last_modified"])  # noqa: E731
+        self.assertEqual(review_prep._parse_dt(t3), stamp("BG0001"), got["BG0001"])
+        self.assertEqual(review_prep._parse_dt(t2), stamp("BG0002"), got["BG0002"])
+        self.assertEqual(review_prep._parse_dt(t1), stamp("prd"), got["prd"])
+        self.assertEqual(review_prep._parse_dt(t1), stamp("BG0004"), got["BG0004"])
+        for key in ("BG0001", "BG0002", "BG0004", "prd"):
+            self.assertEqual("git", got[key]["modified_method"], got[key])
+        self.assertEqual("mtime", got["BG0003"]["modified_method"], got["BG0003"])
+        self.assertEqual(datetime.fromtimestamp(1_700_000_000, timezone.utc), stamp("BG0003"))
+
+    def test_no_history_is_walked_when_nothing_is_tracked(self) -> None:
+        """Every artefact untracked: each reads its file time, and no `git log` walks a history
+        that can name none of them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            other = root / "src" / "x.py"
+            other.parent.mkdir()
+            other.write_text("x = 1\n", encoding="utf-8")
+            self._commit(root, "2026-01-01T00:00:00+00:00", other)
+            self._bug(root, 1)
+            got, started = self._git_processes(root)
+        self.assertEqual("mtime", got["BG0001"]["modified_method"], got["BG0001"])
+        self.assertEqual([], [a for a in started if "log" in a], started)
 
 
 class PersonaUsageTests(unittest.TestCase):

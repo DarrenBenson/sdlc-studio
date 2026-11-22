@@ -8332,7 +8332,8 @@ DRY_RUN_FROM_PREFLIGHT = {
 DRY_RUN_ACTION_STEPS = tuple(_CLOSE_CHAIN)
 
 
-def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = None) -> dict:
+def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = None,
+                  progress=None) -> dict:
     """Every refusal the close chain would raise, in ONE pass, writing nothing.
 
     `close_preflight` answers the PREREQUISITES and is read-only by construction, but three of
@@ -8345,11 +8346,15 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
     when nothing refused AND nothing was left unevaluated - a pass with an unanswered step is
     not a clean pass, and reporting it as one would make the whole preview untrustworthy in
     exactly the direction that matters.
+
+    `progress`, when given, is called with each step's name as that step starts (the
+    preflight's as `prerequisites and gate`), so a slow preview can be told from a hung one.
     """
     import shutil  # noqa: PLC0415 - local; only this path copies a tree
     import tempfile  # noqa: PLC0415
     root = Path(root)
     steps: list[dict] = []
+    started = progress or (lambda name: None)
 
     def note(step: str, status: str, detail: str = "", remedy: str = "") -> None:
         steps.append({"step": step, "status": status, "detail": detail, "remedy": remedy})
@@ -8359,6 +8364,7 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
     # So the cost row is suppressed here and only here.
     # The pre-flight of the close it previews: the chain's last step writes the anchor, and a
     # verdict the invocation supplies is recorded before the chain.
+    started("prerequisites and gate")
     pre = close_preflight(root, retro_id, record_cost=False, goal_verdict=goal_verdict,
                           writes_anchor=True)
     # A row that declares itself non-blocking is SHOWN, labelled as the close's own report
@@ -8412,6 +8418,8 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
             # previewed checklist judges the goal the close will have judged.
             run_state.record_goal_verdict(scratch, goal_verdict, "supplied to the dry run")
         state = run_state.read(scratch) or {}
+        if not retro_id:
+            started("retro-scaffold")
         rid = retro_id or _dry_run_retro(scratch, state, note)
         gate_refused = any(b["stage"] == "gate" for b in held)
         # Did the preflight ACTUALLY reach the gate? It has early returns that come back on a
@@ -8468,6 +8476,7 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
                          f"it could not be told which tree to read from",
                          "give the step an explicit `read_root=None` parameter")
                     continue
+                started(step)
                 with _on_the_copy():
                     ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)
             except Exception as exc:  # noqa: BLE001 - a step that explodes is UNEVALUATED
@@ -10982,7 +10991,10 @@ def cmd_close(args: argparse.Namespace) -> int:
     if getattr(args, "dry_run", False):
         # Before `_record_close_attempt`: a preview is not an attempt, and counting it as one
         # would make the attempt trend report the tool being used carefully as a tool failing.
-        result = close_dry_run(root, args.retro, goal_verdict=supplied)
+        # Each step is named on stderr as it starts: the preview can run for many minutes, and
+        # with nothing printed until the verdict a slow one cannot be told from a hung one.
+        result = close_dry_run(root, args.retro, goal_verdict=supplied, progress=lambda name: print(
+            f"close --dry-run: running {name}", file=sys.stderr, flush=True))
         print(dry_run_report(result))
         if refusal := _refuse_batch_repair(root, state, "close"):
             print(refusal)          # REPORTED on a preview, refused on the real thing
@@ -14823,7 +14835,9 @@ def build_parser() -> argparse.ArgumentParser:
         "a decision record of at most 30 lines: a refusal (a step that exits non-zero), a "
         "warning (a WARNING line from a step that exited 0), a REJECT (recorded, with the repair "
         "brief named), a rebase conflict (the whole wave stops) and a wave end (no unit of the "
-        "next wave starts). "
+        "next wave starts). Exit 2 is a refusal before anything ran, or a review that could not "
+        "start after the unit's build and landing ran (its brief over the size limit, or the CLI "
+        "gone from PATH). "
         "`step --after <agent-id>` handles one agent's hand-back instead: a builder's or "
         "repair's worktree agent-<id> is landed, briefed and priced, and a reviewer's verdict "
         "accepted, its paperwork committed, or answered by the repair brief; the last line "
@@ -14840,7 +14854,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="(walk) each session's timeout in seconds (default: 3600)")
     dr.add_argument("--after", default=None, metavar="AGENT_ID",
                     help="(step) the agent whose hand-back this is: a builder or repair "
-                         "builder by its worktree agent-<id>, else a reviewer")
+                         "builder by its worktree agent-<id>, else a reviewer, never the "
+                         "unit's builder, whose transcript names the verdict file")
     dr.add_argument("--unit", default=None,
                     help="(step) the unit a reviewer's verdict answers, when several units "
                          "await a written verdict")

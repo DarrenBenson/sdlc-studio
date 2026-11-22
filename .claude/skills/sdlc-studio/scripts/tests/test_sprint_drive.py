@@ -221,11 +221,14 @@ class SprintDriveTests(_DriveFixture):
     def test_a_clean_unit_is_driven_from_build_to_paperwork(self) -> None:
         rc, out, err = self.drive()
         self.assertEqual(0, rc, out + err)
+        # the doctrine's order, written out: read from drive.STEPS, a reorder there would
+        # reorder the expectation with it
+        order = ("build", "land", "brief", "review", "accept", "return", "paperwork")
         at = [next((n for n, ln in enumerate(out.splitlines())
-                    if ln.startswith(f"{A} {step}: ")), None) for step in drive.STEPS]
+                    if ln.startswith(f"{A} {step}: ")), None) for step in order]
         self.assertNotIn(None, at, f"a step printed no line:\n{out}")
         self.assertEqual(sorted(at), at, f"the steps ran out of order:\n{out}")
-        self.assertEqual(len(drive.STEPS), len(set(at)), "two steps shared one line")
+        self.assertEqual(len(order), len(set(at)), "two steps shared one line")
         # the build ran in the lane's worktree before the review ran in the root
         self.assertEqual(["build", "build", "review"], [s["role"] for s in self.sessions()])
         self.assertEqual("Done", self.status_at(A))

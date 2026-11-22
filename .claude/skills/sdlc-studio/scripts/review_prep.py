@@ -47,6 +47,48 @@ def _git_iso(path: Path, repo_root: Path) -> str | None:
     return r.stdout.strip() or None
 
 
+#: One history walk reads every artefact's commit time; a large repository's walk takes seconds.
+_HISTORY_TIMEOUT = 600
+
+
+def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
+    """The last commit time (ISO-8601) of each path in `rels` (POSIX, relative to repo_root)
+    that HEAD tracks, read with two git processes whatever the number of paths.
+
+    `git ls-tree` names the paths HEAD tracks, and one `git log --name-only` walks the history
+    newest first, under the parent folders of those paths, keeping for each the time of the
+    first commit in that walk whose change names it (a merge commit names no path, so its time
+    is never taken). A path HEAD does not track is absent from the result, as is every path when
+    git is unavailable or fails; with no path tracked, no history is walked.
+    """
+    def run(*args: str) -> str | None:
+        try:
+            r = subprocess.run(["git", "-C", str(repo_root), "-c", "core.quotePath=false", *args],
+                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return r.stdout if r.returncode == 0 else None
+
+    folders = sorted({Path(rel).parent.as_posix() for rel in rels})
+    listed = run("ls-tree", "-r", "--name-only", "HEAD", "--", *folders)
+    tracked = set((listed or "").splitlines()) & rels
+    if not tracked:
+        return {}
+    walked = run("log", "--relative", "--name-only", "--format=%x00%cI", "--", *folders)
+    times: dict[str, str] = {}
+    when = ""
+    for line in (walked or "").splitlines():
+        if line.startswith("\0"):
+            when = line[1:].strip()
+        elif line in tracked and line not in times:
+            times[line] = when
+    return times
+
+
+def _mtime_iso(path: Path) -> str:
+    return datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+
+
 def _modified_iso(path: Path, repo_root: Path) -> tuple[str, str]:
     """(timestamp, method): git commit time when tracked, else file mtime.
 
@@ -59,8 +101,7 @@ def _modified_iso(path: Path, repo_root: Path) -> tuple[str, str]:
     git = _git_iso(path, repo_root)
     if git:
         return git, "git"
-    ts = path.stat().st_mtime
-    return datetime.fromtimestamp(ts, timezone.utc).isoformat(), "mtime"
+    return _mtime_iso(path), "mtime"
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -80,17 +121,28 @@ def staleness(repo_root: Path) -> dict:
     'Last modified' is the git commit time (reproducible) with an st_mtime
     fallback; it is compared to review-state.json `last_reviewed` as parsed
     datetimes, not raw strings. No entry, or an unparseable `last_reviewed`,
-    means needs review (the latter also surfaces a warning).
+    means needs review (the latter also surfaces a warning). Every commit time
+    comes from one pass of the history (`_git_commit_times`), so the git
+    processes started do not grow with the number of artefacts.
     """
     base = repo_root / "sdlc-studio"
     state = sdlc_md.read_json(base / ".local" / "review-state.json", {})
     reviewed = state.get("artifacts", {}) if isinstance(state, dict) else {}
     out: dict[str, dict] = {}
+    found: list[tuple[str, Path]] = []
+    for doc in PROJECT_DOCS:
+        found.append((doc, base / f"{doc}.md"))
+    for type_ in sdlc_md.ARTIFACT_TYPES:
+        for path in sdlc_md.artifact_files(type_, repo_root):
+            rec = sdlc_md.extract_record_id(path.stem)
+            if rec:
+                found.append((rec, path))
+    found = [(key, path) for key, path in found if path.exists()]
+    times = _git_commit_times(repo_root, {p.relative_to(repo_root).as_posix() for _, p in found})
 
     def consider(key: str, path: Path) -> None:
-        if not path.exists():
-            return
-        modified, method = _modified_iso(path, repo_root)
+        git = times.get(path.relative_to(repo_root).as_posix())
+        modified, method = (git, "git") if git else (_mtime_iso(path), "mtime")
         entry = reviewed.get(key, {})
         last_reviewed = entry.get("last_reviewed")
         rec = {
@@ -111,13 +163,8 @@ def staleness(repo_root: Path) -> dict:
                 rec["needs_review"] = (m_dt is None) or (m_dt > r_dt)
         out[key] = rec
 
-    for doc in PROJECT_DOCS:
-        consider(doc, base / f"{doc}.md")
-    for type_ in sdlc_md.ARTIFACT_TYPES:
-        for path in sdlc_md.artifact_files(type_, repo_root):
-            rec = sdlc_md.extract_record_id(path.stem)
-            if rec:
-                consider(rec, path)
+    for key, path in found:
+        consider(key, path)
     return out
 
 

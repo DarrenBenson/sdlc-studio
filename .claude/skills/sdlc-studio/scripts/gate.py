@@ -1524,7 +1524,9 @@ def _review_current(root: str) -> dict:
         latest_dt = review_prep._parse_dt(
             datetime.fromtimestamp(latest.stat().st_mtime, timezone.utc).isoformat())
     stale = []
-    for key, rec in review_prep.staleness(rr).items():
+    # ONE staleness reading serves the verdict and the bookkeeping attribution below.
+    recs = review_prep.staleness(rr)
+    for key, rec in recs.items():
         m = review_prep._parse_dt(rec.get("last_modified"))
         stale_by_anchor = bool(m and latest_dt and m > latest_dt)
         # Currency is a property of the review RECORD, not only the anchor file's commit time. A
@@ -1541,7 +1543,6 @@ def _review_current(root: str) -> dict:
             stale.append(key)
     if stale:
         anchor_rev = _anchor_last_commit(rr, latest)
-        recs = review_prep.staleness(rr)
         judged = ([k for k in stale
                    if not _close_owned_change_only(
                        rr, rr / (recs.get(k, {}).get("path") or k), anchor_rev)]

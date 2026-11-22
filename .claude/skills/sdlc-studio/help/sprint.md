@@ -819,8 +819,10 @@ resumes each unit: a worktree holding a hand-in starts at its landing, a landing
 after its commit is finished with `lane land --resume`, a completed landing starts at its brief,
 and a verdict file already written is not reviewed again. A unit moved with its paperwork
 uncommitted, as a warning at accept or a refused paperwork commit leaves it, stops every re-run
-until the paperwork commit its record names is made. Exit 2 is a refusal before anything ran, 0 a
-wave end, otherwise the stopped step's own status.
+until the paperwork commit its record names is made; after a refused commit the record says so,
+with its exit status and where its output is kept. Exit 2 is a refusal before anything ran, or a
+review that could not start after the unit's build and landing ran (its brief over the size
+limit, or the CLI gone from PATH); 0 a wave end, otherwise the stopped step's own status.
 
 An orchestrator that spawns its own agents hands each agent's return to one command instead:
 
@@ -836,11 +838,16 @@ rejoinder (`critic.py brief --rejoinder`, quoting the unanswered REJECT), addres
 reviewer who rejected, to resume rather than replace. For a reviewer's hand-back, whose verdict
 is in the file its prompt named, it records the verdict: an APPROVE is verified, moved, returned
 and its paperwork committed, and a REJECT under `review.max_rounds` is answered by the repair
-brief. The last line printed is the next prompt's path: the reviewer's, the repair builder's, or
-the builder's of the wave's next unit not yet briefed, building or landed, by `drive step` or by
-`lane brief`; otherwise it says what the wave waits on, or that it has ended. A REJECT at the
-round cap, like every other stop, prints the decision record, naming the cap and the operator's
-ruling owed, and no path. `--unit` names the unit a reviewer answered when several verdicts are
-written at once. Exit 2 is a refusal that changed nothing, such as an agent the run has no lane
-for. The prompts, and the record of which reviewer answers which unit, are kept under
+brief. The reviewer is never the unit's builder, and an id drive's record does not already name
+as the unit's reviewer is taken only when that agent's transcript, in the session's subagents
+directory, names the verdict file; any other id is refused and nothing is recorded. An APPROVE
+whose accept stops on a warning names as its resume the unit's paperwork commit, then the same
+`drive step --after <agent-id>`, which resumes from the recorded accept; run before that commit,
+the step stops again, as a re-run of `drive` does. The last line printed is the next prompt's
+path: the reviewer's, the repair builder's, or the builder's of the wave's next unit not yet
+briefed, building or landed, by `drive step` or by `lane brief`; otherwise it says what the wave
+waits on, or that it has ended. A REJECT at the round cap, like every other stop, prints the
+decision record, naming the cap and the operator's ruling owed, and no path. `--unit` names the
+unit a reviewer answered when several verdicts are written at once. Exit 2 is a refusal that
+changed nothing, such as an agent the run has no lane for. The prompts, and the record of which reviewer answers which unit, are kept under
 `sdlc-studio/.local/drive/`.

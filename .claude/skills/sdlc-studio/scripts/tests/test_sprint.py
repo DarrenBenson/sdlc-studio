@@ -11285,6 +11285,60 @@ class CloseDryRunTests(unittest.TestCase):
             self.assertIn(step, report, f"{step} is missing from the report")
 
 
+class CloseProgressTests(unittest.TestCase):
+    """A close dry run ran half an hour with nothing printed before its verdict, so a slow one
+    could not be told from a hung one. Each step is named as it starts, before its result."""
+
+    #: Written out, not read from the code under test: a reorder there must not reorder this.
+    CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
+             "persona-memory", "lessons-summary", "checklist", "reconcile", "review-anchor")
+
+    def test_the_close_names_each_step_as_it_starts(self) -> None:
+        import functools
+        sprint = _load()
+        root = CloseDryRunTests._repo(self)
+        out = io.StringIO()
+        seen: dict[str, str] = {}
+
+        def watch(name, fn):
+            @functools.wraps(fn)
+            def wrapper(*a, **kw):
+                seen[name] = out.getvalue()  # what was printed when the step was entered
+                return fn(*a, **kw)
+            return wrapper
+
+        patches = [unittest.mock.patch.object(sprint, "close_preflight",
+                                              watch("preflight", sprint.close_preflight)),
+                   unittest.mock.patch.object(sprint, "_scaffold_run_retro",
+                                              watch("retro-scaffold",
+                                                    sprint._scaffold_run_retro))]
+        patches += [unittest.mock.patch.object(
+            sprint, "_close_" + step.replace("-", "_"),
+            watch(step, getattr(sprint, "_close_" + step.replace("-", "_"))))
+            for step in self.CHAIN]
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(out))
+            stack.enter_context(contextlib.redirect_stderr(out))
+            sprint.main(["close", "--dry-run", "--root", str(root)])
+        text = out.getvalue()
+        lines = text.splitlines()
+        self.assertIn("close --dry-run: running prerequisites and gate",
+                      seen["preflight"].splitlines(),
+                      "the preflight, which runs the gate, started unannounced")
+        for step in ("retro-scaffold", *self.CHAIN):
+            with self.subTest(step=step):
+                self.assertIn(step, seen, f"{step} never ran, so this proves nothing of it")
+                start = f"close --dry-run: running {step}"
+                self.assertIn(start, seen[step].splitlines(),
+                              f"{step} started before any line named it")
+                # the step's result is the report's line for it, printed after its start
+                result = next(n for n, ln in enumerate(lines)
+                              if re.match(rf"\s+\S+\s+{re.escape(step)}: ", ln))
+                self.assertLess(lines.index(start), result, text)
+
+
 class CloseChainCoverageTests(CloseDryRunTests):
     """BG0460: the dry run reported a chain step as neither refusing nor unevaluated.
 

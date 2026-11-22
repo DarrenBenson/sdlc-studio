@@ -39,7 +39,8 @@ its landing, one whose landing stopped after its commit has it finished by `lane
 one whose landing completed starts at its brief, and a review whose verdict file is already
 written is not run again. A unit at a terminal status in the working tree and not at HEAD, as a
 warning at accept or a refused paperwork commit leaves it, stops each re-run again until the
-paperwork commit its record names is made.
+paperwork commit its record names is made; the record of a refused commit names it, with its exit
+status and its kept output.
 
 `step` is `sprint.py drive step --after <agent-id>`, for an orchestrator that spawns its own agents
 and hands each one's return to one command, which ends with the next prompt's path:
@@ -52,17 +53,23 @@ and hands each one's return to one command, which ends with the next prompt's pa
   REJECT), addressed to the reviewer who rejected, so that reviewer is resumed rather than a fresh
   one spawned;
 - a reviewer's hand-back, whose verdict is in the file its prompt named: `lane accept` records it.
-  An APPROVE is verified, moved and returned, its paperwork committed, and the last line is the
-  builder prompt of the wave's next unit not yet briefed, building or landed (one neither drive's
-  lane record, `run_state.lanes_in_flight` nor a land record since the run opened names), or
-  says the wave waits or has ended. A REJECT under the review round cap (`review.max_rounds`) is
+  The reviewer is the one drive's lane record names for the unit, taken as itself without
+  `--unit`, or else an agent that is not the unit's builder and whose transcript in the
+  session's subagents directory names the verdict file; any other id is refused. An APPROVE whose accept stops on a warning is recorded as
+  accepted, and its resume is the unit's paperwork commit and then the same step, which resumes
+  from the recorded accept, or stops again while that commit is unmade. An APPROVE is verified,
+  moved and returned, its paperwork committed, and the last line is the builder prompt of the
+  wave's next unit not yet briefed, building or landed (one neither drive's lane record,
+  `run_state.lanes_in_flight` nor a land record since the run opened names), or says the wave
+  waits or has ended. A REJECT under the review round cap (`review.max_rounds`) is
   answered by the repair brief (`sprint.py lane brief --repair`), whose path is the last line. A
   REJECT at the cap stops with a decision record naming the cap and the operator's ruling owed.
 
 A stop prints the decision record and no prompt path. Exit 2 is a refusal before anything moved
-(no open run, an agent the run has no lane for), 0 a step that ends with a prompt or a wave's
-state, otherwise the stopped step's own status, at least 1. Drive's lane record, which prompt each
-unit was given and which reviewer answers it, is `sdlc-studio/.local/drive/lanes.json`.
+(no open run, an agent the run has no lane for, a reviewer id refused), 0 a step that ends with
+a prompt or a wave's state, otherwise the stopped step's own status, at least 1. Drive's lane
+record, which prompt each unit was given and which reviewer answers it, is
+`sdlc-studio/.local/drive/lanes.json`.
 """
 from __future__ import annotations
 
@@ -330,6 +337,34 @@ def _paperwork_step(root: Path, unit: str) -> str:
     return f"committed {sha} ({len(paths)} file(s))"
 
 
+def _refused_paperwork(root: Path, unit: str) -> tuple[str, str] | None:
+    """(the exit line, the kept log) of `unit`'s refused paperwork commit, from the log
+    `_paperwork_step` keeps only for a refusal; None with no such log, or when the unit's accept
+    log is newer, as a later stop at accept leaves it."""
+    folder = root / DRIVE / sdlc_md.norm_id(unit)
+    log, accept = folder / "paperwork.log", folder / "accept.log"
+    try:
+        if accept.is_file() and accept.stat().st_mtime_ns > log.stat().st_mtime_ns:
+            return None
+        said = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    return (said[1].strip() if len(said) > 1 else "exit unknown"), log.relative_to(root).as_posix()
+
+
+def _uncommitted_record(root: Path, unit: str, again: str) -> str:
+    """The stop of a unit at a terminal status in the working tree and not at HEAD: the stop
+    that left its move uncommitted, a refused paperwork commit named as one, is unanswered."""
+    refused = _refused_paperwork(root, unit)
+    why = (f"its paperwork commit was refused ({refused[0]}), and" if refused else
+           "the stop that left it (a warning, or a refused paperwork commit) is unanswered, so")
+    return decision_record(unit, "paperwork", REFUSAL, quote=[
+        f"{unit} is at {_status(root, unit)[0]} in the working tree but not at HEAD: its move "
+        f"is uncommitted; {why} drive drives nothing past it"],
+        kept=refused[1] if refused else None,
+        resume=f"{paperwork_command(root, unit)}, then {again}")
+
+
 def _stop_for(root: Path, unit: str, step: str, done: subprocess.CompletedProcess, resume: str,
               own=frozenset(), shown: list[str] | None = None) -> str:
     """Keep the step's output and raise the stop it makes, if any; the kept path otherwise."""
@@ -411,11 +446,7 @@ def _walk_steps(w: _Wave, unit: str) -> None:
     if _status(root, unit)[1]:
         # terminal in the tree and not at HEAD: the stop that left its move uncommitted is
         # unanswered, and a re-run never carries it forward
-        raise _Stop(decision_record(unit, "paperwork", REFUSAL, quote=[
-            f"{unit} is at {_status(root, unit)[0]} in the working tree but not at HEAD: its "
-            f"move is uncommitted, so the stop that left it (a warning, or a refused paperwork "
-            f"commit) is unanswered and drive drives nothing past it"],
-            resume=f"{paperwork_command(root, unit)}, then {w.again}"), 1)
+        raise _Stop(_uncommitted_record(root, unit, w.again), 1)
     first = _resume_at(root, unit, wt)
     if first != "build":
         w.say(f"{unit}: resuming at {first}")
@@ -723,34 +754,84 @@ def _after_builder(root: Path, agent: str, wt: Path, state: dict, record: dict) 
     return out + paths
 
 
-def _resolve_reviewer(agent: str, unit: str | None, record: dict) -> str:
+def _briefed(root: Path, agent: str, verdict) -> str | None:
+    """Why agent `agent` is not the reviewer a brief reached, or None when it is: its transcript
+    in the session's subagents directory, where the builder's return is priced from, names the
+    verdict file the review's brief named, as reading that brief or writing the verdict leaves
+    it."""
+    got = run_state.agent_transcript_tokens(root, agent)
+    path = Path(got["source"]) if got.get("source") else (
+        Path(got["searched"]) / f"agent-{agent}.jsonl")
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return got.get("reason") or f"agent {agent!r} has no transcript at {path}"
+    named = {str(verdict), json.dumps(str(verdict))[1:-1]}
+    if verdict and any(form in text for form in named):
+        return None
+    return f"agent {agent}'s transcript {path} does not name the verdict file {verdict}"
+
+
+def _resolve_reviewer(root: Path, agent: str, unit: str | None, record: dict) -> str:
+    """The key of the unit whose verdict `agent` hands back. A unit whose accept stopped on a
+    warning is taken up by the reviewer drive's record names for it, with or without `--unit`,
+    and without `--unit` so is a unit awaiting a verdict from the reviewer a rejoinder resumed.
+    Any other id is refused when it is the unit's builder, or when its transcript does not name
+    the verdict file the unit's brief named, so no reviewer is recorded."""
     waiting = {k: e for k, e in record.items() if e.get("stage") == "review"}
+    resumed = [k for k, e in record.items()
+               if e.get("stage") == "accepted" and e.get("reviewer") == agent]
     if unit:
         key = sdlc_md.norm_id(unit)
+        if key in resumed:
+            return key
         if key not in waiting:
             raise _Refused(f"{unit} awaits no verdict in drive's lane record, so nothing was "
                            f"recorded")
-        return key
-    mine = [k for k, e in waiting.items() if e.get("reviewer") == agent]
-    if mine:
-        return mine[0]
-    ready = [k for k, e in waiting.items() if not e.get("reviewer") and _written(e.get("verdict"))]
-    if not ready:
-        raise _Refused(f"the open run has no lane for agent {agent}: no worktree is named "
-                       f"agent-{agent}, and no unit awaits a verdict from it, so nothing was "
-                       f"changed")
-    if len(ready) > 1:
-        raise _Refused(f"{', '.join(waiting[k]['unit'] for k in ready)} each await a written "
-                       f"verdict: name the unit agent {agent} reviewed with --unit")
-    return ready[0]
+    elif resumed:
+        return resumed[0]
+    else:
+        mine = [k for k, e in waiting.items() if e.get("reviewer") == agent]
+        if mine:
+            return mine[0]
+        ready = [k for k, e in waiting.items()
+                 if not e.get("reviewer") and _written(e.get("verdict"))]
+        if not ready:
+            raise _Refused(f"the open run has no lane for agent {agent}: no worktree is named "
+                           f"agent-{agent}, and no unit awaits a verdict from it, so nothing was "
+                           f"changed")
+        if len(ready) > 1:
+            raise _Refused(f"{', '.join(waiting[k]['unit'] for k in ready)} each await a "
+                           f"written verdict: name the unit agent {agent} reviewed with --unit")
+        key = ready[0]
+    entry = waiting[key]
+    if agent == entry.get("builder"):
+        raise _Refused(f"agent {agent} is {entry['unit']}'s builder, and a builder does not "
+                       f"review its own unit, so nothing was recorded")
+    if why := _briefed(root, agent, entry.get("verdict")):
+        raise _Refused(f"{why}, so no brief naming {entry['unit']}'s verdict file reached it "
+                       f"and nothing was recorded. A reviewer outside this session records its "
+                       f"verdict with `sprint.py lane accept --unit {entry['unit']} --verdict "
+                       f"{entry.get('verdict')} --reviewer <name>`")
+    return key
 
 
 def _after_reviewer(root: Path, agent: str, unit: str | None, state: dict,
                     record: dict) -> list[str]:
     import critic  # noqa: PLC0415
-    key = _resolve_reviewer(agent, unit, record)
+    key = _resolve_reviewer(root, agent, unit, record)
     entry = record[key]
     unit, verdict = entry["unit"], Path(entry.get("verdict") or "")
+    again = f"sprint.py drive step --after {agent}"
+    if entry.get("stage") == "accepted":
+        # the verdict is recorded and the unit moved; the warning that stopped the accept is
+        # answered once the paperwork commit is made, as a re-run of `sprint.py drive` holds
+        if not _finished(root, unit):
+            raise _Stop(_uncommitted_record(root, unit, again), 1)
+        entry["stage"] = "done"
+        _save(root, record)
+        return ([f"{unit} accept: recorded already; its paperwork is committed"]
+                + _next_prompt(root, unit, state, record))
     if not _written(verdict):
         raise _Refused(f"agent {agent} has written no verdict to {verdict}, so nothing was "
                        f"recorded")
@@ -759,9 +840,15 @@ def _after_reviewer(root: Path, agent: str, unit: str | None, state: dict,
     rejected = re.search(rf"^{re.escape(unit)}: REJECT recorded, round \S+", done.stdout, re.M)
     own = {sdlc_md.norm_id(u) for u in state.get("batch") or []}
     if not rejected:
-        _stop_for(root, unit, "accept", done, f"sprint.py lane accept --unit {unit} --verdict "
-                                              f"{verdict} --reviewer qa-seat-{unit}-{agent}",
-                  own)
+        warned = done.returncode == 0 and warnings(done.stderr, own)
+        if warned:
+            # recorded and moved: this step, run again, resumes from the recorded accept
+            entry.update(stage="accepted", reviewer=agent)
+            _save(root, record)
+        _stop_for(root, unit, "accept", done,
+                  f"{paperwork_command(root, unit)}, then {again}" if warned else
+                  f"sprint.py lane accept --unit {unit} --verdict {verdict} --reviewer "
+                  f"qa-seat-{unit}-{agent}", own)
         entry["stage"] = "done"
         _save(root, record)
         lines = [ln.strip() for ln in done.stdout.splitlines() if ln.strip()]

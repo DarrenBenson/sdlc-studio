@@ -2278,6 +2278,21 @@ class ReviewCurrentDirtyTests(unittest.TestCase):
             self.assertIn("stale", lane["detail"])
             self.assertIn("run `review`", lane["detail"])
 
+    def test_a_stale_anchor_reads_the_staleness_once(self) -> None:
+        """The lane's verdict and its close-bookkeeping attribution read one staleness pass; a
+        second pass walked every artefact's history again inside one gate run."""
+        import review_prep
+        with tempfile.TemporaryDirectory() as t:
+            root, latest = self._repo(t, artefact_first=True, commit_latest=False)
+            st = (root / "sdlc-studio" / "stories" / "US0001-x.md").stat()
+            os.utime(latest, (st.st_atime - 3600, st.st_mtime - 3600))
+            with mock.patch.object(review_prep, "staleness",
+                                   wraps=review_prep.staleness) as read:
+                lane = gate._review_current(str(root))
+            self.assertIn("stale", lane["detail"])
+            self.assertTrue(lane["blocking"], lane)
+            self.assertEqual(1, read.call_count, "the staleness was read more than once")
+
     def test_committed_and_current_passes(self) -> None:
         """AC4: the clean path is untouched."""
         with tempfile.TemporaryDirectory() as t:

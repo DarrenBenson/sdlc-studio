@@ -71,10 +71,19 @@ class _StepFixture(walk._DriveFixture):  # noqa: SLF001
         path = self.root / drive.LANES
         return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
 
-    def verdict(self, unit: str, text: str) -> Path:
-        """The reviewer writes `text` to the verdict file its prompt names."""
+    def briefed(self, agent: str, prompt: str) -> None:
+        """Agent `agent`'s transcript, as the harness keeps it, opening on the prompt it was
+        given."""
+        meter._Transcripts._append(  # noqa: SLF001
+            self.tx.subagents / f"agent-{agent}.jsonl",
+            [json.dumps({"type": "user", "message": {"role": "user", "content": prompt}})])
+
+    def verdict(self, unit: str, text: str, by: str) -> Path:
+        """Reviewer agent `by`, briefed with `unit`'s prompt, writes `text` to the verdict file
+        that prompt names."""
         entry = self.lanes()[sdlc_md.norm_id(unit)]
         prompt = (self.root / entry["prompt"]).read_text(encoding="utf-8")
+        self.briefed(by, prompt)
         path, uid, stem = _VERDICT_AT.findall(prompt)[-1]
         Path(path).write_text(f"UNIT: {uid}\nBRIEF: {stem}\n{text}", encoding="utf-8")
         return Path(path)
@@ -95,7 +104,7 @@ class _StepFixture(walk._DriveFixture):  # noqa: SLF001
         self.builder("a1", A, "A = 2\n")
         rc, out, err = self.step("a1")
         self.assertEqual(0, rc, out + err)
-        self.verdict(A, REJECT)
+        self.verdict(A, REJECT, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
 
@@ -136,7 +145,7 @@ class SprintDriveStepTests(_StepFixture):
             self.builder(agent, unit, body)
             rc, out, err = self.step(agent)
             self.assertEqual(0, rc, out + err)
-        self.verdict(A, APPROVE)
+        self.verdict(A, APPROVE, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", self.status_at(A))
@@ -152,7 +161,7 @@ class SprintDriveStepTests(_StepFixture):
         story.write_text(story.read_text(encoding="utf-8").replace(
             "**Status:** Ready", "**Status:** Done"), encoding="utf-8")
         gitutil.git(["commit", "-q", "-am", f"chore: {C} is done"], self.root)
-        self.verdict(B, APPROVE)
+        self.verdict(B, APPROVE, by="rb")
         rc, out, err = self.step("rb")
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", self.status_at(B))
@@ -167,7 +176,7 @@ class SprintDriveStepTests(_StepFixture):
         self.builder("a1", A, "A = 2\n")
         rc, out, err = self.step("a1")
         self.assertEqual(0, rc, out + err)
-        self.verdict(A, APPROVE)
+        self.verdict(A, APPROVE, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", self.status_at(A))
@@ -190,7 +199,7 @@ class SprintDriveStepTests(_StepFixture):
         self.assertIn(f"DRIVE STOPPED: {B} at land, {drive.REFUSAL}", out)
         self.assertEqual(f"feat({B}): B = 2", self.subjects()[0])
         # A's APPROVE names no builder prompt for B, which is landed
-        self.verdict(A, APPROVE)
+        self.verdict(A, APPROVE, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
         self.assertFalse((self.root / drive.PROMPTS / f"{B}-build.txt").exists(), out)
@@ -202,7 +211,7 @@ class SprintDriveStepTests(_StepFixture):
         prompt = Path(self.last(out))
         self.assertEqual(f"{sdlc_md.norm_id(B)}-review-r1.txt", prompt.name)
         # and B's reviewer's hand-back is taken
-        self.verdict(B, APPROVE)
+        self.verdict(B, APPROVE, by="rb")
         rc, out, err = self.step("rb")
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", self.status_at(B))
@@ -248,7 +257,7 @@ class SprintDriveStepTests(_StepFixture):
         self.builder("a1", A, "A = 2\n")
         rc, out, err = self.step("a1")
         self.assertEqual(0, rc, out + err)
-        self.verdict(A, REJECT)
+        self.verdict(A, REJECT, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
         self.assertIn("| REJECT |", self.rows(A)[-1])
@@ -275,7 +284,7 @@ class SprintDriveStepTests(_StepFixture):
         self.assertIn(FINDING, text)
         self.assertIn("resume reviewer agent ra", out)
         # the reviewer who rejected is resumed, and its round-two APPROVE is accepted
-        self.verdict(A, APPROVE)
+        self.verdict(A, APPROVE, by="ra")
         rc, out, err = self.step("ra")
         self.assertEqual(0, rc, out + err)
         self.assertEqual("Done", self.status_at(A))
@@ -284,7 +293,7 @@ class SprintDriveStepTests(_StepFixture):
 
     def test_a_reject_at_the_round_cap_stops_with_a_decision_record(self) -> None:
         self.repair_landed()
-        self.verdict(A, REJECT)
+        self.verdict(A, REJECT, by="ra")
         rc, out, err = self.step("ra")
         self.assertNotEqual(0, rc, out + err)
         self.assertIn(f"DRIVE STOPPED: {A} at accept, {drive.REJECTED}", out)
@@ -299,7 +308,7 @@ class SprintDriveStepTests(_StepFixture):
         case.builder("a1", A, "A = 2\n")
         rc, out, err = case.step("a1")
         self.assertEqual(0, rc, out + err)
-        case.verdict(A, REJECT)
+        case.verdict(A, REJECT, by="ra")
         rc, out, err = case.step("ra")
         self.assertNotEqual(0, rc, out + err)
         self.assertIn("at the review round cap of 1", out)
