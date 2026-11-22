@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, changelog.d/BG1482.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, changelog.d/BG1482.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/reference-retro.md
 > **Evidence:** sdlc-studio/reviews/verdicts/BG1474/8dc244746ca5-ede8b0eb.txt, finding 1 and 2.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -35,3 +35,4 @@ Never cap a build class out of the lane brief (carry every live build class, as 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened in-run on lane R's BLOCKED hand-in: the full suite's test_lean_lessons.py pins the five-class build cap that AC1 removes, and reference-retro.md says a brief carries 'at most five' lessons |
