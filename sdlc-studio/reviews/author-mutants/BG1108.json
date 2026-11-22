@@ -1,50 +1,41 @@
 {
   "unit": "BG1108",
-  "digest": "c9cfb80f7c13dc0e at ac68018d4917",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a83b343ecc8843382/BG1108-mutation-edits.json",
+  "digest": "cc700bc4f4d2d555 at 249fecd288b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-acc71ab401c7ce9c1/BG1108-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the unit's latest note read whatever brief cut it, so a second seat's later commit is recorded",
+      "mutant": "a missing fingerprint read as any fingerprint (fp or None)",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "judged = str(((_noted_row(repo_root, uid, fp) if fp else None) or {}).get(\"commit\") or \"\")",
-      "new": "judged = str(((_noted_row(repo_root, uid) if fp else None) or {}).get(\"commit\") or \"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
+      "old": "(_noted_row(repo_root, uid, fp) if fp else None)",
+      "new": "_noted_row(repo_root, uid, fp or None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_capping_reject_recorded_with_no_brief_carries_at_the_commit_checked_out",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the briefed id compared as typed in carried_review_base, so bg0001 reads as never carried",
+      "mutant": "a missing fingerprint read as the unit's latest note (no fp passed)",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    uid = sdlc_md.norm_id(unit)\n    try:\n        current = run_state.read(repo_root) or {}",
-      "new": "    uid = unit\n    try:\n        current = run_state.read(repo_root) or {}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
+      "old": "(_noted_row(repo_root, uid, fp) if fp else None)",
+      "new": "_noted_row(repo_root, uid)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_capping_reject_recorded_with_no_brief_carries_at_the_commit_checked_out",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a note naming the fingerprint but recording no commit read as the commit None",
+      "mutant": "the guard dropped, the empty fingerprint passed to _noted_row",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "or {}).get(\"commit\") or \"\")",
-      "new": "or {}).get(\"commit\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
-      "result": "killed",
-      "answer": ""
+      "old": "(_noted_row(repo_root, uid, fp) if fp else None)",
+      "new": "_noted_row(repo_root, uid, fp)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_capping_reject_recorded_with_no_brief_carries_at_the_commit_checked_out",
+      "result": "survived",
+      "answer": "equivalent: _noted_row keeps a row only when row.get('fp') is truthy and fp is None or equals row['fp']; an empty fp equals no truthy fingerprint, so _noted_row(root, uid, '') is None, the guard's own answer. Probe: over a notes file holding US0001 rows, critic._noted_row(root, 'US0001', '') is None while critic._noted_row(root, 'US0001') is the latest row"
     },
     {
-      "mutant": "no commit recorded when no note gives one",
+      "mutant": "the commit checked out not taken when no note answers",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
       "old": "review_base=judged or _head_commit(Path(repo_root)))",
       "new": "review_base=judged)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the two-seat test expects the second seat's commit",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
-      "old": "        self.assertEqual((qa[\"commit\"], UNIT), critic.carried_review_base(root, UNIT))",
-      "new": "        self.assertEqual((critic._noted_row(root, UNIT)[\"commit\"], UNIT),\n                         critic.carried_review_base(root, UNIT))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py::CarriedReviewBaseTests::test_a_capping_reject_recorded_with_no_brief_carries_at_the_commit_checked_out",
       "result": "killed",
       "answer": ""
     }

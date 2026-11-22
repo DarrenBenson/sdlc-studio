@@ -1,6 +1,6 @@
 # BG1120: A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py, changelog.d/BG1120.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

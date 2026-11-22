@@ -32,8 +32,14 @@ Fix each finding above, then deliver BG1475 again in a later run.
 - [ ] **AC4** BG1475 AC3 still passes: Given an open run, when `sprint.py close --dry-run` runs, then it prints a line naming each close step as that step starts, before the step's result. Fails on: no output until the verdict, so a slow close cannot be told from a hung one.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts
 
+- [ ] **AC5** Given a project in a folder whose name holds a `"`, a `\` or a tab, below its repository top, when `review_prep.py prep` reads its artefacts' commit times, then each artefact reads its commit time, not its file time. Fails on: git quoting the history paths (`review_prep.py:83` and `:87`), so no path matches and every artefact falls back to its file time (round three, verdict 7a83a2e7510b-7b61087e).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests
+- [ ] **AC6** Given the user's git setting `diff.relative = true` and a project folder at the repository top, when `review_prep.py prep` runs, then commit times are read as without the setting, and the docstring's account of the paths git prints is true under it. Fails on: the setting rewriting the history paths so they no longer match (`review_prep.py:63-64`). The reviewer's likely fix for both: `git log -z --no-relative`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | BG1475's ruled round three (D0583) rejected for two regressions in the repair; AC5 and AC6 carry them to the next run with the reviewer's likely fix |

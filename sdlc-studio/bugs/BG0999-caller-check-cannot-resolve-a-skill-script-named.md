@@ -1,6 +1,6 @@
 # BG0999: Caller-check cannot resolve a skill script named as the consumer
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0999.md

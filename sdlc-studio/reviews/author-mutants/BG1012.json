@@ -1,0 +1,124 @@
+{
+  "unit": "BG1012",
+  "digest": "ddf73240f41c0fce at e80af2d5d875",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad5fbb428c9e2a648/BG1012-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "committed-records-not-read",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    others.update(_tracked_records(root))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live-run-copies-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    others.pop(str(live.get(\"run_id\")), None)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_the_live_record_wins_over_the_committed_copy_of_its_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "oldest-start-first",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "records.extend(sorted(reversed(list(others.values())), reverse=True,",
+      "new": "records.extend(sorted(reversed(list(others.values())), reverse=False,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_between_committed_records_goes_to_the_newest",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start-not-sorted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "key=lambda s: s.get(\"started_at\") if isinstance(s.get(\"started_at\"), str)\n                          else \"\"))",
+      "new": "key=lambda s: \"\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_between_a_committed_and_an_archived_run_goes_to_the_newest",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archive-order-not-reversed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "records.extend(sorted(reversed(list(others.values())), reverse=True,",
+      "new": "records.extend(sorted(list(others.values()), reverse=True,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_tie_in_start_keeps_the_archive_s_newest_cycle",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "committed-copy-does-not-replace-archived",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    others.update(_tracked_records(root))\n",
+      "new": "    others.update({k + \"#\": v for k, v in _tracked_records(root).items()})\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_the_committed_copy_stands_in_for_the_archived_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-utf8-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        except (run_state.RunStateError, ValueError) as exc:  # ValueError: not UTF-8\n",
+      "new": "        except run_state.RunStateError as exc:  # ValueError: not UTF-8\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_an_unreadable_committed_record_is_skipped_and_the_rest_still_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "damaged-json-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        except (run_state.RunStateError, ValueError) as exc:  # ValueError: not UTF-8\n",
+      "new": "        except UnicodeDecodeError as exc:  # ValueError: not UTF-8\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_an_unreadable_committed_record_is_skipped_and_the_rest_still_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty-record-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        if rec:\n            out[p.stem] = rec\n",
+      "new": "        out[p.stem] = rec\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_an_empty_committed_record_does_not_hide_the_archived_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live-unbound-when-unreadable",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    live: dict = {}\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_an_unreadable_live_record_falls_back_to_the_committed_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-without-the-committed-record",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "        self._archive(_record(\"RUN-TEST01\", \"which schema wins?\"))\n        self._track(_record(\"RUN-TEST01\", \"which schema wins?\"))\n",
+      "new": "        self._archive(_record(\"RUN-TEST01\", \"which schema wins?\"))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-clone-carries-local",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "        (self.root / \".gitignore\").write_text(\"sdlc-studio/.local/\\n\", encoding=\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-record-of-another-sprint",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py",
+      "old": "        self._track(_record(\"RUN-TEST01\", \"which schema wins?\"))\n        row = next(",
+      "new": "        self._track(_record(\"RUN-TEST01\", \"which schema wins?\", batch=(\"US0999\",)))\n        row = next(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_checklist_reads_tracked_record.py::ChecklistTrackedRecordTests::test_a_clean_clone_reads_the_committed_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

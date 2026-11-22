@@ -1,95 +1,41 @@
 {
   "unit": "BG1463",
-  "digest": "a3a32851624941aa at 1736835cd317",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1463-mutation-edits.json",
+  "digest": "4789d2c21a6045ed at dfe94480fc55",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a9dbb4204018ebb51/BG1463-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "charged bug also uncharged",
+      "mutant": "post-dates reads every approval's day, seated or not",
       "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "            if not charged and basis[\"rule\"] == \"escaped-via\":",
-      "new": "            if basis[\"rule\"] == \"escaped-via\":",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "narrow-rule bug named uncharged",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "            if not charged and basis[\"rule\"] == \"escaped-via\":",
-      "new": "            if not charged:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "never charged",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "                charged = True\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reject-only reads as no seat",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    if not approvals:\n        return f\"no review approved {unit}\"\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "seatless reads as late or catch-all",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    if not seated:\n        return f\"the approval of {unit} names no seat\"\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "same-day approval reads as late",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    if days and days[0] > created:",
-      "new": "    if days and days[0] >= created:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "undated approvals unguarded",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    if days and days[0] > created:",
-      "new": "    if days[0] > created:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "undated approval counted as a day",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    days = sorted(day for day in (_day(r.get(\"date\")) for r in seated) if day)",
-      "new": "    days = sorted(_day(r.get(\"date\")) for r in seated)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "latest dated approval read",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    if days and days[0] > created:",
-      "new": "    if days and days[-1] > created:",
+      "old": "days = sorted(day for day in (_day(r.get(\"date\")) for r in seated) if day)",
+      "new": "days = sorted(day for day in (_day(r.get(\"date\")) for r in approvals) if day)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_post_dates_reason_reads_the_earliest_dated_approval",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "seat taken from every live row",
+      "mutant": "post-dates reads the latest seated day, not the earliest",
       "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    seated = [r for r in approvals if critic.recorded_seat(r.get(\"reviewer\") or \"\")]",
-      "new": "    seated = [r for r in unit_rows if critic.recorded_seat(r.get(\"reviewer\") or \"\")]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_an_escaped_via_unit_whose_approval_names_no_seat_is_named_uncharged",
+      "old": "if days and days[0] > created:",
+      "new": "if days and days[-1] > created:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_post_dates_reason_reads_the_earliest_dated_approval",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the US0012 approval before the bug names qa, not a seatless reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "old": "(\"US0012\", \"APPROVE\", \"general-purpose agent\", BUILDER,",
+      "new": "(\"US0012\", \"APPROVE\", QA, BUILDER,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_post_dates_reason_reads_the_earliest_dated_approval",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: qa approves US0012 before the bug, not after it",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "old": "(\"US0012\", \"APPROVE\", QA, BUILDER, \"2026-10-08\", \"none\"),",
+      "new": "(\"US0012\", \"APPROVE\", QA, BUILDER, \"2026-10-05\", \"none\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_post_dates_reason_reads_the_earliest_dated_approval",
       "result": "killed",
       "answer": ""
     }

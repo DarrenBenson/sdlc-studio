@@ -1,95 +1,59 @@
 {
   "unit": "BG1120",
-  "digest": "c685af6e8c5b9130 at ac68018d4917",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a83b343ecc8843382/BG1120-mutation-edits.json",
+  "digest": "19e78ed1c7d227fa at 249fecd288b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-acc71ab401c7ce9c1/BG1120-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the round-one walk: the combined diff (-c) read, so a clean merge of two units' edits stales the record",
+      "mutant": "core.quotePath=false dropped from the remerge read",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "\"log\", \"--no-renames\", \"--topo-order\",\n               \"--relative\", \"--name-only\", \"--format=%x00%H %s\"",
-      "new": "\"log\", \"-c\", \"--no-renames\", \"--topo-order\",\n               \"--relative\", \"--name-only\", \"--format=%x00%H %s\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "log = _git(root, \"-c\", \"core.quotePath=false\", \"log\", \"--merges\", \"--remerge-diff\",",
+      "new": "log = _git(root, \"log\", \"--merges\", \"--remerge-diff\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_resolution_of_a_declared_file_named_outside_ascii_stales_the_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the merge's resolutions never added to the walk, so a conflict resolution is set aside",
+      "mutant": "core.quotePath=true on the remerge read",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "for name in filter(None, [*names, *merged.get(sha, ())]):",
-      "new": "for name in filter(None, names):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "log = _git(root, \"-c\", \"core.quotePath=false\", \"log\", \"--merges\", \"--remerge-diff\",",
+      "new": "log = _git(root, \"-c\", \"core.quotePath=true\", \"log\", \"--merges\", \"--remerge-diff\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_resolution_of_a_declared_file_named_outside_ascii_stales_the_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every file the remerge diff names read as the merge's own, a file taken whole from one parent included",
+      "mutant": "git unable to show a file at a merge answered as a merge listing nothing",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "_rev_blob(root, sha, n) != _rev_blob(root, parent, n) for parent in parents)]",
-      "new": "True for parent in parents)]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "    except _GitUnreadable:\n        return None\n    touched:",
+      "new": "    except _GitUnreadable:\n        merged = {}\n    touched:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_file_git_cannot_show_at_the_merge_alone_leaves_the_change_unjudged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a file differing from any one parent read as the merge's own",
+      "mutant": "git unable to show a file at a merge left to propagate",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "found[sha] = [n for n in names if n and all(",
-      "new": "found[sha] = [n for n in names if n and any(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "    except _GitUnreadable:\n        return None\n    touched:",
+      "new": "    except KeyError:\n        return None\n    touched:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_file_git_cannot_show_at_the_merge_alone_leaves_the_change_unjudged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "--relative dropped from the remerge read, so a project below the top matches no declared file",
+      "mutant": "--remerge-diff dropped, so a merge settled by -X theirs lists nothing",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "\"--no-renames\", \"--relative\", \"--name-only\", \"--format=%x00%H %P\",",
-      "new": "\"--no-renames\", \"--name-only\", \"--format=%x00%H %P\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "\"log\", \"--merges\", \"--remerge-diff\",",
+      "new": "\"log\", \"--merges\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_conflict_git_settled_by_a_strategy_option_stales_the_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a git that refuses the remerge diff read as no answer, so the walk is abandoned",
+      "mutant": "a merge's own file read as no change whatever it holds (nothing listed)",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    if log is None or log.returncode != 0:\n        return {}",
-      "new": "    if log is None or log.returncode != 0:\n        return None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "git unable to run for the remerge read not guarded",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    if log is None or log.returncode != 0:\n        return {}",
-      "new": "    if log.returncode != 0:\n        return {}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a file git cannot show at a merge's commit left to propagate",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        merged = _merge_resolutions(root, base, affects)\n    except _GitUnreadable:",
-      "new": "        merged = _merge_resolutions(root, base, affects)\n    except KeyError:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the merge's sha read as its first parent, so its resolutions attach to no walked commit",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        sha, *parents = head.split()",
-      "new": "        *parents, sha = head.split()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the clean two-sided merge expected to stale the record",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
-      "old": "        self.assertEqual(0, r.returncode, f\"a clean merge of two sides staled the record:\\n\"",
-      "new": "        self.assertEqual(2, r.returncode, f\"a clean merge of two sides staled the record:\\n\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py",
+      "old": "        found[sha] = [n for n in names if n and all(",
+      "new": "        found[sha] = [n for n in names if False and all(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py::MergeCommitTests::test_a_conflict_git_settled_by_a_strategy_option_stales_the_record",
       "result": "killed",
       "answer": ""
     }

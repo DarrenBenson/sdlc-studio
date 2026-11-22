@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 311 |
+| Open | 299 |
 | In Progress | 0 |
-| Fixed | 1059 |
+| Fixed | 1071 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -74,7 +74,7 @@
 | [BG0996](BG0996-the-finding-filer-s-identifier-wrapper-pulls-trailing.md) | The finding filer's identifier wrapper pulls trailing punctuation into the code span: (`API_KEY_2`, `TOKEN_V2)` and `keep_alive.` | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Fixed | Medium | 2026-10-08 | 2026-10-08 |
-| [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Won't Fix | Low | 2026-10-08 | 2026-10-08 |
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Fixed | Medium | 2026-10-08 | 2026-10-08 |
@@ -183,7 +183,7 @@
 | [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
 | [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Superseded | Low | 2026-10-21 | 2026-10-21 |
 | [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Fixed | Medium | 2026-10-21 | 2026-10-21 |
-| [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Fixed | Medium | 2026-10-21 | 2026-10-21 |
@@ -195,7 +195,7 @@
 | [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1118](BG1118-six-behaviours-the-self-check-record-its-brief.md) | Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews) | Won't Fix | Low | 2026-10-22 | 2026-10-22 |
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Won't Fix | Low | 2026-10-22 | 2026-10-22 |
-| [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
@@ -538,7 +538,7 @@
 | [BG1460](BG1460-us1058-did-not-converge-in-review-round-2.md) | US1058 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1461](BG1461-lane-brief-warns-a-landed-unit-under-review.md) | lane brief warns a landed unit under review never returned, and that the tree may already carry its work | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Superseded | Low | 2026-11-15 | 2026-11-15 |
-| [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1466](BG1466-a-signed-report-s-signoff-principal-and-signed.md) | A signed report's signoff principal and signed_at figures still read not yet signed, though the evidence schema says they hold who signed and when | Open | Low | 2026-11-15 | 2026-11-15 |
@@ -557,8 +557,8 @@
 | [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1480](BG1480-docs-engineering-leaders-md-states-three-things-more.md) | docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1481](BG1481-test-support-page-lets-four-planted-support-md.md) | test_support_page lets four planted SUPPORT.md defects through: a gh skills install line, an install command in prose, and Stack Overflow or IRC named in prose | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
-| [BG1482](BG1482-a-build-injected-lesson-class-can-no-longer.md) | A build-injected lesson class can no longer retire, so once more than INJECT_MAX build classes are live the digest cap drops the oldest builder traps | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1483](BG1483-a-run-s-repeat-of-a-lesson-class.md) | A run's repeat of a lesson class is counted only from a cited REJECT or retro Try item, so a repeat caught by the land or the push gate goes unrecorded | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1482](BG1482-a-build-injected-lesson-class-can-no-longer.md) | A build-injected lesson class can no longer retire, so once more than INJECT_MAX build classes are live the digest cap drops the oldest builder traps | Fixed | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1483](BG1483-a-run-s-repeat-of-a-lesson-class.md) | A run's repeat of a lesson class is counted only from a cited REJECT or retro Try item, so a repeat caught by the land or the push gate goes unrecorded | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1484](BG1484-verify-ac-py-run-prints-three-lines-on.md) | verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1485](BG1485-a-shell-verify-line-run-with-s-still.md) | A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
 | [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
@@ -779,14 +779,14 @@
 | [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1708](BG1708-verify-ac-py-ts-check-reports-two-test.md) | verify_ac.py ts-check reports two test ids pytest collects: a file under a dotted directory in importlib form, and a def whose decorator gives it a docstring with an example | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1709](BG1709-bg1463-did-not-converge-in-review-round-2.md) | BG1463 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1709](BG1709-bg1463-did-not-converge-in-review-round-2.md) | BG1463 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

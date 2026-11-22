@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py, changelog.d/BG1125.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_diff_is_the_units_own.py, changelog.d/BG1125.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/help/review.md
 > **Evidence:** US1094 QA review round 1, qa-seat-US1094-r1, at 7f113429: non-blocking finding 2.
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ On any shared file the brief's embedded diff, the thing US1094 added to save rev
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened to help/review.md: its review-brief section describes the unit diff this unit changes |

@@ -1,6 +1,6 @@
 # BG1108: A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_carried_review_base.py, changelog.d/BG1108.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py

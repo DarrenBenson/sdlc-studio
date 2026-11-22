@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-reviewer.md, .claude/agents/sdlc-reviewer.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1265.md
+> **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-reviewer.md, .claude/agents/sdlc-reviewer.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1265.md, .claude/skills/sdlc-studio/reference-review.md
 > **Evidence:** the orchestrator's friction log (R8-F11), with run eight (RUN-01M6RZQZ) US1129 review rounds 1 and 2 and BG1258 review round 1 ([pre-existing])
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Tell the reviewer, in the shipped `sdlc-reviewer` definition and in the brief's 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened to reference-review.md: its section on where a delegated reviewer mutates describes the place this unit changes |

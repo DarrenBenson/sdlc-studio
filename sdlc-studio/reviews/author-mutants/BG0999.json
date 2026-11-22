@@ -1,58 +1,40 @@
 {
   "unit": "BG0999",
-  "digest": "47139e370c7cc2f5 at ac68018d4917",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a83b343ecc8843382/BG0999-mutation-edits.json",
+  "digest": "1662acbf9c51ef53 at 249fecd288b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-acc71ab401c7ce9c1/BG0999-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "a project path matched by its file name alone, so src/gate.py resolves to the skill's gate.py",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if tail in index.get(\"skill_names\", ()) and Path(cleaned).parent.name in (",
-      "new": "if tail in index.get(\"skill_names\", ()) and True or Path(cleaned).parent.name in (",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the bare file name no longer accepted",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                    \"\", \"scripts\"):",
-      "new": "                    \"scripts\",):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a name under a scripts directory no longer accepted",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                    \"\", \"scripts\"):",
-      "new": "                    \"\",):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a directory merely ending in scripts read as the scripts directory",
+      "mutant": "any ancestor named scripts read as the scripts directory",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
       "old": "Path(cleaned).parent.name in (\n                    \"\", \"scripts\"):",
-      "new": "Path(cleaned).parent.name.endswith(\n                    \"scripts\") or not Path(cleaned).parent.name:",
+      "new": "(Path(cleaned).parent.name == \"\" or\n                    \"scripts\" in Path(cleaned).parent.parts):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every file of the skill's scripts directory read as a script, its README.md included",
+      "mutant": "a directory ending in scripts read as the scripts directory",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if p.is_file() and p.suffix == \".py\"}",
-      "new": "if p.is_file()}",
+      "old": "Path(cleaned).parent.name in (\n                    \"\", \"scripts\"):",
+      "new": "(Path(cleaned).parent.name == \"\" or\n                    Path(cleaned).parent.name.endswith(\"scripts\")):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: README.md expected to resolve as a skill script",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py",
-      "old": "for named in (\"decisions.py waive\", \"the waiver (scripts/decisions.py waive)\",",
-      "new": "for named in (\"README.md\", \"decisions.py waive\", \"the waiver (scripts/decisions.py waive)\",",
+      "mutant": "the parent directory not checked at all",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "Path(cleaned).parent.name in (\n                    \"\", \"scripts\"):",
+      "new": "(True or\n                    \"scripts\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the scripts directory refused, only a bare name resolving",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "Path(cleaned).parent.name in (\n                    \"\", \"scripts\"):",
+      "new": "Path(cleaned).parent.name in (\n                    \"\",):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CallerNamedTests::test_the_named_caller_must_resolve_when_the_caller_is_a_skill_script",
       "result": "killed",
       "answer": ""

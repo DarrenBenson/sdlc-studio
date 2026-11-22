@@ -1,6 +1,6 @@
 # BG1706: BG1120 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_merge_commit.py, changelog.d/BG1120.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -37,3 +37,4 @@ Fix each finding above, then deliver BG1120 again in a later run.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | BG1120 approved in its ruled round three (D0582); the round-two findings closed by that review, its own criteria pass |
