@@ -1,6 +1,6 @@
 # BG1050: A reviewer id carrying a carriage return or line separator tears its own verdict row
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py, changelog.d/BG1050.md
@@ -26,6 +26,7 @@ Fold every character str.splitlines breaks on (\r, \x0b, \x0c, \x1c-\x1e, \x85, 
 
 - [ ] **AC1** Given a delivery verdict whose reviewer id carries a carriage return, a form feed and U+2028, when it is recorded and the ledger read back, then the row reads whole with its reviewer folded to spaces.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_clean_line_breaks.py::CleanLineBreakTests::test_a_reviewer_id_with_every_splitlines_break_reads_back_whole
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

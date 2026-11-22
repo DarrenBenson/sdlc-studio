@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 312 |
+| Open | 311 |
 | In Progress | 0 |
-| Fixed | 1045 |
+| Fixed | 1046 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -125,7 +125,7 @@
 | [BG1047](BG1047-test-status-s-backlog-advisory-fixture-dates-its.md) | test_status's backlog advisory fixture dates its bugs 2026-07-16, so it went stale on 2026-10-14 and main is red | Fixed | High | 2026-10-14 | 2026-10-14 |
 | [BG1048](BG1048-forward-port-deletes-the-changelog-md-install-sh.md) | forward-port deletes the CHANGELOG.md install.sh ships into the installed copy | Superseded | Low | 2026-10-14 | 2026-10-14 |
 | [BG1049](BG1049-bg1044-s-ruling-record-tests-leave-the-date.md) | BG1044's ruling-record tests leave the date, the note's once-only rule, the heading anchor and the case boundary unpinned | Won't Fix | Low | 2026-10-14 | 2026-10-14 |
-| [BG1050](BG1050-a-reviewer-id-carrying-a-carriage-return-or.md) | A reviewer id carrying a carriage return or line separator tears its own verdict row | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1050](BG1050-a-reviewer-id-carrying-a-carriage-return-or.md) | A reviewer id carrying a carriage return or line separator tears its own verdict row | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1052](BG1052-a-unit-whose-risk-band-rises-after-its.md) | A unit whose risk band rises after its review is found under-reviewed only at the close | Superseded | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Fixed | Medium | 2026-10-14 | 2026-10-14 |
