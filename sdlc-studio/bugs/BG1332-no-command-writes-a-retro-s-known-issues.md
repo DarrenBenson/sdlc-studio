@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG1332.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, changelog.d/BG1332.md
 > **Evidence:** RETRO0142 before D0455; retro.py --help; a consuming project's agent, 2026-11-10
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -38,3 +38,4 @@ Add `retro.py known-issues --write --retro RETROxxxx` that writes one row per op
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened for planning: the new `retro.py known-issues` verb is registered in reference-scripts-surface.md and in sprint_report.py's NON_CEREMONY_VERBS, as `sprint plan` names |

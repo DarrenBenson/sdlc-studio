@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1578.md
+> **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1578.md, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py
 > **Evidence:** `https://github.com/DarrenBenson/sdlc-studio/actions/runs/43869298579`
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,11 @@ Make corpus-verify print each red criterion's verifier output, and give US0926 A
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Scheduled Lint run 43869298579 (2026-11-16, at e356db80) failed corpus-verify with red-criteria 2 against a baseline of 0: NEW US0926::AC1 and US0996::AC3.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: gh run view 43869298579 --log-failed; then run `verify_ac.py` run --id US0926 and --id US0996 on a CI-sized runner.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Make corpus-verify print each red criterion's verifier output, and give US0926 AC1's check a budget measured on the runner.
+- [ ] **AC1** Given a corpus verify run in which a criterion is red, when `bash tools/verify-corpus.sh full` runs, then the job output prints that criterion's id and the verifier's own output under it, so the red can be read without re-running. Fails on: the red criteria named only by id, with no detail in the log.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests
+
+- [ ] **AC2** Given US0926 AC1's migrate.py check on a runner slower than the workstation, when `python3 .claude/skills/sdlc-studio/scripts/verify_ac.py run --id US0926` runs, then the check's time budget is the one the runner's measured speed sets, and it passes within it. Fails on: a fixed budget that timed out once under load.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyBudgetTests
 
 ## Impact
 
@@ -37,3 +39,4 @@ A weekly red that reads as flake teaches the operator to acknowledge it unread, 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Sonnet 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-two) |
