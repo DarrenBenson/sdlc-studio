@@ -6,9 +6,12 @@ resolving a merge conflict was never seen, so the record's digest still matched 
 the other units' commits set aside, and the brief gate under `block` admitted a diff the
 self-check never covered. A merge now touches each declared file it left differing both from
 git's own automatic merge of its parents (its remerge diff, `git log --remerge-diff`) and from
-every parent: its own content, such as a conflict resolution. A merge git made by itself names
-nothing, nor does a file it took whole from one parent, so a clean merge of another unit's
-branch, or of two units' edits to one file, still does not stale the record.
+every parent: its own content, such as a conflict resolution. A merge git made by its default
+strategy without a conflict names nothing, nor does a file it took whole from one parent, so a
+clean merge of another unit's branch, or of two units' edits to one file, still does not stale
+the record. The remerge diff merges by the default strategy, so a conflict git settled by a
+strategy option (`git merge -X theirs`) names the file it left differing from every parent, as
+a hand resolution does.
 
 Each case drives `critic.py` through its entry point in a throwaway project, the fixture shared
 with `test_self_check_survives_a_later_unit`.
@@ -35,13 +38,15 @@ def _branch(root: Path) -> str:
     return gitutil.git(["rev-parse", "--abbrev-ref", "HEAD"], root, text=True).stdout.strip()
 
 
-def _merge(root: Path, branch: str, resolved: str | None = None) -> None:
-    """Merge `branch`, writing `resolved` to the shared file first when the merge conflicts,
-    and commit it under git's own subject, which names no unit."""
-    done = gitutil.git(["merge", "-q", "--no-edit", branch], root, check=False)
+def _merge(root: Path, branch: str, resolved: str | None = None, rel: str = SHARED,
+           option: tuple[str, ...] = ()) -> None:
+    """Merge `branch` (with git's merge `option`, when given), writing `resolved` to `rel`
+    first when the merge conflicts, and commit it under git's own subject, which names no
+    unit."""
+    done = gitutil.git(["merge", "-q", "--no-edit", *option, branch], root, check=False)
     if done.returncode != 0:
         assert resolved is not None, done.stderr
-        later._write(root, SHARED, resolved)
+        later._write(root, rel, resolved)
         gitutil.git(["add", "-A"], root)
         gitutil.git(["commit", "-q", "--no-verify", "--no-edit"], root)
     subject = gitutil.git(["log", "-1", "--format=%s"], root, text=True).stdout.strip()
@@ -136,6 +141,84 @@ class MergeCommitTests(unittest.TestCase):
         with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
                 unittest.mock.patch.object(critic, "_rev_blob", unreadable):
             self.assertIsNone(critic._own_change_digest(root, A, base))
+
+    def test_a_file_git_cannot_show_at_the_merge_alone_leaves_the_change_unjudged(self) -> None:
+        """Git unable to show a listed file at the merge's own commit, and only there, answers
+        no judgement, so the gate falls back to the content as it stands, which moved. Raised
+        at the merge alone, so the walk's own guard over every other read does not answer for
+        it. Mutant: the error answered as a merge listing nothing (`merged = {}`), so both
+        units' commits are set aside and the record reads current."""
+        root = self.root
+        critic = later.critic
+        self._two_sides()
+        _merge(root, "side", "def s():\n    return 2 + 3 + 4\n")
+        merge = gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
+        base = critic.read_self_checks(root)[-1]["commit"]
+        real = critic._rev_blob
+
+        def at_the_merge(at, rev, rel):
+            if rev == merge:
+                raise critic._GitUnreadable(f"git could not show {rel} at {rev}")
+            return real(at, rev, rel)
+
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
+            self.assertIsNotNone(critic._own_change_digest(root, A, base),
+                                 "premise: a git that shows the merge judges the change")
+            with unittest.mock.patch.object(critic, "_rev_blob", at_the_merge):
+                self.assertIsNone(critic._own_change_digest(root, A, base))
+                self.assertIn(later.STALE, critic.self_check_gap(root, A) or "")
+
+    def test_a_resolution_of_a_declared_file_named_outside_ascii_stales_the_record(self) -> None:
+        """The remerge read names each file as it is (`core.quotePath=false`), as the walk
+        does. Mutant: git's quoted spelling (`"src/caf\\303\\251.py"`) taken as the path, so no
+        such file is found at the merge or at its parents, and the resolution reads as no
+        change."""
+        root = self.root
+        cafe = "src/café.py"
+        later._story(root, A, f"{later.A_AFFECTS}, {cafe}")
+        later._commit(root, f"feat({A}): the café module", cafe, "def c():\n    return 1\n")
+        later._record(root, self.scratch)
+        self.assertEqual(0, self._brief().returncode, "premise: the new record is admitted")
+        base = later.critic.read_self_checks(root)[-1]["commit"]
+        gitutil.git(["checkout", "-q", "-b", "side"], root)
+        later._commit(root, "feat(US0102): side", cafe, "def c():\n    return 2\n")
+        gitutil.git(["checkout", "-q", self.main], root)
+        later._commit(root, "feat(US0103): main", cafe, "def c():\n    return 3\n")
+        _merge(root, "side", "def c():\n    return 2 + 3 + 4\n", rel=cafe)
+        head = gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
+        self.assertEqual({head: [cafe]}, later.critic._merge_resolutions(root, base, [cafe]))
+        r = self._brief()
+        self.assertEqual(2, r.returncode, f"a resolution of {cafe} was admitted:\n{r.stderr}")
+        self.assertIn(later.STALE, r.stderr)
+
+    def test_a_conflict_git_settled_by_a_strategy_option_stales_the_record(self) -> None:
+        """The narrower class the module docstring names: the remerge diff merges by git's
+        default strategy, so a conflict git settled by itself under `-X theirs`, with no hand
+        edit and under git's own subject, leaves the file differing from that merge and from
+        both parents, and is read as a resolution. Mutant: a merge git made by itself named
+        as no change whatever its strategy, so the record is admitted."""
+        root = self.root
+        lines = [f"V{n} = {n}\n" for n in range(1, 13)]
+        later._commit(root, f"feat({A}): twelve lines", SHARED, "".join(lines))
+        later._record(root, self.scratch)
+        self.assertEqual(0, self._brief().returncode, "premise: the new record is admitted")
+
+        def edit(changes: dict[int, str]) -> str:
+            return "".join(changes.get(n, x) for n, x in enumerate(lines))
+
+        gitutil.git(["checkout", "-q", "-b", "side"], root)
+        later._commit(root, "feat(US0102): side", SHARED,
+                      edit({1: "V2 = 'side'\n", 5: "V6 = 'side'\n"}))
+        gitutil.git(["checkout", "-q", self.main], root)
+        later._commit(root, "feat(US0103): main", SHARED,
+                      edit({1: "V2 = 'main'\n", 10: "V11 = 'main'\n"}))
+        _merge(root, "side", option=("-X", "theirs"))
+        self.assertEqual(edit({1: "V2 = 'side'\n", 5: "V6 = 'side'\n", 10: "V11 = 'main'\n"}),
+                         (root / SHARED).read_text(encoding="utf-8"),
+                         "premise: git settled the conflict by itself, taking the side's line")
+        r = self._brief()
+        self.assertEqual(2, r.returncode, f"a merge settled by -X theirs was admitted:\n{r.stderr}")
+        self.assertIn(later.STALE, r.stderr)
 
     def test_a_merge_taking_one_file_whole_and_merging_another_lists_only_its_own(self):
         """A merge that git merged one declared file in by itself and whose conflict in another

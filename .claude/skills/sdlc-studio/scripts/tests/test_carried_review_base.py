@@ -216,6 +216,29 @@ class CarriedReviewBaseTests(unittest.TestCase):
         self.assertEqual(0, rc, out + err)
         self.assertEqual((head, UNIT), critic.carried_review_base(root, UNIT))
 
+    def test_a_capping_reject_recorded_with_no_brief_carries_at_the_commit_checked_out(self):
+        """A REJECT recorded at the cap with no `--brief` names no fingerprint, so no note
+        speaks for the commit it judged, and the carry records the commit checked out at the
+        record, however recent the unit's latest note. Mutant: a missing fingerprint read as
+        any fingerprint (`fp or None`), so the latest note's earlier commit is recorded."""
+        root = self.root
+        run_state.open_run(root, batch=[UNIT], goal="g")
+        _commit(root, f"feat({UNIT}): a", "a = 2\n")
+        self._round(1)
+        rc, _out, err = _cli(root, "brief", "--unit", UNIT, "--seat", "qa", "--tier", "light")
+        self.assertEqual(0, rc, err)
+        briefed = critic._noted_row(root, UNIT)["commit"]
+        head = _commit(root, f"fix({UNIT}): after the brief", "a = 2\nlate = 1\n")
+        self.assertNotEqual(briefed, head, "premise: the latest note names an earlier commit")
+        path = _write(root, f"verdicts/{UNIT}-2.txt", REJECT)
+        rc, out, err = _cli(root, "record", "--unit", UNIT, "--from-verdict", str(path),
+                            "--reviewer", REVIEWER, "--author", AUTHOR, "--tier", "light")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("", critic._brief_key(critic.delivery_rounds(root, UNIT)[-1]),
+                         "premise: the capping REJECT names no brief")
+        self.assertIsNotNone(critic.carried_by(root, UNIT), "premise: the REJECT carried it")
+        self.assertEqual((head, UNIT), critic.carried_review_base(root, UNIT))
+
     def test_the_latest_carry_wins_and_a_plain_drop_records_none(self) -> None:
         """Mutants: the first carry's commit kept over a later one's; a later drop recording no
         commit (a hand drop, or one carried by no REJECT) read as erasing the carry's."""

@@ -3234,10 +3234,12 @@ def _merge_resolutions(root: Path, base: str, affects: list[str]) -> dict[str, l
     """Each merge commit since `base` that touches `affects`, mapped to the declared files it
     left differing both from git's own automatic merge of its parents (its remerge diff, `git
     log --remerge-diff`) and from every parent: content of its own, such as a conflict
-    resolution. A merge git made by itself lists nothing, and neither does a file it took whole
-    from one parent. A merge lists no file at all when git cannot give a remerge diff, as one
-    before 2.36 cannot, which is how a merge read before. Raises `_GitUnreadable` when git
-    cannot show a listed file at a commit."""
+    resolution. A merge git made by its default strategy without a conflict lists nothing, and
+    neither does a file it took whole from one parent. The remerge diff merges by the default
+    strategy, so a conflict git settled by a strategy option such as `-X theirs` is held to the
+    same rule as a hand resolution. A merge lists no file at all when git cannot give a remerge
+    diff, as one before 2.36 cannot, which is how a merge read before. Raises `_GitUnreadable`
+    when git cannot show a listed file at a commit."""
     log = _git(root, "-c", "core.quotePath=false", "log", "--merges", "--remerge-diff",
                "--no-renames", "--relative", "--name-only", "--format=%x00%H %P",
                f"{base}..HEAD", "--", *affects)
@@ -5023,8 +5025,8 @@ def _defined_symbols(path: Path) -> set[str]:
 
 def caller_resolves(index: dict, declaration: str) -> bool:
     """Whether the consumer named by `declaration` resolves to something tracked in the tree,
-    or to a script of the loaded skill named by its bare file name or under a `scripts/`
-    directory, never by a project path that only shares its file name.
+    or to a script of the loaded skill named by its bare file name or directly under a
+    `scripts/` directory, never by a project path that only shares its file name.
 
     A caller is named as a PATH or as a COMMAND, so a token must look like one: it carries a
     separator, or a file extension, or it matches a tracked file's name or stem while being
@@ -5048,8 +5050,8 @@ def caller_resolves(index: dict, declaration: str) -> bool:
                 return True
             # A skill command: its script is in the skill, not in a consuming project's tree.
             # By file name only, so a bare word or a stem never reaches the skill's scripts,
-            # and only bare (`decisions.py`) or under a scripts directory: `src/gate.py` names
-            # a project file, which the skill's gate.py does not answer for.
+            # and only bare (`decisions.py`) or directly under a scripts directory: `src/gate.py`
+            # names a project file, which the skill's gate.py does not answer for.
             if tail in index.get("skill_names", ()) and Path(cleaned).parent.name in (
                     "", "scripts"):
                 return True
