@@ -1,7 +1,7 @@
 {
   "unit": "BG1475",
-  "digest": "7341319c90e81f00 at 8560c0b0cddf",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a88f5beabf3df6914/BG1475-mutation-edits.json",
+  "digest": "d1241d48fc863542 at 0bf381f8459b",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aeddd8f4e97f94533/BG1475-mutation-edits.json",
   "mutants": [
     {
       "mutant": "one-git-log-per-artefact",
@@ -126,6 +126,87 @@
       "old": "        for many in (2, 12):\n",
       "new": "        for many in (12, 12):\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_git_calls_do_not_grow_with_the_artefacts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "merge-resolution-unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "run(\"log\", \"-c\", \"--relative\",",
+      "new": "run(\"log\", \"--relative\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_reads_the_merge_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "walk-names-paths-from-the-repository-top",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"-c\", \"--relative\", \"--name-only\"",
+      "new": "\"-c\", \"--name-only\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_project_below_the_repository_root_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scaffold-announced-under-a-named-retro",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if not retro_id:\n            started(\"retro-scaffold\")",
+      "new": "        if True:\n            started(\"retro-scaffold\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_a_named_retro_announces_no_scaffold",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "progress-printed-on-stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"close --dry-run: running {name}\", file=sys.stderr, flush=True))",
+      "new": "f\"close --dry-run: running {name}\", file=sys.stdout, flush=True))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-reads-both-streams-as-one",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "            stack.enter_context(contextlib.redirect_stderr(err))\n            sprint.main([\"close\", \"--dry-run\", *argv])",
+      "new": "            stack.enter_context(contextlib.redirect_stderr(out))\n            sprint.main([\"close\", \"--dry-run\", *argv])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-reviewed-after-the-merge",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "old": "{\"BG0001\": {\"last_reviewed\": \"2026-03-15T00:00:00+00:00\"}}",
+      "new": "{\"BG0001\": {\"last_reviewed\": \"2026-04-15T00:00:00+00:00\"}}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_reads_the_merge_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "diff-walk-unread",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "    walked = run(\"log\", \"-c\", \"--relative\", \"--name-only\", \"--format=%x00%cI\", \"--\", *folders)",
+      "new": "    walked = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clean-merge-unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "run(\"log\", \"-c\", \"--relative\",",
+      "new": "run(\"log\", \"--relative\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_clean_merge_is_read_as_git_log_reads_each_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "merge-read-against-each-parent",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "run(\"log\", \"-c\", \"--relative\",",
+      "new": "run(\"log\", \"-m\", \"--relative\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_clean_merge_is_read_as_git_log_reads_each_path",
       "result": "killed",
       "answer": ""
     }

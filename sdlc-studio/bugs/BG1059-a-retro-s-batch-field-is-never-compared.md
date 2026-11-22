@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py, changelog.d/BG1059.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py, changelog.d/BG1059.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/retro.md
 > **Evidence:** RUN-01M4R168, 2026-10-16: RETRO0134 `> **Batch:**` named 16 ids; sdlc-studio/.local/run-state.json `batch` held 18 (BG1056 and US1004 added by `batch add` after the scaffold); `sprint.py close --dry-run` printed `ok retro-validate: RETRO0134 valid` and the accuracy block read `0 of 16 unit(s) measured`. retro.py:793 `batch_count_check` compares parsed ids with the retro's declared count only.
 > **Created:** 2026-10-16
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ A close measures, reports and accounts for a subset of the run without saying so
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-16 | Claude Opus 5.5 | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Affects widened to `reference-retro.md`, `reference-scripts.md` and `help/retro.md`, the three pages qa round one named as listing the old close checks |

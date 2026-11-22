@@ -1,6 +1,6 @@
 # BG1124: critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py, changelog.d/BG1124.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,6 +26,7 @@ Run both checks on the brief with its UNIT DIFF section removed (or on the secti
 
 - [ ] **AC1** Given a brief whose practices block is missing a practice and whose unit diff quotes that practice's text, when the brief is issued, then it is refused naming the practice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_checks_ignore_the_diff.py::BriefChecksIgnoreTheDiffTests::test_a_practice_quoted_only_in_the_diff_does_not_satisfy_the_check
+  - **Verified:** yes (2026-11-22)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # BG0970: `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py, changelog.d/BG0970.md
@@ -26,10 +26,13 @@ When any Affects path has uncommitted changes, `critic.py brief` warns on stderr
 
 - [ ] **AC1** `critic.py brief` on a unit whose Affects hold uncommitted changes names those paths on stderr and says an isolated reviewer will not see them
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py -k brief_warns_on_uncommitted_affects
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** A brief over a clean tree prints no such warning
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py -k brief_on_a_clean_tree_is_silent
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC3** The brief records the commit it was cut at, so a verdict can be matched to the revision it judged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_uncommitted_affects.py -k brief_records_its_commit
+  - **Verified:** yes (2026-11-22)
 
 ## Related
 

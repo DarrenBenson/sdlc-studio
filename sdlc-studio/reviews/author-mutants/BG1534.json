@@ -1,176 +1,77 @@
 {
   "unit": "BG1534",
-  "digest": "5d5c33e6b4dcb435 at 97c0b4ca482f",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a1e02b34da6ad7776/BG1534-mutation-edits.json",
+  "digest": "0ae7d1edab9f2f49 at ac5f808c75ac",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aefd80f68e9e18f6a/BG1534-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "a decorated def reads as the def itself, the last one bound (the regression)",
+      "mutant": "own-name setter drops an unread binding (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = _decorated(stmt, bound) if stmt.name == name else bound",
-      "new": "bound = [stmt] if stmt.name == name else bound",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
+      "old": "            return bound if getattr(deco.value, \"id\", None) == stmt.name else [_UNREAD]",
+      "new": "            return [b for b in bound if b is not _UNREAD] if getattr(deco.value, \"id\", None) == stmt.name else [_UNREAD]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a decorated def reads as an unread binding",
+      "mutant": "the last listed setter decides, read over another property's setter first",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    for deco in stmt.decorator_list:\n",
-      "new": "    if stmt.decorator_list:\n        return [_UNREAD]\n    for deco in stmt.decorator_list:\n",
+      "old": "    for deco in stmt.decorator_list:\n        if isinstance(deco, ast.Attribute) and deco.attr in (\"setter\", \"deleter\"):",
+      "new": "    for deco in reversed(stmt.decorator_list):\n        if isinstance(deco, ast.Attribute) and deco.attr in (\"setter\", \"deleter\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the last listed setter decides, read over its own setter first",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    for deco in stmt.decorator_list:\n        if isinstance(deco, ast.Attribute) and deco.attr in (\"setter\", \"deleter\"):",
+      "new": "    for deco in reversed(stmt.decorator_list):\n        if isinstance(deco, ast.Attribute) and deco.attr in (\"setter\", \"deleter\"):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a deleter does not keep the property",
+      "mutant": "an own-name setter on any decorator wins over a first-listed other setter",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "deco.attr in (\"setter\", \"deleter\")",
-      "new": "deco.attr in (\"setter\",)",
+      "old": "            return bound if getattr(deco.value, \"id\", None) == stmt.name else [_UNREAD]",
+      "new": "            if getattr(deco.value, \"id\", None) == stmt.name:\n                return bound",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a getter keeps the property too",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "deco.attr in (\"setter\", \"deleter\")",
-      "new": "deco.attr in (\"setter\", \"deleter\", \"getter\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the accessor test inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "deco.attr in (\"setter\", \"deleter\")",
-      "new": "deco.attr not in (\"setter\", \"deleter\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the own-name test inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "getattr(deco.value, \"id\", None) == stmt.name",
-      "new": "getattr(deco.value, \"id\", None) != stmt.name",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a dotted property reads as the def's own name",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "getattr(deco.value, \"id\", None)",
-      "new": "getattr(deco.value, \"id\", stmt.name)",
+      "mutant": "fixture: the assigned property made by a def with no example instead",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "              \"class Assigned:\\n    prop = property(_get)\\n\\n\"",
+      "new": "              \"class Assigned:\\n    @property\\n    def prop(self):\\n        pass\\n\\n\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "another property's accessor reads as the def",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "else [_UNREAD]\n    return [stmt]",
-      "new": "else [stmt]\n    return [stmt]",
+      "mutant": "fixture: bare's own setter listed first",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "              \"    @got.setter\\n    @bare.setter\\n    def bare(self, value):\\n        pass\\n\\n\"",
+      "new": "              \"    @bare.setter\\n    @got.setter\\n    def bare(self, value):\\n        pass\\n\\n\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "another property's accessor keeps the earlier binding",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "else [_UNREAD]\n    return [stmt]",
-      "new": "else bound\n    return [stmt]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an own-name accessor reads as the def",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "return bound if getattr",
-      "new": "return [stmt] if getattr",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "only the outermost decorator is read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    for deco in stmt.decorator_list:\n",
-      "new": "    for deco in stmt.decorator_list[:1]:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "only the innermost decorator is read",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    for deco in stmt.decorator_list:\n",
-      "new": "    for deco in stmt.decorator_list[-1:]:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a non-attribute decorator is read for its attr",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "if isinstance(deco, ast.Attribute) and deco.attr",
-      "new": "if deco.attr",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a finally block may not run",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = _bound_after(getattr(stmt, \"finalbody\", []), name, bound)",
-      "new": "bound = bound + _bound_after(getattr(stmt, \"finalbody\", []), name, bound)",
+      "mutant": "fixture: own's other setter listed first",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "              \"    @own.setter\\n    @got.setter\\n    def own(self, value):\\n        pass\\n\\n\\n\"",
+      "new": "              \"    @got.setter\\n    @own.setter\\n    def own(self, value):\\n        pass\\n\\n\\n\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "an if with no else drops the earlier binding",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "bound = _bound_after(stmt.body, name, bound) + _bound_after(stmt.orelse, name, bound)",
-      "new": "bound = _bound_after(stmt.body, name, bound) + (_bound_after(stmt.orelse, name, bound) if stmt.orelse else [])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the plain setter loses its decorator",
+      "mutant": "count: the new finding row not counted",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "\"    @got.setter\\n    def got(self, value):",
-      "new": "\"    def got(self, value):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the setter-only property loses its decorator",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "\"    @set_only.setter\\n    def set_only",
-      "new": "\"    def set_only",
+      "old": "            self.assertIn(\"ts-check: 34 finding(s)\", out)",
+      "new": "            self.assertIn(\"ts-check: 33 finding(s)\", out)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the finally block no longer rebinds",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "\"try:\\n    pass\\nfinally:\\n    def rebound_in_finally():\\n        pass\\n\\n\\n\"",
-      "new": "\"try:\\n    pass\\nfinally:\\n    pass\\n\\n\\n\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the stacked setters lose their decorators",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "\"\\n\\n    @_keep\\n    @stacked.setter\\n    def stacked",
-      "new": "\"\\n\\n    def stacked",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""
     }

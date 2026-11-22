@@ -1,6 +1,6 @@
 # BG1626: drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, changelog.d/BG1626.md, .claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py, .claude/skills/sdlc-studio/help/sprint.md
@@ -26,6 +26,7 @@ Have drive step name the command that resumes from the recorded accept (the same
 
 - [ ] **AC1** Given a unit whose APPROVE accept stopped on a warning under `sprint.py drive step`, when the resume command the step prints is run, then it succeeds and resumes from the recorded accept, as `sprint.py drive` does. Fails on: the printed `lane accept` exiting 2 with 'a verdict file is recorded once'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

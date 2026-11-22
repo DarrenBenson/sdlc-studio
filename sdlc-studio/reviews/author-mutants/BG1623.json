@@ -1,7 +1,7 @@
 {
   "unit": "BG1623",
-  "digest": "a6f5c1495e23ae3e at 8560c0b0cddf",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a88f5beabf3df6914/BG1623-mutation-edits.json",
+  "digest": "c0dbf3aec867c887 at 0bf381f8459b",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aeddd8f4e97f94533/BG1623-mutation-edits.json",
   "mutants": [
     {
       "mutant": "builder-taken-as-reviewer",
@@ -162,6 +162,24 @@
       "old": "        self.briefed(\"a1\", prompt)\n",
       "new": "",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-accept-prints-no-return",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py",
+      "old": "    ACCEPTED = \"{unit}: moved to Done\\n  lane return: {unit} cleared\\n\"",
+      "new": "    ACCEPTED = \"{unit}: moved to Done\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests::test_the_steps_run_in_the_doctrine_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-shared-unit-not-building",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py",
+      "old": "            sdlc_md.norm_id(B): {\"unit\": B, \"stage\": \"build\",",
+      "new": "            sdlc_md.norm_id(B): {\"unit\": B, \"stage\": \"done\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests::test_a_unit_sharing_a_file_with_one_building_is_given_no_prompt",
       "result": "killed",
       "answer": ""
     }

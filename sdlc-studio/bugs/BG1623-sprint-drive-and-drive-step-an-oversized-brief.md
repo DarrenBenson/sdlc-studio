@@ -1,6 +1,6 @@
 # BG1623: sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1623.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py
@@ -26,12 +26,15 @@ Refuse an --after id that is the unit's builder or that no brief names; state ex
 
 - [ ] **AC1** Given a unit with a written verdict whose builder has agent id B, when `sprint.py drive step --after B` runs, then it exits non-zero naming the builder and records no reviewer; an id no brief names is refused the same way. Fails on: the builder or any unknown id recorded as the reviewer.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveStepReviewerTests
+  - **Verified:** yes (2026-11-22)
 
 - [ ] **AC2** Given a wave whose paperwork commit was refused, when `sprint.py drive` is run again, then it stops naming the refused commit and exits non-zero, not 0 with the paperwork uncommitted. Fails on: a re-run exiting 0 over uncommitted paperwork.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveRerunAfterRefusedPaperworkTests
+  - **Verified:** yes (2026-11-22)
 
 - [ ] **AC3** Given a brief over the size limit, when `sprint.py drive` runs, then it refuses before build, or its help states that exit 2 can follow work that ran, matching the behaviour; swapping the return and paperwork steps, the return-step stop, the landing lock and the shared-file hold each fail a test. Fails on: exit 2 after build and land ran, against help saying nothing ran.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step_guards.py::DriveGuardCoverageTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

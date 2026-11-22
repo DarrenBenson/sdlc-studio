@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 315 |
+| Open | 314 |
 | In Progress | 0 |
-| Fixed | 1047 |
+| Fixed | 1052 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1703** |
+| **Total** | **1707** |
 
 ## All Bugs
 
@@ -45,7 +45,7 @@
 | [BG0967](BG0967-the-finding-filer-backtick-wraps-identifiers-inside-steps.md) | The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0968](BG0968-ci-runs-tools-tests-in-the-same-step.md) | CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0969](BG0969-sprint-close-file-and-close-silently-drops-a.md) | sprint close --file-and-close silently drops a supplied --goal-verdict, then refuses because the goal is unjudged - a hard blocker it cannot file | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0970](BG0970-critic-py-brief-says-nothing-when-the-unit.md) | `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0970](BG0970-critic-py-brief-says-nothing-when-the-unit.md) | `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0971](BG0971-sprint-close-dry-run-reports-later-chain-steps.md) | sprint close --dry-run reports later chain steps in the past tense ('lessons lifted', 'summary regenerated', 'anchor refreshed') although nothing was written | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0972](BG0972-artifact-py-retitle-quotes-the-old-title-verbatim.md) | `artifact.py retitle` quotes the old title verbatim in its revision row, so a retitle made to remove an em dash or a bare identifier puts it straight back | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0973](BG0973-artifact-py-new-type-review-warns-its-acceptance.md) | artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section | Open | Low | 2026-10-07 | 2026-10-07 |
@@ -57,7 +57,7 @@
 | [BG0979](BG0979-file-finding-py-misdirects-a-cr-s-author.md) | `file_finding.py` misdirects a CR's author: `--recommendation` is documented as RFC-only though a CR carries it, and the no-verifier warning cites a `sprint plan` refusal that never applies to a CR | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0980](BG0980-filing-refuses-a-k-selector-for-a-test.md) | Filing refuses a `-k` selector for a test the fix will add to an existing module without naming the node-id form it would accept, so authors scatter one-test files | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Fixed | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0984](BG0984-changing-a-criterion-s-verify-expression-keeps-the.md) | Changing a criterion's Verify expression keeps the old Verified date and evidence when the new one passes | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Fixed | Medium | 2026-10-07 | 2026-10-07 |
@@ -199,7 +199,7 @@
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
-| [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Fixed | High | 2026-10-22 | 2026-10-22 |
@@ -698,10 +698,10 @@
 | [BG1620](BG1620-the-verbatim-repair-brief-loses-the-first-line.md) | The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Fixed | High | 2026-11-19 | 2026-11-19 |
-| [BG1623](BG1623-sprint-drive-and-drive-step-an-oversized-brief.md) | sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1623](BG1623-sprint-drive-and-drive-step-an-oversized-brief.md) | sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1624](BG1624-flaky-test-lane-run-s-timed-out-git.md) | Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1625](BG1625-the-recorded-runner-report-and-the-replayed-mutants.md) | The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Fixed | Medium | 2026-11-19 | 2026-11-19 |
@@ -779,6 +779,10 @@
 | [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

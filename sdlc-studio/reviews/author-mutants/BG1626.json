@@ -1,7 +1,7 @@
 {
   "unit": "BG1626",
-  "digest": "25361458e50557b9 at 8560c0b0cddf",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a88f5beabf3df6914/BG1626-mutation-edits.json",
+  "digest": "d29065f683f3010d at 0bf381f8459b",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aeddd8f4e97f94533/BG1626-mutation-edits.json",
   "mutants": [
     {
       "mutant": "resume-names-lane-accept-again",
@@ -72,6 +72,24 @@
       "old": "        for part in resume.split(\", then \"):\n",
       "new": "        for part in resume.split(\", then \")[1:]:\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_the_printed_resume_resumes_from_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "recorded-accept-taken-by-any-reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "if e.get(\"stage\") == \"accepted\" and e.get(\"reviewer\") == agent]",
+      "new": "if e.get(\"stage\") == \"accepted\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_only_the_recorded_reviewer_takes_up_the_recorded_accept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-other-reviewer-recorded-on-the-accept",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py",
+      "old": "sdlc_md.norm_id(A): entry(A, \"accepted\", \"a1\", \"ra\"),",
+      "new": "sdlc_md.norm_id(A): entry(A, \"accepted\", \"a1\", \"rb\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_drive_step_accept_resume.py::DriveStepAcceptResumeTests::test_only_the_recorded_reviewer_takes_up_the_recorded_accept",
       "result": "killed",
       "answer": ""
     }

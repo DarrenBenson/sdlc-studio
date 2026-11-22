@@ -14,6 +14,8 @@
 
 `run_state.signed_record` turns RunStateError into None (near line 698), so a learning whose run's tracked record cannot be parsed reads on a seat's brief as 'awaits its run's signature'. `read_tracked` says a damaged signed record is not the same fact as an absent one. The behaviour is fail-safe, since the learning is not carried, but the brief gives the operator the wrong reason, and a damaged signed record goes unnoticed.
 
+A run record that is not UTF-8 is the same damage reached by another path: `lib/run_state.py` `archived` (line 525) and `read_tracked` (line 670) read it as UTF-8 and raise `UnicodeDecodeError`, which `_run_record` and `_run_state_for` do not catch, so the command ends in a traceback rather than naming the record as damaged (found by run twenty-two's lane P, 2026-11-22).
+
 ## Steps to Reproduce
 
 1. Sign a run whose listed learning goes live.
@@ -36,3 +38,4 @@ Have `signed_record` return a distinct damaged state, and have the brief and the
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | Summary notes the non-UTF-8 run record's decode traceback in `run_state.py`, the same damage by another path |

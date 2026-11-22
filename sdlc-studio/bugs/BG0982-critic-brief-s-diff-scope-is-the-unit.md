@@ -1,6 +1,6 @@
 # BG0982: critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py, changelog.d/BG0982.md
@@ -28,10 +28,13 @@ In critic.py brief, also compute `git diff --name-only <run base>..HEAD` restric
 
 - [ ] **AC1** For a unit whose commits since the run's base change a file its Affects does not declare, `critic.py brief` names that file in a 'changed but not declared' block in the brief the reviewer reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py -k undeclared_change_is_named
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** A unit whose changes all sit inside its Affects gets no such block
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py -k declared_changes_print_no_block
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC3** The brief's diff scope stays the unit's Affects; the block informs the reviewer and suggests correcting Affects, it does not widen the bounded review
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_undeclared_changes.py -k diff_scope_stays_bounded
+  - **Verified:** yes (2026-11-22)
 
 ## Triage
 
