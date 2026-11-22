@@ -76,6 +76,12 @@ def _warning(stderr: str) -> str:
     return next((line for line in stderr.splitlines() if UNSEEN in line), "")
 
 
+def _named(stderr: str) -> list[str]:
+    """The paths the warning names, in its order, or none when there is no warning."""
+    line = _warning(stderr)
+    return line.split(f"{UNSEEN}: ", 1)[1].split(". A reviewer's", 1)[0].split(", ") if line else []
+
+
 def _notes(root: Path) -> list[dict]:
     return [json.loads(line) for line in
             (root / NOTES).read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -114,6 +120,75 @@ class UncommittedAffectsTests(unittest.TestCase):
         again = _brief(root, "--rejoinder", str(prior))
         self.assertEqual(0, again.returncode, again.stderr)
         self.assertIn("src/a.py", _warning(again.stderr), "the re-review brief said nothing")
+
+    def test_brief_warns_on_uncommitted_affects_staged_deleted_or_renamed(self) -> None:
+        """AC1's other states, each named by its own path: a staged edit, a staged deletion, a
+        staged rename (both of its paths), a deletion not staged, and a new file in a new
+        directory beneath a declared one. Mutants: only entries with a worktree change kept (the
+        staged ones unnamed); only paths still on disk kept (the deletions unnamed); renames
+        detected, so the rename record's second path is misread; untracked directories named
+        in place of their files."""
+        root = self.root
+        for rel in ("src/pkg/staged.py", "src/pkg/gone.py", "src/pkg/old.py"):
+            _write(root, rel, "x = 1\n")
+        _project(root)
+        _write(root, "src/pkg/staged.py", "x = 2\n")
+        gitutil.git(["add", "src/pkg/staged.py"], root)
+        gitutil.git(["rm", "-q", "src/pkg/gone.py"], root)
+        gitutil.git(["mv", "src/pkg/old.py", "src/pkg/renamed.py"], root)
+        (root / "src" / "a.py").unlink()
+        _write(root, "src/pkg/sub/x.py", "y = 1\n")
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["src/a.py", "src/pkg/gone.py", "src/pkg/old.py", "src/pkg/renamed.py",
+                          "src/pkg/staged.py", "src/pkg/sub/x.py"], _named(proc.stderr),
+                         proc.stderr)
+
+    def test_brief_warns_on_uncommitted_affects_in_a_project_below_the_repository_top(self):
+        """A project whose root is a directory of its repository: git names each path from the
+        repository's top, and the warning names it from the root, as the Affects do, and still
+        leaves out the review ledger's append and the verdict file the brief issued. Mutant:
+        the root's prefix left on, so `proj/src/a.py` is named and the tooling's writes are not
+        recognised."""
+        top = self.root
+        root = top / "proj"
+        _project(root, repo=False)
+        gitutil.git(["init", "-q"], top)
+        _commit(top, "base")
+        _write(root, "src/a.py", "x = 2\n")
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["src/a.py"], _named(proc.stderr), proc.stderr)
+        _commit(top, "a moves")
+        issued = Path(_notes(root)[-1]["verdict_file"])
+        self.assertTrue(issued.is_relative_to(root.resolve()), "premise: issued in the project")
+        issued.write_text(PRIOR, encoding="utf-8")
+        _write(root, "sdlc-studio/reviews/critic-verdicts.md", "# Critic Verdicts\n\nrow\n")
+        again = _brief(root, "--rejoinder", str(issued))
+        self.assertEqual(0, again.returncode, again.stderr)
+        self.assertEqual([], _named(again.stderr), again.stderr)
+
+    def test_brief_on_a_clean_tree_is_silent_after_a_verdict_is_written(self) -> None:
+        """The verdict file a reviewer writes at the path the brief issued is not the unit's
+        change, under a unit declaring the reviews directory, so the re-review brief over it
+        names nothing. Mutant: the verdict files named as uncommitted Affects. The positive
+        control: any other new file under the declared directory, one whose name merely starts
+        with `verdicts` among them, is still named."""
+        root = self.root
+        _project(root)
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        issued = Path(_notes(root)[-1]["verdict_file"])
+        self.assertTrue(issued.is_relative_to(root.resolve() / "sdlc-studio" / "reviews"),
+                        "premise: the verdict file is issued under the declared directory")
+        issued.write_text(PRIOR, encoding="utf-8")
+        again = _brief(root, "--rejoinder", str(issued))
+        self.assertEqual(0, again.returncode, again.stderr)
+        self.assertEqual("", _warning(again.stderr), again.stderr)
+        _write(root, "sdlc-studio/reviews/verdicts.md", "x\n")
+        proc = _brief(root, "--rejoinder", str(issued))
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["sdlc-studio/reviews/verdicts.md"], _named(proc.stderr), proc.stderr)
 
     def test_brief_on_a_clean_tree_is_silent(self) -> None:
         """AC2. Mutants: a warning printed whatever git says; an undeclared file's edit read as
@@ -160,7 +235,8 @@ class UncommittedAffectsTests(unittest.TestCase):
         self.assertEqual(head, _notes(root)[-1]["commit"])
         self.assertIn(f"\nbrief cut at commit: {head}\n", proc.stderr)
         fp = _notes(root)[-1]["fp"]
-        self.assertIn(f"brief fingerprint: {fp}\n", proc.stderr)
+        # the commit line sits straight beneath the fingerprint line, as the changelog says
+        self.assertIn(f"brief fingerprint: {fp}\nbrief cut at commit: {head}\n", proc.stderr)
         _write(root, "src/a.py", "x = 2\n")
         later = _commit(root, "a moves")
         self.assertNotEqual(head, later)
@@ -175,7 +251,8 @@ class UncommittedAffectsTests(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertTrue(_notes(root)[-1]["rejoinder"], "premise: the note is the re-review's")
         self.assertEqual(later, _notes(root)[-1]["commit"])
-        self.assertIn(f"brief cut at commit: {later}", proc.stderr)
+        self.assertIn(f"brief fingerprint: {_notes(root)[-1]['fp']}\nbrief cut at commit: "
+                      f"{later}\n", proc.stderr)
         # outside a repository there is no commit to name, and none is claimed
         with tempfile.TemporaryDirectory() as d:
             bare = Path(d)

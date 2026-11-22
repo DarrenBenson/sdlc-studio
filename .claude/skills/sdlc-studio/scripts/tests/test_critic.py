@@ -2191,19 +2191,24 @@ class CallerNamedTests(unittest.TestCase):
         waive`), and the skill's scripts are no files of the project. Mutants: the skill's
         scripts directory not consulted; a bare word matched against it, so `decisions waive`
         resolves; its files matched by stem; its subdirectories read as scripts; a name in
-        neither tree resolving."""
+        neither tree resolving; a project path matched by its file name alone, so `src/gate.py`
+        resolves to the skill's gate.py; a directory merely ending in `scripts` read as the
+        scripts directory; a file of the skill that is no script (its README.md) resolving."""
         mod = _load()
         skill = Path(mod.__file__).resolve().parent
-        self.assertTrue((skill / "decisions.py").is_file(), "premise: the loaded skill has it")
+        for name in ("decisions.py", "gate.py", "README.md"):
+            self.assertTrue((skill / name).is_file(), f"premise: the loaded skill has {name}")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._file(root, "src/thing.py")
             index = mod.tree_index(root)
             self.assertNotIn("decisions.py", index["names"], "premise: not a project file")
-            for named in ("decisions.py waive", "the waiver (scripts/decisions.py waive)"):
+            for named in ("decisions.py waive", "the waiver (scripts/decisions.py waive)",
+                          ".claude/skills/sdlc-studio/scripts/decisions.py waive"):
                 self.assertTrue(mod.caller_resolves(index, named), named)
             for unnamed in ("decisions waive", "nosuchscript.py waive", "decisions.waive",
-                            "the helpers (scripts/lib)"):
+                            "the helpers (scripts/lib)", "src/gate.py run", "README.md",
+                            "lib/decisions.py waive", "subscripts/decisions.py waive"):
                 self.assertFalse(mod.caller_resolves(index, unnamed), unnamed)
             self._file(root, "tests/test_thing.py")
             self._unit(root, 5, "src/thing.py, tests/test_thing.py",
@@ -2213,6 +2218,15 @@ class CallerNamedTests(unittest.TestCase):
                        "- **Caller:** decisions.py waive\n")
             self.assertEqual([], mod.caller_findings(root, ["US0005"]),
                              "the close's caller-check reported a skill command unresolved")
+            # a project path in neither tree, and a skill file that is no script, still fail
+            for n, caller in ((6, "src/gate.py run"), (7, "README.md")):
+                self._unit(root, n, "src/thing.py, tests/test_thing.py",
+                           "### AC1: a gate consumes the digest\n\n- **Then** it reads it\n"
+                           "- **Verify:** pytest tests/test_thing.py::T::t\n"
+                           f"- **Caller:** {caller}\n")
+                found = mod.caller_findings(root, [f"US000{n}"])
+                self.assertEqual([mod.CALLER_UNRESOLVED], [f["kind"] for f in found], caller)
+                self.assertIn(caller.split()[0], found[0]["detail"])
         # an unreadable skill directory resolves nothing from it, and the scan still answers
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

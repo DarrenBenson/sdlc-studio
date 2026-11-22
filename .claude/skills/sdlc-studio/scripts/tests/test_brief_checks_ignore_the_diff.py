@@ -116,15 +116,26 @@ class BriefChecksIgnoreTheDiffTests(unittest.TestCase):
 
     def test_a_surface_quoted_only_in_the_diff_does_not_satisfy_the_claim_pass(self) -> None:
         """The claim-inventory refusal is held to the same text. Mutant: it reads the whole
-        brief, so the diff's 'Resolutions' satisfies it. The positive control: the shipped
-        inventory over the same diff is issued."""
+        brief, so the diff's 'Resolutions' satisfies it; the re-review brief's claim pass reads
+        its diff. The positive control: the shipped inventory over the same diff is issued, on
+        the first brief and the re-review alike."""
         root = self.root
         _project(root, critic._CLAIM_INVENTORY_BLOCK)
         rc, _out, err = _main(root)
         self.assertEqual(0, rc, f"premise: the shipped inventory is issued\n{err}")
+        prior = root / "prior.txt"
+        prior.write_text(PRIOR, encoding="utf-8")
+        rc, out, err = _main(root, "--rejoinder", str(prior))
+        self.assertEqual(0, rc, f"premise: the shipped inventory's re-review is issued\n{err}")
+        self.assertIn("+QUOTE = ", out, "premise: the re-review's diff carries the inventory")
+        self.assertIn("Resolutions", out[out.index("+QUOTE = "):].splitlines()[0],
+                      "premise: the quoted inventory names the dropped surface")
+        omits = "claim-inventory pass omits prose surface(s): Resolutions"
         with unittest.mock.patch.object(critic, "_CLAIM_INVENTORY_BLOCK", NO_RESOLUTIONS):
-            self._refused(_main(root), "claim-inventory pass omits prose surface(s): Resolutions",
+            self._refused(_main(root), omits,
                           "a surface quoted only in the diff satisfied the claim pass")
+            self._refused(_main(root, "--rejoinder", str(prior)), omits,
+                          "the re-review brief's diff satisfied the claim pass")
 
 
 if __name__ == "__main__":

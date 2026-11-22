@@ -7,8 +7,10 @@ each file the unit's commits since the run's base changed outside its Affects, a
 correcting Affects; the diff it carries and names stays bounded to the Affects.
 
 A unit's commits are the ones `verify_ac` already counts as its own: the subject or a `Refs:`
-line names the unit. The workspace's records (`sdlc-studio/`), which status and review
-bookkeeping commits write under the unit's id, are not named.
+line names the unit. A file another unit named the same way by that commit declares is that
+unit's, and is not named. The workspace's records (`sdlc-studio/`), which status and review
+bookkeeping commits write under the unit's id, are not named, and paths are read from the
+project's root, which may lie below the repository's top.
 
 Each case drives the shipped `critic.py brief` against a throwaway git repository whose open run
 names the unit, with git confined to the fixture; the git failure case runs in-process.
@@ -40,10 +42,11 @@ def _write(root: Path, rel: str, body: str) -> None:
     path.write_text(body, encoding="utf-8")
 
 
-def _story(root: Path, affects: str) -> None:
-    _write(root, STORY, f"# US0001: the widget\n\n> **Status:** In Progress\n"
-                        f"> **Affects:** {affects}\n> **Points:** 2\n\n## Acceptance Criteria\n\n"
-                        "- [ ] **AC1** it works\n  - **Verify:** shell true\n")
+def _story(root: Path, affects: str, uid: str = "US0001") -> None:
+    _write(root, STORY.replace("US0001", uid),
+           f"# {uid}: the widget\n\n> **Status:** In Progress\n"
+           f"> **Affects:** {affects}\n> **Points:** 2\n\n## Acceptance Criteria\n\n"
+           "- [ ] **AC1** it works\n  - **Verify:** shell true\n")
 
 
 def _commit(root: Path, message: str, files: dict[str, str] | None = None) -> str:
@@ -54,12 +57,13 @@ def _commit(root: Path, message: str, files: dict[str, str] | None = None) -> st
     return gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
 
 
-def _project(root: Path, affects: str) -> str:
-    """US0001 declaring `affects`, an open run naming it, and the base commit, returned."""
+def _project(root: Path, affects: str, top: Path | None = None) -> str:
+    """US0001 declaring `affects`, an open run naming it, and the base commit, returned. With
+    `top`, the repository is made there, a directory above the project's root."""
     _story(root, affects)
     _write(root, "src/a.py", "a = 1\n")
     _write(root, ".gitignore", "sdlc-studio/.local/\n")
-    gitutil.git(["init", "-q"], root)
+    gitutil.git(["init", "-q"], top or root)
     base = _commit(root, "base")
     state = root / "sdlc-studio" / ".local" / "run-state.json"
     state.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +124,67 @@ class UndeclaredChangeTests(unittest.TestCase):
                          _block(proc.stdout), proc.stdout)
         self.assertIn(f"git log {base}..HEAD", proc.stdout)
         self.assertNotIn(BLOCK, proc.stderr)
+
+    def test_undeclared_change_is_named_less_what_a_sibling_unit_declares(self) -> None:
+        """A commit landing several units names each in its subject or on a `Refs:` line, and
+        a file one of them declares is that unit's, not US0001's undeclared change. Mutants:
+        every file of a multi-unit commit counted against US0001 (src/b.py and src/e.py
+        named); a sibling read from the subject and not a `Refs:` line (src/e.py named); a unit
+        named only in body prose read as a sibling (src/d.py unnamed); a sibling's Affects
+        applied to a commit that does not name it (src/b2.py unnamed)."""
+        root = self.root
+        _story(root, "src/b.py, src/b2.py", "US0002")
+        _story(root, "src/d.py", "US0003")
+        _story(root, "src/e.py", "US0004")
+        _project(root, "src/a.py")
+        # the oldest, so the log, newest first, reads it after the commit naming US0002
+        _commit(root, "feat(US0001): b2", {"src/b2.py": "b = 2\n"})
+        _commit(root, "fix(US0001, US0002): both\n\nRefs: US0001\nRefs: US0002",
+                {"src/a.py": "a = 2\n", "src/b.py": "b = 1\n", "src/c.py": "c = 1\n"})
+        _commit(root, "chore: two\n\nRefs: US0001\nRefs: US0004", {"src/e.py": "e = 1\n"})
+        _commit(root, "feat(US0001): more\n\nThis follows US0003.", {"src/d.py": "d = 1\n"})
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["src/b2.py", "src/c.py", "src/d.py"], _block(proc.stdout), proc.stdout)
+        self.assertIn("outside the Affects of each other unit a commit names as its own",
+                      proc.stdout)
+
+    def test_undeclared_change_is_named_past_a_declared_name_and_across_a_rename(self) -> None:
+        """A declared path covers itself and what lies beneath it as a directory, never a file
+        whose name only starts with it; and a file the unit renamed into its Affects is named by
+        the path it left. Mutants: the directory boundary dropped (src/a.pyi and src/pkg2/x.py
+        unnamed); renames detected, so only the new path is listed (src/old.py unnamed)."""
+        root = self.root
+        _write(root, "src/old.py", "o = 1\n")
+        _project(root, "src/a.py, src/pkg, src/a2.py")
+        _commit(root, "feat(US0001): stubs", {"src/a.pyi": "a: int\n", "src/pkg2/x.py": "x = 1\n",
+                                              "src/pkg/y.py": "y = 1\n"})
+        gitutil.git(["mv", "src/old.py", "src/a2.py"], root)
+        _commit(root, "feat(US0001): move it")
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["src/a.pyi", "src/old.py", "src/pkg2/x.py"], _block(proc.stdout),
+                         proc.stdout)
+
+    def test_declared_changes_print_no_block_below_the_repository_top(self) -> None:
+        """AC2 for a project whose root is a directory of its repository: git names paths from
+        the repository's top, and the block reads them from the root, as the Affects are, so a
+        declared file is not named and a file outside the project is not the unit's to declare.
+        Mutant: the paths read from the top (`proj/src/a.py` named). The positive control: an
+        undeclared file in the project is named from its root."""
+        top = self.root
+        root = top / "proj"
+        _project(root, "src/a.py", top)
+        _commit(root, "feat(US0001): a", {"src/a.py": "a = 2\n"})
+        _write(top, "tools/x.py", "x = 1\n")
+        _commit(root, "chore(US0001): the tool beside the project")
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIsNone(_block(proc.stdout), proc.stdout)
+        _commit(root, "feat(US0001): b", {"src/b.py": "b = 1\n"})
+        proc = _brief(root)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual(["src/b.py"], _block(proc.stdout), proc.stdout)
 
     def test_declared_changes_print_no_block(self) -> None:
         """AC2. Mutants: a block printed whenever the unit has commits; a declared directory's

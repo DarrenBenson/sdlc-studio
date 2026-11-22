@@ -7,7 +7,7 @@ unit or no unit id. So a record of committed work survives another unit's later 
 shared file, and the author's own further edit, uncommitted or committed under this unit's id or
 none, still reads as a record of an earlier diff. The landing orders this per-file view cannot
 see through are BG1121's; an edit made in a merge commit's conflict resolution is read through the
-merge's combined diff, pinned in `test_self_check_merge_commit`. The review tooling's own
+merge's remerge diff, pinned in `test_self_check_merge_commit`. The review tooling's own
 writes (the self-check log, the verdict log, the runtime notes under `sdlc-studio/.local`) are
 outside the digest, so recording a self-check or a verdict, or taking a brief, does not move it.
 

@@ -2089,9 +2089,11 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     run keeps going: the unit becomes a known issue instead of a third round.
 
     The drop records the commit the REJECT judged (`carried_review_base` reads it): the commit
-    its brief was cut at, from the brief's note, or the commit checked out now when no note
-    names its fingerprint. A repair that lands before the redelivery's run opens is then in the
-    diff its brief carries, rather than beneath that run's base."""
+    its brief was cut at, from the note of the brief its fingerprint names, not the unit's latest
+    note, which a second seat's later brief may have written. It is the commit checked out now
+    when no note names that fingerprint, or when the note that does records no commit, as a note
+    cut before notes recorded one does. A repair that lands before the redelivery's run opens is
+    then in the diff its brief carries, rather than beneath that run's base."""
     uid = sdlc_md.norm_id(unit)
     if not run_state.batch_holds(run_state.read(repo_root) or {}, uid):
         return None
@@ -3228,6 +3230,28 @@ def _names_another_unit(subject: str, uid: str) -> bool:
     return bool(named) and uid not in named
 
 
+def _merge_resolutions(root: Path, base: str, affects: list[str]) -> dict[str, list[str]]:
+    """Each merge commit since `base` that touches `affects`, mapped to the declared files it
+    left differing both from git's own automatic merge of its parents (its remerge diff, `git
+    log --remerge-diff`) and from every parent: content of its own, such as a conflict
+    resolution. A merge git made by itself lists nothing, and neither does a file it took whole
+    from one parent. A merge lists no file at all when git cannot give a remerge diff, as one
+    before 2.36 cannot, which is how a merge read before. Raises `_GitUnreadable` when git
+    cannot show a listed file at a commit."""
+    log = _git(root, "-c", "core.quotePath=false", "log", "--merges", "--remerge-diff",
+               "--no-renames", "--relative", "--name-only", "--format=%x00%H %P",
+               f"{base}..HEAD", "--", *affects)
+    if log is None or log.returncode != 0:
+        return {}
+    found: dict[str, list[str]] = {}
+    for chunk in log.stdout.decode("utf-8", "replace").split("\0")[1:]:
+        head, *names = chunk.split("\n")
+        sha, *parents = head.split()
+        found[sha] = [n for n in names if n and all(
+            _rev_blob(root, sha, n) != _rev_blob(root, parent, n) for parent in parents)]
+    return found
+
+
 def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | None:
     """`affects_digest` of the unit's Affects with the commits ANOTHER unit made since `base`
     (the commit the record was taken at) set aside where they top a file's history. Another
@@ -3242,25 +3266,28 @@ def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | Non
     touched it, or when the newest that did is not another unit's, or when it differs from HEAD
     (an uncommitted edit, which nothing attributes to another unit). Otherwise it is the content
     after the newest commit that is not another unit's, or at `base` when every one was. A merge
-    commit is read by its combined diff (`git log -c`), so it touches a file only when it left
-    that file differing from every parent: its own content, such as a conflict resolution,
-    which it is held to by its subject like any other commit. A merge that took a file whole
-    from one parent touches nothing, so a clean merge of another unit's branch stays set aside."""
+    commit touches the files `_merge_resolutions` lists for it, its own content, such as a
+    conflict resolution, which it is held to by its subject like any other commit; so a clean
+    merge of another unit's branch, or of two units' edits to one file, stays set aside."""
     root = Path(repo_root)
     uid = sdlc_md.norm_id(unit)
     affects = sorted(set(_self_check_scope(root, unit)[0]))
     ancestor = _git(root, "merge-base", "--is-ancestor", base, "HEAD")
     if not affects or ancestor is None or ancestor.returncode != 0:
         return None
-    log = _git(root, "-c", "core.quotePath=false", "log", "-c", "--no-renames", "--topo-order",
+    log = _git(root, "-c", "core.quotePath=false", "log", "--no-renames", "--topo-order",
                "--relative", "--name-only", "--format=%x00%H %s", f"{base}..HEAD", "--", *affects)
     if log is None or log.returncode != 0:
+        return None
+    try:
+        merged = _merge_resolutions(root, base, affects)
+    except _GitUnreadable:
         return None
     touched: dict[str, list[tuple[str, bool]]] = {}
     for chunk in log.stdout.decode("utf-8", "replace").split("\0")[1:]:
         head, *names = chunk.split("\n")
         sha, _, subject = head.partition(" ")
-        for name in filter(None, names):
+        for name in filter(None, [*names, *merged.get(sha, ())]):
             touched.setdefault(name, []).append((sha, _names_another_unit(subject, uid)))
 
     def own(member: str) -> bytes | None:
@@ -4226,26 +4253,45 @@ def _declares(affects: list[str], rel: str) -> bool:
 def _undeclared_block(root: Path, unit: str, shown: str, base: str, affects: list[str]) -> str:
     """The block naming each file the unit's commits since `base` changed outside its Affects,
     or "" when there is none. A unit's commits are those `verify_ac` counts as its own (the
-    subject or a `Refs:` line names it); the workspace's records are left out. It informs the
+    subject or a `Refs:` line names it). A file one of them changes is the unit's to declare
+    unless another unit that commit names the same way declares it, as each unit of a commit
+    landing several does; the workspace's records are left out, and each path is read from the
+    root, as the Affects are, though the repository's top may lie above it. It informs the
     reviewer and asks for Affects to be corrected: the diff stays bounded to the Affects. Git
     unable to list the commits is said in the block, never read as no undeclared change."""
     import verify_ac  # noqa: PLC0415 - sibling; its reading of a unit's commits is the one kept
+    owned: dict[str, set] = {}
+
+    def owns(uid: str, sha: str) -> bool:
+        """Whether `sha` is one of `uid`'s commits, each unit's read from git once."""
+        if uid not in owned:
+            owned[uid] = verify_ac._unit_commit_shas(root, base, uid)
+        return sha in owned[uid]
+
+    changed: set[str] = set()
     try:
-        own = verify_ac._unit_commit_shas(root, base, unit)
-        log = _git_text(root, "-c", "core.quotePath=false", "log", "--no-renames",
-                        "--name-only", "--format=%x00%H", f"{base}..HEAD")
+        log = _git_text(root, "-c", "core.quotePath=false", "log", "--no-renames", "--relative",
+                        "--name-only", "--format=%x00%H%x1f%B%x1f", f"{base}..HEAD")
+        for chunk in log.decode("utf-8", "replace").split("\0")[1:]:
+            sha, _, rest = chunk.partition("\x1f")
+            message, _, names = rest.rpartition("\x1f")
+            if not owns(unit, sha := sha.strip()):
+                continue
+            declared = list(affects)
+            for other in {sdlc_md.norm_id(m.group(0))
+                          for m in sdlc_md.ID_SEARCH_RE.finditer(message)} - {unit}:
+                if (found := sdlc_md.find_by_id(root, other)) and owns(other, sha):
+                    declared += sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))
+            changed |= {n for n in names.split("\n") if n and not n.startswith(_WORKSPACE)
+                        and not _declares(declared, n)}
     except (ValueError, verify_ac.CoverageUnavailable) as exc:
         return f"{UNDECLARED_HEADING}: not checked - git could not list the unit's commits ({exc})"
-    changed: set[str] = set()
-    for chunk in log.decode("utf-8", "replace").split("\0")[1:]:
-        sha, *names = chunk.split("\n")
-        if sha.strip() in own:
-            changed |= {n for n in names if n and not n.startswith(_WORKSPACE)}
-    undeclared = sorted((n for n in changed if not _declares(affects, n)), key=PurePosixPath)
+    undeclared = sorted(changed, key=PurePosixPath)
     if not undeclared:
         return ""
     listed = "\n".join(f"- {n}" for n in undeclared)
-    return (f"{UNDECLARED_HEADING} (files {shown}'s commits change outside its Affects: git log "
+    return (f"{UNDECLARED_HEADING} (files {shown}'s commits change outside its Affects, and "
+            f"outside the Affects of each other unit a commit names as its own: git log "
             f"{base}..HEAD, the commits whose subject or a Refs: line names {shown}):\n{listed}\n"
             f"Judge the diff above: this block does not widen this review to these files. If "
             f"they are {shown}'s work, its Affects is wrong; say so, so the author can correct "
@@ -4259,10 +4305,12 @@ UNCOMMITTED_UNSEEN = "an isolated reviewer will not see"
 def uncommitted_notice(repo_root: Path | str, unit: str) -> str | None:
     """The stderr warning naming each of the unit's Affects paths that holds a change HEAD does
     not (modified, staged, deleted or untracked, a declared directory's files beneath it), less
-    the review tooling's own writes: a reviewer's isolated checkout is made from HEAD and does
-    not see them. A note when git cannot give a status; None over a clean tree, for a unit
-    declaring no Affects, or outside a repository, where there is no HEAD to cut a checkout
-    from."""
+    the review tooling's own writes and the verdict files reviewers write under
+    `VERDICTS_DIR_REL`: a reviewer's isolated checkout is made from HEAD and does not see them.
+    Each path is named from the root, as its Affects are, though git names it from the top of
+    the repository, which may lie above. A note when git cannot give a status; None over a clean
+    tree, for a unit declaring no Affects, or outside a repository, where there is no HEAD to
+    cut a checkout from."""
     root = Path(repo_root)
     head = _head_commit(root)
     found = sdlc_md.find_by_id(root, unit)
@@ -4271,13 +4319,15 @@ def uncommitted_notice(repo_root: Path | str, unit: str) -> str | None:
         return None
     shown = sdlc_md.display_id(root, unit)
     try:
+        prefix = os.fsdecode(_git_text(root, "rev-parse", "--show-prefix")).rstrip("\n")
         out = _git_text(root, "status", "--porcelain", "-z", "--untracked-files=all",
                         "--no-renames", "--", *affects)
     except ValueError as exc:
         return (f"note: could not read git status ({exc}), so this brief cannot say whether "
                 f"{shown}'s Affects hold uncommitted changes {UNCOMMITTED_UNSEEN}")
-    paths = sorted({p for p in (os.fsdecode(e[3:]) for e in out.split(b"\0") if len(e) > 3)
-                    if not _review_tool_write(p)}, key=PurePosixPath)
+    named = (os.fsdecode(e[3:]).removeprefix(prefix) for e in out.split(b"\0") if len(e) > 3)
+    paths = sorted({p for p in named if not (_review_tool_write(p) or p.startswith(
+        f"{VERDICTS_DIR_REL.as_posix()}/"))}, key=PurePosixPath)
     if not paths:
         return None
     return (f"warning: {shown}'s Affects hold uncommitted changes {UNCOMMITTED_UNSEEN}: "
@@ -4892,16 +4942,18 @@ SKILL_SCRIPTS = Path(__file__).resolve().parent
 
 
 def _skill_script_names() -> set[str]:
-    """The file names in `SKILL_SCRIPTS`, or none when it cannot be read."""
+    """The file names of the Python scripts in `SKILL_SCRIPTS`, not its other files (such as
+    its README.md) nor its subdirectories, or none when it cannot be read."""
     try:
-        return {p.name for p in SKILL_SCRIPTS.iterdir() if p.is_file()}
+        return {p.name for p in SKILL_SCRIPTS.iterdir() if p.is_file() and p.suffix == ".py"}
     except OSError:
         return set()
 
 
 def tree_index(repo_root: Path | str) -> dict:
     """Every TRACKED file, indexed by relative path, file name and stem, and the file names of
-    the loaded skill's scripts (`skill_names`), which a path-shaped caller may name.
+    the loaded skill's scripts (`skill_names`), which a caller may name bare or under a
+    `scripts/` directory.
 
     Tracked, not walked. A filesystem walk pulled in `node_modules` and every vendored artefact,
     which turned the index into a general English vocabulary: against this repo it made
@@ -4971,7 +5023,8 @@ def _defined_symbols(path: Path) -> set[str]:
 
 def caller_resolves(index: dict, declaration: str) -> bool:
     """Whether the consumer named by `declaration` resolves to something tracked in the tree,
-    or, for a path-shaped token, to a script of the loaded skill by its file name.
+    or to a script of the loaded skill named by its bare file name or under a `scripts/`
+    directory, never by a project path that only shares its file name.
 
     A caller is named as a PATH or as a COMMAND, so a token must look like one: it carries a
     separator, or a file extension, or it matches a tracked file's name or stem while being
@@ -4994,8 +5047,11 @@ def caller_resolves(index: dict, declaration: str) -> bool:
             if tail and (tail in index["names"] or tail in index["stems"]):
                 return True
             # A skill command: its script is in the skill, not in a consuming project's tree.
-            # By file name only, so a bare word or a stem never reaches the skill's scripts.
-            if tail in index.get("skill_names", ()):
+            # By file name only, so a bare word or a stem never reaches the skill's scripts,
+            # and only bare (`decisions.py`) or under a scripts directory: `src/gate.py` names
+            # a project file, which the skill's gate.py does not answer for.
+            if tail in index.get("skill_names", ()) and Path(cleaned).parent.name in (
+                    "", "scripts"):
                 return True
             continue
         # A bare word resolves only against a tracked file NAME (not a stem), and only when it

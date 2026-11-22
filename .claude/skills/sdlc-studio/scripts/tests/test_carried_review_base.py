@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -149,6 +150,71 @@ class CarriedReviewBaseTests(unittest.TestCase):
         self.assertEqual(head, drop[-1]["review_base"])
         self.assertEqual((head, UNIT), critic.carried_review_base(root, UNIT))
         self.assertEqual(("", ""), critic.carried_review_base(root, "US0009"))
+
+    def test_the_capping_reject_reads_its_own_briefs_commit_not_the_units_latest_note(self):
+        """A round of a high-risk unit briefs two seats, and they need not share a commit: the
+        qa seat is briefed, the unit's file moves, and a second seat is briefed after it. The
+        qa REJECT recorded at the cap judged the qa brief's commit. Mutant: the unit's latest
+        note read whatever brief cut it, so the second seat's later commit is recorded and the
+        redelivery's diff hides the commit between them."""
+        root = self.root
+        run_state.open_run(root, batch=[UNIT], goal="g")
+        _commit(root, f"feat({UNIT}): a", "a = 2\n")
+        self._round(1)
+        rc, _out, err = _cli(root, "brief", "--unit", UNIT, "--seat", "qa", "--tier", "light")
+        self.assertEqual(0, rc, err)
+        qa = critic._noted_row(root, UNIT)
+        _commit(root, f"fix({UNIT}): between the seats", "a = 2\nbetween = 1\n")
+        rc, _out, err = _cli(root, "brief", "--unit", UNIT, "--seat", "product",
+                             "--tier", "light")
+        self.assertEqual(0, rc, err)
+        self.assertNotEqual(qa["commit"], critic._noted_row(root, UNIT)["commit"],
+                            "premise: the second seat's brief was cut at a later commit")
+        path = _write(root, f"verdicts/{UNIT}-2.txt", REJECT)
+        rc, out, err = _cli(root, "record", "--unit", UNIT, "--from-verdict", str(path),
+                            "--reviewer", REVIEWER, "--author", AUTHOR, "--brief", qa["fp"],
+                            "--tier", "light")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual((qa["commit"], UNIT), critic.carried_review_base(root, UNIT))
+
+    def test_a_carried_unit_is_found_by_its_id_in_lower_case(self) -> None:
+        """The briefed id is folded before it is compared, as every other id read here is, so
+        a lower-case id briefed through the shipped CLI finds the carry. Mutant: the id compared
+        as typed, so `bg0001` reads as never carried and its brief diffs from the run's base,
+        the empty diff this repair exists to replace."""
+        judged, _repair, bug = self._carry()
+        for typed in (bug.lower(), UNIT.lower()):
+            self.assertEqual((judged, UNIT), critic.carried_review_base(self.root, typed), typed)
+        rc, out, err = _cli(self.root, "brief", "--unit", bug.lower(), "--seat", "qa",
+                            "--tier", "light")
+        self.assertEqual(0, rc, err)
+        self.assertIn(f"--- UNIT DIFF (git diff {judged} HEAD -- src/a.py) ---", out)
+        self.assertNotIn("Diff against the run's base commit", out)
+
+    def test_a_note_that_records_no_commit_carries_at_the_commit_checked_out(self) -> None:
+        """The second fallback the docstring and the changelog name: a note that names the
+        REJECT's fingerprint but records no commit, as every note cut before notes recorded one
+        does, so a run open across the upgrade carries at the commit checked out at the carry.
+        Mutant: such a note read as recording an empty commit, so the drop records none."""
+        root = self.root
+        run_state.open_run(root, batch=[UNIT], goal="g")
+        _commit(root, f"feat({UNIT}): a", "a = 2\n")
+        self._round(1)
+        rc, _out, err = _cli(root, "brief", "--unit", UNIT, "--seat", "qa", "--tier", "light")
+        self.assertEqual(0, rc, err)
+        notes = root / critic.BRIEF_NOTES_REL
+        rows = [json.loads(line) for line in notes.read_text(encoding="utf-8").splitlines()]
+        notes.write_text("".join(json.dumps({k: v for k, v in r.items() if k != "commit"}) + "\n"
+                                 for r in rows), encoding="utf-8")
+        fp = rows[-1]["fp"]
+        self.assertNotIn("commit", critic._noted_row(root, UNIT, fp), "premise: no commit noted")
+        head = _commit(root, f"fix({UNIT}): after the brief", "a = 2\nlate = 1\n")
+        path = _write(root, f"verdicts/{UNIT}-2.txt", REJECT)
+        rc, out, err = _cli(root, "record", "--unit", UNIT, "--from-verdict", str(path),
+                            "--reviewer", REVIEWER, "--author", AUTHOR, "--brief", fp,
+                            "--tier", "light")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual((head, UNIT), critic.carried_review_base(root, UNIT))
 
     def test_the_latest_carry_wins_and_a_plain_drop_records_none(self) -> None:
         """Mutants: the first carry's commit kept over a later one's; a later drop recording no
