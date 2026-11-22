@@ -116,13 +116,24 @@ class RecordTests(unittest.TestCase):
 
     def test_record_names_a_leftover_scratch_worktree(self) -> None:
         """BG1265 AC3. A reviewer's detached worktree still registered under the scratch area is
-        named by the record, with the command that removes it, and the record is not refused
-        over it; with none registered nothing is said. MUTANTS: the note dropped; the record
-        refused; a worktree on a branch (a lane's) named; the main worktree named; the
-        `scratchpad` folder rule or the temporary-directory rule dropped."""
+        named by the record, and the record is not refused over it; with none registered
+        nothing is said. The record cannot tell a worktree a reviewer left from one a review
+        still running is mutating in, so the note says to remove it only once every reviewer
+        has returned, with the plain `git worktree remove`, which refuses a tree holding a
+        mutant, and never with `--force`. MUTANTS: the note dropped; the record refused; the
+        note telling whoever records to force-remove the tree with no condition; a worktree on
+        a branch (a lane's) named; the main worktree named; the `scratchpad` folder rule or the
+        temporary-directory rule dropped."""
         import gitutil  # noqa: PLC0415 - confined git for the fixture repository
         mod = _load()
         units = iter(range(1, 100))
+
+        def note(path: Path) -> str:
+            return (f"note: a detached worktree is still registered under the scratch area: "
+                    f"{path.resolve()}. A review still running may be using it: once every "
+                    f"reviewer dispatched has returned its verdict, it is left behind, and `git "
+                    f"worktree remove {path.resolve()}` removes it, refusing a tree that still "
+                    f"holds uncommitted changes.")
 
         def record(root: Path) -> tuple[int, str]:
             """One REJECT of a unit of its own, so no record meets the review cap."""
@@ -149,7 +160,14 @@ class RecordTests(unittest.TestCase):
             gitutil.git(["worktree", "add", "-q", "--detach", str(left), "HEAD"], root)
             rc, err = record(root)
             self.assertEqual(0, rc, err)
-            self.assertIn(f"git worktree remove --force {left.resolve()}", err)
+            self.assertIn(note(left), err.splitlines())
+            self.assertNotIn("--force", err)
+            # The command the note names keeps a tree holding a reviewer's mutant.
+            (left / "a.txt").write_text("a mutant\n", encoding="utf-8")
+            kept = gitutil.git(["worktree", "remove", str(left.resolve())], root, check=False)
+            self.assertNotEqual(0, kept.returncode, "the plain remove deleted a live mutant")
+            self.assertTrue((left / "a.txt").is_file())
+            (left / "a.txt").write_text("a\n", encoding="utf-8")
             # Outside the temporary directory, named only under a folder called `scratchpad`.
             with unittest.mock.patch.object(mod.tempfile, "gettempdir", return_value=away):
                 rc, err = record(root)
@@ -157,7 +175,7 @@ class RecordTests(unittest.TestCase):
                 pad = scratch / "scratchpad" / "rev-2"
                 gitutil.git(["worktree", "add", "-q", "--detach", str(pad), "HEAD"], root)
                 rc, err = record(root)
-                self.assertIn(f"git worktree remove --force {pad.resolve()}", err)
+                self.assertIn(note(pad), err.splitlines())
                 self.assertNotIn(str(left.resolve()), err)
             for path in (left, pad):
                 gitutil.git(["worktree", "remove", "--force", str(path)], root)
@@ -4379,7 +4397,8 @@ class StagedVerdictTests(unittest.TestCase):
     def test_a_staged_verdict_no_recorded_row_cites_is_refused_by_name(self) -> None:
         """AC1. Mutants: the check passing a staged file with no row; the refusal naming no file
         or no record command; a row of another unit citing the same name and bytes taken for
-        this file's; a verdict file left unstaged judged as if staged."""
+        this file's; a verdict file left unstaged judged as if staged; a staged rename left out
+        of the files judged, so a recorded verdict moved to a name no row cites passes."""
         rc, _out, err = self._check()
         self.assertEqual((0, ""), (rc, err), "premise: nothing staged, nothing refused")
         self._write("sdlc-studio/reviews/verdicts/US0001/untracked-0000.txt", "VERDICT: x\n",
@@ -4394,6 +4413,18 @@ class StagedVerdictTests(unittest.TestCase):
         self.assertIn(f"critic.py record --unit US0001 --from-verdict {self.REL} --brief "
                       f"abc123def456 --author", err)
         self.assertNotIn("untracked-0000", err)
+        # A recorded verdict, committed, then moved with `git mv` to a name no row cites.
+        self._cite(self.REL, self.BODY.encode())
+        self.assertEqual(0, self._check()[0], "premise: the file as recorded passes")
+        self.gitutil.git(["commit", "-qm", "the recorded verdict"], self.root)
+        moved = "sdlc-studio/reviews/verdicts/US0001/fedcba987654-0a1b2c3d.txt"
+        self.gitutil.git(["mv", "--", self.REL, moved], self.root)
+        staged = self.gitutil.git(["diff", "--cached", "--name-status"], self.root,
+                                  text=True).stdout
+        self.assertEqual(f"R100\t{self.REL}\t{moved}", staged.strip(), "premise: a rename")
+        rc, _out, err = self._check()
+        self.assertEqual(1, rc, "a moved verdict no row cites passed")
+        self.assertIn(f"{moved}: no recorded review row cites it", err)
 
     def test_a_staged_verdict_its_recorded_row_cites_passes(self) -> None:
         """AC2. Mutants: the check refusing a file whose bytes a row cites (the verdicts an

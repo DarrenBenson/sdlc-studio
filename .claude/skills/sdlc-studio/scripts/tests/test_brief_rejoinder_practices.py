@@ -7,10 +7,12 @@ quoted prior verdict, so a REJECT whose findings quote a practice satisfied the 
 re-review brief whose own sections carry none of it. The checked text now leaves the quote out,
 the way it leaves out the diff; the issued brief still quotes the prior verdict in full.
 
-Each case runs the shipped verb in-process against a throwaway git repository whose open run
-names the unit, its REJECT recorded in the ledger, and the brief's practices block (or its claim
-inventory) patched to drop what the prior verdict quotes: the stand-in for a seat's brief that
-names none of it.
+Each case works in a throwaway git repository whose open run names the unit, its REJECT
+recorded in the ledger. The two refusal cases run the shipped verb in-process with the brief's
+practices block, or its claim inventory, patched to drop what the prior verdict quotes: the
+stand-in for a seat's brief that names none of it. The issued-brief case runs the verb
+in-process with the shipped blocks as they are, and the checked-text case calls
+`critic.checked_rejoinder_brief` directly, with the shipped blocks too.
 """
 from __future__ import annotations
 

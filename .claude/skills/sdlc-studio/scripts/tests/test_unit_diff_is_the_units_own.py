@@ -98,16 +98,22 @@ class UnitDiffOwnTests(unittest.TestCase):
         root = self.root
         base = _project(root)
         shas = {"one": _commit(root, "feat(US0001): one", {2: "one = 1"}),
-                "two": _commit(root, "feat(US0002): two", {12: "two = 2"}),
-                "refs": _commit(root, "chore: a shared tidy\n\nRefs: US0001", {20: "refs = 1"}),
-                "three": _commit(root, "fix(US0001): three", {28: "three = 3"})}
+                "two": _commit(root, "feat(US0002): two", {12: "two = 2"})}
+        # A run's records commit, naming no unit and changing no Affects file: never listed.
+        (root / "notes.md").write_text("the run's notes\n", encoding="utf-8")
+        shas["records"] = _commit(root, "docs(RUN-A): record the run")
+        shas.update({"refs": _commit(root, "chore: a shared tidy\n\nRefs: US0001",
+                                     {20: "refs = 1"}),
+                     "three": _commit(root, "fix(US0001): three", {28: "three = 3"})})
         return base, shas
 
     def test_the_diff_holds_only_the_units_own_commits(self) -> None:
         """AC1. Mutants: the whole `git diff <base> HEAD` kept, carrying US0002's hunk in
         US0001's brief; a commit naming the unit only on a `Refs:` line left out; the commits
-        listed newest first; the left-out commit unnamed. Each unit's brief holds its own hunks
-        and none of the other's."""
+        listed newest first; the left-out commit unnamed; the commits read without the Affects
+        pathspec, so the run's records commit, which changes no Affects file, is counted as
+        left out. Each unit's brief holds its own hunks and none of the other's, and the
+        left-out line reads in the singular for one commit and in the plural for three."""
         root = self.root
         base, shas = self._two_units()
         proc = _brief(root, "US0001")
@@ -140,18 +146,25 @@ class UnitDiffOwnTests(unittest.TestCase):
         self.assertEqual(["two = 2"], _added(lines))
         self.assertTrue(heading.startswith(f"the 1 commit since {base} naming US0002"), heading)
         self.assertIn(f"Left out: 3 commits since the base change these files without naming "
-                      f"US0002 in its subject or a Refs: line ({shas['one'][:12]}, "
-                      f"{shas['refs'][:12]}, {shas['three'][:12]})", proc.stdout)
+                      f"US0002 in their subject or a Refs: line ({shas['one'][:12]}, "
+                      f"{shas['refs'][:12]}, {shas['three'][:12]}); git diff {base} HEAD -- "
+                      f"src/a.py shows them with this unit's.", proc.stdout)
+        self.assertNotIn(shas["records"][:12], proc.stdout)
 
     def test_a_range_of_only_the_units_commits_or_none_keeps_the_whole_diff(self) -> None:
         """The controls. Only the unit's commits change the file: the section is the whole
         `git diff <base> HEAD` under its heading, as before. No commit names the unit (a run
         whose commits name no id): the whole diff too, never an empty section. Mutant: the
         own-commit form taken whenever another commit exists, so the second case reads as no
-        change at all."""
+        change at all. US0002 also commits a file outside the Affects, which counts neither as
+        its own commit to them nor as one left out. Mutant: the commits read without the
+        Affects pathspec, so US0001 takes the own-commit form and names US0002's commit as left
+        out, and US0002 is handed its commit's empty diff."""
         root = self.root
         base = _project(root)
         _commit(root, "feat(US0001): one", {2: "one = 1"})
+        (root / "src" / "b.py").write_text("b = 1\n", encoding="utf-8")
+        _commit(root, "feat(US0002): b only")
         _commit(root, "fix(US0001): three", {28: "three = 3"})
         whole = gitutil.git(["diff", base, "HEAD", "--", "src/a.py"], root,
                             text=True).stdout.rstrip("\n").split("\n")
@@ -164,6 +177,7 @@ class UnitDiffOwnTests(unittest.TestCase):
                 self.assertEqual(f"git diff {base} HEAD -- src/a.py", heading)
                 self.assertEqual(whole, lines)
                 self.assertEqual(added, _added(lines))
+                self.assertNotIn("Left out:", proc.stdout)
 
     def test_the_cap_holds_in_the_own_commit_form(self) -> None:
         """The tier's line cap holds over the commits as over the range: past it, the remainder

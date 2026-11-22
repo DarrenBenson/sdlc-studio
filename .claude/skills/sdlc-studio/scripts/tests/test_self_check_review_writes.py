@@ -94,6 +94,34 @@ class VerdictFilesLeaveDigestTests(unittest.TestCase):
                 self.assertNotIn(STALE, r.stderr)
                 self.assertIn(f"Unit under review: {UNIT}", r.stdout)
 
+    def test_a_verdict_file_committed_after_another_units_commit_leaves_it_current(
+            self) -> None:
+        """AC1 in the own-change view. Another unit's commit to a file the Affects cover moves
+        the digest of the tree as it stands, so the self-check is judged on the unit's own
+        change, the files touched since its commit with that unit's commit set aside; a
+        verdict file committed after it, in the run's records commit or under this unit's id,
+        is the tooling's write there too. Mutant: the verdicts folder left out of the working
+        tree's files alone, so the committed verdict file counts as the unit's own change and
+        the brief refuses the self-check as stale."""
+        for subject in ("docs(RUN-01ABCDEF): record the verdict",
+                        f"fix({UNIT}): record the verdict"):
+            with self.subTest(subject=subject), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, "sdlc-studio/reviews/")
+                _write(root, "sdlc-studio/reviews/notes.md", "# Review notes\n\nUS0999's\n")
+                gitutil.git(["commit", "-q", "--no-verify", "-am", "fix(US0999): its note"],
+                            root)
+                r = _brief(root)
+                self.assertEqual(0, r.returncode,
+                                 f"premise: another unit's commit is set aside\n{r.stderr}")
+                _write(root, f"sdlc-studio/reviews/verdicts/{UNIT}/abc123-0001.txt",
+                       f"UNIT: {UNIT}\nBRIEF: abc123-0001\nVERDICT: REJECT\nISSUES: [new] x\n")
+                gitutil.git(["add", "-A"], root)
+                gitutil.git(["commit", "-q", "--no-verify", "-m", subject], root)
+                r = _brief(root)
+                self.assertEqual(0, r.returncode, r.stderr)
+                self.assertNotIn(STALE, r.stderr)
+
     def test_a_verdict_file_of_another_unit_leaves_it_current_too(self) -> None:
         """The whole verdicts folder is the tooling's, whichever unit's folder the file is in."""
         with tempfile.TemporaryDirectory() as d:

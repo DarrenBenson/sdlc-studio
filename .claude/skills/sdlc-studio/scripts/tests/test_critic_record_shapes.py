@@ -190,8 +190,10 @@ class RecordDryRunTests(unittest.TestCase):
 
     def test_a_verdict_record_would_refuse_is_refused_by_the_dry_run(self) -> None:
         """Each refusal a record makes before or at its write, under the dry run: an untagged
-        finding, a cell markdownlint would refuse (an odd backtick), an unknown unit, and a
-        round past the review cap. Nothing is written for any."""
+        finding, a cell markdownlint would refuse (an odd backtick) in the issues and in each of
+        the reviewer, author and brief cells, and an unknown unit. Nothing is written for any.
+        Mutant: the dry run's cell check cut down to the issues cell."""
+        odd = "`qa-seat"
         cases = {
             "an untagged finding": (("--verdict", "reject", "--issues", "w is wrong"),
                                     "carry no origin"),
@@ -204,6 +206,18 @@ class RecordDryRunTests(unittest.TestCase):
                 r = self._record(*args, "--dry-run")
                 self.assertEqual(2, r.returncode, f"{label} passed the dry run")
                 self.assertIn(said, r.stderr)
+                self.assertEqual(before, _snapshot(self.root))
+        for cell, flags in (("reviewer", ("--reviewer", odd, "--author", "eng-seat")),
+                            ("author", ("--reviewer", "qa-seat", "--author", odd)),
+                            ("brief", ("--reviewer", "qa-seat", "--author", "eng-seat",
+                                       "--brief", odd))):
+            with self.subTest(cell=cell):
+                before = _snapshot(self.root)
+                r = _cli(self.root, "record", "--unit", "US0101", "--verdict", "approve", *flags,
+                         "--dry-run")
+                self.assertEqual(2, r.returncode, f"an odd backtick in the {cell} cell passed")
+                self.assertIn("odd number of backticks", r.stderr)
+                self.assertNotIn("would be recorded", r.stdout)
                 self.assertEqual(before, _snapshot(self.root))
         before = _snapshot(self.root)
         r = _cli(self.root, "record", "--unit", "US9999", "--verdict", "approve", "--reviewer",
@@ -226,29 +240,46 @@ class RecordDryRunTests(unittest.TestCase):
 
 
 class LedgerAsteriskTests(unittest.TestCase):
+    """AC1, part three: `a_`*`_b` puts a bare asterisk between two code spans; two of them in
+    one row pair into emphasis (MD037) unless each is escaped. The escape and the read-back are
+    checked with no linter, so the mutant dies wherever the suite runs; markdownlint itself is
+    run where it can be found, and its test says so by name where it cannot."""
 
-    def test_a_verdict_naming_a_glob_between_spans_writes_a_row_markdownlint_passes(self) -> None:
-        """AC1, part three: `a_`*`_b` puts a bare asterisk between two code spans; two of them
-        in one row pair into emphasis unless each is escaped. Mutant: the asterisk left bare."""
-        mdl = _markdownlint()
-        if mdl is None:
-            self.skipTest("markdownlint is not installed (run `npm install`)")
+    ISSUES = "[new] `a_`*`_b` and `test_lean_`*`_x` both match"
+
+    def _ledger(self, root: Path) -> Path:
+        _project(root)
+        r = _cli(root, "record", "--unit", "US0101", "--verdict", "reject", "--reviewer",
+                 "qa-seat", "--author", "eng-seat", "--issues", self.ISSUES)
+        self.assertEqual(0, r.returncode, r.stderr)
+        return critic.verdicts_path(root)
+
+    def test_each_asterisk_between_spans_is_escaped_and_reads_back_bare(self) -> None:
+        """Mutant: the asterisk left bare. The row carries each asterisk outside a code span
+        escaped and none bare, and the finding reads back as the reviewer wrote it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _project(root)
-            issues = "[new] `a_`*`_b` and `test_lean_`*`_x` both match"
-            r = _cli(root, "record", "--unit", "US0101", "--verdict", "reject", "--reviewer",
-                     "qa-seat", "--author", "eng-seat", "--issues", issues)
-            self.assertEqual(0, r.returncode, r.stderr)
-            ledger = critic.verdicts_path(root)
-            self.assertIn("`a_`\\*`_b`", ledger.read_text(encoding="utf-8"))
+            text = self._ledger(root).read_text(encoding="utf-8")
+            row = next(ln for ln in text.splitlines() if "both match" in ln)
+            self.assertIn("`a_`\\*`_b` and `test_lean_`\\*`_x` both match", row)
+            self.assertNotIn("`*`", row, "an asterisk between two code spans was left bare")
+            got = critic.parse_findings(critic.read_verdicts(root)[-1]["issues"])
+            self.assertEqual(["`a_`*`_b` and `test_lean_`*`_x` both match"],
+                             [f["text"] for f in got])
+
+    def test_the_row_passes_markdownlint(self) -> None:
+        """The ledger with that row passes the repository's own markdownlint configuration."""
+        mdl = _markdownlint()
+        if mdl is None:
+            self.skipTest("markdownlint was found neither on PATH nor in node_modules/.bin of "
+                          "this checkout or its main worktree, so the lint half of AC1 part "
+                          "three is unchecked here (run `npm install`)")
+        with tempfile.TemporaryDirectory() as d:
+            ledger = self._ledger(Path(d))
             lint = subprocess.run([mdl, "--config", str(REPO / ".markdownlint.json"),
                                    str(ledger)], capture_output=True, text=True, check=False,
                                   timeout=300)
             self.assertEqual(0, lint.returncode, lint.stdout + lint.stderr)
-            got = critic.parse_findings(critic.read_verdicts(root)[-1]["issues"])
-            self.assertEqual(["`a_`*`_b` and `test_lean_`*`_x` both match"],
-                             [f["text"] for f in got])
 
 
 if __name__ == "__main__":

@@ -127,6 +127,65 @@ class CriticReplaySelectorTests(unittest.TestCase):
         self.assertEqual(([], []), critic.pytest_targets("python3 -m pytest tests/a.py"),
                          "a line not run as pytest names nothing")
 
+    def test_a_cluster_of_short_flags_is_read_as_pytest_reads_it(self) -> None:
+        """A short flag cluster (`-qk`, `-vm`) is each letter in turn, as pytest's argparse reads
+        it, until one that takes a value, whose value is the rest of the word or else the next
+        word; `-r` is pytest's own value option. Mutants: a cluster ending in `k` skipped as a
+        plain option, so its expression's words print as selectors; `-r` left out of the value
+        options, so its value prints as one; the letters read on past the one that took the
+        rest of the word, so `-km` takes the next word as an `-m` expression."""
+        for verify, want in (
+                ("pytest tests/a.py -qk 'add or sign'", (["tests/a.py"], ["-k 'add or sign'"])),
+                ("pytest -vm 'slow and not flaky' tests/a.py",
+                 (["tests/a.py"], ["-m 'slow and not flaky'"])),
+                ("pytest tests/a.py -qkadd", (["tests/a.py"], ["-k add"])),
+                ("pytest tests/a.py -r a -k add", (["tests/a.py"], ["-k add"])),
+                ("pytest -rA tests/a.py", (["tests/a.py"], [])),
+                ("pytest -km tests/a.py", (["tests/a.py"], ["-k m"])),
+                ("pytest -qx tests/a.py", (["tests/a.py"], [])),
+                ("pytest -- tests/a.py", (["tests/a.py"], []))):
+            with self.subTest(verify=verify):
+                self.assertEqual(want, critic.pytest_targets(verify))
+
+    def test_every_listed_value_option_takes_the_next_word(self) -> None:
+        """Each option `_PYTEST_VALUE_OPTIONS` lists, given its value as the next word, leaves
+        that word out of the targets, so no entry is listed for nothing. Mutant: any entry
+        dropped, so its value prints as a selector."""
+        for option in sorted(critic._PYTEST_VALUE_OPTIONS):
+            with self.subTest(option=option):
+                self.assertEqual((["tests/a.py"], []),
+                                 critic.pytest_targets(f"pytest {option} v tests/a.py"))
+
+    def test_every_option_pytest_reads_a_value_for_is_listed(self) -> None:
+        """The installed pytest's own options (its plugins' autoload off) that read one value
+        are each a listed value option or an expression option, so the brief reads a line as
+        pytest does. A pytest whose parser cannot be read this way is named as the reason."""
+        probe = ("import json, _pytest.config as c\n"
+                 "p = c._prepareconfig([])._parser\n"
+                 "p = getattr(p, 'optparser', None) or p._getparser()\n"
+                 "print(json.dumps(sorted(o for a in p._actions if a.nargs in (None, 1)"
+                 " for o in a.option_strings)))\n")
+        env = {**gitutil.git_env(), "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"}
+        with tempfile.TemporaryDirectory() as d:
+            r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True,
+                               text=True, timeout=120, env=env, cwd=d, check=False)
+        if r.returncode != 0:
+            self.skipTest(f"pytest's option parser could not be read: {r.stderr.strip()[-300:]}")
+        options = json.loads(r.stdout.strip().splitlines()[-1])
+        self.assertIn("-k", options, "premise: the probe read pytest's options")
+        known = critic._PYTEST_VALUE_OPTIONS | set(critic._PYTEST_EXPRESSION_OPTIONS)
+        self.assertEqual([], [o for o in options if o not in known])
+
+    def test_an_expression_named_twice_is_named_once(self) -> None:
+        """Two criteria filtering one file by one expression name the file and the expression
+        once each, in criterion order. Mutant: the expressions kept as each line gives them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "pytest tests/test_widget.py -k 'add or sign'\n\n### AC2: again\n"
+                           "- **Verify:** pytest tests/test_widget.py -k 'add or sign' -m slow")
+            self.assertEqual((["tests/test_widget.py"], ["-k 'add or sign'", "-m slow"]),
+                             critic._verify_selectors(root, "US0101"))
+
     def test_a_unit_no_artefact_holds_names_no_selector(self) -> None:
         """A unit id no artefact holds reads as no selectors and no expressions, never None.
         Mutant: the not-found branch returning nothing, which the caller unpacks."""
@@ -138,14 +197,19 @@ class CriticReplaySelectorTests(unittest.TestCase):
                              critic._verify_selectors(root, "US0101"))
 
     def test_the_brief_prints_no_bogus_selector(self) -> None:
-        """AC1 through the shipped verb: the author self-check section on the brief's stderr."""
-        with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
-            _project(root, "pytest tests/test_widget.py -k 'add or sign'")
-            r = _cli(root, "brief", "--unit", "US0101", "--seat", "qa")
-            self.assertEqual(0, r.returncode, r.stderr)
-            self.assertIn("Verify selectors: tests/test_widget.py (-k 'add or sign' filters by "
-                          "expression", " ".join(r.stderr.split()))
+        """AC1 through the shipped verb: the author self-check section on the brief's stderr,
+        for a `-k` given on its own and in a cluster of short flags after `-r a`."""
+        for verify in ("pytest tests/test_widget.py -k 'add or sign'",
+                       "pytest tests/test_widget.py -r a -qk 'add or sign'"):
+            with self.subTest(verify=verify), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, verify)
+                r = _cli(root, "brief", "--unit", "US0101", "--seat", "qa")
+                self.assertEqual(0, r.returncode, r.stderr)
+                said = " ".join(r.stderr.split())
+                self.assertIn("Verify selectors: tests/test_widget.py (-k 'add or sign' filters "
+                              "by expression", said)
+                self.assertNotIn("tests/test_widget.py; ", said, "a second selector was named")
 
 
 class CriticKeptListWriteTests(unittest.TestCase):
@@ -243,6 +307,26 @@ class CriticKeptListWriteTests(unittest.TestCase):
                     self.assertNotIn("Traceback", r.stderr)
                     self.assertEqual("", r.stdout)
 
+    def test_a_kept_list_that_cannot_be_read_is_refused_by_name(self) -> None:
+        """A kept list the disk will not read (here a directory where the file should be) is
+        refused as malformed, naming the file, as an unparsable one is. Mutant: only a parse
+        error caught, so the read error crashes the brief."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root)
+            r = _record_from(root, _report(root / "sdlc-studio" / ".local" / "report.json"))
+            self.assertEqual(0, r.returncode, r.stderr)
+            path = critic.author_mutants_path(root, "US0101")
+            path.unlink()
+            path.mkdir()
+            with self.assertRaises(ValueError) as caught:
+                critic.recorded_mutants(root, "US0101")
+            self.assertIn(f"the kept mutant list {path} is malformed", str(caught.exception))
+            r = _cli(root, "brief", "--unit", "US0101", "--seat", "qa")
+            self.assertEqual(2, r.returncode, r.stderr)
+            self.assertIn("brief refused:", r.stderr)
+            self.assertNotIn("Traceback", r.stderr)
+
     def test_an_absent_or_stale_kept_list_still_reads_as_none(self) -> None:
         """The controls: no kept file, or one naming another row, is no list (the brief says
         nothing was recorded), never a refusal."""
@@ -281,6 +365,43 @@ class CriticKeptListPathTests(unittest.TestCase):
                 "utf-8"))
             self.assertNotIn(str(root), critic.author_mutants_path(root, "US0101").read_text(
                 "utf-8"))
+
+    def test_a_root_given_as_dot_still_names_the_report_relative_to_it(self) -> None:
+        """The default `--root .`, run from the project root, with the report named by its
+        absolute path or relative to the working directory: the kept list names it relative to
+        the root. The CLI hands the record a root it has already resolved, so the function that
+        names the report is also given the root as `.` and as a path through a symlink. Mutant:
+        the root left unresolved there, so no resolved report lies under `.` or under the link,
+        and each is kept by its name alone."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve()
+            _project(root)
+            report = _report(root / "sdlc-studio" / ".local" / "lane" / "US0101-report.json")
+            claims = _write(root, "sdlc-studio/.local/claims.json", json.dumps(CLAIMS))
+            for given in (str(report), "sdlc-studio/.local/lane/US0101-report.json"):
+                with self.subTest(report=given):
+                    r = subprocess.run(
+                        [sys.executable, "-B", str(CRITIC), "self-check", "record", "--unit",
+                         "US0101", "--claims", str(claims), "--mutants-from", given, "--root",
+                         "."], capture_output=True, text=True, timeout=300, cwd=root,
+                        env=gitutil.git_env(), check=False)
+                    self.assertEqual(0, r.returncode, r.stderr)
+                    kept = json.loads(critic.author_mutants_path(root, "US0101").read_text(
+                        "utf-8"))
+                    self.assertEqual("sdlc-studio/.local/lane/US0101-report.json",
+                                     kept["report"])
+            link = Path(d).parent / f"{Path(d).name}-link"
+            link.symlink_to(root, target_is_directory=True)
+            self.addCleanup(link.unlink)
+            here = os.getcwd()
+            os.chdir(root)
+            try:
+                for given in (".", str(link)):
+                    with self.subTest(root=given):
+                        self.assertEqual("sdlc-studio/.local/lane/US0101-report.json",
+                                         critic._kept_report_path(given, report))
+            finally:
+                os.chdir(here)
 
     def test_a_report_of_the_wrong_kind_or_version_is_refused(self) -> None:
         """AC3, part two. Mutants: the kind check dropped; the version check dropped. Each is

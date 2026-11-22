@@ -549,7 +549,7 @@ ran concurrently over one tree and left a live mutant in it. So `critic.py brief
 both tiers, names this harness's mechanism (`Agent(isolation: 'worktree')`) and forbids `git stash`
 and `git checkout --` by name: both are **tree-wide**, so one reviewer's cleanup reverts another's
 mutant mid-run. A brief without that reason is refused; `critic.py record` names a detached worktree
-left under a scratch area.
+left under a scratch area, to remove without `--force` once every reviewer dispatched has returned.
 
 **And the result carries the tree it was measured in.** `mutation.py run` records whether it ran
 in a linked worktree, the main worktree, or a checkout git cannot describe, and prints the

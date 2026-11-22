@@ -1,10 +1,10 @@
 """BG1700: `critic.py show` walks the artefact tree a fixed number of times, not per row.
 
 Every ledger row bound to an issued verdict file names its unit's folder through
-`sdlc_md.display_id`, which reaches `find_by_id`, and outside a corpus cache `find_by_id` walks
-every artefact type on each call. `cmd_show` asks twice per row (once for the label, once inside
-`verdict_file_state`), so this repository's ledger of some two thousand rows walked the tree
-about four thousand times and the listing took minutes. The listing now runs inside
+`sdlc_md.display_id`, which reaches `find_by_id`. Outside a corpus cache each `find_by_id` call
+walks the artefact types in turn until one holds the id, and every type for an id no file
+carries. `cmd_show` asks twice per bound row (once for the label, once inside
+`verdict_file_state`), so the walks grew with the ledger. The listing now runs inside
 `sdlc_md.corpus_cache()`, as `critic.brief` does, so the tree is walked once per artefact type.
 
 The walk is counted at `sdlc_md._walk_artifact_files`, the one unmemoised walk, never timed: a
@@ -90,9 +90,10 @@ def _show(root: Path, *argv: str) -> tuple[int, str, int]:
 class CriticShowScalesTests(unittest.TestCase):
 
     def test_a_ledger_ten_times_longer_walks_the_tree_no_more_often(self) -> None:
-        """AC1. Mutant: the listing outside `corpus_cache()`, so each row's display id walks
-        every artefact type (twice a row), and the long ledger walks ten times as often as the
-        short one. Held for the text listing and the JSON one, which share the reader."""
+        """AC1. Mutant: the listing outside `corpus_cache()`, so each bound row's display id
+        walks the artefact types up to the one holding it (twice a row), and the ledger ten
+        times longer walks the tree more often than the short one. Held for the text listing and
+        the JSON one, which share the reader."""
         for fmt in ((), ("--format", "json")):
             with self.subTest(format=fmt or "text"):
                 counts = {}

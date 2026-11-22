@@ -3036,21 +3036,41 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
 
 #: The pytest options whose value is an expression over test names, not a test.
 _PYTEST_EXPRESSION_OPTIONS = ("-k", "-m")
-#: The pytest options (and the common plugins') that take the next word as their value, so that
-#: word is not a test to run: `-p no:cacheprovider`, `--deselect <node id>`, `-n 4`.
+#: The pytest options (and the common plugins') that take a value, so the next word, or the rest
+#: of a short option's own word, is not a test to run: `-p no:cacheprovider`, `-r a`,
+#: `--deselect <node id>`, `-n 4`. pytest's own are each option its parser reads one value for
+#: (a test holds the list to the installed pytest's), with pytest-xdist's and the `--timeout`,
+#: `--count` and `--reruns` of pytest-timeout, pytest-repeat and pytest-rerunfailures.
 _PYTEST_VALUE_OPTIONS = frozenset({
     "-p", "-c", "-o", "-n", "-W", "--maxfail", "--deselect", "--ignore", "--ignore-glob",
     "--rootdir", "--tb", "--durations", "--junitxml", "--junit-xml", "--basetemp",
     "--confcutdir", "--override-ini", "--config-file", "--log-level", "--import-mode",
-    "--numprocesses", "--dist", "--timeout", "--count", "--reruns"})
+    "--numprocesses", "--dist", "--timeout", "--count", "--reruns",
+    "-r", "--report-chars", "--assert", "--capture", "--show-capture", "--code-highlight",
+    "--color", "--doctest-glob", "--doctest-report", "--durations-min", "--junit-prefix",
+    "--junitprefix", "--last-failed-no-failures", "--lfnf", "--log-auto-indent",
+    "--log-format", "--log-date-format", "--log-cli-level", "--log-cli-format",
+    "--log-cli-date-format", "--log-file", "--log-file-mode", "--log-file-level",
+    "--log-file-format", "--log-file-date-format", "--log-disable", "--max-warnings",
+    "--pastebin", "--pdbcls", "--pythonwarnings", "--verbosity",
+    "--maxprocesses", "--max-worker-restart", "--maxschedchunk", "--px", "--tx", "--rsyncdir",
+    "--rsyncignore", "--testrunuid"})
+#: The letters of the short options above and of the expression options: in a cluster of short
+#: flags (`-qk`), the first of these takes the rest of the word, or else the next word.
+_PYTEST_SHORT_VALUE_LETTERS = frozenset(
+    o[1] for o in (*_PYTEST_VALUE_OPTIONS, *_PYTEST_EXPRESSION_OPTIONS) if len(o) == 2)
 
 
 def pytest_targets(verifier: str) -> tuple[list[str], list[str]]:
     """`(targets, expressions)` of one pytest Verify line, its words read as a shell reads them
     (word by word, quotes dropped, when a quote is unbalanced): each file, directory or node id
-    it names, and each `-k`/`-m` expression it filters them by, as `-k '<expression>'`. An
-    expression's words are never a target; neither is an option, nor the value of an option in
-    `_PYTEST_VALUE_OPTIONS` given as the next word. Empty for a line not run by pytest."""
+    it names, and each `-k`/`-m` expression it filters them by, as `-k '<expression>'`. No word
+    that starts with `-` is a target. A long option in `_PYTEST_VALUE_OPTIONS` takes the next
+    word as its value. A short option word is a cluster read as pytest's argparse reads it
+    (`-qk` is `-q -k`): each letter a flag until the first that takes a value (`-k`, `-m` or a
+    short option in `_PYTEST_VALUE_OPTIONS`), whose value is the rest of the word or else the
+    next word. So an expression's words are never a target, nor is such an option's value.
+    Empty for a line not run by pytest."""
     try:
         words = shlex.split(verifier or "")
     except ValueError:
@@ -3061,15 +3081,18 @@ def pytest_targets(verifier: str) -> tuple[list[str], list[str]]:
     expressions: list[str] = []
     rest = iter(words[1:])
     for word in rest:
-        flag = word[:2]
-        if flag in _PYTEST_EXPRESSION_OPTIONS:
-            value = word[2:] or next(rest, "")
-            if value:
-                expressions.append(f"{flag} {shlex.quote(value)}")
-        elif word in _PYTEST_VALUE_OPTIONS:
-            next(rest, "")
-        elif not word.startswith("-"):
+        if not word.startswith("-"):
             targets.append(word)
+        elif word.startswith("--"):
+            if word in _PYTEST_VALUE_OPTIONS:
+                next(rest, "")
+        else:
+            for at, letter in enumerate(word[1:], 2):
+                if letter in _PYTEST_SHORT_VALUE_LETTERS:
+                    value = word[at:] or next(rest, "")
+                    if f"-{letter}" in _PYTEST_EXPRESSION_OPTIONS and value:
+                        expressions.append(f"-{letter} {shlex.quote(value)}")
+                    break
     return targets, expressions
 
 
@@ -4382,8 +4405,9 @@ def _unit_diff_section(root: Path, base: str, affects: list[str], tier: str,
     if left_out:
         one = len(left_out) == 1
         body += (f"\nLeft out: {len(left_out)} commit{'' if one else 's'} since the base "
-                 f"change{'s' if one else ''} these files without naming {unit} in its subject "
-                 f"or a Refs: line ({', '.join(sha[:12] for sha in left_out)}); git diff {base} "
+                 f"change{'s' if one else ''} these files without naming {unit} in "
+                 f"{'its' if one else 'their'} subject or a Refs: line "
+                 f"({', '.join(sha[:12] for sha in left_out)}); git diff {base} "
                  f"HEAD -- {paths} shows {'it' if one else 'them'} with this unit's.")
     return f"{head}\n{body}"
 
@@ -5778,9 +5802,14 @@ def cmd_record(args: argparse.Namespace) -> int:
             print(shallow, file=sys.stderr)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
+    # Named, never force-removed: a reviewer's worktree left behind and one a review still
+    # running is mutating in look the same from here, and the plain remove keeps a live mutant.
     for left in leftover_scratch_worktrees(args.root):
-        print(f"note: a detached worktree is still registered under the scratch area: {left} - "
-              f"remove it with `git worktree remove --force {left}`", file=sys.stderr)
+        print(f"note: a detached worktree is still registered under the scratch area: {left}. "
+              f"A review still running may be using it: once every reviewer dispatched has "
+              f"returned its verdict, it is left behind, and `git worktree remove {left}` "
+              f"removes it, refusing a tree that still holds uncommitted changes.",
+              file=sys.stderr)
     return rc
 
 
@@ -5837,10 +5866,11 @@ def is_awaiting_signoff(status: str) -> bool:
 
 def cmd_show(args: argparse.Namespace) -> int:
     """The verdict listing, read inside `sdlc_md.corpus_cache()`. Each row bound to an issued
-    file names its unit's folder through `sdlc_md.display_id`, twice a row, and outside the
-    cache every call walked the whole artefact tree; inside it the tree is walked at most
-    once per artefact type for the invocation. `show` writes nothing, so the cache cannot serve it a
-    stale view, and it closes as the listing returns."""
+    file names its unit's folder through `sdlc_md.display_id`, twice a row. Outside the cache
+    each of those lookups walks the artefact types in turn until one holds the id (every type
+    for an id no file carries), so the walks grow with the ledger; inside it the tree is walked
+    at most once per artefact type for the invocation. `show` writes nothing, so the cache
+    cannot serve it a stale view, and it closes as the listing returns."""
     with sdlc_md.corpus_cache():
         return _show(args)
 
