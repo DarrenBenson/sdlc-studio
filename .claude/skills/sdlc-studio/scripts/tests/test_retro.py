@@ -4155,6 +4155,57 @@ class KnownIssuesWriteTests(unittest.TestCase):
         self.assertEqual((1, b"\xff\xfe# not utf-8\n"), (rc, path.read_bytes()), out + err)
         self.assertIn("refused", err)
 
+    def test_a_retro_holding_the_section_twice_is_written_where_the_close_reads(self) -> None:
+        """A hand edit left the scaffold's empty section and added a second one, ruling BG0001,
+        below the accuracy section. The close's reader keeps the last section of a repeated
+        heading, so the row goes there: BG0002 is read with BG0001, the first section is left as
+        it was, and a second run adds nothing. MUTANT: take the first section - BG0002 lands
+        where the close never reads it, and each further run writes it again."""
+        self._bug("BG0001")
+        self._bug("BG0002")
+        ruled = "| BG0001 | not-stop-ship | Maya Patel | 2026-11-22 |"
+        path = self._retro()
+        first = path.read_text(encoding="utf-8")
+        path.write_text(first + f"\n## Known issues carried\n\n{retro.known_issues_table()}\n"
+                        f"{ruled}\n", encoding="utf-8")
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        once = path.read_text(encoding="utf-8")
+        self.assertTrue(once.startswith(first), "the first section is left as it was")
+        self.assertTrue(once.endswith(ruled + "\n| BG0002 |  |  |  |\n"), once)
+        self.assertEqual(["BG0001", "BG0002"],
+                         sorted(r["id"] for r in retro.carried_issues(once, root=self.root)))
+        import sprint_report  # noqa: PLC0415 - the close's own reader of the table
+        self.assertEqual(["BG0001", "BG0002"],
+                         sorted(r["id"] for r in sprint_report._carried_issues(self.root,
+                                                                               self.RID)))
+        rc, out, err = self._run("--write")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(once, path.read_text(encoding="utf-8"), "a second run adds nothing")
+
+    def test_a_retro_that_cannot_be_read_raises_value_error_naming_it(self) -> None:
+        """`known_issues` says it raises ValueError naming why when the retro is unreadable: a
+        retro the process cannot open and one that is not UTF-8 each raise it, naming the retro,
+        and the CLI refuses with exit 1. MUTANT: catch only the decode error - the unopenable
+        retro raises PermissionError. MUTANT: catch only OSError - the undecodable retro raises
+        a bare UnicodeDecodeError that names no retro."""
+        self._bug("BG0001")
+        path = self._retro()
+        path.write_bytes(b"\xff\xfe# not utf-8\n")
+        with self.assertRaises(ValueError) as ctx:
+            retro.known_issues(self.root, self.RID, write=True)
+        self.assertIn(f"{path} cannot be read", str(ctx.exception))
+        if os.name == "posix" and os.geteuid() != 0:
+            self._retro()
+            path.chmod(0)
+            self.addCleanup(path.chmod, 0o644)
+            with self.assertRaises(ValueError) as ctx:
+                retro.known_issues(self.root, self.RID, write=True)
+            self.assertIn(f"{path} cannot be read", str(ctx.exception))
+            rc, out, err = self._run("--write")
+            self.assertEqual(1, rc, out + err)
+            self.assertIn(f"refused: {path} cannot be read", err)
+
     def test_an_archived_run_is_read_once_it_has_closed(self) -> None:
         """After the close the run is in the archive and a later run may be open."""
         self._bug("BG0001")

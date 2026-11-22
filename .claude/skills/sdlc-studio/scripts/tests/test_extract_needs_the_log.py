@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import shutil
 import sys
 import tempfile
@@ -147,6 +148,24 @@ class ExtractNeedsTheLogTests(_Project):
         rc, out, err = self._extract()
         self.assertEqual(1, rc, out + err)
         self.assertIn(SUMMARY, err)
+        self.assertEqual(before, self._tree())
+
+    @unittest.skipIf(os.name != "posix" or os.geteuid() == 0,
+                     "a mode-000 file is readable by root, and the mode needs POSIX")
+    def test_a_digest_that_cannot_be_opened_refuses_by_name(self) -> None:
+        """A digest the process cannot open says nothing about what it lists either, so the
+        extract refuses naming it, exit 1, and the tree is unchanged. MUTANT: catch only the
+        decode error - the open fails with a PermissionError traceback instead of a refusal."""
+        digest = self._write(SUMMARY, DIGEST)
+        self._write(f"sdlc-studio/retros/{RID}-a-run.md", _retro("Run the preflight first."))
+        before = self._tree()
+        digest.chmod(0)
+        self.addCleanup(digest.chmod, 0o644)
+        rc, out, err = self._extract()
+        digest.chmod(0o644)
+        self.assertEqual(1, rc, out + err)
+        self.assertIn(f"the digest {self.root / SUMMARY} cannot be read", err)
+        self.assertIn("Nothing was written.", err)
         self.assertEqual(before, self._tree())
 
 

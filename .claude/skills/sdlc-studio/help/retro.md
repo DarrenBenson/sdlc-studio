@@ -11,7 +11,7 @@ turning what you learned into a lesson the next sprint actually sees.
 | Command | Does |
 | --- | --- |
 | `/sdlc-studio retro create` | Write the retro for the batch just closed (`artifact new --type retro`); `sprint close` with no `--retro` scaffolds it for you |
-| `/sdlc-studio retro validate` | Content check: the three lines, the Try limit, no placeholder left, every class tag known |
+| `/sdlc-studio retro validate` | Content check: the three lines, the Try limit, no placeholder left, every class tag known, and the Batch field omits no unit of the batch of the run its `Run` field names (read from the live run state, else the run archive) |
 | `/sdlc-studio retro extract` | Turn each Try item into a lesson (the close runs this) |
 | `/sdlc-studio retro dispose` | An older retro's findings: filed, fixed, declined, or still undecided |
 

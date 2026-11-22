@@ -16,6 +16,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -193,6 +194,46 @@ class BatchMatchesRunTests(_Project):
         self.assertEqual(1, rc, out)
         self.assertTrue(any("cannot be compared" in e and RUN in e for e in res["errors"]),
                         res["errors"])
+
+
+SKILL = Path(__file__).resolve().parents[2]
+
+
+class BatchCheckDocumentedTests(unittest.TestCase):
+    """An operator whose close stops on a stale Batch field finds the check where the close
+    gate's checks are listed, not only in the error text."""
+
+    def test_the_close_gate_list_names_the_batch_check(self) -> None:
+        """The retro reference's numbered list of what the close gate checks carries the check,
+        with its rules: read from the live run state, else the archive; an unreadable run state
+        refusing; a unit the field adds left as written. MUTANT: the list as it stood, four
+        checks with no Batch item."""
+        text = (SKILL / "reference-retro.md").read_text(encoding="utf-8")
+        gate = text.split("## What the close gate checks", 1)[1].split("\n## ", 1)[0]
+        found = re.search(r"(?ms)^5\. (.*?)(?=^\d+\. |\n\n|\Z)", gate)
+        item = found.group(0) if found else ""
+        flat = " ".join(item.split())
+        for words in ("**The Batch field omits no unit of the run's batch**", "`> **Run:**`",
+                      "`sprint.py batch add`", "live run state", "run archive",
+                      "cannot be read refuses", "left as written"):
+            with self.subTest(words=words):
+                self.assertIn(words, flat, item)
+
+    def test_the_catalogue_names_the_batch_check(self) -> None:
+        """The script catalogue's `retro.py` entry lists what `validate` checks. MUTANT: the
+        entry as it stood, naming sections, a lesson and dispositions only."""
+        entry = next(line for line in (SKILL / "reference-scripts.md").read_text(
+            encoding="utf-8").splitlines() if line.startswith("- `retro.py` - "))
+        self.assertIn("a Batch field that omits no unit of the batch of the run it names",
+                      entry)
+
+    def test_the_help_page_names_the_batch_check(self) -> None:
+        """The retro help page's `retro validate` row lists what the check reads. MUTANT: the
+        row as it stood, naming the three lines, the Try limit, placeholders and class tags."""
+        row = next(line for line in (SKILL / "help" / "retro.md").read_text(
+            encoding="utf-8").splitlines() if line.startswith("| `/sdlc-studio retro validate` |"))
+        self.assertIn("the Batch field omits no unit of the batch of the run its `Run` field "
+                      "names", row)
 
 
 if __name__ == "__main__":

@@ -2018,7 +2018,8 @@ def add_hit(row: dict, run: str, unit: str = "", source: str = "", finding: str 
 
 def active_for(repo_root, phase: str) -> list[dict]:
     """The live lessons injected at `phase`, most-repeated first (newest class on a tie), so
-    a cap drops the quietest. Uncapped: the renderer caps and says how many it dropped."""
+    a cap drops the quietest. Uncapped: `phase_digest` caps plan and review, never build, and
+    the renderer says how many it dropped."""
     rows = [r for r in load_store(repo_root)
             if r.get("state") in LIVE_STATES and phase in (r.get("inject") or ())]
     return sorted(rows, key=lambda r: (-len(r.get("hits") or ()), -int(r["id"][3:])))
@@ -2161,10 +2162,13 @@ def run_citations(repo_root, state: dict, retro_id: str | None = None) -> list[t
     return out
 
 
-def names_a_run(value) -> bool:
-    """Does a class's `recorded_run` name a run (`RUN-...`)? A class recorded with no run open
-    carries none: `class-add` stamps "" and a manual `retro.py extract` the retro's id."""
-    return str(value or "").startswith("RUN-")
+def recorded_with_no_run(value) -> bool:
+    """Was a class whose `recorded_run` is `value` recorded with no run open? `class-add` then
+    stamps "" (a blank label) and a manual `retro.py extract` the retro's id, as typed, in either
+    key schema. Any other label names where the class was recorded, so it is not: a run
+    (`RUN-...`), or the bundled seed's `back-to-basics-review`, another project's review."""
+    label = str(value or "").strip()
+    return not label or sdlc_md.norm_id(sdlc_md.stem_record_id(label) or "").startswith("RETRO")
 
 
 def recent_runs(repo_root, run: str) -> list[str]:
@@ -2223,10 +2227,11 @@ def close_pass(repo_root, run: str, state: dict | None = None,
     left the digest. A retirement made on another clone's evidence is undone by the next
     repeat: a hit on a retired class puts it back in force (`add_hit`).
 
-    A class recorded with no run open (`names_a_run`) is recorded at the next run to close: the
-    first close that finds it active stamps that run as its `quiet_from`, once, and the window
-    counts it as one of the class's runs, so the class gets its full QUIET_RUNS rather than
-    retiring at that close for naming no run this archive knows.
+    A class recorded with no run open (`recorded_with_no_run`: a blank label or a retro id) is
+    recorded at the next run to close: the first close that finds it active stamps that run as
+    its `quiet_from`, once, and the window counts it as one of the class's runs, so the class
+    gets its full QUIET_RUNS rather than retiring at that close for naming no run this archive
+    knows. Any other label, the bundled seed's included, is judged as another clone's run is.
 
     Returns `{hits, repeats: [(code, finding)], unknown, reactivated, quiet_from, graduating:
     [(code, cr)], graduated, retired, closed_by: {code: "<CR> <status>"}, errors}`: `hits`
@@ -2272,7 +2277,7 @@ def close_pass(repo_root, run: str, state: dict | None = None,
     hit_now |= {r["id"] for r in rows if any(h.get("run") == run for h in r.get("hits") or ())}
     for row in rows:
         if (row.get("state") == "active" and not row.get("quiet_from")
-                and not names_a_run(row.get("recorded_run"))):
+                and recorded_with_no_run(row.get("recorded_run"))):
             row["quiet_from"] = run
             res["quiet_from"].append(row["id"])
     known = recent_runs(repo_root, run)

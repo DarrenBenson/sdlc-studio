@@ -58,6 +58,12 @@ every Source it pooled, so a rate taken across two bases is never read as one fi
    [reference-sprint.md#cost-regression](reference-sprint.md#cost-regression)): a `## Cost`
    section with at least one bullet that is not a `{{placeholder}}`. Read from the run's record,
    so no other retro is asked for it.
+5. **The Batch field omits no unit of the run's batch** - when the `> **Run:**` field names a
+   run, each unit of its batch is in the `> **Batch:**` field, so a unit that joined after the
+   close scaffolded the retro (`sprint.py batch add`) is measured, reported and closed. The run
+   is read from the live run state when it is that run, else from the run archive; a run in
+   neither, or a batch that is not a list, is not compared, and a live run state that cannot be
+   read refuses by name. A unit the field names that the batch does not is left as written.
 
 `retro.py cost-baseline add --retro RETROxxxx --since <iso> --until <iso>` records a past run
 in `sdlc-studio/retros/COST-BASELINE.md`, once: the window's priced cost from the harness
@@ -130,8 +136,10 @@ evidence. A bug counts in the retro whose window holds its `Created` day: after 
 retro's `Date`, on or before this retro's (a retro with no `Date` charges nothing, and says
 so). A bug whose title reads `<unit> did not converge in review` is never charged: it records
 the review's outcome, not a defect it let through. A bug carrying `Escaped-via` (written by
-`escape.py trace --confirm`) is charged to that unit on the recorded link alone; when no live
-verdict on that unit stands, the bug is named as charged to no seat, with the reason. Otherwise
+`escape.py trace --confirm`) is charged to that unit on the recorded link alone; when that
+charges no seat, the bug is named as charged to no seat, with the reason: no live verdict on the
+unit stands, only a REJECT does, its approval names no seat, a seat first approved it after the
+bug's day, or no seat's latest verdict on or before that day approves it. Otherwise
 the narrow rule applies: the bug cites the unit, shares an `Affects` file with it, and cites three
 story, bug or change request ids or fewer above its Revision History, its own aside. The charge
 goes to every seat whose latest verdict on the unit, on or before the bug's day, approved, in

@@ -2006,7 +2006,9 @@ class QuietBuildClassTests(unittest.TestCase):
         """BG1482 AC1. Six live build classes, the oldest three with no hit: a build class leaves
         only by graduating, so the lane brief carries every one. MUTANT: HEAD - the cap of five
         drops LC-001, the oldest zero-hit trap, from the brief. A retired build class (LC-007) and
-        a class injected only at review (LC-008) are not carried."""
+        a class injected only at review (LC-008) are not carried. Past any cap, 2 x INJECT_MAX + 1
+        live build classes are every one carried too. MUTANT: cap the build digest at
+        INJECT_MAX + 1 - six pass, and of eleven the five oldest zero-hit traps fall out."""
         root = self._root()
         rows = [self._row(f"LC-00{n}", ["build"], hits=self._hit(n) if n > 3 else [])
                 for n in range(1, 7)]
@@ -2025,6 +2027,19 @@ class QuietBuildClassTests(unittest.TestCase):
         self.assertNotIn("more active", block)
         self.assertNotIn("LC-007", block)
         self.assertNotIn("LC-008", block)
+        count = 2 * lessons.INJECT_MAX + 1
+        rows = [self._row(f"LC-{n:03d}", ["build"], hits=self._hit(n) if n > 3 else [])
+                for n in range(1, count + 1)]
+        (root / lessons.STORE_FILE).write_text("".join(json.dumps(r) + "\n" for r in rows),
+                                               encoding="utf-8")
+        digest = lessons.phase_digest(root, "build")
+        self.assertEqual([f"LC-{n:03d}" for n in range(count, 0, -1)],
+                         [r["id"] for r in digest["lessons"]], f"all {count}")
+        block = "\n".join(lessons.render_phase(digest))
+        for n in range(1, count + 1):
+            self.assertIn(f"Rule of LC-{n:03d} holds.", block)
+        self.assertIn(f"Lessons for build ({count} of {count} active)", block)
+        self.assertNotIn("more active", block)
 
     def test_a_phase_other_than_build_is_still_capped(self):
         """BG1482 AC2. Seven live classes injected at plan and review: each of those digests
@@ -2130,24 +2145,25 @@ class RunRepeatHitTests(unittest.TestCase):
         (self.root / lessons.STORE_FILE).write_text("".join(json.dumps(
             {"id": code, "class": f"class {code}", "rule": "A rule.", "behaviour": "Do it.",
              "inject": ["build"], "hits": [], "state": "active", "recorded_run": "RUN-1"})
-            + "\n" for code in ("LC-001", "LC-002", "LC-003")), encoding="utf-8")
+            + "\n" for code in ("LC-001", "LC-002", "LC-003", "LC-004")), encoding="utf-8")
         self.state = {"run_id": self.RUN, "outcome": "running", "batch": [],
                       "started_at": "2026-11-22T09:00:00Z"}
 
-    def _bug(self, bid: str, summary: str, moment: str = "2026-11-22T10:00:00Z") -> None:
+    def _bug(self, bid: str, summary: str, moment: str = "2026-11-22T10:00:00Z",
+             status: str = "Open") -> None:
         (self.root / "sdlc-studio" / "bugs" / f"{bid}-defect.md").write_text(
-            f"# {bid}: a defect citing LC-003 in its title\n\n> **Status:** Open\n"
+            f"# {bid}: a defect citing LC-003 in its title\n\n> **Status:** {status}\n"
             f"> **Raised-in-batch:** none open - raised outside a delivery batch, {moment}\n"
             f"> **Created:** {moment[:10]}\n\n## Summary\n\n{summary}\n\n"
             "## Steps to Reproduce\n\nLC-003 is named here, outside the Summary.\n",
             encoding="utf-8")
 
     def _retro(self, keep: str = "the gate held", stop: str = "the wait",
-               cost: str = "") -> None:
+               cost: str = "", try_: str = "run the preflight first") -> None:
         (self.root / "sdlc-studio" / "retros" / f"{self.RID}-a-run.md").write_text(
             f"# RETRO-9999: a run\n\n> **Date:** 2026-11-22\n> **Run:** {self.RUN}\n"
             f"> **Batch:** US0001\n\n## Keep\n\n- {keep}\n\n## Stop\n\n- {stop}\n\n"
-            f"## Try\n\n- run the preflight first\n\n## Cost\n\n- {cost or 'repairs'}\n",
+            f"## Try\n\n- {try_}\n\n## Cost\n\n- {cost or 'repairs'}\n",
             encoding="utf-8")
 
     def _close(self) -> tuple:
@@ -2164,8 +2180,11 @@ class RunRepeatHitTests(unittest.TestCase):
         """AC1. MUTANT: HEAD - LC-001 stays at no hits though BG0001, filed in the run, names it.
         A code named outside the Summary (LC-003, in the title and the steps) is not a citation,
         nor a code inside a longer token (XLC-002), nor a CR's Summary (CR0001 cites LC-002); a
-        bug with no Summary section is read as citing nothing."""
+        bug with no Summary section is read as citing nothing. BG0004, filed in the run and
+        Fixed before the close, as a repeat the land or the push gate caught usually is, counts
+        too. MUTANT: read only the run's still-open bugs - LC-004 stays at no hits."""
         self._bug("BG0001", "The land refused a selection again (LC-001), not the XLC-002 flag.")
+        self._bug("BG0004", "The push gate caught it again (LC-004).", status="Fixed")
         (self.root / "sdlc-studio" / "bugs" / "BG0003-defect.md").write_text(
             "# BG0003: LC-003 in a title alone\n\n> **Status:** Open\n> **Raised-in-batch:** "
             "none open - raised outside a delivery batch, 2026-11-22T10:00:00Z\n", encoding="utf-8")
@@ -2181,7 +2200,9 @@ class RunRepeatHitTests(unittest.TestCase):
         hits = self._hits("LC-001")
         self.assertEqual(1, len(hits), hits)
         self.assertEqual("BG0001", hits[0]["finding"])
-        self.assertIn("1 repeat(s) cited by the run's bugs or retro: LC-001 (BG0001)", detail)
+        self.assertEqual(["BG0004"], [h["finding"] for h in self._hits("LC-004")])
+        self.assertIn("2 repeat(s) cited by the run's bugs or retro: LC-001 (BG0001), "
+                      "LC-004 (BG0004)", detail)
         self.assertEqual([], self._hits("LC-003"))
         self.assertEqual([], self._hits("LC-002"))
         res = lessons.close_pass(self.root, self.RUN, self.state, retro_id=self.RID)
@@ -2190,10 +2211,13 @@ class RunRepeatHitTests(unittest.TestCase):
     def test_a_stop_or_keep_item_citing_a_class_is_a_hit(self) -> None:
         """AC2. MUTANT: HEAD - only Try items and REJECTs count, so LC-001 and LC-002 stay at no
         hits. MUTANT: read the whole retro - LC-003, named in the Cost section and in a comment
-        inside Keep, gains a hit too."""
+        inside Keep, gains a hit too. A second comment follows Stop, in Try. MUTANT: strip from
+        the first comment's opening to the last one's close - Stop goes with it, and LC-001
+        gains no hit."""
         self._retro(keep="landing in order kept LC-002 away <!-- e.g. LC-003 -->",
                     stop="stop skipping the boundary run (LC-001)",
-                    cost="LC-003 cost a repair round")
+                    cost="LC-003 cost a repair round",
+                    try_="run the preflight first <!-- as LC-003 says -->")
         (ok, detail, _remedy), said = self._close()
         self.assertTrue(ok, detail + said)
         self.assertEqual([f"{self.RID} Stop"], [h["finding"] for h in self._hits("LC-001")])
@@ -2219,15 +2243,20 @@ class RunRepeatHitTests(unittest.TestCase):
 
     def test_a_class_the_run_already_hit_gains_no_second_hit(self) -> None:
         """A class a REJECT or a Try item already hit this run has its repeat; a bug citing it
-        adds nothing. MUTANT: drop the per-run check - LC-001 holds two hits for the run."""
+        adds nothing. LC-001 was hit by a REJECT, LC-002 by the retro's Try item, which the
+        close's extract lifts before the pass. MUTANT: drop the per-run check - LC-001 holds two
+        hits for the run. MUTANT: guard only on a REJECT's hit - LC-002 holds two, the Try
+        item's and the bug's, for one repeat."""
         self._bug("BG0001", "The same trap again (LC-001).")
-        self._retro()
+        self._bug("BG0002", "And this one again (LC-002).")
+        self._retro(try_="[LC-002] US0001 run the preflight before the land")
         rows = lessons.load_store(self.root)
         lessons.add_hit(rows[0], self.RUN, "US0001", f"critic:{self.RUN}", "[new] x [LC-001]")
         lessons.save_store(self.root, rows)
         (ok, detail, _remedy), said = self._close()
         self.assertTrue(ok, detail + said)
         self.assertEqual([f"critic:{self.RUN}"], [h["source"] for h in self._hits("LC-001")])
+        self.assertEqual([f"retro:{self.RID}"], [h["source"] for h in self._hits("LC-002")])
 
     def test_a_cited_code_the_store_does_not_hold_is_named_and_a_retired_class_returns(self):
         """A bug citing a code the store lacks is reported as unknown, never written; a cited

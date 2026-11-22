@@ -434,12 +434,14 @@ def run_known_issue_ids(root, record: dict) -> list[str] | None:
 def _insert_known_rows(text: str, ids: list[str]) -> str:
     """`text` with a blank row for each of `ids` inside its `## Known issues carried` table,
     after the table's last row, so no row lands after a later section, where the close's reader
-    does not look. A section with no table gets the header and the rows under its heading; a
-    retro with no section gets one at its end."""
+    does not look. A retro holding the heading twice is written in the last such section, the
+    one `sections`, and so the close's reader, keeps. A section with no table gets the header
+    and the rows under its heading; a retro with no section gets one at its end."""
     rows = [_blank_known_row(uid) for uid in ids]
     lines = text.split("\n")
-    head = next((i for i, line in enumerate(lines) if (m := SECTION_RE.match(line))
-                 and m.group(1).strip() == KNOWN_ISSUES_SECTION), None)
+    heads = [i for i, line in enumerate(lines) if (m := SECTION_RE.match(line))
+             and m.group(1).strip() == KNOWN_ISSUES_SECTION]
+    head = heads[-1] if heads else None
     if head is None:
         return (text.rstrip("\n") + f"\n\n## {KNOWN_ISSUES_SECTION}\n\n{known_issues_table()}\n"
                 + "\n".join(rows) + "\n")
@@ -464,7 +466,11 @@ def known_issues(root, retro_id: str, write: bool = False) -> dict:
     path = find_retro(root, retro_id)
     if path is None:
         raise ValueError(f"{retro_id} not found in {RETRO_DIR}/")
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"{path} cannot be read ({exc}), so its table can be neither checked "
+                         f"nor written") from exc
     rid = path.name.split("-", 1)[0]
     run_id = retro_run_id(text)
     if not run_id:
@@ -1803,7 +1809,16 @@ def seat_misses(root, retro_path) -> dict:
     charges no seat is named in `uncharged` with the reason: it has no live ledger row (no review
     recorded, or every row superseded), or `_uncharged_reason` says why its live rows charge
     none. A unit read by the narrow rule that charges no seat is weaker evidence and is not
-    named. Each unit's Affects files are read once per call, however many bugs cite it."""
+    named. Each unit's Affects files are read once per call, however many bugs cite it, and each
+    artefact type is walked once per call: the call runs inside one `sdlc_md.corpus_cache`, so a
+    unit's lookup reads the by-id index the first lookup builds rather than walking every type.
+    The call writes nothing, so the cache cannot serve it a stale read."""
+    with sdlc_md.corpus_cache():
+        return _seat_misses_cached(root, retro_path)
+
+
+def _seat_misses_cached(root, retro_path) -> dict:
+    """`seat_misses`, run inside the corpus cache it opens."""
     import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
     window = miss_window(root, retro_path)
     out: dict = {"window": {**window, "undated": []}, "seats": {}, "uncharged": []}

@@ -120,6 +120,32 @@ class NoRunRetireTests(_Project):
         self.assertEqual("RUN-7", self._row("LC-001").get("quiet_from"),
                          "the stamp is saved when it is the only change")
 
+    def test_the_bundled_seed_is_not_stamped_and_its_quiet_classes_retire(self) -> None:
+        """The seed's classes were recorded under another project's review, which names no run
+        here exactly as another clone's run does not, and class-add and extract never write that
+        label. With no store of its own, a project's close reads the seed: its quiet classes not
+        injected at build (LC-004, LC-008) retire as before, and none is stamped. MUTANT: stamp
+        every class whose label names no run - seven seed classes get a window and LC-004 and
+        LC-008 stay for five more runs."""
+        self.assertFalse((self.root / lessons.STORE_FILE).exists())
+        res = self._close("RUN-7")
+        self.assertEqual([], res["quiet_from"])
+        self.assertEqual(["LC-004", "LC-008"], res["retired"])
+        self.assertEqual([], [r["id"] for r in lessons.load_store(self.root)
+                              if r.get("quiet_from")])
+        self.assertNotIn("recorded with no run", lessons.close_pass_line(res))
+
+    def test_only_a_blank_label_or_a_retro_id_is_recorded_with_no_run(self) -> None:
+        """What class-add (blank) and a manual extract (the retro's id, as typed, in either key
+        schema) write, and nothing else: not a run, not the seed's label, not a label that only
+        opens like a retro."""
+        for label, want in (("", True), (None, True), ("  ", True), ("RETRO9999", True),
+                            ("retro-0153", True), ("RETRO-01M13SMS", True), ("RUN-7", False),
+                            ("RUN-01M3891F", False), ("back-to-basics-review", False),
+                            ("retrospective", False)):
+            with self.subTest(label=label):
+                self.assertIs(want, lessons.recorded_with_no_run(label))
+
     def test_a_class_with_no_run_that_is_not_active_is_left_alone(self) -> None:
         """Only an active class is given a window: a graduating or retired one recorded with no
         run is not stamped, so the store is not rewritten for it."""
