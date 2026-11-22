@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0493: Return a unit approved in a ruled round past the cap to the batch, with its carry bug moved to Fixed, so the close credits it without hand…**
+- **L-0492: Land lanes that share a file in the order they were briefed, and give a lane that waits behind another landing in the same file a rebase…**
+- **L-0491: Gate the self-review: have the land's self-check judge refuse a hand-in whose mutation pass does not cover every changed hunk in the unit's…**
 - **L-0490: When a unit adds a new caller of a reader or validator, probe the new path with a malformed input (a card that is not UTF-8, an empty card…**
 - **L-0489: Brief a high-risk unit's second seat only after the first seat's verdict is recorded, until BG1665 lets parallel seats on one delivery…**
 - **L-0488: At grooming, run the existing test modules that import each script a unit changes, and put any that write fixtures the change touches into…**

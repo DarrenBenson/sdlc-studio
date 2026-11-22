@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-22
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 311 |
+| Open | 312 |
 | In Progress | 0 |
 | Fixed | 1045 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1697** |
+| **Total** | **1698** |
 
 ## All Bugs
 
@@ -773,6 +773,7 @@
 | [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1698](BG1698-a-unit-approved-in-a-ruled-round-past.md) | A unit approved in a ruled round past the cap stays dropped from the batch, so the close and the report do not credit it | Open | Low | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

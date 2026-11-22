@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-20
+**Last Updated:** 2026-11-22
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0493: Return a unit approved in a ruled round past the cap to the batch, with its carry bug moved to Fixed, so the close credits it without hand…
+
+- **Added:** 2026-11-22
+- **Review-by:** 2027-02-20
+
+Return a unit approved in a ruled round past the cap to the batch, with its carry bug moved to Fixed, so the close credits it without hand work (BG1698; 13 units were re-added by hand this run).
+
+Recorded from retro RETRO0154.
+
+## L-0492: Land lanes that share a file in the order they were briefed, and give a lane that waits behind another landing in the same file a rebase…
+
+- **Added:** 2026-11-22
+- **Review-by:** 2027-02-20
+
+Land lanes that share a file in the order they were briefed, and give a lane that waits behind another landing in the same file a rebase step before its own land.
+
+Recorded from retro RETRO0154.
+
+## L-0491: Gate the self-review: have the land's self-check judge refuse a hand-in whose mutation pass does not cover every changed hunk in the unit's…
+
+- **Added:** 2026-11-22
+- **Review-by:** 2027-02-20
+
+Gate the self-review: have the land's self-check judge refuse a hand-in whose mutation pass does not cover every changed hunk in the unit's Affects, not only the criteria's lines.
+
+Recorded from retro RETRO0154.
 
 ## L-0490: When a unit adds a new caller of a reader or validator, probe the new path with a malformed input (a card that is not UTF-8, an empty card…
 
