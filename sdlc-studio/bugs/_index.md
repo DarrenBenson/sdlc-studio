@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 313 |
+| Open | 311 |
 | In Progress | 0 |
-| Fixed | 1054 |
+| Fixed | 1059 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1708** |
+| **Total** | **1711** |
 
 ## All Bugs
 
@@ -134,8 +134,8 @@
 | [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Won't Fix | Low | 2026-10-15 | 2026-10-15 |
 | [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Fixed | Medium | 2026-10-15 | 2026-10-15 |
-| [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
-| [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
+| [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Fixed | Medium | 2026-10-16 | 2026-10-16 |
+| [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
 | [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Open | Medium | 2026-10-19 | 2026-10-19 |
@@ -407,7 +407,7 @@
 | [BG1329](BG1329-run-nine-s-close-push-is-refused-by.md) | Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use | Fixed | High | 2026-11-09 | 2026-11-09 |
 | [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Fixed | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Fixed | Medium | 2026-11-10 | 2026-11-10 |
-| [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Open | Medium | 2026-11-10 | 2026-11-10 |
+| [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Fixed | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Fixed | High | 2026-11-10 | 2026-11-10 |
 | [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
 | [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -511,7 +511,7 @@
 | [BG1433](BG1433-the-report-templates-still-say-the-wall-clock.md) | The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1438](BG1438-the-evidence-annex-says-fingerprint-strings-escape-all.md) | The evidence annex says fingerprint strings escape all control characters while the reference implementation escapes only U+0000 to U+001F, and it omits the no-closed-sprint limit of the version stamp | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
@@ -540,7 +540,7 @@
 | [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Superseded | Low | 2026-11-15 | 2026-11-15 |
 | [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1466](BG1466-a-signed-report-s-signoff-principal-and-signed.md) | A signed report's signoff principal and signed_at figures still read not yet signed, though the evidence schema says they hold who signed and when | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1467](BG1467-a-review-cap-carry-bug-copies-the-carried.md) | A review-cap carry bug copies the carried unit's Affects verbatim, so it declares the unit's changelog fragment, not its own | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Fixed | High | 2026-11-15 | 2026-11-15 |
@@ -784,6 +784,9 @@
 | [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1708](BG1708-verify-ac-py-ts-check-reports-two-test.md) | verify_ac.py ts-check reports two test ids pytest collects: a file under a dotted directory in importlib form, and a def whose decorator gives it a docstring with an example | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1709](BG1709-bg1463-did-not-converge-in-review-round-2.md) | BG1463 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

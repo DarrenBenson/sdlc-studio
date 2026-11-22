@@ -1,6 +1,6 @@
 # BG1059: A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py, changelog.d/BG1059.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/retro.md
@@ -26,6 +26,7 @@ Have `retro.py validate`, and so the close's retro-validate step, compare the Ba
 
 - [ ] **AC1** With a retro naming a run whose batch holds a unit its Batch field omits, `retro.py validate` and the close's retro-validate step refuse, naming the omitted id
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py -k omitted_unit_is_refused
+  - **Verified:** yes (2026-11-22)
 
 ## Impact
 

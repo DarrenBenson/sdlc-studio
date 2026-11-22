@@ -1,6 +1,6 @@
 # BG1060: retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py, changelog.d/BG1060.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
@@ -26,6 +26,7 @@ Apply the summary's guard in extract: when the log is absent (or lacks lessons t
 
 - [ ] **AC1** With retros/LESSONS.md absent and LESSONS-SUMMARY.md listing lessons, `retro.py extract` writes no log and names the missing log and the digest's count
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py -k extract_refuses_to_start_a_log_the_digest_outlives
+  - **Verified:** yes (2026-11-22)
 
 ## Impact
 

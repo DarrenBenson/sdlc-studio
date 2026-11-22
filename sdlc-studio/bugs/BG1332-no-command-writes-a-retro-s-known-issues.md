@@ -1,6 +1,6 @@
 # BG1332: No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, changelog.d/BG1332.md
@@ -28,10 +28,13 @@ Add `retro.py known-issues --write --retro RETROxxxx` that writes one row per op
 
 - [ ] **AC1** Given a run that raised two open bugs, and a retro whose accuracy section follows its 'Known issues carried' table, when `retro.py known-issues --write --retro <id>` is run, then one row per bug is inside the table and the close's known-issues reader returns both. Fails on: a row written after a later section, which the report reads as unruled.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_one_row_per_open_bug_of_the_run_is_written_inside_the_table
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** Given a table that already holds one of those bugs with a ruling, when the command is run again, then that ruling is kept word for word, no row is doubled, and the new row is left for the operator to rule. Fails on: a recorded ruling overwritten, or a second run duplicating rows.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_recorded_ruling_is_kept_and_a_second_run_adds_nothing
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC3** Given a bug of the run that is Fixed, and an open bug whose Raised-in-batch names another run, when the command is run, then neither gets a row. Fails on: a closed bug or another run's finding carried into this retro.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_closed_bug_and_another_runs_bug_get_no_row
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 

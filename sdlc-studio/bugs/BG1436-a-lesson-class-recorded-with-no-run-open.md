@@ -1,6 +1,6 @@
 # BG1436: A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, .claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py, changelog.d/BG1436.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/reference-retro.md
@@ -26,8 +26,10 @@ Treat a class recorded with no run as recorded at the next run to open (or count
 
 - [ ] **AC1** Given six archived runs and no open run, when a class is recorded by class-add or by retro extract and the next run closes without a hit, then the class is still active. Fails on: it retiring at that close.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests
+  - **Verified:** yes (2026-11-22)
 - [ ] **AC2** Given class-add with any one required field blank, or an unreadable run state, when it runs, then it refuses and the store is byte-identical. Fails on: any field accepted blank.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::ClassAddRefusalTests
+  - **Verified:** yes (2026-11-22)
 
 ## Revision History
 
