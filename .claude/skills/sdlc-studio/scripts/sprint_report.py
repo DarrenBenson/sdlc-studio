@@ -32,6 +32,7 @@ import difflib
 import hashlib
 import importlib
 import json
+import os
 import re
 import shutil
 import statistics
@@ -99,6 +100,23 @@ def _mutation_row(mut, root: Path, row: dict) -> dict:
             "cost_per_finding_s": cost, "cost_per_finding_note": note}
 
 
+def _tracked_records(root: Path) -> dict[str, dict]:
+    """Every run record filed at `run_state.tracked_path`, by run id: the copies a commit holds,
+    so every clone reads them. One that cannot be read (bytes that are not UTF-8, JSON that does
+    not parse or is not an object, or `{}`) is skipped, as `run_state.archived` skips an entry
+    whose JSON does not parse: the report stays renderable and the close gate owns that failure."""
+    out = {}
+    for p in sorted((Path(root) / run_state.TRACKED_REL).glob("*.json")):
+        try:
+            rec = run_state.read_tracked(root, p.stem)
+        except (run_state.RunStateError, ValueError) as exc:  # ValueError: not UTF-8
+            sdlc_md.debug("sprint_report.tracked_records", exc)
+            continue
+        if rec:
+            out[p.stem] = rec
+    return out
+
+
 def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
     """The run record that delivered THIS sprint, or None.
 
@@ -113,20 +131,35 @@ def _run_record(root: Path, unit_ids: list[str]) -> dict | None:
     alone was not enough: a superset batch ties an exact one, so a foreign run touching every
     unit of this sprint took the window. Trying the live record first regardless was the same defect one level up: a run that
     merely RE-TOUCHES one unit of an old sprint supplied that sprint's window, and an open run
-    has no end, so every later project-wide row read as this sprint's again. Ties keep the live
-    record, then the newest archived one, because a report is normally read after the close and
-    the close archives the run it describes. `ended_at` may be None - an open run has a start
-    and no end, and a row after its start still belongs to it."""
+    has no end, so every later project-wide row read as this sprint's again.
+
+    Each run is read from ONE copy, in the order `_run_state_for` reads one: the live record,
+    else the record filed at `run_state.tracked_path` that a commit holds (`_tracked_records`),
+    else the `.local` archive's. The committed record is what makes a clean clone, which holds
+    no `.local`, see the run at all. Ties keep the live record, then the newest by start of the
+    rest, committed and archived ordered together so a tie reads the same in every clone.
+    `ended_at` may be None - an open run has a start and no end, and a row after its start
+    still belongs to it."""
     want = {sdlc_md.norm_id(u) for u in unit_ids}
     records = []
+    live: dict = {}
     try:
         live = run_state.read(root) or {}
-        if live:
-            records.append(live)
     except run_state.RunStateError:
         pass                      # the report stays renderable; the close gate owns that failure
-    # `archived` skips an unreadable record rather than raising, so there is nothing to catch.
-    records.extend(reversed(run_state.archived(root)))
+    if live:
+        records.append(live)
+    # `archived` skips an entry whose JSON does not parse rather than raising, so nothing is
+    # caught here. Archived oldest first; a committed copy replaces this clone's archived copy
+    # of the same run in place.
+    others = {str(s.get("run_id")): s for s in run_state.archived(root)}
+    others.update(_tracked_records(root))
+    others.pop(str(live.get("run_id")), None)
+    # Newest start first. Sorting the reversed list keeps the archive's own newest-first order
+    # (its cycle index breaks a tie in start) for records that start in the same second.
+    records.extend(sorted(reversed(list(others.values())), reverse=True,
+                          key=lambda s: s.get("started_at") if isinstance(s.get("started_at"), str)
+                          else ""))
     best = None                   # ((cover, -extraneous), state)
     for state in records:
         batch = {sdlc_md.norm_id(u) for u in (state.get("batch") or [])}
@@ -5914,7 +5947,9 @@ def write_report(root, report: dict) -> Path:
 
     Both, always. The twin is a RENDERING of the JSON, so writing one without the other is how
     a page and the record it claims to show come to disagree - which is the failure the whole
-    fingerprint exists to detect, and it should not be this module that causes it. Used by
+    fingerprint exists to detect, and it should not be this module that causes it. Both are
+    rendered before either is written, and `_write_together` stages both before it replaces
+    either, so a write interrupted part-way leaves the report and its twin as they were. Used by
     `file_report` when the page is first derived, and by the seal when a signature lands on it.
     """
     root = Path(root)
@@ -5924,11 +5959,33 @@ def write_report(root, report: dict) -> Path:
     d = report_dir(root)
     d.mkdir(parents=True, exist_ok=True)
     path = d / f"{rid}.json"
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     md = _twin_path(root, {**report, "report_id": rid})
-    md.write_text(render_markdown(report), encoding="utf-8")
+    _write_together([(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n"),
+                     (md, render_markdown(report))])
     _sync_report_index(root, d, rid, md, report)
     return path
+
+
+def _write_together(pairs: list[tuple[Path, str]]) -> None:
+    """Write each `(path, text)` in `pairs`, replacing none until every text is written whole.
+    Each is first written to a staged file beside its path through `sdlc_md.atomic_write`,
+    carrying the mode of the file it will replace; only once all are staged is each renamed
+    into place. A write that fails or is interrupted while any text is being staged leaves
+    every path as it was, and the staged files are removed; a rename never leaves a path
+    half-written."""
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for path, text in pairs:
+            tmp = path.with_name(f".{path.name}.{os.getpid()}.staged")
+            sdlc_md.atomic_write(tmp, text)
+            staged.append((tmp, path))
+            if path.exists():
+                shutil.copymode(path, tmp)
+        for tmp, path in staged:
+            tmp.replace(path)
+    finally:
+        for tmp, _path in staged:
+            tmp.unlink(missing_ok=True)
 
 
 def _twin_path(root, report: dict) -> Path:
@@ -6681,9 +6738,7 @@ def cmd_render(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if args.out:
-        out = Path(args.out)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(page, encoding="utf-8")
+        sdlc_md.atomic_write(Path(args.out), page)
         return 0
     print(page)
     return 0

@@ -658,6 +658,40 @@ class TrdStorageTests(unittest.TestCase):
         self.assertRegex(purpose, r"QA brief")
         self.assertRegex(purpose, r"replays? the author's mutants")
 
+    def test_a_shared_file_is_defined_and_every_exception_is_listed(self) -> None:
+        """Mutants: the definition of a shared file dropped from rule 5 or from the scripts row
+        of the component table; the ledgers called the one exception again; a script the
+        shared-file sweep lets rewrite a tracked file whole (`SHARED_WRITE_ALLOWLIST`, kind
+        outside) left off rule 5's list of exceptions, a listed script that is no such writer,
+        or an exception listed with no reason."""
+        from test_confinement import OUTSIDE, SHARED_WRITE_ALLOWLIST  # noqa: PLC0415
+        body = _trd_body()
+        rule5 = _section(body, "Script CLI contract").split("\n5. ", 1)[1].split("\n6. ", 1)[0]
+        flat = " ".join(rule5.split())
+        self.assertRegex(flat, r"A shared file is any tracked workspace file a script rewrites "
+                               r"whole\.")
+        self.assertNotRegex(flat, r"(?i)\bone (?:deliberate )?exception\b")
+        row = " ".join(next(line for line in body.splitlines()
+                            if line.startswith("| `scripts/`")).split())
+        self.assertRegex(row, r"shared files \(any tracked workspace file a script rewrites "
+                              r"whole; §5 rule 5 lists the writers left outside\)")
+        bullets = [" ".join(b.split())
+                   for b in re.findall(r"^ {3}- (.*(?:\n {5}\S.*)*)", rule5, re.M)]
+        self.assertTrue([b for b in bullets if "`O_APPEND`" in b],
+                        "the append-only ledgers are listed among the exceptions")
+        listed: dict[str, str] = {}
+        for bullet in bullets:
+            head, sep, reason = bullet.partition(": ")
+            for script in re.findall(r"`([a-z0-9_]+\.py)\b", head):
+                listed[script] = reason if sep else ""
+        outside = {site.split("::", 1)[0] for site, (kind, _why) in SHARED_WRITE_ALLOWLIST.items()
+                   if kind == OUTSIDE}
+        self.assertGreater(len(outside), 3, "premise: the sweep names writers left outside")
+        self.assertEqual(sorted(listed), sorted(outside))
+        for script, reason in sorted(listed.items()):
+            with self.subTest(script=script):
+                self.assertGreaterEqual(len(reason.split()), 5, f"{script} carries no reason")
+
     def test_the_run_lifecycle_reaches_sign(self) -> None:
         """Mutants: the run state shown as `.local` only (the tracked record dropped, or kept in
         `.local`); a path the TRD gives that `run_state` does not keep; the sign step left out or

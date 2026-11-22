@@ -3104,7 +3104,7 @@ def verify_story(
         new_text = "\n".join(lines)
         if text.endswith("\n"):
             new_text += "\n"
-        story_path.write_text(new_text, encoding="utf-8")
+        sdlc_md.atomic_write(story_path, new_text)
 
     return report
 
@@ -4519,7 +4519,7 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
     if getattr(args, "out", None):
         out = under_root(repo_root, args.out)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(matrix, encoding="utf-8")
+        sdlc_md.atomic_write(out, matrix)
         print(f"wrote {out}")
     else:
         print(matrix, end="")

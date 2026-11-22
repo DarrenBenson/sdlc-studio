@@ -958,7 +958,7 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
                 keep = [lines[k] for k in range(i + 1, j)
                         if lines[k].strip() and not lines[k].strip().startswith("_No stories")]
                 lines[i:j] = [lines[i], ""] + keep + [line, ""]
-            ep.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            sdlc_md.atomic_write(ep, "\n".join(lines) + "\n")
             return True
     return False
 
@@ -1982,8 +1982,7 @@ def cmd_revision(args: argparse.Namespace) -> int:
         # The note is prose in a table cell: a bare `_check, then _series` there is emphasis.
         row = sdlc_md.join_row([today, author, file_finding._md_safe(args.note)])
         lines.insert(last_row + 1, row)
-        path.write_text("\n".join(lines) + ("\n" if text.endswith("\n") else ""),
-                        encoding="utf-8")
+        sdlc_md.atomic_write(path, "\n".join(lines) + ("\n" if text.endswith("\n") else ""))
         print(f"revision recorded: {rid} ({path.name})")
     return 1 if refused else 0
 

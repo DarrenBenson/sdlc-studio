@@ -203,7 +203,7 @@ def write_project_file(path: Path, header: str, entries: list[dict]) -> None:
     parts = [refresh_last_updated(header).rstrip() + "\n"]
     parts.extend("\n" + render_entry(e) for e in entries)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(parts), encoding="utf-8")
+    sdlc_md.atomic_write(path, "".join(parts))
 
 
 def next_project_id(entries: list[dict]) -> str:
@@ -564,7 +564,7 @@ def cmd_add(args: argparse.Namespace) -> int:
             template_path.read_text(encoding="utf-8"),
             id_, args.title, tags, args.body, origin, sdlc_md.now_date(),
         )
-        dest.write_text(content, encoding="utf-8")
+        sdlc_md.atomic_write(dest, content)
         append_index_row(index_path, id_, filename, args.title, tags)
         print(f"Wrote {id_} to {dest} and appended the index row")
         print("git version-controls that registry, so `git status` there shows the lesson; "
@@ -2510,7 +2510,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
     text = build_summary_text(entries)
     if not args.dry_run:
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(text, encoding="utf-8")
+        sdlc_md.atomic_write(out_path, text)
     n = sum(1 for e in entries if not is_closed(e))
     if args.format == "json":
         print(json.dumps({"out": str(out_path), "open": n, "written": not args.dry_run}, indent=2))

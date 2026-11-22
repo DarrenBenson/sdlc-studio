@@ -5219,5 +5219,100 @@ class DelegatedSignatureTests(ReportOfRecordBase):
                     self.assertNotIn("decision", text)
 
 
+class _TornFile:
+    """A text file whose first write lands half its text and then fails, as a full disk or a
+    killed process leaves a write."""
+
+    def __init__(self, fh) -> None:
+        self._fh = fh
+
+    def write(self, text: str) -> int:
+        self._fh.write(text[: len(text) // 2])
+        self._fh.flush()
+        raise OSError(28, "No space left on device")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        self._fh.close()
+        return False
+
+    def __getattr__(self, name: str):
+        return getattr(self._fh, name)
+
+
+@contextlib.contextmanager
+def _tear_write(nth: int):
+    """Tear the `nth` file opened for writing in text mode while the block runs, by replacing
+    `io.open`. `sdlc_md.atomic_write` opens through `os.fdopen`, which looks `io.open` up when
+    it runs, so its write is torn on every Python; `Path.write_text` is torn from Python 3.11,
+    where `Path.open` does the same."""
+    real = io.open
+    seen = [0]
+
+    def opener(file, mode="r", *args, **kwargs):
+        fh = real(file, mode, *args, **kwargs)
+        if "w" in mode and "b" not in mode:
+            seen[0] += 1
+            if seen[0] == nth:
+                return _TornFile(fh)
+        return fh
+
+    with mock.patch("io.open", opener):
+        yield seen
+
+
+class ReportWriteIsAtomicTests(ReportOfRecordBase):
+    """A signed report's JSON and its Markdown twin are rewritten together or not at all."""
+
+    def _signed(self) -> tuple[str, dict]:
+        fixture_run(self.root)
+        rid = sr.file_report(self.root, sr.build_report(self.root, FIX_RETRO))
+        data = sr.read_report(self.root, rid)
+        data["signature"] = {"principal": "the operator", "signed_at": "2026-09-16T09:00:00Z",
+                             "fingerprint": data["fingerprint"]}
+        sr.write_report(self.root, data)
+        return rid, data
+
+    def _files(self, rid: str, data: dict) -> tuple[Path, Path]:
+        return (sr.report_dir(self.root) / f"{rid}.json",
+                sr._twin_path(self.root, data))  # noqa: SLF001 - the writer's own twin path
+
+    def test_an_interrupted_write_leaves_the_previous_report_whole(self) -> None:
+        """The write torn in the JSON, then in the twin: each time both files keep their
+        previous content in full and nothing is left beside them. Then the positive control:
+        the same rewrite uninterrupted lands in both."""
+        rid, data = self._signed()
+        js, md = self._files(rid, data)
+        before = {p: p.read_text(encoding="utf-8") for p in (js, md)}
+        listing = sorted(p.name for p in js.parent.iterdir())
+        resigned = {**data, "signature": {**data["signature"], "principal": "a second signer"}}
+        for nth, torn in ((1, "the JSON"), (2, "the Markdown twin")):
+            with self.subTest(torn=torn):
+                with _tear_write(nth) as seen, self.assertRaises(OSError):
+                    sr.write_report(self.root, resigned)
+                self.assertGreaterEqual(seen[0], nth, "the write under test was never torn")
+                for p, text in before.items():
+                    self.assertEqual(p.read_text(encoding="utf-8"), text,
+                                     f"{p.name} lost its previous content when {torn} was torn")
+                self.assertEqual(sorted(p.name for p in js.parent.iterdir()), listing,
+                                 "an interrupted write left a file beside the report")
+        sr.write_report(self.root, resigned)
+        self.assertEqual(json.loads(js.read_text(encoding="utf-8"))["signature"]["principal"],
+                         "a second signer")
+        self.assertIn("a second signer", md.read_text(encoding="utf-8"))
+
+    def test_a_rewrite_keeps_each_file_s_mode(self) -> None:
+        """The files are replaced, not rewritten in place, so the mode they had is carried."""
+        rid, data = self._signed()
+        js, md = self._files(rid, data)
+        js.chmod(0o640)
+        md.chmod(0o604)
+        sr.write_report(self.root, data)
+        self.assertEqual(js.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(md.stat().st_mode & 0o777, 0o604)
+
+
 if __name__ == "__main__":
     unittest.main()

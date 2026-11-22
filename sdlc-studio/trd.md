@@ -130,7 +130,7 @@ ADR-002.
 | `templates/` | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text | - |
 | `best-practices/` | Quality guidelines consulted before producing artifacts. | Markdown | - |
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown | - |
-| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+, PyYAML | Python 3.10+ with PyYAML, the one required third-party package (ADR-014); no other package is required. Every workspace write is bounded and tested (§5 rule 5), going through `atomic_write` for shared files. Every script has unit tests. |
+| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+, PyYAML | Python 3.10+ with PyYAML, the one required third-party package (ADR-014); no other package is required. Every workspace write is bounded and tested (§5 rule 5), going through `atomic_write` for shared files (any tracked workspace file a script rewrites whole; §5 rule 5 lists the writers left outside). Every script has unit tests. |
 | `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ | `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a second module re-hardcoding the status vocabulary or the id grammar is a defect, not a convenience. |
 | `scripts/tests/` | Unit tests for the script layer; `python3 -m unittest discover` gives the live count. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` | - |
 | `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash | - |
@@ -314,14 +314,35 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    evidence and per-unit sign-off logs are frozen history nothing writes). This list names
    the load-bearing writers, not all of them -
    `reference-scripts.md` is the authoritative catalogue of the script write surface.
-   Shared-file writes go through `sdlc_md.atomic_write` (temp-then-replace) and id
-   allocation is serialised by `sdlc_md.allocation_lock`, so a crash or a concurrent
-   writer never corrupts a shared file. The one deliberate exception to atomic-write is
-   the append-only ledgers - `critic`'s verdict log, the actuals and forecast shards
-   and `verify-history.jsonl` - each grown by a single `O_APPEND` row write rather than a
-   rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
-   reports rather than silently drops), never the file. The scripts are NOT read-only
-   over the workspace; the guarantee is that every write is tested and bounded.
+   A shared file is any tracked workspace file a script rewrites whole. Its rewrite goes
+   through `sdlc_md.atomic_write` (temp-then-replace) and id allocation is serialised by
+   `sdlc_md.allocation_lock`, so neither a crash nor a concurrent writer leaves a shared file
+   half-written. A write to a temporary directory or the untracked `.local/`, or one that
+   creates a file only where none exists, rewrites no shared file.
+   `scripts/tests/test_confinement.py` names every `write_text` site with the kind of its
+   target, so a new whole-file rewrite fails there until it goes through `atomic_write` or
+   is listed here. The writers left outside the guarantee, each with its reason:
+
+   - The append-only ledgers, `critic`'s verdict log, the actuals and forecast shards and
+     `verify-history.jsonl`: each grows by a single `O_APPEND` row write rather than a
+     rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
+     reports rather than silently drops), never the file.
+   - `migrate_v3.py`, `project_upgrade.py` and `backfill_audit_runs.py`: migrations, run when
+     a project upgrades or backfills a field rather than in the course of work, that rewrite
+     the files they move to a new convention.
+   - `provenance.py` (`remake`): a backfill that writes the provenance stamp into the
+     artefacts that carry none.
+   - `docgen.py`: the pages it rewrites are generated, and a rerun derives each whole again.
+   - `init.py`: it seeds the project tree it initialises, over an existing file only with
+     `--force`, and with accepted tailoring adds a criterion to a definition document.
+   - `close_owed.py` (`stamp_baseline`), `command_audit.py` (`file_coverage_findings`),
+     `refine.py` (`_fill_user_story`), `retro.py` (`cmd_cost_baseline`), `sprint.py`
+     (`record_charter_review`) and `triage_noise.py` (`_append_finding`): each rewrites a
+     tracked file whole and is not yet moved onto `atomic_write`; the sweep holds each to
+     this list until it is.
+
+   The scripts are NOT read-only over the workspace; the guarantee is that every write is
+   tested and bounded.
 6. Network access is limited to the outbound paths [Network paths](#network-paths) lists,
    the Cursor usage request from `meter_cursor.py` among them. No other shipped script
    calls `gh`, opens a connection through `urllib` or runs `git fetch`.

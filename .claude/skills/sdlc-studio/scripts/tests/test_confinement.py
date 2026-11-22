@@ -678,5 +678,198 @@ class ConfinementRosterSweepTests(unittest.TestCase):
         self.assertEqual(blank, [], f"allowlist entries without a reason: {blank}")
 
 
+# --------------------------------------------------------------------------
+# Shared-file sweep: a tracked file rewritten whole goes through atomic_write
+# --------------------------------------------------------------------------
+
+#: The kinds of target a `write_text` site may have. SCRATCH is a temporary directory the call
+#: made; UNTRACKED is under a gitignored `.local/`, or a directory the operator names for an
+#: export; NEW creates a file only where none exists, so a torn write loses no previous content;
+#: OUTSIDE rewrites a tracked file whole and is a writer TRD §5 rule 5 lists as left outside the
+#: atomic-write guarantee, with its reason.
+SCRATCH, UNTRACKED, NEW, OUTSIDE = "scratch", "untracked", "new", "outside"
+
+#: Every `write_text` site in the shipped scripts, as `<script>::<function>::<receiver>`, with
+#: the kind of its target and why. A shared file, any tracked workspace file a script rewrites
+#: whole, is rewritten through `sdlc_md.atomic_write`, so no site writing one is here except
+#: as OUTSIDE.
+SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
+    "critic.py::_replay_author_mutants::edits": (SCRATCH, "the edits file in a mkdtemp directory"),
+    "file_finding.py::grooming_gaps::preview": (SCRATCH, "a preview in a TemporaryDirectory"),
+    "verify_ac.py::_phase_plugins::tmp / f'_sdlc_batch_{phase}.py'": (
+        SCRATCH, "a pytest plugin module in the batch run's temporary directory"),
+    "verify_ac.py::coverage_report::rc": (SCRATCH, "a coveragerc in a TemporaryDirectory"),
+    "gate.py::_full_suite::log": (UNTRACKED, "sdlc-studio/.local/boundary-suite-last.log"),
+    "gate.py::record_gate_cost::path": (UNTRACKED, "sdlc-studio/.local/gate-cost.json"),
+    "gate.py::record_suite_verdict::path": (UNTRACKED,
+                                            "sdlc-studio/.local/gate-suite-verdict.json"),
+    "github_sync.py::save_state::path": (UNTRACKED,
+                                         "sdlc-studio/.local/github-sync-state.json"),
+    "lib/lanes.py::_commit::log": (UNTRACKED, "the hook output in the lane's kept .local folder"),
+    "mutation.py::applied::sidecar": (UNTRACKED, "the in-flight mutant record under .local"),
+    "mutation.py::run_gate::out": (UNTRACKED, "sdlc-studio/.local/mutation-report.json"),
+    "reconcile.py::cmd_detect::out_path": (UNTRACKED, "sdlc-studio/.local/reconcile-report.json"),
+    "release_cut.py::record_green::p": (UNTRACKED, "the release-gate marker under .local"),
+    "repo_map.py::write_index::out_path": (UNTRACKED, "--out, sdlc-studio/.local/repo-map.json "
+                                                      "unless the operator names another"),
+    "sprint.py::_write_lane_worklists::p": (UNTRACKED, "the worklist export directory the "
+                                                       "operator names, handed to a team"),
+    "sprint.py::cmd_plan::out": (UNTRACKED, "sdlc-studio/.local/sprint-plan.json"),
+    "sprint.py::record_execution_run::path": (UNTRACKED,
+                                              "sdlc-studio/.local/test-execution.json"),
+    "triage_noise.py::record_creation::p": (UNTRACKED, "sdlc-studio/.local/triage-session.json"),
+    "triage_sampling.py::record_sample::p": (UNTRACKED,
+                                             "sdlc-studio/.local/triage-sampled.json"),
+    "verify_ac.py::cmd_lane_check::path": (UNTRACKED, "sdlc-studio/.local/lane-check-yield.json"),
+    "version_check.py::_write_cache::p": (UNTRACKED, "the skill's .local version-check cache"),
+    "deploy.py::record::log": (NEW, "the deploy log's header, written only when the log is "
+                                    "absent; rows are appended"),
+    "ledger.py::append_decision::path": (NEW, "the tranche ledger's header, written only when "
+                                              "the ledger is absent; rows are appended"),
+    "triage_noise.py::_new_consolidation_cr::path": (NEW, "a CR file under a freshly "
+                                                          "allocated id"),
+    "init.py::_seed_singleton::dst": (NEW, "a seed copied only where the target is absent"),
+    "backfill_audit_runs.py::apply::path": (OUTSIDE, "a one-off backfill of audit fields"),
+    "close_owed.py::stamp_baseline::root / BASELINE_FILE": (OUTSIDE, "the close-owed baseline"),
+    "command_audit.py::file_coverage_findings::path": (OUTSIDE, "stamps the bug it just filed"),
+    "docgen.py::_write::path": (OUTSIDE, "generated pages, re-derived by a rerun"),
+    "init.py::_write_definition::path": (OUTSIDE, "seeds the project it initialises"),
+    "init.py::stage_agents::p": (OUTSIDE, "seeds the project it initialises"),
+    "init.py::init._write::p": (OUTSIDE, "seeds the project it initialises, --force rewrites"),
+    "init.py::init::doc": (OUTSIDE, "adds a criterion to a seeded definition document"),
+    "migrate_v3.py::_stamp_schema_v3::ver": (OUTSIDE, "a one-off migration"),
+    "migrate_v3.py::migrate::e['old_path']": (OUTSIDE, "a one-off migration"),
+    "project_upgrade.py::apply::cfg": (OUTSIDE, "the upgrade migration"),
+    "project_upgrade.py::apply::ver": (OUTSIDE, "the upgrade migration"),
+    "project_upgrade.py::apply::root / seed['target']": (OUTSIDE, "the upgrade migration"),
+    "project_upgrade.py::apply::target": (OUTSIDE, "the upgrade migration"),
+    "project_upgrade.py::apply::dest / name": (OUTSIDE, "the upgrade migration"),
+    "provenance.py::remake::p": (OUTSIDE, "a one-off provenance remake over the artefacts"),
+    "refine.py::_fill_user_story::story_path": (OUTSIDE, "fills the story refine just created"),
+    "retro.py::cmd_cost_baseline::path": (OUTSIDE, "the cost-baseline history row"),
+    "sprint.py::record_charter_review::path": (OUTSIDE, "the charter's seat review section"),
+    "triage_noise.py::_append_finding::path": (OUTSIDE, "a bullet on a consolidation CR"),
+}
+
+#: The whole-file rewrites of committed files that went onto `sdlc_md.atomic_write`, each
+#: `(script, function)`; the first four are the ones the TRD's guarantee was found false for.
+NOW_ATOMIC = (("verify_ac.py", "verify_story"), ("lessons.py", "write_project_file"),
+              ("artifact.py", "_wire_story_to_epic"), ("github_sync.py", "set_github_issue_field"),
+              ("artifact.py", "cmd_revision"), ("lessons.py", "cmd_add"),
+              ("lessons.py", "cmd_summary"), ("verify_ac.py", "cmd_scaffold"),
+              ("sprint_report.py", "cmd_render"))
+
+
+def _write_text_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
+    """Every `<receiver>.write_text(...)` call in the Python files under `scripts`, at any
+    depth, as `<script>::<function>::<receiver>` mapped to the lines it is made on, the script
+    named by its path under `scripts`. A nested function is named by its dotted path and a
+    module-level call by `<module>`. The tests are not shipped, so `tests/` is not read."""
+    sites: dict[str, list[int]] = {}
+
+    def visit(node: ast.AST, rel: str, qual: str) -> None:
+        for child in ast.iter_child_nodes(node):
+            inner = qual
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                inner = f"{qual}.{child.name}" if qual else child.name
+            if (isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute)
+                    and child.func.attr == "write_text"):
+                key = f"{rel}::{qual or '<module>'}::{ast.unparse(child.func.value)}"
+                sites.setdefault(key, []).append(child.lineno)
+            visit(child, rel, inner)
+
+    for p in sorted(scripts.rglob("*.py")):
+        rel = p.relative_to(scripts)
+        if rel.parts[0] != "tests":
+            visit(ast.parse(p.read_text(encoding="utf-8")), rel.as_posix(), "")
+    return sites
+
+
+def _unlisted_writes(scripts: Path = SCRIPTS,
+                     allowlist: dict[str, tuple[str, str]] = SHARED_WRITE_ALLOWLIST) -> list[str]:
+    """The `write_text` sites under `scripts` that `allowlist` does not name, with their lines."""
+    return sorted(f"{site} (line {', '.join(map(str, lines))})"
+                  for site, lines in _write_text_sites(scripts).items() if site not in allowlist)
+
+
+def _function(script: str, name: str) -> ast.AST:
+    tree = ast.parse((SCRIPTS / script).read_text(encoding="utf-8"))
+    found = [n for n in ast.walk(tree)
+             if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name]
+    if len(found) != 1:
+        raise AssertionError(f"{len(found)} functions named {name} in {script}, expected one")
+    return found[0]
+
+
+def _calls(node: ast.AST) -> set[str]:
+    return {n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", "")
+            for n in ast.walk(node) if isinstance(n, ast.Call)}
+
+
+class SharedFileWriteSweepTests(unittest.TestCase):
+    """A shared file is any tracked workspace file a script rewrites whole, and a truncating
+    `write_text` of one can leave it half-written. Every `write_text` site is named here with
+    the kind of its target, so a new one fails until it is moved onto `sdlc_md.atomic_write`
+    or its target is shown to be scratch, untracked, new or a listed exception."""
+
+    def test_no_tracked_workspace_file_is_rewritten_with_write_text(self) -> None:
+        sites = _write_text_sites()
+        self.assertGreater(len(sites), 20, "the sweep has stopped finding write_text calls")
+        self.assertEqual(_unlisted_writes(), [],
+                         "these write_text calls are on no allowlist: move a shared file's "
+                         "rewrite onto sdlc_md.atomic_write, or list the site with its kind")
+        stale = sorted(set(SHARED_WRITE_ALLOWLIST) - set(sites))
+        self.assertEqual(stale, [], f"allowlisted sites that no longer call write_text: {stale}")
+        for site, (kind, reason) in SHARED_WRITE_ALLOWLIST.items():
+            with self.subTest(site=site):
+                self.assertIn(kind, (SCRATCH, UNTRACKED, NEW, OUTSIDE))
+                self.assertTrue(reason.strip(), "an allowlisted site carries no reason")
+        for script, name in NOW_ATOMIC:
+            with self.subTest(moved=f"{script}::{name}"):
+                self.assertFalse([s for s in SHARED_WRITE_ALLOWLIST
+                                  if s.startswith(f"{script}::{name}::")])
+                calls = _calls(_function(script, name))
+                self.assertIn("atomic_write", calls)
+                self.assertNotIn("write_text", calls)
+
+    def test_the_sweep_catches_a_planted_truncating_write(self) -> None:
+        """A planted rewrite of a story file is named, in a script and in any folder under
+        it, in a nested function and at module level; the same call to a scratch path on the
+        allowlist is not, nor is one in the tests, nor one through atomic_write."""
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "lib").mkdir()
+            (d / "tests").mkdir()
+            (d / "planted.py").write_text(
+                "def stamp(root):\n"
+                "    story = root / 'sdlc-studio' / 'stories' / 'US0001.md'\n"
+                "    story.write_text('half', encoding='utf-8')\n"
+                "def scratch(tmp):\n"
+                "    rc = tmp / 'coveragerc'\n"
+                "    rc.write_text('x')\n"
+                "def safe(story):\n"
+                "    sdlc_md.atomic_write(story, 'whole')\n"
+                "def outer(root):\n"
+                "    def inner():\n"
+                "        rc.write_text('x')\n"
+                "ROOT.write_text('x')\n", encoding="utf-8")
+            (d / "lib" / "shared.py").write_text("def put(p):\n    p.write_text('x')\n",
+                                                 encoding="utf-8")
+            (d / "hooks" / "deep").mkdir(parents=True)
+            (d / "hooks" / "deep" / "guard.py").write_text("def g(p):\n    p.write_text('x')\n",
+                                                           encoding="utf-8")
+            (d / "tests" / "test_planted.py").write_text("def t(p):\n    p.write_text('x')\n",
+                                                         encoding="utf-8")
+            allowlist = {"planted.py::scratch::rc": (SCRATCH, "a temporary directory")}
+            self.assertEqual(_unlisted_writes(d, allowlist), [
+                "hooks/deep/guard.py::g::p (line 2)",
+                "lib/shared.py::put::p (line 2)",
+                "planted.py::<module>::ROOT (line 12)",
+                "planted.py::outer.inner::rc (line 11)",
+                "planted.py::stamp::story (line 3)"])
+            self.assertIn("planted.py::scratch::rc", _write_text_sites(d),
+                          "the allowlisted scratch write must still be found, then excused")
+
+
 if __name__ == "__main__":
     unittest.main()

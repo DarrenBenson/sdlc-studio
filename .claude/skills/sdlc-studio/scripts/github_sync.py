@@ -329,7 +329,7 @@ def set_github_issue_field(path: Path, number: int) -> None:
             )
         else:
             new_text = text.rstrip() + "\n\n" + insert_line + "\n"
-    path.write_text(new_text, encoding="utf-8")
+    sdlc_md.atomic_write(path, new_text)
 
 
 # -----------------------------------------------------------------------------
