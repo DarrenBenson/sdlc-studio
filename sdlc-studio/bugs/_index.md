@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 292 |
+| Open | 290 |
 | In Progress | 0 |
-| Fixed | 1085 |
+| Fixed | 1087 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -550,7 +550,7 @@
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Fixed | High | 2026-11-15 | 2026-11-15 |
-| [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Fixed | Medium | 2026-11-15 | 2026-11-15 |
@@ -782,7 +782,7 @@
 | [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1708](BG1708-verify-ac-py-ts-check-reports-two-test.md) | verify_ac.py ts-check reports two test ids pytest collects: a file under a dotted directory in importlib form, and a def whose decorator gives it a docstring with an example | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1709](BG1709-bg1463-did-not-converge-in-review-round-2.md) | BG1463 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
