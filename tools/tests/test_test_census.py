@@ -919,6 +919,67 @@ class SharedModuleNameTests(unittest.TestCase):
                     self._assert_none_shared(root)
                 self.assertIn(f"{self._SUITE_DIRS[missing]} holds no module", str(caught.exception))
 
+    def test_a_folder_holding_no_module_is_refused_not_read_as_clean(self) -> None:
+        """The control for an empty listing: a suite folder that is there but holds no `.py`.
+
+        It shares nothing for the same reason a missing folder does, so it is refused too,
+        naming the folder. It holds a file that is not Python, so a guard that asks only whether
+        the folder exists, or whether it holds any file at all, fails here. Each folder is
+        emptied in turn.
+        """
+        for empty, full in ((1, 0), (0, 1)):
+            with self.subTest(empty=self._SUITE_DIRS[empty]), \
+                    tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                for rel in self._SUITE_DIRS:
+                    (root / rel).mkdir(parents=True)
+                (root / self._SUITE_DIRS[empty] / "data.json").write_text("", encoding="utf-8")
+                (root / self._SUITE_DIRS[full] / "test_only.py").write_text("", encoding="utf-8")
+                with self.assertRaises(AssertionError) as caught:
+                    self._assert_none_shared(root)
+                self.assertIn(f"{self._SUITE_DIRS[empty]} holds no module", str(caught.exception))
+
+    def test_one_shared_name_alone_fails_naming_it(self) -> None:
+        """The control for a single clash, the case a second shared name would land as.
+
+        The first control plants two shared names, so a census that drops one of them still
+        fails it. This one plants exactly one, beside a name in one folder only and the package
+        marker, and expects that one name reported.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, only in zip(self._SUITE_DIRS, ("test_tools_only.py", "test_skill_only.py")):
+                folder = root / rel
+                folder.mkdir(parents=True)
+                for name in ("__init__.py", "test_config.py", only):
+                    (folder / name).write_text("", encoding="utf-8")
+            self.assertEqual(["test_config.py"], self.shared_names(root))
+            with self.assertRaises(AssertionError) as caught:
+                self._assert_none_shared(root)
+        self.assertIn("['test_config.py']; rename the tools-side module", str(caught.exception))
+
+    def test_the_census_reads_the_two_suite_folders_by_their_paths(self) -> None:
+        """The control for the folder pair, laid out by literal paths, not from `_SUITE_DIRS`.
+
+        The other controls build their fixture from the class's own folder pair, so a census
+        aimed at another folder builds the same wrong fixture and passes them. Here the clash is
+        planted at `tools/tests` and the skill's `scripts/tests` as spelled out below, and each
+        parent folder holds a module of its own name, so a census aimed at `tools` or at the
+        skill's `scripts` lists a folder that holds a module and misses the clash.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tools = root / "tools/tests"
+            skill = root / ".claude/skills/sdlc-studio/scripts/tests"
+            for folder, parent_module in ((tools, "gate.py"), (skill, "sprint.py")):
+                folder.mkdir(parents=True)
+                (folder / "test_config.py").write_text("", encoding="utf-8")
+                (folder.parent / parent_module).write_text("", encoding="utf-8")
+            self.assertEqual(["test_config.py"], self.shared_names(root))
+            with self.assertRaises(AssertionError) as caught:
+                self._assert_none_shared(root)
+        self.assertIn("['test_config.py']; rename the tools-side module", str(caught.exception))
+
 
 class AttributionTests(unittest.TestCase):
     """BG0578: a test file's owner was decided by how often a module's name happened to appear
