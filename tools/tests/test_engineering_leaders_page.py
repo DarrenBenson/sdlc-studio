@@ -5,6 +5,13 @@ a point), stays short, links every claim in those sections to the script, refere
 committed record behind it, and cites the committed report for every dollar figure it states.
 Each check runs on the live page and on a planted failure beside it, so a check that has stopped
 looking cannot pass.
+
+What the pack's signer check refuses is held by a closed world, not a list of words (as BG1056
+did for pip): refusing an absolute refusal of agents by its verbs failed two review rounds, each
+list passing a plain rewording and refusing a true statement of the limit. Every sentence on the
+page or the reference's `evidence_pack.py` entry that names an agent or the accountable person
+must be on an approved list naming the code that makes it true, and every listed sentence must
+still be there. A claim made in a sentence that names neither is not read.
 """
 # test-census-subject: docs/engineering-leaders.md
 from __future__ import annotations
@@ -228,14 +235,58 @@ _SIGNER_LIMIT = re.compile(r"\bcannot tell a person from an agent session\b[^.]*
 _HUMAN_AUTHOR = re.compile(r"\bunless the ledger records that author as a person\b", re.I)
 
 
-#: A clause that refuses: a verb that refuses, rejects, bars, blocks or excludes, or a verb that
-#: accepts, admits, allows, lets, names or signs, or the verb be, with not, never, cannot or n't
-#: in front of it, at most one word apart.
-_REFUSAL = re.compile(r"\b(?:refus|reject|bar(?:s|red)?\b|block|exclud)"
-                      r"|(?:\bnot|\bnever|\bcannot|n't)\s+(?:\w+\s+)?"
-                      r"(?:(?:accept|admit|allow|let|name|sign)\w*|be)\b", re.I)
-#: The qualification that the check reads the name, unless a clause widens it ("or by any other").
-_BY_NAME = re.compile(r"\bby name\b(?!,?\s+or\b)", re.I)
+#: The closed world's selector: a sentence naming an agent (agent, agents, agentic, subagent) or
+#: the accountable person, in any case, speaks about the pack's signer check. It catches more than
+#: the check's own sentences, and every one it catches must be approved.
+_NAMES_SIGNER = re.compile(r"\b(?:sub)?agent|\baccountab", re.I)
+#: Every sentence about the signer check the page and the reference entry may carry, word for
+#: word once whitespace is collapsed, each with the code or test that makes it true.
+SIGNER_SENTENCES = {
+    PAGE: {
+        "For each change it states what changed, which acceptance criteria passed, who reviewed it "
+        "independently, what is known to be wrong, and the accountable person, who is the person "
+        "that signed the run's report ([evidence_pack.py](../.claude/skills/sdlc-studio/scripts/"
+        "evidence_pack.py), [how the pack is built](../.claude/skills/sdlc-studio/"
+        "reference-scripts-domain.md#evidence_packpy)).":
+            "evidence_pack.py names each change's accountable person from its report's signature "
+            "principal (test_evidence_pack_accountable.py "
+            "test_each_change_names_the_signing_principal)",
+        "The pack refuses a report nobody has signed, and a signer it can see is not a person: a "
+        "blank principal, one that reads as an agent by name (the word agent or subagent in it), "
+        "and one the committed review ledgers record as an author of the report's own units, "
+        "unless the ledger records that author as a person.":
+            "evidence_pack.py: `principal_refusal` refuses the three, and `unit_authors` leaves "
+            "out an author typed human (test_evidence_pack_accountable.py)",
+        "It cannot tell a person from an agent session signing under another name, so the person "
+        "it names is the operator's responsibility.":
+            "evidence_pack.py: `principal_refusal` reads only the principal's words and the "
+            "ledgers' authors, so a person's name an agent session signs under passes",
+        "Each unit of work has three duties, held by three different people or seats, and the "
+        "record names each one, so work is never put down to \"the agent\".":
+            "critic.py `record` refuses a reviewer who is the author and writes both to the "
+            "verdict ledger; sprint.py `_principal_refusals` refuses a signer who authored or "
+            "reviewed a unit, and the run record keeps the signer",
+    },
+    REFERENCE: {
+        "For each unit the named signed reports delivered, the pack states what changed, which "
+        "criteria passed, who reviewed it independently, what is known to be wrong and the "
+        "accountable person, the report's signing principal.":
+            "evidence_pack.py names each change's accountable person from its report's signature "
+            "principal (test_evidence_pack_accountable.py "
+            "test_each_change_names_the_signing_principal)",
+        "It refuses an unsigned report, and a signer it can see is not a person "
+        "(`principal_refusal`): a blank principal, one that reads as an agent by name (the word "
+        "agent or subagent in it), and one the committed review ledgers record as an author of "
+        "the report's own units, unless the ledger records that author as a person (typed "
+        "`human`).":
+            "evidence_pack.py: `principal_refusal` refuses the three, and `unit_authors` leaves "
+            "out an author typed human (test_evidence_pack_accountable.py)",
+        "It cannot tell a person from an agent session signing under another name, so the person "
+        "it names is the operator's responsibility.":
+            "evidence_pack.py: `principal_refusal` reads only the principal's words and the "
+            "ledgers' authors, so a person's name an agent session signs under passes",
+    },
+}
 
 
 def reference_entry(text: str, heading: str = "### `evidence_pack.py`") -> str:
@@ -258,15 +309,31 @@ def signer_limit_stated(body: str) -> bool:
     return any(_SIGNER_LIMIT.search(c) for c in claims(body))
 
 
+def sentences(body: str) -> list[str]:
+    """Each sentence of each claim in a body, its whitespace collapsed. A sentence ends at a full
+    stop, question mark or exclamation mark followed by a space, so the full stop in a name such
+    as `evidence_pack.py` does not end one."""
+    return [s for c in claims(body) for s in re.split(r"(?<=[.!?])\s+", " ".join(c.split()))]
+
+
+def signer_sentence_problems(body: str, approved: dict[str, str]) -> list[str]:
+    """The closed world over a page's account of the signer check: each sentence naming an agent
+    or the accountable person (`_NAMES_SIGNER`) that is not in `approved`, new or reworded, and
+    each approved sentence the body no longer carries as such a sentence."""
+    found = [s for s in sentences(body) if _NAMES_SIGNER.search(s)]
+    return ([f"a sentence about the gate changed: check it against evidence_pack.py "
+             f"principal_refusal and add it to the approved list: {s}"
+             for s in found if s not in approved]
+            + [f"an approved sentence about the gate is no longer on the page: {s}"
+               for s in approved if s not in found])
+
+
 def signer_check_problems(body: str) -> list[str]:
-    """The signer check stated as more or less than it enforces: a refusal of agents stated
-    without saying it reads the name, a refusal or its exception left out, or the limit unsaid."""
-    problems = [f"states the agent refusal as absolute: {c[:60]}" for c in clauses(body)
-                if _REFUSAL.search(c) and re.search(r"\bagents?\b", c, re.I)
-                and not _BY_NAME.search(c)]
+    """The signer check stated as less than it enforces: a refusal or its exception left out, or
+    the limit unsaid."""
     stated = signer_refusals(body)
-    problems += [f"does not state the refusal of {name}" for name in SIGNER_REFUSALS
-                 if name not in stated]
+    problems = [f"does not state the refusal of {name}" for name in SIGNER_REFUSALS
+                if name not in stated]
     if not any(_HUMAN_AUTHOR.search(c) for c in claims(body)):
         problems.append("does not say an author the ledger records as a person is not refused")
     if not signer_limit_stated(body):
@@ -383,42 +450,81 @@ class FactualWordingTests(unittest.TestCase):
                    "responsibility.")
     LIMIT_MISSING = ("does not say the pack cannot tell a person from an agent session signing "
                      "under another name")
+    CHANGED = ("a sentence about the gate changed: check it against evidence_pack.py "
+               "principal_refusal and add it to the approved list: ")
+    GONE = "an approved sentence about the gate is no longer on the page: "
+    #: Every refusal of an agent a review put to the old word lists, and the sentence the bug was
+    #: filed on.
+    ABSOLUTE = ("It refuses to name an agent as the accountable person.",
+                "It rejects an agent as the accountable person.",
+                "The pack never names an agent as the accountable person.",
+                "It will not accept an agent as the accountable person.",
+                "It refuses every agent, by name or by any other sign.",
+                "It never names an agent as accountable.",
+                "It prevents an agent from being the accountable person.",
+                "It forbids an agent as the accountable person.",
+                "Agents are not permitted to sign.",
+                "It will not take an agent as accountable.",
+                "It keeps agents out of the accountable role.")
+    #: True statements of the limit a review found the old word lists refused.
+    LIMIT = ("It does not block an agent that signs under a person's name.",
+             "An agent that signs under a person's name is not refused.")
+
+    def assert_closed_world(self, body: str, approved: dict[str, str]) -> None:
+        """The live body holds exactly the approved sentences, and each way of leaving the list
+        is reported: a rewording planted into it, a true limit not yet approved, a pinned sentence
+        taken off it."""
+        self.assertEqual(signer_sentence_problems(body, approved), [])
+        for note in approved.values():
+            self.assertRegex(note, r"\w\.py\b", "an approved sentence must name the code or test "
+                                                "that makes it true")
+        for absolute in self.ABSOLUTE:
+            with self.subTest(absolute=absolute):
+                self.assertEqual(signer_sentence_problems(f"{body}\n\n{absolute}\n", approved),
+                                 [self.CHANGED + absolute])
+        flat = "\n\n".join(" ".join(c.split()) for c in claims(body))
+        for true in self.LIMIT:
+            with self.subTest(true=true):
+                planted = flat if true in flat else f"{flat}\n\n{true}\n"
+                unlisted = {s: n for s, n in approved.items() if s != true}
+                self.assertEqual(signer_sentence_problems(planted, unlisted), [self.CHANGED + true])
+                self.assertEqual(signer_sentence_problems(
+                    planted, {**unlisted, true: "evidence_pack.py"}), [])
+        for said in approved:
+            with self.subTest(removed=said[:50]):
+                self.assertIn(said, flat)
+                self.assertEqual(signer_sentence_problems(flat.replace(said, ""), approved),
+                                 [self.GONE + said])
 
     def test_the_agent_refusal_is_not_stated_as_absolute(self) -> None:
+        approved = SIGNER_SENTENCES[PAGE]
+        self.assert_closed_world(self.text, approved)
         self.assertEqual(signer_check_problems(section_body(self.text, "change approval")), [])
-        # Planted failures beside a positive control.
+        # The sentence the bug was filed on, put back in place of the refusals, changes them.
+        said = next(s for s in approved if s.startswith("The pack refuses"))
+        old = ("The pack refuses a report nobody has signed, and it refuses to name an agent as "
+               "the accountable person.")
+        flat = "\n\n".join(" ".join(c.split()) for c in claims(self.text))
+        self.assertEqual(signer_sentence_problems(flat.replace(said, old), approved),
+                         [self.CHANGED + old, self.GONE + said])
+        # An approved sentence the page carries in a sentence the selector does not read is gone.
+        strict = "The pack is strict."
+        self.assertEqual(signer_sentence_problems(strict, {strict: "x"}), [self.GONE + strict])
+        # A sentence ends at a stop followed by a space, never inside a name; an agent in any
+        # case or form, or the accountable person, is read, and no other word is.
+        self.assertEqual(sentences("A `evidence_pack.py` b. Is it? Yes! No\nmore  here.\n\n- One"
+                                   "\n- 2."),
+                         ["A `evidence_pack.py` b.", "Is it?", "Yes!", "No more here.", "- One",
+                          "- 2."])
+        for named in ("A subagent signs.", "AGENTS sign.", "Agentic work.", "Accountability.",
+                      "It is ACCOUNTABLE."):
+            with self.subTest(named=named):
+                self.assertEqual(signer_sentence_problems(named, {}), [self.CHANGED + named])
+        self.assertEqual(signer_sentence_problems("A reagent is unaccountable and signed.", {}),
+                         [])
+        # The three refusals, their exception and the limit are each stated.
         good = self.GOOD_SIGNER
         self.assertEqual(signer_check_problems(good), [])
-        old = ("The pack refuses a report nobody has signed, and it refuses to name an agent as the "
-               "accountable\nperson.")
-        found = signer_check_problems(old)
-        self.assertTrue(found[0].startswith("states the agent refusal as absolute"), found)
-        self.assertEqual(len(found), 6, found)
-        # A refusal of agents in any refusing verb, or a negated one that admits, with no word
-        # that the check reads the name, or with one widened past the name.
-        for absolute in ("It refuses agents.", "It rejects an agent as the accountable person.",
-                         "It bars agents from signing.", "It is barred to an agent.",
-                         "It blocks an agent named as accountable.",
-                         "It excludes an agent from the accountable role.",
-                         "It will not accept an agent as the accountable person.",
-                         "It won't admit an agent as accountable.",
-                         "It does not allow an agent to sign.", "It cannot let an agent sign.",
-                         "The pack never names an agent as the accountable person.",
-                         "It would never knowingly sign for an agent.",
-                         "An agent can never be the accountable person.",
-                         "It refuses every agent, by name or by any other sign.",
-                         "It refuses every agent by name, or by any other sign."):
-            with self.subTest(absolute=absolute):
-                self.assertEqual(signer_check_problems(f"{good} {absolute}"),
-                                 [f"states the agent refusal as absolute: {absolute}"])
-        # Not a refusal of agents: one that says it reads the name, one of something else, an
-        # agent named in a sentence that refuses nothing, and a negation too far from its verb.
-        for said in (" It refuses as accountable any signer that reads as an agent by name.",
-                     " It refuses an unsigned report.", " No agent is the accountable person.",
-                     " It does not know who signed, an agent or a person.",
-                     " It prints an agent's barcode."):
-            with self.subTest(said=said):
-                self.assertEqual(signer_check_problems(good + said), [])
         self.assertEqual(signer_check_problems(good.replace("unless the ledger", "if the ledger")),
                          ["does not say an author the ledger records as a person is not refused"])
         for name, (said, cut) in {
@@ -443,18 +549,17 @@ class FactualWordingTests(unittest.TestCase):
     def test_the_reference_states_the_same_refusals_and_limit(self) -> None:
         entry = reference_entry(REFERENCE.read_text(encoding="utf-8"))
         self.assertIn("evidence pack", entry, "the reference has no evidence_pack.py entry")
+        self.assert_closed_world(entry, SIGNER_SENTENCES[REFERENCE])
         self.assertEqual(signer_check_problems(entry), [])
         page = section_body(self.text, "change approval")
         self.assertEqual(signer_refusals(entry), signer_refusals(page))
         self.assertEqual(signer_limit_stated(entry), signer_limit_stated(page))
-        # Planted failures beside a positive control.
+        # The sentence the bug was filed on, put back in the entry, is a changed sentence.
         old = ("It reads the committed copies, so an uncommitted edit never changes the pack, and "
                "it refuses an unsigned report or an agent named as accountable.")
-        self.assertTrue(signer_check_problems(old)[0].startswith(
-            "states the agent refusal as absolute"))
-        self.assertEqual(signer_check_problems(f"{entry} It never names an agent as accountable."),
-                         ["states the agent refusal as absolute: It never names an agent as "
-                          "accountable."])
+        self.assertEqual(signer_sentence_problems(f"{entry}\n\n{old}\n",
+                                                  SIGNER_SENTENCES[REFERENCE]),
+                         [self.CHANGED + old])
         two = self.GOOD_SIGNER.replace("a blank principal, ", "")
         self.assertNotEqual(signer_refusals(two), signer_refusals(self.GOOD_SIGNER))
         self.assertNotEqual(signer_limit_stated(two.replace("cannot tell", "x")),

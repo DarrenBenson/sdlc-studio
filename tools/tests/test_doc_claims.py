@@ -24,8 +24,15 @@ is read here too, not just the prose that describes it.
 its criteria pass. Of a bug's criteria, the gate in `transition.py` asks only that something
 speak for the fix (a criterion ticked or one carrying a `Verify:` line) and that no recorded run
 of them be red, so a `Verify:` line that was never run, or that names a file that does not
-exist, lets a bug through. The page is held to what the gate enforces, and the bug record
-that stood at Fixed on such a line is held to a test that exists and a recorded run of it.
+exist, lets a bug through. The bug record that stood at Fixed on such a line is held to a test
+that exists and a recorded run of it.
+
+A closed world, not a parser (as BG1056 did for pip). Refusing the over-claim by its wording
+failed two review rounds: each list of words passed a plain rewording and refused a true sentence.
+So every sentence the why page and the white paper say about the Fixed gate is held to an approved
+list, each entry naming the code that makes it true. A sentence that names Fixed, or says a bug is
+fixed, and is not on the list fails the test, new or reworded, and so does a listed sentence the
+page no longer carries. A claim made in a sentence that does neither is not read.
 """
 # test-selection: sweep 0.6s
 from __future__ import annotations
@@ -276,32 +283,43 @@ class LaneObligationDocsTests(unittest.TestCase):
                       "reference-sprint.md must point at the obligations, not restate them")
 
 
-#: A gap inside one clause that names no story: a story named between Fixed and the condition
-#: makes the condition the story's.
-_NOT_STORY = r"(?:(?!\bstor(?:y|ies)\b).)*?"
-#: What a page may call a bug's criteria, what it may call their passing or having run, and a
-#: requirement.
-_CHECKS = r"\b(?:criteri(?:a|on)|Verify\b[:`]*\s+lines?|tests?)\b"
-_PASS = r"\b(?:pass\w*|green|run|ran)\b"
-_MUST = r"\b(?:must|ha(?:s|ve) to|needs? to)\b"
-#: A refusal not negated by the word before it, and a criterion that has not run.
-_REFUSES = r"(?<!not )(?<!never )(?<!n't )\b(?:refus\w*|cannot|can't)\b"
-_NEVER_RUN = r"\b(?:(?:never|not(?: yet)?)(?: been)? (?:run|ran)|unrun)\b"
-#: What the Fixed gate does not enforce, each read inside one clause (a sentence or a semicolon
-#: clause): that a bug's criteria must pass or have run, said three ways, or that a criterion
-#: never run refuses Fixed. The first shape a clause matches is the one reported.
-_OVER_CLAIMS = {
-    "a bug's criteria must pass or run (a condition on Fixed)": re.compile(
-        rf"\bFixed\b{_NOT_STORY}\b(?:only (?:when|if|once|after)|until|unless)\b.*?{_CHECKS}"
-        rf".*?{_PASS}"),
-    "a bug's criteria must pass or run (a requirement after Fixed)": re.compile(
-        rf"\bFixed\b{_NOT_STORY}{_CHECKS}.*?{_MUST}.*?{_PASS}"),
-    "a bug's criteria must pass or run (a requirement before Fixed)": re.compile(
-        rf"{_CHECKS}.*?{_MUST}.*?{_PASS}[^,]*?\bFixed\b"),
-    "a criterion never run refuses Fixed": re.compile(
-        rf"(?:{_REFUSES}[^,]*?\bFixed\b|\bFixed\b{_NOT_STORY}{_REFUSES}){_NOT_STORY}{_NEVER_RUN}"),
+#: The closed world's selector: a sentence speaks about the Fixed gate when it names the status
+#: Fixed as written, or the word fixed in any case together with a bug. It catches more than the
+#: gate's own sentences, and every one it catches must be approved.
+_NAMES_FIXED = re.compile(r"\bFixed\b")
+_FIXES_A_BUG = (re.compile(r"\bfixed\b", re.I), re.compile(r"\bbugs?\b", re.I))
+#: Every sentence about the Fixed gate each page may carry, word for word once whitespace is
+#: collapsed, each with the code or test that makes it true.
+FIXED_GATE_SENTENCES = {
+    WHY_PAGE: {
+        "Around that identity sits the quality floor: a mechanical **independence gate** (the "
+        "author of a change can never be its reviewer), **executable acceptance criteria** (a "
+        "story reaches Done only when its executable criteria have passed; a bug is refused Fixed "
+        "when nothing speaks for the fix - no criterion ticked and none carrying a `Verify:` line "
+        "- or when a recorded run of its criteria is red), a **portable CI gate** (`gate.py`, runs "
+        "the same checks anywhere), and reconciliation that keeps every index and epic checkbox in "
+        "step with the files - recomputed from them, not asserted.":
+            "transition.py: `_done_verify_gate` refuses Done on a failing or never-run executable "
+            "criterion; `_pre_write_gates` refuses Fixed when no criterion is ticked and none "
+            "carries a Verify line (test_transition.py "
+            "test_an_unticked_unverified_bug_cannot_reach_fixed); `_bug_verify_gate` refuses it on "
+            "a recorded red run and on nothing else",
+    },
+    WHITEPAPER: {
+        "The operator reads it and signs the run: `sprint sign` moves the bug to Fixed through the "
+        "gate `transition.py` enforces, which refuses it when nothing speaks for the fix (no "
+        "criterion ticked and none carrying a `Verify:` line) or when a recorded run of its "
+        "criteria is red.":
+            "sprint.py: `cmd_sign` seals each unit through `_seal_units`, which calls "
+            "`transition.transition`, so the bug meets the two refusals of `_pre_write_gates` "
+            "and `_bug_verify_gate` in transition.py",
+        "A bug nothing speaks for - no ticked criterion, no `Verify:` line - is refused Fixed, and "
+        "so is one whose recorded run is red.":
+            "transition.py: `_pre_write_gates` (no ticked criterion and no Verify line) and "
+            "`_bug_verify_gate` (a recorded red run)",
+    },
 }
-#: What the account of the closing gates says instead, each in a paragraph that names Fixed.
+#: What the why page's account of the closing gates says, in a sentence that names Fixed.
 _GATE_CLAIMS = {
     "a story reaches Done only when its executable criteria have passed": re.compile(
         r"\ba story reaches Done only when its executable criteria have passed\b"),
@@ -314,28 +332,36 @@ _GATE_CLAIMS = {
 _BUG_FIX_CLAIMED = {"Fixed", "Verified", "Closed"}
 
 
-def over_claim_problems(text: str) -> list[str]:
-    """Each clause of a page claiming what `transition.py` does not enforce of a bug's criteria
-    (`_OVER_CLAIMS`). A clause ends at a semicolon or full stop followed by a space, so the full
-    stop in a name such as `transition.py` does not end one."""
-    problems = []
-    for p in re.split(r"\n\s*\n", text):
-        for clause in (c.strip() for c in re.split(r"[.;]\s", _norm(p))):
-            name = next((n for n, shape in _OVER_CLAIMS.items() if shape.search(clause)), None)
-            if name:
-                problems.append(f"claims {name}: {clause[:70]}")
-    return problems
+def _flat(text: str) -> str:
+    """A page with each paragraph's whitespace collapsed and the paragraphs kept apart, so a test
+    can find and replace a sentence word for word."""
+    return "\n\n".join(_norm(p) for p in re.split(r"\n\s*\n", text))
 
 
-def fixed_gate_problems(text: str) -> list[str]:
-    """Each over-claim on a page (`over_claim_problems`), and each true claim its account of the
-    closing gates leaves out of every paragraph that names Fixed."""
-    paragraphs = [_norm(p) for p in re.split(r"\n\s*\n", text)]
-    problems = over_claim_problems(text)
-    gate = [p for p in paragraphs if re.search(r"\bFixed\b", p)]
-    problems += [f"the closing gates do not say {name!r}" for name, pattern in _GATE_CLAIMS.items()
-                 if not any(pattern.search(p) for p in gate)]
-    return problems
+def fixed_gate_sentences(text: str) -> list[str]:
+    """Each sentence of a page that names Fixed (`_NAMES_FIXED`, `_FIXES_A_BUG`), its whitespace
+    collapsed. A sentence ends at a blank line, or at a full stop, question mark or exclamation
+    mark followed by a space, so the full stop in a name such as `transition.py` does not end
+    one."""
+    return [s for p in re.split(r"\n\s*\n", text) for s in re.split(r"(?<=[.!?])\s+", _norm(p))
+            if _NAMES_FIXED.search(s) or all(word.search(s) for word in _FIXES_A_BUG)]
+
+
+def fixed_gate_problems(text: str, approved: dict[str, str]) -> list[str]:
+    """The closed world over a page's account of the Fixed gate: each sentence naming Fixed that
+    is not in `approved`, new or reworded, and each approved sentence the page no longer carries
+    as a sentence naming Fixed."""
+    found = fixed_gate_sentences(text)
+    return ([f"a sentence about the gate changed: check it against transition.py and add it to "
+             f"the approved list: {s}" for s in found if s not in approved]
+            + [f"an approved sentence about the gate is no longer on the page: {s}"
+               for s in approved if s not in found])
+
+
+def gate_claim_problems(sentences: list[str]) -> list[str]:
+    """Each true claim of the closing gates (`_GATE_CLAIMS`) that no sentence here makes."""
+    return [f"the closing gates do not say {name!r}" for name, pattern in _GATE_CLAIMS.items()
+            if not any(pattern.search(s) for s in sentences)]
 
 
 def bug_record_problems(text: str, repo: Path = REPO) -> list[str]:
@@ -379,91 +405,89 @@ class FixedGateClaimTests(unittest.TestCase):
     """The public account of the Fixed gate, and the record it let through, say what is true."""
 
     def test_the_why_page_claims_only_what_the_fixed_gate_enforces(self) -> None:
-        self.assertEqual(fixed_gate_problems(WHY_PAGE.read_text(encoding="utf-8")), [])
-        self.assertEqual(over_claim_problems(WHITEPAPER.read_text(encoding="utf-8")), [])
-        # Planted failures beside a positive control.
-        good = ("Closing gates for Done and Fixed (a story reaches Done only when its executable "
-                "criteria have passed; a bug is refused Fixed when nothing speaks for the fix, "
-                "or when a recorded run of its criteria is red).")
-        self.assertEqual(fixed_gate_problems(good), [])
-        condition, after, before, unrun = _OVER_CLAIMS
-        for name, over in (
-                (condition, "a story reaches Done, and a bug Fixed, only when its criteria pass"),
-                (condition, "A bug reaches Fixed only when its criteria pass."),
-                (condition, "A story reaches Done or Fixed only if its acceptance criteria "
-                            "passed."),
-                (condition, "A bug reaches Fixed only once its criteria pass."),
-                (condition, "A bug reaches Fixed only after its criteria pass."),
-                (condition, "No bug reaches Fixed until its criteria pass."),
-                (condition, "A bug cannot be Fixed unless every criterion passes."),
-                (condition, "A bug reaches Fixed only when its `Verify:` lines pass."),
-                (condition, "A bug reaches Fixed only when each Verify line passes."),
-                (condition, "A bug reaches Fixed only after its tests pass."),
-                (condition, "A bug reaches Fixed only once its regression test passes."),
-                (condition, "A bug reaches Fixed only when its criteria are green."),
-                (condition, "A bug reaches Fixed only when its criteria must pass."),
-                (condition, "`sprint sign` moves the bug to Fixed only if its criteria and "
-                            "recorded verification run speak for it."),
-                (condition, "A bug reaches Fixed only after its criteria ran."),
-                (condition, "A bug is Fixed only when reviewed.The criteria pass on their own."),
-                (after, "For Fixed, its criteria must have run."),
-                (after, "To reach Fixed, a bug's criteria must pass."),
-                (after, "For Fixed, every criterion has to pass."),
-                (after, "For Fixed, its criteria have to pass."),
-                (after, "For Fixed, its tests need to pass."),
-                (after, "For Fixed, each criterion needs to pass."),
-                (before, "A bug's criteria must pass before it is Fixed."),
-                (unrun, "A bug cannot reach Fixed while a criterion is unrun."),
-                (unrun, "A bug can't reach Fixed while a criterion has not yet run."),
-                (unrun, "Fixed is refused when a `Verify:` line has not been run."),
-                (unrun, "The gate refuses Fixed to a bug whose criteria never ran."),
-                (unrun, "The gate will refuse Fixed when a criterion has never run."),
-                (unrun, "`sprint sign` moves a bug to Fixed through `transition.py`, which refuses "
-                        "it when a criterion has never run.")):
-            with self.subTest(over=over):
-                found = fixed_gate_problems(good + "\n\n" + over)
-                self.assertEqual(len(found), 1, found)
-                self.assertTrue(found[0].startswith(f"claims {name}: "), found)
-        # A refusal the gate does not make, added to the account's own list of refusals.
-        found = fixed_gate_problems(good.replace("is red)", "is red, or when any criterion has "
-                                                              "never run)"))
-        self.assertEqual(len(found), 1, found)
-        self.assertTrue(found[0].startswith(f"claims {unrun}: "), found)
-        # A sentence or clause break, a story named before the condition, no requirement, or a
-        # refusal negated, kept off Fixed or made the story's, takes the claim off the Fixed gate.
-        for true in ("A bug is Fixed. A story reaches Done only when its criteria pass.",
-                     "A bug can be Fixed; Done comes only when its criteria pass.",
-                     "Done and Fixed: stories reach Done only when their criteria pass.",
-                     "Done and Fixed differ, for a story reaches Done only when its criteria pass.",
-                     "A bug is Fixed only when reviewed. The criteria pass on their own.",
-                     "A bug is Fixed only when reviewed; the criteria pass on their own.",
-                     "A bug reaches Fixed only if its criteria speak for it.",
-                     "A bug reaches Fixed when its criteria pass.",
-                     "Done and Fixed: a story's criteria must pass for Done.",
-                     "Its criteria may pass before it is Fixed.",
-                     "A story's criteria must pass before Done, and a bug is refused Fixed when "
-                     "nothing speaks for the fix.",
-                     "A bug reaches Fixed even when a criterion has never run.",
-                     "A bug is not refused Fixed when a criterion has never run.",
-                     "The gate never refuses Fixed when a criterion has never run.",
-                     "The gate doesn't refuse Fixed when a criterion has never run.",
-                     "A story is refused Done, but a bug reaches Fixed even when a criterion has "
-                     "never run.",
-                     "A bug reaches Fixed, and a story is refused Done when a criterion has never "
-                     "run.",
-                     "A bug is refused Fixed when nothing speaks for the fix, and a story is "
-                     "refused Done when a criterion has never run."):
+        pages = {page: page.read_text(encoding="utf-8") for page in FIXED_GATE_SENTENCES}
+        for page, text in pages.items():
+            with self.subTest(page=page.name):
+                self.assertEqual(fixed_gate_problems(text, FIXED_GATE_SENTENCES[page]), [])
+                for note in FIXED_GATE_SENTENCES[page].values():
+                    self.assertRegex(note, r"\w\.py\b", "an approved sentence must name the code "
+                                                        "or test that makes it true")
+        self.assertEqual(gate_claim_problems(fixed_gate_sentences(pages[WHY_PAGE])), [])
+        changed = ("a sentence about the gate changed: check it against transition.py and add it "
+                   "to the approved list: ")
+        gone = "an approved sentence about the gate is no longer on the page: "
+        # Planted failures beside the live pages. Every rewording a review put to the old word
+        # lists, and the sentence the bug was filed on, is a changed sentence on either page.
+        for page, text in pages.items():
+            for over in ("A bug reaches Fixed only when its criteria pass.",
+                         "A bug reaches Fixed only once its criteria pass.",
+                         "A bug reaches Fixed only after its criteria pass.",
+                         "No bug reaches Fixed until its criteria pass.",
+                         "A bug's criteria must pass before it is Fixed.",
+                         "`sprint sign` moves the bug to Fixed only if its criteria and recorded "
+                         "verification run speak for it.",
+                         "Fixed requires every criterion to pass.",
+                         "To be Fixed, a bug must pass its criteria.",
+                         "A bug is marked Fixed only when all its criteria are met.",
+                         "No bug is Fixed before its tests pass.",
+                         "A bug cannot be Fixed without its criteria passing.",
+                         "Only a bug whose criteria pass reaches Fixed.",
+                         "A bug is fixed only when its tests pass."):
+                with self.subTest(page=page.name, over=over):
+                    self.assertEqual(fixed_gate_problems(f"{text}\n\n{over}\n",
+                                                         FIXED_GATE_SENTENCES[page]),
+                                     [changed + over])
+        # A refusal the gate does not make, added inside an approved sentence, changes it.
+        for page, approved in FIXED_GATE_SENTENCES.items():
+            for said in approved:
+                unrun = f"{said[:-1]}, and when any criterion has never run{said[-1]}"
+                with self.subTest(unrun=said[:50]):
+                    self.assertEqual(fixed_gate_problems(_flat(pages[page]).replace(said, unrun),
+                                                         approved),
+                                     [changed + unrun, gone + said])
+        # A true account of the gate is held until it is approved, and passes once it is, on the
+        # page as it stands or with the sentence planted into it.
+        for true in ("A bug is refused Fixed when a recorded run of its criteria is red, and a "
+                     "criterion never run does not refuse it.",
+                     "Unlike Done, Fixed does not wait until its criteria pass."):
             with self.subTest(true=true):
-                self.assertEqual(fixed_gate_problems(good + "\n\n" + true), [])
+                why = _flat(pages[WHY_PAGE])
+                planted = why if true in why else f"{why}\n\n{true}\n"
+                approved = {s: n for s, n in FIXED_GATE_SENTENCES[WHY_PAGE].items() if s != true}
+                self.assertEqual(fixed_gate_problems(planted, approved), [changed + true])
+                self.assertEqual(fixed_gate_problems(planted, {**approved, true: "transition.py"}),
+                                 [])
+        # Each pinned sentence taken off its page is reported, and so is one the page carries
+        # in a sentence that does not name Fixed.
+        for page, approved in FIXED_GATE_SENTENCES.items():
+            for said in approved:
+                with self.subTest(removed=said[:50]):
+                    self.assertIn(said, _flat(pages[page]))
+                    self.assertEqual(fixed_gate_problems(_flat(pages[page]).replace(said, ""),
+                                                         approved), [gone + said])
+        self.assertEqual(fixed_gate_problems("The gate is strict.", {"The gate is strict.": "x"}),
+                         [gone + "The gate is strict."])
+        # A sentence ends at a blank line or at a stop followed by a space, never inside a name.
+        self.assertEqual(fixed_gate_sentences("Not this. Is it Fixed? Yes! Fixed it is.\n\nThe "
+                                              "gate\nkeeps `transition.py` Fixed. Done. Bugs are "
+                                              "FIXED once tested."),
+                         ["Is it Fixed?", "Fixed it is.", "The gate keeps `transition.py` Fixed.",
+                          "Bugs are FIXED once tested."])
+        # The status as written, or fixed said of a bug: no other word is read as either.
+        self.assertEqual(fixed_gate_sentences(
+            "Prefixed and unfixed. Fixedness. An isFixed flag. A FIXED cost. A fixed-length "
+            "sprint. The debug build is fixed. A bugbear is fixed. An unfixed bug waits. A bug of "
+            "fixedness."), [])
+        # A true claim cut from an account of the closing gates is reported.
+        account = ("Closing gates (a story reaches Done only when its executable criteria have "
+                   "passed; a bug is refused Fixed when nothing speaks for the fix, or when a "
+                   "recorded run of its criteria is red).")
+        self.assertEqual(gate_claim_problems([account]), [])
         for name in _GATE_CLAIMS:
             with self.subTest(dropped=name):
-                cut = good.replace(name.removeprefix("or when "), "something else")
-                self.assertEqual(fixed_gate_problems(cut),
+                cut = account.replace(name.removeprefix("or when "), "something else")
+                self.assertEqual(gate_claim_problems([cut]),
                                  [f"the closing gates do not say {name!r}"])
-        # Said only in a paragraph that does not name the Fixed gate, a claim does not count.
-        story = "a story reaches Done only when its executable criteria have passed"
-        self.assertEqual(fixed_gate_problems(f"Here {story}.\n\n" + good.replace(story, "x")),
-                         [f"the closing gates do not say {story!r}"])
 
     def test_bg1039_names_tests_that_exist_and_records_their_run(self) -> None:
         record = next(BUGS.glob("BG1039-*.md"))
