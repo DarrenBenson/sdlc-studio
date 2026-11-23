@@ -165,3 +165,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0153](RETRO0153-persona-cards-meet-an-enforced-standard-each-seat.md) | Persona cards meet an enforced standard, each seat's goal brief uses its own card, and persona docs match the code | 2026-11-20 | -- | -- |
 | [RETRO-0154](RETRO0154-the-sprint-lane-transition-and-verify-scripts-lose.md) | The sprint, lane, transition and verify scripts lose 32 Medium bugs; each fix's test fails without it | 2026-11-22 | -- | -- |
 | [RETRO-0155](RETRO0155-the-review-retro-lessons-drive-report-and-verify.md) | The review, retro, lessons, drive, report and verify scripts lose 28 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
+| [RETRO-0156](RETRO0156-release-cut-filer-validate-refine-and-the-carried.md) | Release cut, filer, validate, refine and the carried units lose 25 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
