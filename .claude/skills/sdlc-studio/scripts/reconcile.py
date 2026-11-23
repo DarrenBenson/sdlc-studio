@@ -1191,15 +1191,18 @@ def epic_partial_delivery_drift(repo_root: Path | str) -> list[dict]:
     epic kept the status it was minted with and read as work not started, to `status` and to
     backlog triage, while its stories shipped. A finished breakdown is left to that lane, so the
     two never name one epic. Starting an epic is not a completion, so no ruling can be lost: the
-    item carries `target`, so `settle` moves it at commit (and the commit gate reports it as
-    settled rather than counting it), and `apply_epic_partial_delivery` moves it on `apply`, each
-    through `transition.py`, whose gates decide.
+    item carries `target`, so `settle` moves it at commit and `apply_epic_partial_delivery` moves
+    it on `apply`, each through `transition.py`, whose gates decide, and never forced.
 
-    The move is asked of `transition` first, as a dry run. An epic whose own gates refuse it (one
-    missing a section `quality.require_full_sections` requires, say) is not reported: no command
-    this lane could name would clear it, and a commit that only starts a story must not be
-    refused over the epic's sections. It reads as it did before this lane existed until its
-    gates pass.
+    The move is asked of `transition` first, as a dry run. Where the epic's own gates allow it,
+    `blocked_by` is None and the commit gate reports the item as settled rather than counting it.
+    Where they refuse it (one missing a section `quality.require_full_sections` requires, say),
+    the item is still reported, with the refusal's first line as `blocked_by` and in its `fix`,
+    which carries the remedy where the gate names one (`artifact.py promote` for missing
+    sections). `settle` and `apply` are refused the same move and leave the epic as it is. The
+    commit gate does not count an item carrying `blocked_by`, and a sprint close whose only drift
+    is such items goes on, so a commit that only starts a story is not refused over the epic's
+    sections.
     """
     import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
     root = Path(repo_root)
@@ -1218,17 +1221,18 @@ def epic_partial_delivery_drift(repo_root: Path | str) -> list[dict]:
         if not moved:
             continue
         eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
-        try:
-            transition.transition(root, eid, _EPIC_WORKING, dry_run=True)
-        except (ValueError, FileNotFoundError):
-            continue          # the epic's own gates hold it where it is
+        blocked_by = _terminal_refusal(transition, root, eid, _EPIC_WORKING)
+        fix = (f"{eid} is `{canon}` but its breakdown has work delivered or under way "
+               f"({', '.join(moved)}), so it derives `{_EPIC_WORKING}`")
+        if blocked_by:
+            fix += (f", but its own gates refuse the move: {blocked_by} - clear that first; "
+                    f"until then `reconcile apply` and `reconcile settle` leave it as it is")
+        else:
+            fix += (f" - `reconcile apply` moves it there through `transition.py`, and "
+                    f"`reconcile settle` does so at commit")
         drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
                       "file_status": canon, "index_status": None, "moved": moved,
-                      "target": _EPIC_WORKING,
-                      "fix": f"{eid} is `{canon}` but its breakdown has work delivered or under "
-                             f"way ({', '.join(moved)}), so it derives `{_EPIC_WORKING}` - "
-                             f"`reconcile apply` moves it there through `transition.py`, and "
-                             f"`reconcile settle` does so at commit"})
+                      "target": _EPIC_WORKING, "blocked_by": blocked_by, "fix": fix})
     return drift
 
 
@@ -1237,8 +1241,8 @@ def apply_epic_partial_delivery(repo_root: Path | str, dry_run: bool = False) ->
 
     Returns {"synced": [id, ...], "unapplied": [{"id", "target", "reason"}, ...]}. Goes through
     `transition.transition`, as `apply_derivable_requests` does, never forced, so the index row
-    follows and the epic's own gates decide; a refusal the detector's dry run did not foresee is
-    returned as data and the rest still run.
+    follows and the epic's own gates decide; a refusal, whether the detector's dry run named it
+    under `blocked_by` or did not foresee it, is returned as data and the rest still run.
     """
     import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
     root = Path(repo_root)
@@ -2169,7 +2173,7 @@ def _terminal_refusal(transition, root: Path, rid: str, target: str) -> str | No
     try:
         transition.transition(root, rid, target, dry_run=True)
     except (ValueError, FileNotFoundError) as exc:
-        return str(exc).strip().splitlines()[0]
+        return (str(exc).strip() or type(exc).__name__).splitlines()[0]
     return None
 
 

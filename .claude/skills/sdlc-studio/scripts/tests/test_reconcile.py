@@ -2126,6 +2126,7 @@ class EpicStatusStaleTests(unittest.TestCase):
         self.assertIn("never rewritten", hint)
         self.assertRegex(hint, r"Draft, Ready or Approved epic .* In Progress, and `reconcile "
                                r"apply` moves it")
+        self.assertIn("one whose own gates refuse the move is reported with the refusal", hint)
 
 
 class EpicPartialDeliveryTests(unittest.TestCase):
@@ -2188,6 +2189,7 @@ class EpicPartialDeliveryTests(unittest.TestCase):
                          (items[0]["kind"], items[0]["file_status"], items[0]["target"],
                           items[0]["moved"]))
         # A move settle makes at commit, so the commit gate does not count it.
+        self.assertIsNone(items[0]["blocked_by"])
         self.assertEqual(items, reconcile.settled_items(self.root, items))
         self.assertIn("`reconcile settle` does so at commit", items[0]["fix"])
         code, out, _err = self._main("detect")
@@ -2329,23 +2331,125 @@ class EpicPartialDeliveryTests(unittest.TestCase):
         self.assertIn("left EP0001: its derived move was refused - it derives from unstaged "
                       "edits", out)
 
-    def test_an_epic_whose_own_gates_refuse_the_move_is_left_as_it_was(self) -> None:
-        # A gate on the epic refuses In Progress: nothing names it, apply leaves it, and the
-        # commit gate has nothing to count, as before this lane existed.
+    def _require_full_sections(self) -> Path:
         cfg = self.root / "sdlc-studio" / ".config.yaml"
         cfg.parent.mkdir(parents=True, exist_ok=True)
         cfg.write_text("quality:\n  require_full_sections: true\n", encoding="utf-8")
-        path = self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        return cfg
+
+    def _gate(self):
+        spec = importlib.util.spec_from_file_location("gate_for_bg1552",
+                                                      SCRIPT_PATH.parent / "gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        return gate
+
+    def _refusal(self, eid: str) -> str:
         import transition  # noqa: PLC0415 - the module reconcile's lazy import resolves
-        with self.assertRaises(ValueError):
-            transition.transition(self.root, "EP0001", "In Progress", dry_run=True)
-        self.assertEqual([], self._naming("EP0001"))
+        with self.assertRaises(ValueError) as refused:
+            transition.transition(self.root, eid, "In Progress", dry_run=True)
+        return str(refused.exception).strip().splitlines()[0]
+
+    def test_an_epic_whose_own_gates_refuse_the_move_is_reported_blocked_and_left(self) -> None:
+        # A gate on the epic refuses In Progress: detect still names it, with the refusal and
+        # the remedy it gives under `blocked_by`, so the commit gate reports it without counting
+        # it, and apply leaves it where the gate holds it.
+        cfg = self._require_full_sections()
+        path = self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        reason = self._refusal("EP0001")
+        self.assertIn("`artifact.py promote --id <id> --to full`", reason)
+        items = self._naming("EP0001")
+        self.assertEqual(1, len(items), items)
+        self.assertEqual(("epic-status-stale", "Draft", "In Progress", ["US0001"], reason),
+                         (items[0]["kind"], items[0]["file_status"], items[0]["target"],
+                          items[0]["moved"], items[0]["blocked_by"]))
+        self.assertEqual([], reconcile.settled_items(self.root, items))
+        code, out, _err = self._main("detect")
+        self.assertEqual(1, code)
+        self.assertIn("epic-status-stale EP0001: EP0001 is `Draft` but its breakdown has work "
+                      "delivered or under way (US0001), so it derives `In Progress`, but its "
+                      f"own gates refuse the move: {reason} - clear that first", out)
+        tally = self._gate().reconcile_drift_tally(str(self.root))
+        self.assertEqual(1, tally["blocked"], tally)
+        self.assertNotIn("epic-status-stale", tally["settled"])
         code, out, err = self._main("apply")
-        self.assertNotIn("move EP0001", out + err)
+        self.assertEqual(1, code)
+        self.assertIn(f"could NOT move EP0001 -> In Progress: {reason}", err)
+        self.assertNotIn("moved EP0001", out)
         self.assertEqual("Draft", self._status(path))
-        # The positive control: the same tree without the policy is reported.
+        self.assertEqual("Draft", self._index_status("EP0001"))
+        self.assertEqual([reason], [x["blocked_by"] for x in self._naming("EP0001")])
+        self.assertEqual(0, self._gate().reconcile_drift_tally(str(self.root))["count"])
+        # The positive control: the same tree without the policy is free and settled.
         cfg.write_text("", encoding="utf-8")
-        self.assertEqual(["In Progress"], [x["target"] for x in self._naming("EP0001")])
+        items = self._naming("EP0001")
+        self.assertEqual([None], [x.get("blocked_by") for x in items])
+        self.assertEqual(items, reconcile.settled_items(self.root, items))
+
+    def test_settle_never_forces_a_start_its_gates_refuse(self) -> None:
+        # A refusal at settle's own move (the detector's dry run passed): the epic is left and
+        # the refusal recorded, not forced round the gate that refused it.
+        import os  # noqa: PLC0415
+        import gitutil  # noqa: PLC0415 - hermetic git for the fixture
+        import transition  # noqa: PLC0415 - the module reconcile's lazy import resolves
+        self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        gitutil.git(["init", "-q"], self.root)
+        gitutil.git(["add", "-A"], self.root)
+
+        def refuse_unless_forced(*_args, dry_run=False, force=False, **_kw) -> None:
+            if not (dry_run or force):
+                raise ValueError("held")
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
+                unittest.mock.patch.object(transition, "transition",
+                                           side_effect=refuse_unless_forced):
+            res = reconcile.settle(self.root)
+        self.assertEqual(([], [("EP0001", "held")]), (res["started"], res["refused"]))
+
+    def test_a_refusal_with_no_message_is_named_by_its_type(self) -> None:
+        self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        import transition  # noqa: PLC0415 - the module reconcile's lazy import resolves
+        with unittest.mock.patch.object(transition, "transition", side_effect=ValueError("")):
+            items = self._naming("EP0001")
+        self.assertEqual(["ValueError"], [x["blocked_by"] for x in items])
+
+    def test_a_commit_under_an_epic_its_gates_hold_is_not_refused(self) -> None:
+        # The commit hook's path when the epic's own gates refuse the move: settle leaves it,
+        # naming the refusal, restages nothing for it, and the gate counts nothing.
+        import os  # noqa: PLC0415
+        import gitutil  # noqa: PLC0415 - hermetic git for the fixture
+        self._require_full_sections()
+        path = self._epic("EP0001", "Draft", {"US0001": "Ready", "US0002": "Draft"})
+        gitutil.git(["init", "-q"], self.root)
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x"],
+                    self.root)
+        self._story("US0001", "In Progress")
+        gitutil.git(["add", "-A"], self.root)
+        reason = self._refusal("EP0001")
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
+            res = reconcile.settle(self.root)
+            code, out, _err = self._main("settle")
+        self.assertEqual(([], [("EP0001", reason)]), (res["started"], res["refused"]))
+        self.assertNotIn("sdlc-studio/epics/EP0001-e.md", res["restaged"])
+        self.assertEqual("Draft", self._status(path))
+        self.assertEqual(0, code)
+        self.assertIn(f"left EP0001: its derived move was refused - {reason}", out)
+        tally = self._gate().reconcile_drift_tally(str(self.root))
+        self.assertEqual((0, 1), (tally["count"], tally["blocked"]), tally)
+
+    def test_a_sprint_close_passes_over_an_epic_its_gates_hold(self) -> None:
+        # The close's reconcile step goes on when the only drift is an epic its gates hold.
+        sprint = importlib.util.module_from_spec(importlib.util.spec_from_file_location(
+            "sprint_for_bg1552", SCRIPT_PATH.parent / "sprint.py"))
+        sprint.__spec__.loader.exec_module(sprint)
+        self._require_full_sections()
+        path = self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        self._main("apply")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ok, detail, remedy = sprint._close_reconcile(self.root, None, {})
+        self.assertEqual((True, "no mechanical drift; 1 item(s) awaiting a decision (EP0001) - "
+                                "reported, not clearable by apply", ""), (ok, detail, remedy))
+        self.assertEqual("Draft", self._status(path))
 
     def test_reference_epic_states_the_rule_the_script_holds(self) -> None:
         # The page's In Progress line names Done children and every status the lane moves.
@@ -2357,6 +2461,7 @@ class EpicPartialDeliveryTests(unittest.TestCase):
             with self.subTest(status=status):
                 self.assertIn(status, line)
         self.assertIn("`apply` moves it", line)
+        self.assertIn("names the refusal where they do not", line)
 
     def test_a_vocabulary_without_in_progress_has_no_partial_lane(self) -> None:
         self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
