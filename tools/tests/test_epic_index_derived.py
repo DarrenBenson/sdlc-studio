@@ -59,6 +59,47 @@ def _index_rows_live(repo: Path) -> list[str]:
     return [ln for ln in p.read_text(encoding="utf-8").splitlines()
             if reconcile._EPIC_ROW_RE.match(ln)] if p.is_file() else []
 
+
+def _mutate_one_row_and_sweep(copy: Path) -> tuple[str, list[dict]]:
+    """Blank one derived Stories cell in the tree under `copy` and sweep it.
+
+    The row is taken from the live index. A live index with no epic row (every row archived, the
+    state `archive.py` leaves a mature project in) would leave nothing to mutate, so the row is
+    then taken from the archive sub-indexes and written into the live table, which is the table
+    the sweep reads. Either way a row is mutated and the sweep must report exactly it.
+    """
+    target = copy / "sdlc-studio" / "epics" / "_index.md"
+    text = target.read_text(encoding="utf-8")
+
+    def usable(line: str) -> bool:
+        # A row whose cell is a real derived count, so blanking it creates a placeholder.
+        match = reconcile._EPIC_ROW_RE.match(line)
+        return bool(match and reconcile._split_row_cells(line)[3].isdigit()
+                    and f"{match.group(1)}.Stories" not in UNCORROBORATED)
+
+    def blanked(line: str) -> str:
+        cells = reconcile._split_row_cells(line)
+        cells[3] = sdlc_md.CELL_NOT_STATED
+        return "| " + " | ".join(cells) + " |"
+
+    live = [ln for ln in text.splitlines() if usable(ln)]
+    if live:
+        victim = live[0]
+        mutated = text.replace(victim, blanked(victim), 1)
+    else:
+        victim = next(ln for ln in _index_rows(copy, "epic") if usable(ln))
+        lines = text.splitlines()
+        # The row goes under the live table's separator row, so it sits in a table whose
+        # columns the sweep can resolve.
+        sep = next(i for i, ln in enumerate(lines) if re.match(r"^\|\s*-{3}", ln)
+                   and "Stories" in lines[i - 1])
+        lines.insert(sep + 1, blanked(victim))
+        mutated = "\n".join(lines) + "\n"
+    target.write_text(mutated, encoding="utf-8")
+    rec = reconcile._EPIC_ROW_RE.match(victim).group(1)
+    return rec, reconcile.epic_index_derivable_drift(copy)
+
+
 #: The rows whose count the census FALLS SHORT of, pinned with both numbers.
 #:
 #: WHY they are held, corrected after an independent review falsified the first explanation. It is
@@ -108,20 +149,7 @@ class EpicIndexRepoTests(unittest.TestCase):
             (copy / "sdlc-studio").mkdir()
             for sub in ("epics", "stories"):
                 shutil.copytree(REPO / "sdlc-studio" / sub, copy / "sdlc-studio" / sub)
-            target = copy / "sdlc-studio" / "epics" / "_index.md"
-            text = target.read_text(encoding="utf-8")
-            # A row whose cell is a real derived count, so blanking it creates a placeholder.
-            victim = next(l for l in text.splitlines()
-                          if reconcile._EPIC_ROW_RE.match(l)
-                          and reconcile._split_row_cells(l)[3].isdigit()
-                          and f"{reconcile._EPIC_ROW_RE.match(l).group(1)}.Stories"
-                          not in UNCORROBORATED)
-            rec = reconcile._EPIC_ROW_RE.match(victim).group(1)
-            cells = reconcile._split_row_cells(victim)
-            cells[3] = sdlc_md.CELL_NOT_STATED
-            target.write_text(text.replace(victim, "| " + " | ".join(cells) + " |", 1),
-                              encoding="utf-8")
-            found = reconcile.epic_index_derivable_drift(copy)
+            rec, found = _mutate_one_row_and_sweep(copy)
         self.assertEqual([(rec, "Stories")], [(f["id"], f["column"]) for f in found],
                          f"the mutated {rec} row was not reported, so a clean result above is "
                          f"equally consistent with a sweep that reads nothing")
@@ -233,6 +261,43 @@ class EpicIndexRepoTests(unittest.TestCase):
         header = next(l for l in self.text.splitlines() if l.startswith("| ID |"))
         live = tuple(c.strip() for c in re.split(r"(?<!\\)\|", header.strip().strip("|")))
         self.assertEqual(sdlc_md.EPIC_INDEX_COLUMNS, live)
+
+
+
+class EpicIndexNegativeControlTests(unittest.TestCase):
+
+    def test_an_emptied_live_index_still_has_a_target(self) -> None:
+        """With every epic row archived the control still mutates a row, and the sweep reports it.
+
+        A fixture, because the repository's own live index is not empty today: the control must
+        keep a target on the day archiving empties it, not fail with an exhausted search.
+        """
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            copy = Path(d)
+            epics = copy / "sdlc-studio" / "epics"
+            (epics / "archive" / "v1").mkdir(parents=True)
+            (copy / "sdlc-studio" / "stories").mkdir()
+            head = ("| ID | Title | Status | Stories | Deps | Created | Updated |\n"
+                    "| --- | --- | --- | --- | --- | --- | --- |\n")
+            (epics / "_index.md").write_text("# Epic Index\n\n" + head, encoding="utf-8")
+            # The first archived row carries no count, so it is no target; the second is.
+            rows = ("| [EP0899](../../EP0899-w.md) | W | Done | -- | -- | 2026-01-01 | 2026-01-01 |\n"
+                    "| [EP0900](../../EP0900-x.md) | T | Done | 0 | -- | 2026-01-01 | 2026-01-01 |\n")
+            (epics / "archive" / "v1" / "epic.md").write_text("# archive\n\n" + head + rows,
+                                                              encoding="utf-8")
+            (epics / "EP0900-x.md").write_text("# EP0900: T\n\n> **Status:** Done\n",
+                                               encoding="utf-8")
+            self.assertEqual([], [ln for ln in (epics / "_index.md").read_text().splitlines()
+                                  if reconcile._EPIC_ROW_RE.match(ln)],
+                             "the fixture's live index is not empty")
+            (epics / "EP0899-w.md").write_text("# EP0899: W\n\n> **Status:** Done\n",
+                                               encoding="utf-8")
+            self.assertEqual([], reconcile.epic_index_derivable_drift(copy),
+                             "the unmutated fixture already drifts, so the control proves nothing")
+            rec, found = _mutate_one_row_and_sweep(copy)
+        self.assertEqual("EP0900", rec)
+        self.assertEqual([("EP0900", "Stories")], [(f["id"], f["column"]) for f in found])
 
 
 if __name__ == "__main__":

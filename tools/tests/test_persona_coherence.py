@@ -371,12 +371,10 @@ class PrdTargetUsersTests(unittest.TestCase):
             "## Negative (not designed for)\n\n"
             "- [Sable Wintergreen](sable.md) - stub\n"
         )
-        tmp = REPO / "sdlc-studio" / "personas" / ".stub-registry.md"
-        try:
+        with tempfile.TemporaryDirectory() as scratch:
+            tmp = Path(scratch) / "stub-registry.md"
             tmp.write_text(fabricated, encoding="utf-8")
             parsed = read_registry(tmp)
-        finally:
-            tmp.unlink(missing_ok=True)
         self.assertEqual(parsed, {"Primary": ["Quimby Vantablack"],
                                   "Secondary": ["Rowan Fitzhubbard"],
                                   "Served": ["Odile Pemberthwaite"],

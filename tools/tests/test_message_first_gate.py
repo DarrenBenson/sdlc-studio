@@ -31,6 +31,7 @@ import unittest
 
 from collections import Counter
 from pathlib import Path
+from unittest import mock
 
 from test_lean_commit_lanes import LISTING_HOOKS, _list, _listed_keys
 
@@ -143,12 +144,17 @@ class _GateFixture(unittest.TestCase):
 
     #: Wall-clock the suite stub deliberately burns, so a run that paid for it is
     #: distinguishable from one that did not. Zero by default: this lane is itself part of
-    #: the gate, and only the tests that MEASURE the saving need to pay for it.
+    #: the gate, and only a test that shows a clock-based verdict would be wrong pays for it.
     SUITE_COST_SECONDS = 0
 
     #: Wall-clock deliberately spent in the FIRST hook. Zero unless a test needs the two
     #: halves of the gate to be told apart by duration - see BudgetAcrossThePairTests.
     CHEAP_COST_SECONDS = 0
+
+    #: Wall-clock burnt inside the timed window of the FIRST commit a test makes, standing in
+    #: for a scheduling spike on a loaded host. Zero unless a test shows its verdict does not
+    #: read the clock - see SpikedRefusalTests.
+    SPIKE_SECONDS = 0
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
@@ -272,6 +278,9 @@ class _GateFixture(unittest.TestCase):
 
     def _commit(self, message: str) -> tuple[int, str, float]:
         t0 = time.monotonic()
+        spike, self.SPIKE_SECONDS = self.SPIKE_SECONDS, 0
+        if spike:
+            time.sleep(spike)
         out = subprocess.run(["git", "-C", str(self.root), "commit", "-m", message],
                              capture_output=True, text=True, env=_clean_env())
         return out.returncode, out.stdout + out.stderr, time.monotonic() - t0
@@ -285,23 +294,25 @@ class _GateFixture(unittest.TestCase):
         return self.lane_log.read_text(encoding="utf-8").split()
 
 
-class MessageBeforeSuitesTests(_GateFixture):
+class _RefusalChecks:
+    """The refusal's assertions, shared by the unspiked and the spiked run of it."""
 
-    #: The saving is a wall-clock claim, so the suites have to cost wall-clock here.
-    SUITE_COST_SECONDS = 1
-
-    def test_a_refused_message_never_reaches_the_unit_suites(self) -> None:
-        """AC1. A subject naming two ids with no `Refs:` trailer, over a staged change that
+    def _assert_a_refused_message_never_reaches_the_unit_suites(self) -> None:
+        """A subject naming two ids with no `Refs:` trailer, over a staged change that
         DOES select the suites: refused, with the same message and paste-ready trailers as
         before, and neither expensive lane executed.
 
         The second half is the control that stops this passing vacuously: the identical
         staged change with the trailers added runs both lanes and commits. Without it, a
         hook that had simply lost the suites would satisfy the first half.
+
+        The skip is judged from the lane log alone, which records whether a lane executed.
+        A wall-clock comparison of the two commits is a statement about the host's load as
+        much as about the hook, and refused a push by 4 ms.
         """
         self._stage_code()
 
-        rc, refused_out, refused_secs = self._commit("feat(CR0257, CR0258): batch fix")
+        rc, refused_out, _ = self._commit("feat(CR0257, CR0258): batch fix")
 
         self.assertNotEqual(rc, 0, f"the message defect did not refuse the commit:\n{refused_out}")
         self.assertEqual(self._subjects(), ["fixture"], "the refused commit LANDED")
@@ -317,16 +328,17 @@ class MessageBeforeSuitesTests(_GateFixture):
             self.assertNotIn(lane, _lanes(refused_out))
 
         # The control: same staged change, a message the rules accept.
-        rc, ok_out, ok_secs = self._commit(
+        rc, ok_out, _ = self._commit(
             "feat(CR0257, CR0258): batch fix\n\nRefs: CR0257\nRefs: CR0258\n")
         self.assertEqual(rc, 0, ok_out)
         self.assertEqual(sorted(self._ran()), ["skill-tests", "tool-tests"],
                          f"the accepted commit did not run the suites:\n{ok_out}")
-        # The saving, measured rather than asserted from the source: the refusal is cheaper
-        # than the accepted run by at least the cost of the suites it did not pay for.
-        self.assertLess(refused_secs, ok_secs - self.SUITE_COST_SECONDS / 2,
-                        f"the refusal cost {refused_secs:.2f}s against {ok_secs:.2f}s for the "
-                        "full run - it did not skip the expensive lanes")
+
+
+class MessageBeforeSuitesTests(_RefusalChecks, _GateFixture):
+
+    def test_a_refused_message_never_reaches_the_unit_suites(self) -> None:
+        self._assert_a_refused_message_never_reaches_the_unit_suites()
 
     def test_a_docs_only_commit_still_skips_the_suites_and_says_so(self) -> None:
         """The selection rule survives the move: a commit touching no scripts/, templates/
@@ -349,6 +361,37 @@ class MessageBeforeSuitesTests(_GateFixture):
         self.assertNotEqual(rc, 0, out)
         self.assertIn("a cheaper lane already failed", out)
         self.assertEqual(self._ran(), [])
+
+
+class SpikedRefusalTests(_RefusalChecks, _GateFixture):
+    """The same refusal under a scheduling spike, the suites costing real wall-clock.
+
+    The spike lands inside the first, refused commit's timed window and the hooks run
+    unchanged. A verdict that compared the two commits' durations would read the spike as the
+    suites having run; the lane log does not.
+    """
+
+    SUITE_COST_SECONDS = 1
+    SPIKE_SECONDS = 1.2
+
+    def test_a_refused_message_never_reaches_the_unit_suites(self) -> None:
+        spike = self.SPIKE_SECONDS     # `_commit` spends it, so read it first
+        measured: list[float] = []
+        commit = self._commit
+
+        def timed(message: str) -> tuple[int, str, float]:
+            result = commit(message)
+            measured.append(result[2])
+            return result
+
+        self._commit = timed
+        with mock.patch.object(time, "sleep", wraps=time.sleep) as slept:
+            self._assert_a_refused_message_never_reaches_the_unit_suites()
+        # Spent once, on the refused commit, and inside its measured window. The elapsed time
+        # alone cannot show this: a loaded host makes any commit slower than the spike.
+        self.assertEqual([c.args for c in slept.call_args_list], [(spike,)])
+        self.assertGreaterEqual(measured[0], spike,
+                                "the spike never landed in the refused commit's measured time")
 
 
 class LaneInventoryTests(_GateFixture):
