@@ -130,10 +130,16 @@ class CriticReplaySelectorTests(unittest.TestCase):
     def test_a_cluster_of_short_flags_is_read_as_pytest_reads_it(self) -> None:
         """A short flag cluster (`-qk`, `-vm`) is each letter in turn, as pytest's argparse reads
         it, until one that takes a value, whose value is the rest of the word or else the next
-        word; `-r` is pytest's own value option. Mutants: a cluster ending in `k` skipped as a
-        plain option, so its expression's words print as selectors; `-r` left out of the value
-        options, so its value prints as one; the letters read on past the one that took the
-        rest of the word, so `-km` takes the next word as an `-m` expression."""
+        word; `-r` is pytest's own value option. One `=` directly after that letter is dropped,
+        as argparse drops it (`-k=add` filters by `add`, `-k==add` by `=add`; Python 3.10's keeps
+        it in a cluster such as `-qk=add`), and `-k=` is an empty value that leaves the next word
+        a target. A long option written `--opt=value` carries its value, so the next word stays a
+        target. Mutants: a cluster ending in `k` skipped as a plain option, so its expression's
+        words print as selectors; `-r` left out of the value options, so its value prints as one;
+        the letters read on past the one that took the rest of the word, so `-km` takes the next
+        word as an `-m` expression; the `=` kept, so `-k=add` names `=add`; every leading `=`
+        dropped; the `=` dropped only after a lone `-k`, never in a cluster; `-k=` taking the
+        next word; a long `--opt=value` taking the next word as well."""
         for verify, want in (
                 ("pytest tests/a.py -qk 'add or sign'", (["tests/a.py"], ["-k 'add or sign'"])),
                 ("pytest -vm 'slow and not flaky' tests/a.py",
@@ -143,7 +149,13 @@ class CriticReplaySelectorTests(unittest.TestCase):
                 ("pytest -rA tests/a.py", (["tests/a.py"], [])),
                 ("pytest -km tests/a.py", (["tests/a.py"], ["-k m"])),
                 ("pytest -qx tests/a.py", (["tests/a.py"], [])),
-                ("pytest -- tests/a.py", (["tests/a.py"], []))):
+                ("pytest -- tests/a.py", (["tests/a.py"], [])),
+                ("pytest tests/a.py -rA -k=add", (["tests/a.py"], ["-k add"])),
+                ("pytest -qk='add or sign' tests/a.py", (["tests/a.py"], ["-k 'add or sign'"])),
+                ("pytest tests/a.py -k==add", (["tests/a.py"], ["-k =add"])),
+                ("pytest -k= tests/a.py", (["tests/a.py"], [])),
+                ("pytest -p=no:cacheprovider tests/a.py", (["tests/a.py"], [])),
+                ("pytest --deselect=tests/a.py::T::slow tests/b.py", (["tests/b.py"], []))):
             with self.subTest(verify=verify):
                 self.assertEqual(want, critic.pytest_targets(verify))
 

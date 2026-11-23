@@ -3066,10 +3066,13 @@ def pytest_targets(verifier: str) -> tuple[list[str], list[str]]:
     (word by word, quotes dropped, when a quote is unbalanced): each file, directory or node id
     it names, and each `-k`/`-m` expression it filters them by, as `-k '<expression>'`. No word
     that starts with `-` is a target. A long option in `_PYTEST_VALUE_OPTIONS` takes the next
-    word as its value. A short option word is a cluster read as pytest's argparse reads it
-    (`-qk` is `-q -k`): each letter a flag until the first that takes a value (`-k`, `-m` or a
-    short option in `_PYTEST_VALUE_OPTIONS`), whose value is the rest of the word or else the
-    next word. So an expression's words are never a target, nor is such an option's value.
+    word as its value; written `--opt=value`, it carries its own. A short option word is a
+    cluster read as pytest's argparse reads it (`-qk` is `-q -k`): each letter a flag until the
+    first that takes a value (`-k`, `-m` or a short option in `_PYTEST_VALUE_OPTIONS`), whose
+    value is the rest of the word, less one `=` directly after the letter (`-k=add` and
+    `-qk=add` are `-k add`, and `-k=` an empty value), or else, when nothing follows the
+    letter, the next word. Python 3.10's argparse keeps that `=` in a cluster, reading `-qk=add`
+    as `-k =add`. So an expression's words are never a target, nor is such an option's value.
     Empty for a line not run by pytest."""
     try:
         words = shlex.split(verifier or "")
@@ -3089,7 +3092,8 @@ def pytest_targets(verifier: str) -> tuple[list[str], list[str]]:
         else:
             for at, letter in enumerate(word[1:], 2):
                 if letter in _PYTEST_SHORT_VALUE_LETTERS:
-                    value = word[at:] or next(rest, "")
+                    attached = word[at:]
+                    value = attached[1:] if attached[:1] == "=" else attached or next(rest, "")
                     if f"-{letter}" in _PYTEST_EXPRESSION_OPTIONS and value:
                         expressions.append(f"-{letter} {shlex.quote(value)}")
                     break

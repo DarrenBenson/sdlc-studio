@@ -4398,7 +4398,8 @@ class StagedVerdictTests(unittest.TestCase):
         """AC1. Mutants: the check passing a staged file with no row; the refusal naming no file
         or no record command; a row of another unit citing the same name and bytes taken for
         this file's; a verdict file left unstaged judged as if staged; a staged rename left out
-        of the files judged, so a recorded verdict moved to a name no row cites passes."""
+        of the files judged, so a recorded verdict moved to a name no row cites passes; a staged
+        type change left out of them, so a recorded verdict replaced by a symlink passes."""
         rc, _out, err = self._check()
         self.assertEqual((0, ""), (rc, err), "premise: nothing staged, nothing refused")
         self._write("sdlc-studio/reviews/verdicts/US0001/untracked-0000.txt", "VERDICT: x\n",
@@ -4425,6 +4426,19 @@ class StagedVerdictTests(unittest.TestCase):
         rc, _out, err = self._check()
         self.assertEqual(1, rc, "a moved verdict no row cites passed")
         self.assertIn(f"{moved}: no recorded review row cites it", err)
+        # The same recorded verdict replaced by a symlink: git stages a type change, and the
+        # staged blob (the link's target) is bytes no row cites.
+        self.gitutil.git(["reset", "-q", "--hard"], self.root)
+        self.assertEqual(0, self._check()[0], "premise: the recorded verdict is restored")
+        (self.root / self.REL).unlink()
+        (self.root / self.REL).symlink_to("fedcba987654-0a1b2c3d.txt")
+        self.gitutil.git(["add", "--", self.REL], self.root)
+        staged = self.gitutil.git(["diff", "--cached", "--name-status"], self.root,
+                                  text=True).stdout
+        self.assertEqual(f"T\t{self.REL}", staged.strip(), "premise: a type change")
+        rc, _out, err = self._check()
+        self.assertEqual(1, rc, "a verdict replaced by a symlink passed")
+        self.assertIn(f"{self.REL}: a recorded review row cites it, but not these bytes", err)
 
     def test_a_staged_verdict_its_recorded_row_cites_passes(self) -> None:
         """AC2. Mutants: the check refusing a file whose bytes a row cites (the verdicts an
