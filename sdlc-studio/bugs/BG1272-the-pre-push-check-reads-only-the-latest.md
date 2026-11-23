@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_red_main.py, tools/tests/test_pre_push_hook.py, changelog.d/BG1272.md
+> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_red_main.py, tools/tests/test_pre_push_hook.py, tools/tests/test_lean_push.py, changelog.d/BG1272.md
 > **Evidence:** run eight (RUN-01M6RZQZ) mid-run push, GitHub Actions Lint run 42263229398
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ When the latest run on main is in progress, read the most recent concluded run a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + tools/tests/test_lean_push.py: AC1's in-progress read adds a gh call that PushBoundaryTests counts (builder BLOCKED pre-edit). AC2 holds at HEAD because the hook reads only completed runs; it stays as the control |
