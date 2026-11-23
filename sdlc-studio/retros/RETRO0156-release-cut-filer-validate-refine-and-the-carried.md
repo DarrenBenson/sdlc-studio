@@ -88,13 +88,7 @@ BG1723 and BG1731 are deferred to run twenty-four, and the 6.5 tag waits for bot
 
 **0 of 30 unit(s) measured; 28 of 30 forecast at plan time.**
 
-**Priced cost: 121,983,326 priced input-equivalent tokens**, 1,524,792 per point over 80 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $333.81, $4.17 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 9,986 x1
-- output: 4,487,347 x5
-- cache write 5m: 16,513,191 x1.25
-- cache write 1h: 1,058,222 x2
-- cache read: 767,786,718 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 275,859** (22,068,746 tokens over 80 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
