@@ -44,4 +44,4 @@
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-15 | Claude Opus 5.5 (run fourteen grooming, D0479) | Groomed: criteria with Verify lines, must-fail notes, Affects with the tests each change exercises and this unit's fragment |
-| 2026-11-23 | Dani Okafor (engineering, BG1538) | Regroomed under D0495, D0507 and D0512: the check runs inside the `neutrality` lane's script so the lane count stays at 31, Affects now name `tools/check_census_marker.py`, `tools/check_neutrality.py` and `tools/tests/test_lean_commit_lanes.py`, the run-14 wave note and the Depends line on a finished unit are gone, AC3 pins no new lane, status left at Draft |
+| 2026-11-23 | Dani Okafor (engineering, BG1538) | Regroomed under D0495, D0507 and D0512: the check runs inside the `neutrality` lane's script so the lane count stays at 31, Affects now name `tools/check_census_marker.py`, `tools/check_neutrality.py` and `tools/tests/test_lean_commit_lanes.py`, the run-14 wave note is gone, AC3 pins no new lane, status left at Draft |
