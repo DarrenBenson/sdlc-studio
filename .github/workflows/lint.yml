@@ -32,7 +32,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: '20'
+          node-version: '26'
           cache: 'npm'
 
       - name: Install dependencies
@@ -93,9 +93,14 @@ jobs:
         # tools/tests run through the push's own plan (pytest, parallel, `serial_only` after,
         # `boundary_only` included), the command the pre-push full-suite lane runs, so a push the
         # gate passed is not red here for a runner difference (US0939, after BG0770).
+        # The step's shell stops at the first failing command, so the skill suite's exit status
+        # is held rather than allowed to stop it: tools/tests runs whatever the skill suite
+        # returned, and the step still fails on the skill suite's status after it (BG0968).
         run: |
-          SDLC_STUDIO_BOUNDARY_SUITE=1 SKILL_TESTS_COVERAGE=1 bash tools/skill-tests.sh
+          skill_suite=0
+          SDLC_STUDIO_BOUNDARY_SUITE=1 SKILL_TESTS_COVERAGE=1 bash tools/skill-tests.sh || skill_suite=$?
           SDLC_STUDIO_BOUNDARY_SUITE=1 python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary push --run-tests tools/tests/test_*.py
+          exit "$skill_suite"
 
       - name: Portable artefact gate (same gate the pre-commit hook runs)
         run: |
@@ -130,7 +135,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: '20'
+          node-version: '26'
           cache: 'npm'
 
       - name: Install dependencies
@@ -195,7 +200,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: '20'
+          node-version: '26'
           cache: npm
 
       - name: Install Node deps

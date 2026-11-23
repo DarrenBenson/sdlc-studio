@@ -15,6 +15,7 @@ import sys
 import subprocess
 import io
 import contextlib
+import re
 import tempfile
 import unittest
 from unittest import mock
@@ -179,6 +180,135 @@ class CutoffTests(unittest.TestCase):
             self.assertFalse(u["exempt"])
             self.assertTrue(u["violation"])
 
+    # A schema-v3 cutoff and four units around it: an earlier timestamp bucket (`01KX8B` before
+    # `01KXB3`), the cutoff id itself, another id in the cutoff's own bucket, and a later bucket.
+    V3_CUTOFF = "BG-01KXB3QF"
+    V3_EARLIER, V3_SAME_BUCKET, V3_LATER = "BG-01KX8B04", "BG-01KXB3QG", "BG-01KXC2AA"
+
+    def _v3_project(self, root, cutoff=V3_CUTOFF):
+        _config(root, f"engagement_floor:\n  adopt_after: {cutoff}\n")
+        for rid in (self.V3_EARLIER, self.V3_CUTOFF, self.V3_SAME_BUCKET, self.V3_LATER):
+            _write_v3_unit(root, rid, status="Fixed", affects=["a/one.py", "a/two.py"])
+
+    def test_id_at_or_below_cutoff_is_exempt_for_a_v3_ulid(self):
+        """BG0959 AC1. The floor parsed its cutoff without `allow_ulid` and compared id numbers,
+        so a ULID `adopt_after` raised ValueError. It now compares timestamp buckets through
+        `sdlc_md.cutoff_exempts`: an earlier bucket and the cutoff id are exempt, another id
+        in the cutoff's bucket and a later bucket are judged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3_project(root)
+            self.assertEqual(("floor", "01KXB3QF"), _load()._mode_and_cutoff(root))
+            units = _units(root)
+            for rid in (self.V3_EARLIER, self.V3_CUTOFF):
+                self.assertTrue(units[rid]["exempt"], rid)
+                self.assertFalse(units[rid]["violation"], rid)
+            for rid in (self.V3_SAME_BUCKET, self.V3_LATER):
+                self.assertFalse(units[rid]["exempt"], rid)
+                self.assertTrue(units[rid]["violation"], rid)
+
+    def test_a_v3_cutoff_exempts_the_sequential_ids_a_migrated_project_holds(self):
+        """A migrated project holds sequential ids beside v3 ones. Under a v3 cutoff its
+        sequential ids predate every v3 id (`cutoff_exempts`), and the forward check, which
+        compares a numeric cutoff with the highest sequential id, must not compare a ULID
+        with a number."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3_project(root)
+            _write_unit(root, "story", 100, status="Done", affects=["b/one.py", "b/two.py"])
+            result = _load().detect(root)
+            self.assertEqual(100, result["summary"]["max_id"])
+            self.assertFalse(result["summary"]["cutoff_forward"])
+            units = {u["id"]: u for u in result["units"]}
+            self.assertTrue(units["US0100"]["exempt"])
+            self.assertTrue(units[self.V3_LATER]["violation"])
+
+    def test_check_honours_a_ulid_cutoff_through_the_cli(self):
+        """BG0959 AC2. `engagement_floor.py check` on a schema-v3 fixture with a ULID cutoff
+        exits on its verdict, with no traceback: the two units at or before the cutoff are
+        grandfathered and still counted, and the two after it are reported."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._v3_project(root)
+            r = subprocess.run([sys.executable, str(SCRIPT), "check", "--root", str(root)],
+                               capture_output=True, text=True, env=gitutil.git_env(),
+                               timeout=120)
+            self.assertNotIn("Traceback", r.stderr)
+            self.assertEqual("", r.stderr)
+            self.assertEqual(1, r.returncode, r.stdout)
+            self.assertIn("2 violation(s) across 4 shipped unit(s)", r.stdout)
+            self.assertIn(", 2 exempt", r.stdout)
+            self.assertIn("2 exempt unit(s) would violate (grandfathered by adopt_after "
+                          "01KXB3QF)", r.stdout)
+            violating = [ln.split()[0] for ln in r.stdout.splitlines()
+                         if ln.startswith("  ") and "source file(s)" in ln]
+            self.assertEqual([self.V3_SAME_BUCKET, self.V3_LATER], violating)
+
+    def test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id(self):
+        """BG0959 AC3. A numeric cutoff stays a number compared with id numbers, in both
+        spellings, and the remedy names a v3 id as a legal cutoff beside the integer and the
+        prefixed sequential id. The v3 example it prints is parsed and honoured as written."""
+        floor = _load()
+        for spelling in ("150", "US0150"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _config(root, f"engagement_floor:\n  adopt_after: {spelling}\n")
+                _write_unit(root, "story", 150, status="Done", affects=["a/one.py", "a/two.py"])
+                _write_unit(root, "story", 151, status="Done", affects=["b/one.py", "b/two.py"])
+                self.assertEqual(("floor", 150), floor._mode_and_cutoff(root))
+                units = _units(root)
+                self.assertTrue(units["US0150"]["exempt"], spelling)
+                self.assertFalse(units["US0151"]["exempt"], spelling)
+                self.assertTrue(units["US0151"]["violation"], spelling)
+        remedy = floor.REMEDY_CUTOFF
+        self.assertIn("a bare id `238`", remedy)
+        self.assertIn("a prefixed `CR0238`", remedy)
+        example = re.search(r"on schema v3 an id such as `(BG-[0-9A-HJKMNP-TV-Z]{8})`", remedy)
+        self.assertIsNotNone(example, remedy)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, f"engagement_floor:\n  adopt_after: {example.group(1)}\n")
+            _write_v3_unit(root, "BG-01KX0000", status="Fixed", affects=["a/one.py", "a/two.py"])
+            self.assertTrue(_units(root)["BG-01KX0000"]["exempt"])
+
+    def test_a_cutoff_that_is_no_id_still_refuses_loud(self):
+        """Admitting a v3 id admits nothing else: a v3 id cut short, one without its dash, a
+        word and an empty value each still raise, never read as no cutoff at all."""
+        for spelling in ("BG-01KX", "BG01KXB3QF", "banana", '""'):
+            with self.subTest(spelling=spelling), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _config(root, f"engagement_floor:\n  adopt_after: {spelling}\n")
+                _write_v3_unit(root, "BG-01KX8B04", status="Fixed",
+                               affects=["a/one.py", "a/two.py"])
+                with self.assertRaisesRegex(ValueError, "not a number or id"):
+                    _load().detect(root)
+
+    def test_the_refusal_names_a_v3_id_only_where_one_is_accepted(self):
+        """`parse_cutoff`'s refusal names the forms the call accepts: with `allow_ulid`, a v3 id
+        beside the integer and the prefixed id, each of which then parses as named; without
+        it, the message is what it was. The floor's CLI prints the first."""
+        sdlc_md = _load().sdlc_md
+        prefix = "adopt_after cutoff is not a number or id: 'BG-01KX' - "
+        with self.assertRaises(ValueError) as with_v3:
+            sdlc_md.parse_cutoff("BG-01KX", allow_ulid=True)
+        self.assertEqual(prefix + "use a bare integer (103), a prefixed id (US0103) or a schema "
+                         "v3 id (BG-01KX95QP)", str(with_v3.exception))
+        with self.assertRaises(ValueError) as without:
+            sdlc_md.parse_cutoff("BG-01KX")
+        self.assertEqual(prefix + "use a bare integer (103) or a prefixed id",
+                         str(without.exception))
+        for named, parsed in (("103", 103), ("US0103", 103), ("BG-01KX95QP", "01KX95QP")):
+            self.assertEqual(parsed, sdlc_md.parse_cutoff(named, allow_ulid=True), named)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "engagement_floor:\n  adopt_after: BG-01KX\n")
+            r = subprocess.run([sys.executable, str(SCRIPT), "check", "--root", str(root)],
+                               capture_output=True, text=True, env=gitutil.git_env(),
+                               timeout=120)
+            self.assertEqual(1, r.returncode, r.stdout)
+            self.assertNotIn("Traceback", r.stderr)
+            self.assertIn("or a schema v3 id (BG-01KX95QP)", r.stderr)
+
 
 class WaiverTests(unittest.TestCase):
     """Reuses BG0110's waiver primitive: a per-unit waiver exempts one unit, a project-global
@@ -213,6 +343,67 @@ class WaiverTests(unittest.TestCase):
                         affects=["a/one.py", "a/two.py"])
             dec.record_waiver(root, "rule:engagement-floor", "operator accepts the risk")
             self.assertEqual(_load().detect(root)["summary"]["violations"], 0)
+
+    WAIVED, NEIGHBOUR = "BG-01JQK3F8", "BG-01JQK3F9"
+
+    def _waived_units(self, *subjects, rows=()):
+        """The judged units of a project holding WAIVED and NEIGHBOUR, both below the floor,
+        after recording a waiver for each subject (and adding each raw decision row)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            dec = self._decisions()
+            for rid in (self.WAIVED, self.NEIGHBOUR):
+                _write_v3_unit(root, rid, status="Fixed", affects=["a/one.py", "a/two.py"])
+            for subject in subjects:
+                dec.record_waiver(root, subject, "legacy carve-out")
+            for decision, status in rows:
+                dec.add(root, decision, "legacy carve-out", status=status)
+            return _units(root)
+
+    def test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id(self):
+        """BG0997 AC1. The remedy prints `rule:engagement-floor:<id>` and a v3 id is written
+        with a dash; the floor looked the waiver up under the dashless key only, so the
+        recorded waiver waived nothing."""
+        units = self._waived_units(f"rule:engagement-floor:{self.WAIVED}")
+        self.assertTrue(units[self.WAIVED]["waived"])
+        self.assertFalse(units[self.WAIVED]["violation"])
+        self.assertFalse(units[self.NEIGHBOUR]["waived"])
+        self.assertTrue(units[self.NEIGHBOUR]["violation"])
+
+    def test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id_and_the_dashless_form(self):
+        """BG0997 AC2. The dashless spelling, the only one that worked before, still waives the
+        same unit and no other; so does any case or punctuation the id key ignores."""
+        for spelling in ("BG01JQK3F8", "bg-01jqk3f8"):
+            units = self._waived_units(f"rule:engagement-floor:{spelling}")
+            self.assertTrue(units[self.WAIVED]["waived"], spelling)
+            self.assertFalse(units[self.NEIGHBOUR]["waived"], spelling)
+            self.assertTrue(units[self.NEIGHBOUR]["violation"], spelling)
+
+    def test_a_dashed_sequential_waiver_now_waives_its_unit(self):
+        """The old lookup normalised only the unit's id, so `US-0100` waived nothing either."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write_unit(root, "story", 100, status="Done", affects=["a/one.py", "a/two.py"])
+            self._decisions().record_waiver(root, "rule:engagement-floor:US-0100", "carve-out")
+            self.assertTrue(_units(root)["US0100"]["waived"])
+
+    def test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id(self):
+        """A superseded row waives nothing, as `decisions.waiver_for` reads it; a subject with a
+        further `:` segment, or an id the waived one only begins with, names no unit, though
+        the id key would read the colon away."""
+        rows = ((f"waiver: rule:engagement-floor:{self.WAIVED}", "superseded"),
+                ("waiver: rule:engagement-floor:bg-01:jqk3f8", "accepted"),
+                ("waiver: rule:engagement-floor:bg-01jqk3f", "accepted"),
+                ("ruling: rule:engagement-floor:bg-01jqk3f8", "accepted"))
+        units = self._waived_units(rows=rows)
+        self.assertFalse(units[self.WAIVED]["waived"])
+        self.assertTrue(units[self.WAIVED]["violation"])
+        # ...and the same project with one accepted row of the right shape is waived, its case
+        # and padding read as `decisions.waiver_for` reads them.
+        units = self._waived_units(rows=rows + ((f"Waiver: Rule:Engagement-Floor: {self.WAIVED}",
+                                                 "accepted"),))
+        self.assertTrue(units[self.WAIVED]["waived"])
+        self.assertFalse(units[self.NEIGHBOUR]["waived"])
 
 
 class GitCrossCheckTests(unittest.TestCase):
@@ -905,6 +1096,67 @@ class ForwardCutoffTests(unittest.TestCase):
                         affects=["a/one.py", "a/two.py"])  # exempt, but would violate
             result = _load().detect(root)
             self.assertEqual(result["summary"]["exempt_would_violate"], 1)
+
+    def test_a_v3_cutoff_ahead_of_the_clock_is_flagged(self):
+        """A v3 cutoff orders by timestamp bucket, so one in a bucket the clock has not reached
+        exempts ids not minted yet: the forward disarm, on a project holding no sequential id
+        to compare it with. The gate blocks on it and names it as a v3 cutoff."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "engagement_floor:\n  adopt_after: BG-7ZZZZZZZ\n")
+            _write_v3_unit(root, "BG-01KX8B04", status="Fixed", affects=["a/one.py", "a/two.py"])
+            floor = _load()
+            result = floor.detect(root)
+            self.assertEqual(0, result["summary"]["max_id"])
+            self.assertTrue(result["summary"]["cutoff_forward"])
+            detail = floor.remedy_detail(result)
+            self.assertIn("adopt_after 7ZZZZZZZ is in a later timestamp bucket than the clock",
+                          detail)
+            self.assertNotIn("highest existing id", detail)
+            import gate
+            r = gate._engagement_floor(str(root))
+            self.assertTrue(r["blocking"])
+            self.assertEqual(1, r["count"])
+
+    def test_a_numeric_cutoff_on_a_project_holding_no_sequential_id_is_not_forward(self):
+        """Unchanged: with no sequential id to compare with, a numeric cutoff is not called
+        forward, and it exempts no v3 id (a v3 id has no number)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _config(root, "engagement_floor:\n  adopt_after: 500\n")
+            _write_v3_unit(root, "BG-01KX8B04", status="Fixed", affects=["a/one.py", "a/two.py"])
+            result = _load().detect(root)
+            self.assertFalse(result["summary"]["cutoff_forward"])
+            self.assertFalse(result["units"][0]["exempt"])
+            self.assertTrue(result["units"][0]["violation"])
+            # ...and the first sequential id is enough to compare with.
+            _write_unit(root, "story", 1, status="Done", affects=["a/one.py", "a/two.py"])
+            self.assertTrue(_load().detect(root)["summary"]["cutoff_forward"])
+
+    def test_a_v3_cutoff_is_forward_only_from_the_next_bucket_on(self):
+        """The clock held at bucket `01KXB3`: a cutoff in that bucket, whatever its other
+        characters, is not forward, and one in the next bucket is. The whole six characters
+        are the bucket, no fewer and no more."""
+        floor = _load()
+        clock = "01KXB30000" + "0" * 16
+        cases = (("BG-01KXB3ZZ", False), ("BG-01KXB300", False), ("BG-01KXB2ZZ", False),
+                 ("BG-01KXB400", True), ("BG-01KXC000", True))
+        with mock.patch.object(floor.sdlc_md, "new_ulid", return_value=clock):
+            for cutoff, forward in cases:
+                with self.subTest(cutoff=cutoff):
+                    self.assertEqual(forward, floor._cutoff_forward(cutoff[3:], 0))
+
+    def test_a_v3_cutoff_in_the_current_bucket_is_honoured(self):
+        """Ids minted later in the cutoff's own bucket are judged (`cutoff_exempts`), so a
+        cutoff minted now is not a forward one; nor is one in a past bucket."""
+        floor = _load()
+        for cutoff in (f"BG-{floor.sdlc_md.short_ulid()}", "BG-01KXB3QF"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _config(root, f"engagement_floor:\n  adopt_after: {cutoff}\n")
+                _write_v3_unit(root, "BG-01KX8B04", status="Fixed",
+                               affects=["a/one.py", "a/two.py"])
+                self.assertFalse(floor.detect(root)["summary"]["cutoff_forward"], cutoff)
 
 
 class BatchCommitTests(unittest.TestCase):

@@ -667,9 +667,10 @@ def _engagement_floor_cutoff(root: Path) -> list[dict]:
     never below a failing unit. A cutoff that stops short is named as a raise from its value.
 
     Nothing is proposed in `judgement` mode, where the lane never blocks. A forward cutoff fails
-    the lane as a config error, so the lane's own words are carried instead of a line. A v3 id
-    has no number `adopt_after` can reach, so such a unit is named with the per-unit remedies and
-    kept out of the line, which therefore always parses."""
+    the lane as a config error, so the lane's own words are carried instead of a line. A numeric
+    cutoff cannot reach a v3 id, so such a unit is kept out of the line and named with the
+    per-unit remedies, beside what a v3 cutoff would do instead: reach it, but also exempt every
+    sequential id and, within its own timestamp bucket, only itself (`sdlc_md.cutoff_exempts`)."""
     import engagement_floor  # noqa: PLC0415 - the lane is needed only here
 
     def item(ids: list[str], line: str | None, detail: str, count: int | None) -> list[dict]:
@@ -706,9 +707,10 @@ def _engagement_floor_cutoff(root: Path) -> list[dict]:
                    f"once you have checked none of them is new work - every id at or below it "
                    f"is exempt.")
     if unnumbered:
-        detail += (f" {len(unnumbered)} of them ({_named(unnumbered)}) carry a v3 id, which no "
-                   f"cutoff can reach: {engagement_floor.REMEDY_ADD}; or "
-                   f"{engagement_floor.REMEDY_WAIVER}.")
+        detail += (f" {len(unnumbered)} of them ({_named(unnumbered)}) carry a v3 id, which a "
+                   f"numeric cutoff cannot reach. A v3 cutoff can, but it also exempts every "
+                   f"sequential id, and within its own timestamp bucket only itself. Otherwise, "
+                   f"{engagement_floor.REMEDY_ADD}; or {engagement_floor.REMEDY_WAIVER}.")
     return item(failing, line, detail, s["violations"])
 
 

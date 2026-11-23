@@ -40,9 +40,12 @@ failure - a weak model shipping a multi-file change with NO planning.
 Escape valves, each auditable, none a silent judgement:
   * `engagement_floor.adopt_after` (`.config.yaml`) exempts ids at or below a cutoff - the
     `conformance.adopt_after` precedent - so turning the floor on does not redden the backlog of
-    units closed before it existed. A cutoff ABOVE the highest existing id is not grandfathering
-    but a silent forward disarm, and is refused (use judgement mode to opt out visibly). Exempt
-    units that WOULD violate stay counted in the report, so a cutoff cannot hide them.
+    units closed before it existed. A schema v3 cutoff (`BG-01KX95QP`) is compared as conformance
+    compares it (`sdlc_md.cutoff_exempts`): an id minted in an earlier timestamp bucket, and the
+    cutoff id itself, are exempt. A cutoff ABOVE the highest existing id, or a v3 cutoff in a
+    bucket the clock has not reached, is not grandfathering but a silent forward disarm, and is
+    refused (use judgement mode to opt out visibly). Exempt units that WOULD violate stay counted
+    in the report, so a cutoff cannot hide them.
   * `engagement_floor: judgement` (`.config.yaml`) is the project-global opt-out the doctrine and
     agent-instructions already document: the floor still reports, but its gate lane is advisory.
   * a recorded waiver (`decisions.py waive`) - `rule:engagement-floor` waives the whole floor for
@@ -127,17 +130,19 @@ _MSGEND = "\x1f"  # message/file-list separator within a record
 _GIT_TIMEOUT = 30
 
 
-def _mode_and_cutoff(root: Path) -> tuple[str, int | None]:
+def _mode_and_cutoff(root: Path) -> tuple[str, int | str | None]:
     """Read the floor's config once. `engagement_floor` accepts two shapes so the scalar the
     prose half shipped (`engagement_floor: judgement`) and a cutoff can both be expressed without
     colliding on one YAML key:
       * a scalar string -> the mode (`floor` default, or `judgement`); no cutoff.
       * a mapping -> `mode` (default `floor`) and/or `adopt_after` (the grandfather cutoff).
-    An unparseable cutoff raises loud (parse_cutoff), never silently disabling the floor."""
+    The cutoff is `parse_cutoff`'s: a number for a bare or prefixed sequential id, or a v3 id's
+    upper-cased suffix (`01KX95QP`), compared only through `sdlc_md.cutoff_exempts`. An
+    unparseable cutoff raises loud (parse_cutoff), never silently disabling the floor."""
     raw = sdlc_md.project_override(root, "engagement_floor")
     if isinstance(raw, dict):
         mode = str(raw.get("mode", "floor")).strip().lower() or "floor"
-        cutoff = sdlc_md.parse_cutoff(raw.get("adopt_after"))
+        cutoff = sdlc_md.parse_cutoff(raw.get("adopt_after"), allow_ulid=True)
     elif raw is None:
         mode, cutoff = "floor", None
     else:
@@ -492,11 +497,36 @@ def _has_planning(text: str) -> bool:
     return bool(_PLAN_LINK_RE.search(text))
 
 
+def _cutoff_forward(cutoff: int | str | None, max_id: int) -> bool:
+    """Whether `cutoff` exempts units that do not exist yet. A numeric cutoff is forward when
+    it is above the highest existing sequential id (never on a project holding none). A v3
+    cutoff orders only by timestamp bucket (`sdlc_md.cutoff_exempts`), so it is forward when its
+    bucket is later than the clock's: an id minted before that bucket begins would be exempt."""
+    if cutoff is None:
+        return False
+    if isinstance(cutoff, str):
+        k = sdlc_md.ULID_BUCKET_CHARS
+        return cutoff[:k] > sdlc_md.new_ulid()[:k]
+    return max_id > 0 and cutoff > max_id
+
+
 def _unit_waiver(root: Path, rid: str) -> str | None:
-    """The id of a per-unit waiver `rule:engagement-floor:<id>`, or None. The subject uses the
-    normalised id so `US0100`/`US-0100` match one waiver."""
-    subject = f"{WAIVER_RULE}:{sdlc_md.norm_id(rid)}"
-    return decisions.waiver_for(root, subject)
+    """The id of the accepted per-unit waiver `rule:engagement-floor:<id>` for `rid`, or None.
+    The subject's id is matched by the normalised key (`sdlc_md.norm_id`), so a waiver recorded
+    under any spelling of the id (`BG-01JQK3F8`, `BG01JQK3F8`, `US-0100`, `US0100`) waives that
+    one unit, and the decisions log is not rewritten (its subject keeps the dash). A subject
+    with a further `:` segment names no unit. Accepted and anchored as `decisions.waiver_for` reads a
+    waiver: a superseded row, or one that only mentions the subject, waives nothing."""
+    want = sdlc_md.norm_id(rid)
+    prefix = f"{decisions.WAIVER_PREFIX} {WAIVER_RULE}:"
+    for rec in decisions.list_decisions(root):
+        decision = rec["decision"].lower()
+        if rec["status"] != "accepted" or not decision.startswith(prefix):
+            continue
+        tail = decision[len(prefix):]
+        if ":" not in tail and sdlc_md.norm_id(tail) == want:
+            return rec["id"]
+    return None
 
 
 def _classify(multi_file: bool, has_planning: bool, declared: bool) -> str | None:
@@ -520,7 +550,8 @@ def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
     its source-file count, whether it is multi-file, whether it has a planning artefact, whether it
     DECLARED its footprint, its violation kind, and whether it is exempt (cutoff) or waived. A live
     violation is a would-violate unit that is neither exempt nor waived. An adopt_after cutoff above
-    the highest existing id is a silent forward disarm and is flagged (`cutoff_forward`).
+    the highest existing id, or a v3 cutoff ahead of the clock, is a silent forward disarm and is
+    flagged (`cutoff_forward`).
 
     `include_staged` folds the pending commit in (`_pending_touched_by_id`), so a violation the
     commit in hand is about to create is visible BEFORE it lands rather than one commit later.
@@ -532,7 +563,7 @@ def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
     mode, cutoff = _mode_and_cutoff(root)
     project_waived = decisions.waiver_for(root, WAIVER_RULE) is not None
     max_id = _max_judged_id(root)
-    cutoff_forward = cutoff is not None and max_id > 0 and cutoff > max_id
+    cutoff_forward = _cutoff_forward(cutoff, max_id)
     git_touched = _git_touched_by_id(root)   # ONE pass, not one `git log --grep` per unit
     staged_unreadable = False
     try:
@@ -555,8 +586,7 @@ def detect(repo_root: Path | str, include_staged: bool = False) -> dict:
             has_planning = _has_planning(text)
             declared = _affects_declared(text)
             kind = _classify(multi_file, has_planning, declared)
-            rid_num = sdlc_md.id_number(rid)
-            exempt = cutoff is not None and rid_num is not None and rid_num <= cutoff
+            exempt = sdlc_md.cutoff_exempts(rid, cutoff)
             waived = project_waived or (_unit_waiver(root, rid) is not None)
             violation = kind is not None and not exempt and not waived
             # Was it already a violation without this commit? The difference is what the
@@ -611,8 +641,10 @@ REMEDY_ADD = ("plan the unit (one acceptance criterion, a `Verify:` line, or a l
               "it is genuinely small, DECLARE its footprint in an `Affects:` field - the floor is "
               "the planning pass, not paperwork")
 REMEDY_CUTOFF = ("set `engagement_floor.adopt_after` in sdlc-studio/.config.yaml to grandfather "
-                 "pre-adoption ids forward-only (a bare id `238` or prefixed `CR0238`; ids <= it "
-                 "are exempt; a cutoff above the highest existing id is refused)")
+                 "pre-adoption ids forward-only (a bare id `238`, a prefixed `CR0238`, or on "
+                 "schema v3 an id such as `BG-01KX95QP`; ids <= it are exempt, and under a v3 "
+                 "cutoff ids minted in an earlier timestamp bucket and the cutoff itself; a cutoff "
+                 "above the highest existing id, or a v3 cutoff ahead of the clock, is refused)")
 REMEDY_WAIVER = ("record a waiver (`decisions.py waive --subject rule:engagement-floor:<id> "
                  "--rationale ...` for one unit, or `--subject rule:engagement-floor` for the "
                  "whole project), or set `engagement_floor: judgement` to opt out everywhere")
@@ -620,6 +652,11 @@ _MAX_NAMED = 10
 
 
 def _forward_cutoff_detail(s: dict) -> str:
+    if isinstance(s["cutoff"], str):
+        return (f"adopt_after {s['cutoff']} is in a later timestamp bucket than the clock's - a v3 "
+                f"cutoff ahead of it exempts units not minted yet (a silent forward disarm), not "
+                f"grandfathering. Set it to an existing id, or set `engagement_floor: judgement` "
+                f"to opt out visibly")
     return (f"adopt_after {s['cutoff']} exceeds the highest existing id {s['max_id']} - a cutoff "
             f"above it exempts units that do not exist yet (a silent forward disarm), not "
             f"grandfathering. Lower it to <= {s['max_id']}, or set `engagement_floor: judgement` "

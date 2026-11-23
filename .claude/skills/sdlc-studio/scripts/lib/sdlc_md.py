@@ -3533,6 +3533,8 @@ def parse_cutoff(value, allow_ulid: bool = False) -> int | str | None:
     first six characters are a timestamp bucket (`short_ulid`: 30 bits of milliseconds, about
     17 minutes a bucket) and the rest are random, so only the bucket orders ids. Without
     `allow_ulid` a v3 id still raises, so a caller comparing numbers is never handed a string.
+    A refused value other than a YAML bool is told the forms the call accepts, a v3 id among
+    them only under `allow_ulid`.
     """
     if value is None:
         return None
@@ -3548,9 +3550,9 @@ def parse_cutoff(value, allow_ulid: bool = False) -> int | str | None:
         return n
     if allow_ulid and is_v3_id(s):  # a schema v3 id (BG-01KX95QP): its time-ordered suffix
         return s.split("-", 1)[1].upper()
-    raise ValueError(
-        f"adopt_after cutoff is not a number or id: {value!r} - "
-        "use a bare integer (103) or a prefixed id")
+    accepted = ("a bare integer (103), a prefixed id (US0103) or a schema v3 id (BG-01KX95QP)"
+                if allow_ulid else "a bare integer (103) or a prefixed id")
+    raise ValueError(f"adopt_after cutoff is not a number or id: {value!r} - use {accepted}")
 
 
 #: The leading characters of a v3 id suffix that encode its mint time (`short_ulid`).

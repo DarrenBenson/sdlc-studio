@@ -840,8 +840,9 @@ class EngagementFloorCutoffTests(unittest.TestCase):
         self.assertIn("exceeds the highest existing id 3", items[0]["detail"])
 
     def test_a_ulid_unit_is_named_without_a_line_it_could_not_parse(self) -> None:
-        # A v3 id has no number for `adopt_after` to reach, so no cutoff can cover it: it is
-        # named with the per-unit remedies, and the line covers only the numbered units.
+        # A numeric cutoff cannot reach a v3 id, so the line covers only the numbered units and
+        # the v3 unit is named with the per-unit remedies. A v3 cutoff could reach it, but would
+        # also exempt every sequential id, and within its own timestamp bucket only itself.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._fixture(root)
@@ -852,7 +853,11 @@ class EngagementFloorCutoffTests(unittest.TestCase):
         self.assertEqual(["BG-01JQK3F8", "BG0001", "BG0002"], items[0]["ids"])
         self.assertEqual("engagement_floor.adopt_after: BG0002", items[0]["line"])
         self.assertIn("BG-01JQK3F8", items[0]["detail"])
-        self.assertIn("no cutoff can reach", items[0]["detail"])
+        self.assertIn("1 of them (BG-01JQK3F8) carry a v3 id, which a numeric cutoff cannot "
+                      "reach. A v3 cutoff can, but it also exempts every sequential id, and "
+                      "within its own timestamp bucket only itself. Otherwise, plan the unit",
+                      items[0]["detail"])
+        self.assertNotIn("no cutoff can reach", items[0]["detail"])
 
     def test_judgement_mode_and_an_unreadable_cutoff(self) -> None:
         # `judgement` makes the lane advisory: nothing blocks, so nothing is proposed. A cutoff
