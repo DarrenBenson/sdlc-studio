@@ -1,6 +1,6 @@
 # BG0986: `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port
 
-> **Status:** Open
+> **Status:** Fixed
 > **Supersedes:** BG1048
 > **Severity:** Medium
 > **Points:** 1
@@ -27,10 +27,13 @@ Exclude CHANGELOG.md from the --delete sweep, or have forward-port ship it the w
 
 - [ ] **AC1** A forward-port into a copy that holds the installer's CHANGELOG.md leaves it in place, or replaces it with the repository's current one, and never deletes it
   - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k changelog_survives_the_sweep
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Every other file absent from the source is still swept, so the mirror stays exact
   - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k other_strays_are_still_swept
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given an installed copy holding the repository's current CHANGELOG.md, when `bash tools/forward-port.sh --check` runs, then it reports no drift for CHANGELOG.md
   - **Verify:** pytest tools/tests/test_forward_port_changelog.py -k check_does_not_count_the_changelog_as_drift
+  - **Verified:** yes (2026-11-23)
 
 ## Triage
 

@@ -1,0 +1,6 @@
+UNIT: BG1538
+BRIEF: 23dbad10cec9-f88a37bf
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED: "[new] US1168's Revision History row" - commit 14106acfc changes only that row (1 line)\, and it no longer claims a Depends removal. Its remaining claims hold: the neutrality lane runs one script, Affects name the three files, the run-fourteen wave note is gone from the Notes. The verify_ac dry-run still passes 3 of 3 and no new defect is added.

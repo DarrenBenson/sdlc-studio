@@ -1,0 +1,6 @@
+UNIT: BG1540
+BRIEF: d7e37072aea5-064d336e
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Executed: `known_issues.py bar --at v6.4.0` exits 0 and the verify_ac dry-run passes 3 of 3. The 8 ReleaseBarTests pass. Three mutants in a detached worktree each turned the new tests red (the --at branch bypassed, git archive reading HEAD not REV, the --at verdict forced to 0). tools/known_issues.py is unchanged since the base, matching the fragment's claim that `bar --at REV` was already in place. The claim that no earlier release-cut story carries the live bar Verify line holds: US0985 already judges its tag and US0938 AC4 only greps for a severity message. The worktree is removed.

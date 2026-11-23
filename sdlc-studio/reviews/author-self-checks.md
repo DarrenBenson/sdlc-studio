@@ -689,3 +689,14 @@
 | BG1732 | Dani Okafor (engineering) | 2026-11-23 | TRUE 2, FALSE 0, UNVERIFIABLE 1 | killed 1, survived 1 | f08b57a9b3086738 at a808c4d4343e |
 | BG0957 | Dani Okafor (engineering) | 2026-11-23 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 2 | 743821fe2282835e at a808c4d4343e |
 | BG1581 | Dani Okafor (engineering) | 2026-11-23 | TRUE 4, FALSE 0, UNVERIFIABLE 1 | killed 4, survived 0 | 033e952748eb4c7d at a808c4d4343e |
+| BG1538 | Dani Okafor (engineering) | 2026-11-23 | TRUE 5, FALSE 0, UNVERIFIABLE 0 | none - no test declared | e900a88949190df8 at a253272a8011 |
+| BG1540 | Dani Okafor (engineering) | 2026-11-23 | TRUE 5, FALSE 0, UNVERIFIABLE 0 | killed 2, survived 0 | f1efae01b7dfc16a at a253272a8011 |
+| BG0986 | Dani Okafor (engineering) | 2026-11-23 | TRUE 5, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | 95ffbd695f709cdf at a253272a8011 |
+| BG1538 | Dani Okafor (engineering) | 2026-11-23 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | none - no test declared | cf0ef0cc24e23b89 at 14106acfce50 |
+| BG0957 | Dani Okafor (engineering) | 2026-11-23 | TRUE 5, FALSE 0, UNVERIFIABLE 0 | killed 9, survived 2 | bc9f50db490fe10f at 7716e9248413 |
+| BG1101 | Dani Okafor (engineering) | 2026-11-23 | TRUE 6, FALSE 0, UNVERIFIABLE 0 | killed 5, survived 0 | d5c8fe6dfa256b14 at 1facbd964877 |
+| BG1256 | Dani Okafor (engineering) | 2026-11-23 | TRUE 9, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 1 | 9123ddeb94178bb7 at 1facbd964877 |
+| BG1455 | Dani Okafor (engineering) | 2026-11-23 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 0 | 3b1d8cee56975bdc at cce4d3c548ad |
+| BG1373 | Dani Okafor (engineering) | 2026-11-23 | TRUE 7, FALSE 0, UNVERIFIABLE 3 | killed 14, survived 0 | ee32efddf1f052f6 at cce4d3c548ad |
+| BG1407 | Dani Okafor (engineering) | 2026-11-23 | TRUE 6, FALSE 0, UNVERIFIABLE 1 | killed 8, survived 0 | 63f1273276324bd7 at cce4d3c548ad |
+| BG1570 | Dani Okafor (engineering) | 2026-11-23 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | c220d338a50031e5 at cce4d3c548ad |

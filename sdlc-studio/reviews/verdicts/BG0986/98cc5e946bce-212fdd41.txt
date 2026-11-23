@@ -1,0 +1,6 @@
+UNIT: BG0986
+BRIEF: 98cc5e946bce-212fdd41
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Exercised through the shipped script against throwaway --target copies only. --yes ships the repo's CHANGELOG.md and --check then reports in sync. A stale or missing copy is counted as one differing file with exit 1. A nested refs/CHANGELOG.md and a stray root file are still swept. install.sh:528 confirms the installer ships CHANGELOG.md to the skill root. The 22 tests of test_forward_port_changelog.py and test_forward_port.py pass. Four mutants (unanchored exclude, exclude dropped, cmp forced equal, cp removed) each turned a test red. The worktree is removed.

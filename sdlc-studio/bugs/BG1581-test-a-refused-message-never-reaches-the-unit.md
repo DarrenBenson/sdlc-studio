@@ -1,6 +1,6 @@
 # BG1581: test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_message_first_gate.py, changelog.d/BG1581.md
@@ -40,10 +40,13 @@ refusal test, so a wall-clock assertion brought back fails. No change to
 
 - [ ] **AC1** Given the refused commit's measured time is raised by a 1.2 s scheduling spike and the hooks run unchanged, when the refusal test runs, then it passes, judging the skip from the lane log. Fails on: HEAD's `assertLess(refused_secs, ok_secs - SUITE_COST_SECONDS / 2)` (measured: `2.61 not less than 2.46` with `ran=[]`).
   - **Verify:** pytest tools/tests/test_message_first_gate.py::SpikedRefusalTests::test_a_refused_message_never_reaches_the_unit_suites
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given the unspiked fixture, when a subject naming two ids with no `Refs:` refuses, then the lane log records no suite lane, and the same staged change with both trailers commits and records `skill-tests` and `tool-tests`. Fails on: a fix that drops the lane-log assertions or the accepted control along with the clock.
   - **Verify:** pytest tools/tests/test_message_first_gate.py::MessageBeforeSuitesTests::test_a_refused_message_never_reaches_the_unit_suites
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given CI's nested `python3 -m unittest` order, when `test_lean_refusal_log` and `test_message_first_gate` run in one process, then every test passes. Fails on: the clock assertion, which refused commit 3777e27e at the push by 4 ms.
   - **Verify:** pytest tools/tests/test_lean_ci_unittest_run.py::CiUnittestRunTests::test_the_gate_fixture_survives_an_importers_teardown
+  - **Verified:** yes (2026-11-23)
 
 ## Impact
 

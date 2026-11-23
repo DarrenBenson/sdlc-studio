@@ -1,0 +1,6 @@
+UNIT: BG1101
+BRIEF: bc2032c3a689-9fc76c46
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: test_repo_hygiene passes (12) with HOME and XDG_CONFIG_HOME pointed at a throwaway directory\; the worktree and the real tree were unchanged after the run, so ProbeMechanismTests writes nothing into scripts/tests. The author's five mutants replayed killed.

@@ -1,6 +1,6 @@
 # BG1256: test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, changelog.d/BG1256.md, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py
@@ -26,10 +26,13 @@ Pass `gitutil.git_env()` to both calls (the fake script's environment included),
 
 - [ ] **AC1** Given `GIT_INDEX_FILE` set to a scratch file, as a git hook sets it, when a lane run and its fake CLI stage a file in the timeout case, then the case passes and the scratch index is never written. Fails on: `src/lane.py` staged into the caller's index.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given a module that runs git with no `env` through a local name bound to a subprocess runner, when the unconfined-git detector reads it, then the call is counted, and the same call passing an `env` is not. Fails on: a count of zero for the aliased call.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_a_call_through_a_local_name
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given a module holding a generated script whose text runs git with no `env`, when the detector reads it, then the script's call is counted, while a string that only mentions git is not. Fails on: git inside a generated script staying invisible to the sweep.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_git_run_inside_a_generated_script
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

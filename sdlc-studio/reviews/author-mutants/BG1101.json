@@ -1,0 +1,52 @@
+{
+  "unit": "BG1101",
+  "digest": "d5c8fe6dfa256b14 at 1facbd964877",
+  "report": "sdlc-studio/.local/lane/landed/agent-accea3876a850eb90/BG1101-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "fixtures written back into the real tests dir",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "old": "(self.scripts / \"tests\" / f\"{name}.py\").write_text(body, encoding=\"utf-8\")",
+      "new": "(TESTS_DIR / f\"{name}.py\").write_text(body, encoding=\"utf-8\"); self.addCleanup((TESTS_DIR / f\"{name}.py\").unlink)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeIsolationTests::test_the_probe_fixtures_write_nothing_into_the_repository_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "probe run from the real scripts dir",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "old": "return _probe(mod, helpers, self.scripts)",
+      "new": "return _probe(mod, helpers)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeMechanismTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "probe ignores scripts_dir param",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "old": "cwd=str(scripts_dir))",
+      "new": "cwd=str(SCRIPTS_DIR))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeMechanismTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stub helper missing so correct fixture fails",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "old": "(self.scripts / \"tests\" / \"gitutil.py\").write_text(\"git = None\\n\", encoding=\"utf-8\")",
+      "new": "pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeMechanismTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "deferred fixture sets its path up",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py",
+      "old": "\"def uses_it():\\n    from gitutil import git\\n    return git\\n\"",
+      "new": "\"import sys\\nfrom pathlib import Path\\nsys.path.insert(0, str(Path(__file__).resolve().parent))\\ndef uses_it():\\n    from gitutil import git\\n    return git\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeMechanismTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

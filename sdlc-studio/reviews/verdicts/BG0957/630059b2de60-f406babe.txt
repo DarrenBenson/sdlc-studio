@@ -1,0 +1,6 @@
+UNIT: BG0957
+BRIEF: 630059b2de60-f406babe
+VERDICT: REJECT
+ISSUES: [new] the live-rows route of _mutate_one_row_and_sweep is unpinned (tools/tests/test_epic_index_derived.py, the `if live:` branch)\: mutating it to `if False:` survives both EpicIndexRepoTests::test_every_row_is_derived_and_a_mutated_row_fails and the new fixture test, so AC2 (with live rows the test behaves as today) is asserted by no test that can fail. The builder's equivalent answer holds only for the returned id and finding\: executed on a fixture with one live row and one archived row, the mutant writes a second blanked EP0900 row beside the live one (two rows in the live index) where the real branch blanks the live row in place, and no test reads the index after the mutation
+BLOCKING: the live-rows route of _mutate_one_row_and_sweep is unpinned
+RULINGS: AC1 holds\: the emptied-index fixture test passes and the author's other six mutants replay killed. The fix is a second fixture holding a live usable row and an archived one that asserts the live index still holds exactly one row for that id after the mutation (or that the live row itself is blanked).

@@ -1,6 +1,6 @@
 # BG1538: US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/stories/US1168-the-commit-hook-refuses-a-staged-new-test.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, changelog.d/BG1538.md
@@ -31,10 +31,13 @@ Regroom US1168 in its story file: add `tools/check_census_marker.py` and `tools/
 
 - [ ] **AC1** Given US1168 as dropped from 6.4 under D0495, when it is regroomed under D0507, then its criteria have the census-marker check run inside an existing commit-hook lane's script, the lane count stays at 31, and its `Depends on` line no longer names a finished unit. Fails on: a criterion that adds a 32nd lane, or the story still reading as it did when it was dropped.
   - **Verify:** shell f="$(ls sdlc-studio/stories/US1168-*.md)"; grep -q 'D0495' "$f" && grep -E '^> [*][*]Affects:[*][*]' "$f" | grep -q 'tools/check_census_marker.py' && ! sed '/^## Revision History/,$d' "$f" | grep -qE 'run fourteen|the new lane is listed'
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given EP0312's completion criteria, when the epic is corrected under D0512, then the run-six replay and the before-and-after report reading are marked retired with the decision named, and the epic's bar is US1168 alone. Fails on: either criterion left open with no owner.
   - **Verify:** shell e="$(ls sdlc-studio/epics/EP0312-*.md)"; grep 'Replayed in a throwaway clone' "$e" | grep -q 'D0512' && grep 'Before and after' "$e" | grep -q 'D0512'
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given the corrected story, when the planner's readiness report is run over US1168, then it lists US1168 as groomed. Fails on: a regroom that leaves a criterion with no executable Verify line (passes at HEAD: a positive control).
   - **Verify:** shell f="$(ls sdlc-studio/stories/US1168-*.md)"; n="$(grep -cE '^- [*][*]AC[0-9]+' "$f")"; test "$n" -ge 1 && test "$n" -eq "$(grep -cE '^  - [*][*]Verify:[*][*] (pytest|shell) ' "$f")"
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

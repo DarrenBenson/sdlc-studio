@@ -1,0 +1,133 @@
+{
+  "unit": "BG1455",
+  "digest": "3b1d8cee56975bdc at cce4d3c548ad",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9fecf979267d8606/BG1455-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "mentions-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if sdlc_md.norm_id(i) not in mentioned]",
+      "new": "]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_unit_a_mentions_trailer_names_is_not_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whole-message-scanned",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "_UNIT_ID_RE.findall(subject)",
+      "new": "_UNIT_ID_RE.findall(message)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refs-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "            + ids(engagement_floor._REFS_LINE_RE))",
+      "new": "            )",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subject-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    return ([i for i in _UNIT_ID_RE.findall(subject) if sdlc_md.norm_id(i) not in mentioned]\n            + ids(engagement_floor._REFS_LINE_RE))",
+      "new": "    return ids(engagement_floor._REFS_LINE_RE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mentions-read-as-refs",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "mentioned = {sdlc_md.norm_id(i) for i in ids(engagement_floor._MENTIONS_LINE_RE)}",
+      "new": "mentioned = {sdlc_md.norm_id(i) for i in ids(engagement_floor._REFS_LINE_RE)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_unit_a_mentions_trailer_names_is_not_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subject-not-stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "subject = message.strip().split(",
+      "new": "subject = message.split(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_the_escaped_bug_is_never_proposed_as_its_own_cause",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subject-is-whole-message",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "subject = message.strip().split(\"\\n\", 1)[0]",
+      "new": "subject = message",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "log-not-split-per-commit",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "f\"--format=%B{_MSG_SEP}\"",
+      "new": "\"--format=%B\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_the_escaped_bug_is_never_proposed_as_its_own_cause",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "latest-row-not-latest-approve",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "row = (approves or rows or [None])[-1]",
+      "new": "row = (rows or [None])[-1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_the_latest_approve_is_proposed_not_a_later_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "own-id-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "units = [u for u in release_units(root, release) if sdlc_md.norm_id(u) != sdlc_md.norm_id(bid)]",
+      "new": "units = release_units(root, release)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_the_escaped_bug_is_never_proposed_as_its_own_cause",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-affects-refusal-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if not fix_files:\n        raise TraceRefused(f\"{bid} names no Affects",
+      "new": "    if False:\n        raise TraceRefused(f\"{bid} names no Affects",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_a_bug_with_no_affects_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-mentions-as-refs",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py",
+      "old": "root = _span(d, \"docs(D0001): rule the release\\n\\nMentions: US0005\")",
+      "new": "root = _span(d, \"docs(D0001): rule the release\\n\\nRefs: US0005\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_unit_named_only_in_a_mentions_trailer_is_not_proposed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-reject-before-approve",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py",
+      "old": "critic.record_verdict(root, \"US0001\", \"REJECT\"",
+      "new": "critic.record_verdict(root, \"US0001\", \"APPROVE\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests::test_the_latest_approve_is_proposed_not_a_later_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "separator-is-a-newline",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "_MSG_SEP = \"\\x1e\"\n",
+      "new": "_MSG_SEP = \"\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

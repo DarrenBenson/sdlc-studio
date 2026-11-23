@@ -1,0 +1,6 @@
+UNIT: BG1732
+BRIEF: 053c8ccd3e47-88f6cedf
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 grep and AC2 (pytest -n 4 over the coherence and persona-card tests, 30 passed) run green at a808c4d43. The surviving mutant (stub moved back into the personas folder) is pinned by AC1's Verify grep, which fails on it.

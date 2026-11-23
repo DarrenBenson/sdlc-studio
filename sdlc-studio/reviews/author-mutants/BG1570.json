@@ -1,0 +1,169 @@
+{
+  "unit": "BG1570",
+  "digest": "c220d338a50031e5 at cce4d3c548ad",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9fecf979267d8606/BG1570-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "seal-check-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if sealed != held:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_figures_and_signature_rewritten_after_the_seal_refuse_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seal-check-dropped-principal",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if sealed != held:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_a_principal_rewritten_after_the_seal_refuses_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seal-compares-only-fingerprint",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if sealed != held:\n",
+      "new": "    if sealed.get(\"fingerprint\") != held.get(\"fingerprint\"):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_a_principal_rewritten_after_the_seal_refuses_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any-commit-after-the-seal-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if sealed != held:\n",
+      "new": "    if seal != sha:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_commits_after_the_seal_that_leave_the_signature_alone_still_build",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whole-record-compared",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "            return commit, sig\n",
+      "new": "            return commit, {**sig, \"_record\": record}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_commits_after_the_seal_that_leave_the_signature_alone_still_build",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest-signing-commit-as-seal",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "_git(root, \"log\", \"--reverse\", \"--format=%H\", sha, \"--\", rel)",
+      "new": "_git(root, \"log\", \"--format=%H\", sha, \"--\", rel)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_figures_and_signature_rewritten_after_the_seal_refuse_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "build-revision-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "_git(root, \"log\", \"--reverse\", \"--format=%H\", sha, \"--\", rel)",
+      "new": "_git(root, \"log\", \"--reverse\", \"--format=%H\", \"--\", rel)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_read_from_the_history_of_the_revision_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-record-stops-the-search",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        except ValueError:\n            continue\n        sig = record.get(\"signature\")",
+      "new": "        except ValueError:\n            break\n        sig = record.get(\"signature\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another-reports-signature-taken-as-seal",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\").strip().upper() == rid:\n",
+      "new": "        if isinstance(sig, dict):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-case-not-folded",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\").strip().upper() == rid:\n",
+      "new": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\") == rid:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_a_seal_naming_the_report_in_lower_case_is_found",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-history-trusted",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if seal is None:\n        return {}, (f\"no commit in the history",
+      "new": "    if seal is None:\n        seal, sealed = sha, held\n    if False:\n        return {}, (f\"no commit in the history",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "changed-keys-not-named",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "if sealed.get(k) != held.get(k)))",
+      "new": "))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_a_principal_rewritten_after_the_seal_refuses_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seal-commit-not-named",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "f\"the one sealed at {seal[:12]}, the first",
+      "new": "f\"the one sealed earlier, the first",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_figures_and_signature_rewritten_after_the_seal_refuse_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-forge-leaves-the-record-alone",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py",
+      "old": "        def record_change(rec: dict) -> None:\n            rec[\"signature\"][\"fingerprint\"] = forged[\"fp\"]\n",
+      "new": "        def record_change(rec: dict) -> None:\n            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_figures_and_signature_rewritten_after_the_seal_refuse_the_pack",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "removed-record-not-passed-over",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "            record = json.loads(_show(root, commit, rel) or \"\")\n",
+      "new": "            record = json.loads(_show(root, commit, rel))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-that-is-not-an-object-read",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        sig = record.get(\"signature\") if isinstance(record, dict) else None\n        if isinstance(sig, dict) and",
+      "new": "        sig = record.get(\"signature\")\n        if isinstance(sig, dict) and",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "signature-not-an-object-read",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\").strip().upper() == rid:\n",
+      "new": "        if str(sig.get(\"report\") or \"\").strip().upper() == rid:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_the_seal_is_the_first_commit_whose_record_signs_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-spaces-not-stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\").strip().upper() == rid:\n",
+      "new": "        if isinstance(sig, dict) and str(sig.get(\"report\") or \"\").upper() == rid:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SealedSignatureTests::test_a_seal_naming_the_report_in_lower_case_is_found",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+UNIT: BG1256
+BRIEF: 7c074170c860-e8fff6b4
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: all six touched modules pass (test_gitutil 19, test_lane_run 21, test_lane_timeout_index_lock 7, test_sprint_drive 6, test_command_audit 55) with an isolated HOME and XDG_CONFIG_HOME\; no file appeared in the worktree, the throwaway home held no git config, and the real tree was unchanged. My mutants: the fake's stage git add without env fails subtest case direct\; the late child's git add without env fails case direct-late\; removing env=None from test_command_audit.py:748 turns the unconfined-git sweep red. The surviving mutant (direct case not given the caller's index) is equivalent: it deletes the setup that makes the test able to fail\, and the direct case is the only one that kills the two production-side mutants through that same variable\, so the author's answer holds.

@@ -1,0 +1,133 @@
+{
+  "unit": "BG1373",
+  "digest": "ee32efddf1f052f6 at cce4d3c548ad",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9fecf979267d8606/BG1373-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "guard-reraises",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    except (OSError, RuntimeError, ValueError):\n        return None\n\n\ndef _names",
+      "new": "    except (OSError, RuntimeError):\n        return None\n\n\ndef _names",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_in_a_transcript_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "affected-unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    path = _resolved(value)\n    for root in roots if path else ():",
+      "new": "    path = Path(value).resolve()\n    for root in roots:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_in_a_transcript_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "affected-none-path-not-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    for root in roots if path else ():",
+      "new": "    for root in roots:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_in_a_transcript_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scan-abandoned-at-unresolvable-path",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "            if use.get(\"name\") in (\"Write\", *EDIT_TOOLS) and (\n",
+      "new": "            if _resolved(given.get(\"file_path\") or given.get(\"notebook_path\") or \"/\") is None:\n                return None\n            if use.get(\"name\") in (\"Write\", *EDIT_TOOLS) and (\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_does_not_hide_a_later_edit_of_the_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "names-unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    return _resolved(value) == target\n",
+      "new": "    return isinstance(value, str) and bool(value) and Path(value).resolve() == target\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_beside_the_verdict_write_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "names-always-false",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    return _resolved(value) == target\n",
+      "new": "    return False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_beside_the_verdict_write_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "worktree-unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    roots = [r for r in (_resolved(tree), _resolved(repo_root)) if r]\n",
+      "new": "    roots = [Path(r).resolve() for r in (tree, repo_root) if isinstance(r, (str, Path)) and r]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_an_unresolvable_worktree_path_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "worktree-none-kept-as-root",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    roots = [r for r in (_resolved(tree), _resolved(repo_root)) if r]\n",
+      "new": "    roots = [r for r in (_resolved(tree), _resolved(repo_root))]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_an_unresolvable_worktree_path_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty-path-resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    if not isinstance(value, (str, Path)) or not value:\n",
+      "new": "    if not isinstance(value, (str, Path)):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_an_unresolvable_worktree_path_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "non-path-value-resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    if not isinstance(value, (str, Path)) or not value:\n",
+      "new": "    if not value:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_path_that_is_not_a_string_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "loop-runtimeerror-not-caught",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    except (OSError, RuntimeError, ValueError):\n        return None\n\n\ndef _names",
+      "new": "    except (OSError, ValueError):\n        return None\n\n\ndef _names",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_path_whose_resolution_raises_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "oserror-not-caught",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
+      "old": "    except (OSError, RuntimeError, ValueError):\n        return None\n\n\ndef _names",
+      "new": "    except (RuntimeError, ValueError):\n        return None\n\n\ndef _names",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_path_whose_resolution_raises_costs_only_itself",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-nul-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py",
+      "old": "            rec, got = self._nul_case(d, [unit + \"\\0\"])\n",
+      "new": "            rec, got = self._nul_case(d, [unit])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_in_a_transcript_is_skipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-real-write-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py",
+      "old": "writes=(\"\\0\", \"\"), writer=\"r1\")",
+      "new": "writes=(\"\\0\",), writer=\"r1\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_beside_the_verdict_write_is_skipped",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

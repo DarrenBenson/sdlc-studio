@@ -1,6 +1,6 @@
 # BG1732: `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_persona_coherence.py, changelog.d/BG1732.md
@@ -26,8 +26,10 @@ Write the stub registry into a temporary directory (`read_registry` takes a path
 
 - [ ] **AC1** Given `tools/tests/test_persona_coherence.py`, when its registry-parser test runs, then it writes its stub registry under a temporary directory and nothing under the repository's `sdlc-studio/` tree, so the listing of `sdlc-studio/personas/` is the same before, during and after it. Fails on: `REPO / "sdlc-studio" / "personas" / ".stub-registry.md"` written and unlinked in place, which a parallel test globbing that folder reads.
   - **Verify:** shell ! grep -q 'personas" / ".stub-registry.md"' tools/tests/test_persona_coherence.py && python3 -m pytest -q tools/tests/test_persona_coherence.py
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given the coherence test and `tools/tests/test_own_persona_cards_pass_standard.py`, when both run in one parallel session, then both pass. Fails on: the persona-card test's premise failing on a stub card another test left in the folder.
   - **Verify:** shell python3 -m pytest -q -n 4 tools/tests/test_persona_coherence.py tools/tests/test_own_persona_cards_pass_standard.py
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

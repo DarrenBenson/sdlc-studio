@@ -1,6 +1,6 @@
 # BG1101: test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py, changelog.d/BG1101.md
@@ -36,8 +36,10 @@ Nothing is written into, or removed from, the repository's own tree.
 
 - [ ] **AC1** Given the repository's `scripts/tests/` directory, when ProbeMechanismTests runs, then no file is created in it or removed from it and its `__pycache__` is left as it was. Fails on: HEAD's `_fixture`, which writes `_probe_fixture_deferred.py` and `_probe_fixture_correct.py` into it and removes `tests/__pycache__` whole (measured in a copy).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeIsolationTests::test_the_probe_fixtures_write_nothing_into_the_repository_tree
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given fixtures built outside the tree, when the probe runs, then it still reports the module whose `gitutil` import is deferred with no path set up, naming `gitutil`, and passes the module that sets its path up. Fails on: a fix that moves the fixtures but leaves `_probe` running from the real `scripts/`, where the fixture module is not found and the catch is of the wrong import.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::ProbeMechanismTests
+  - **Verified:** yes (2026-11-23)
 
 ## Impact
 

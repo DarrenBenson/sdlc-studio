@@ -1,0 +1,6 @@
+UNIT: BG1581
+BRIEF: c59054b32bbd-cc0b3561
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: test_epic_index_derived, test_message_first_gate and test_lean_ci_unittest_run ran together at a808c4d43 (27 passed, 2 skipped). The refusal is judged from the lane log with the accepted control kept (AC2), the spiked variant passes with the sleep asserted to land once inside the refused commit's window (AC1), and the nested unittest order passes (AC3). The author's four mutants replay killed.

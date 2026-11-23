@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 273 |
+| Open | 266 |
 | In Progress | 0 |
-| Fixed | 1118 |
+| Fixed | 1126 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1732** |
+| **Total** | **1733** |
 
 ## All Bugs
 
@@ -32,7 +32,7 @@
 | [BG0954](BG0954-a-draft-story-transitions-straight-to-done-the.md) | A Draft story transitions straight to Done - the Definition of Ready is never required | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0955](BG0955-test-lean-backlog-sweep-reads-only-the-live.md) | `test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Fixed | Medium | 2026-10-06 | 2026-10-06 |
-| [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
@@ -61,7 +61,7 @@
 | [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0984](BG0984-changing-a-criterion-s-verify-expression-keeps-the.md) | Changing a criterion's Verify expression keeps the old Verified date and evidence when the new one passes | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Fixed | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0986](BG0986-tools-forward-port-sh-deletes-the-changelog-md.md) | `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0986](BG0986-tools-forward-port-sh-deletes-the-changelog-md.md) | `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Fixed | High | 2026-10-07 | 2026-10-07 |
@@ -176,7 +176,7 @@
 | [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | Fixed | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1100](BG1100-gate-py-s-verify-ceiling-still-calls-300.md) | gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s | Open | Low | 2026-10-20 | 2026-10-20 |
-| [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Open | Medium | 2026-10-20 | 2026-10-20 |
+| [BG1101](BG1101-test-repo-hygiene-writes-probe-fixtures-into-the.md) | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail | Fixed | Medium | 2026-10-20 | 2026-10-20 |
 | [BG1102](BG1102-the-corpus-verify-timing-step-s-ceiling-is.md) | The corpus-verify timing step's ceiling is pinned only as an integer, so one as long as the job's own cap passes | Won't Fix | Low | 2026-10-20 | 2026-10-20 |
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Won't Fix | Low | 2026-10-20 | 2026-10-20 |
@@ -331,7 +331,7 @@
 | [BG1253](BG1253-lib-lanes-py-clears-only-7-of-the.md) | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1254](BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md) | sprint cost --anatomy reads the whole session, not the open run's window, so it cannot price one run inside a long-lived session | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1255](BG1255-us1123-s-signed-page-test-runs-git-without.md) | US1123's signed-page test runs git without the confined environment, so the push gate's unconfined-git sweep is red | Fixed | High | 2026-11-06 | 2026-11-06 |
-| [BG1256](BG1256-test-lane-run-py-runs-git-unconfined-through.md) | test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1256](BG1256-test-lane-run-py-runs-git-unconfined-through.md) | test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1257](BG1257-bg1246-s-locked-store-test-bounds-a-duration.md) | BG1246's locked-store test bounds a duration its own process measured without the wall-clock census marks | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1258](BG1258-us1130-did-not-converge-in-review-round-2.md) | US1130 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1259](BG1259-the-forge-s-lint-job-has-been-red.md) | The forge's Lint job has been red on main since 8a00d2cc because bandit reads the OpenCode meter's placeholder join as SQL injection | Fixed | High | 2026-11-06 | 2026-11-06 |
@@ -613,9 +613,9 @@
 | [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Fixed | Medium | 2026-11-17 | 2026-11-17 |
@@ -656,7 +656,7 @@
 | [BG1578](BG1578-the-weekly-corpus-verify-of-2026-11-16.md) | The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1582](BG1582-once-head-moves-past-the-close-commit-sprint.md) | Once HEAD moves past the close commit, sprint sign skips the whole-tree check, so an uncommitted edit to a unit's file seals with no later run open | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1583](BG1583-sprint-sign-names-the-wrong-page-when-the.md) | sprint sign names the wrong page when the later run has also closed, and three of US1290's guards have no test | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1584](BG1584-bg1507-and-bg1520-left-four-checks-with-no.md) | BG1507 and BG1520 left four checks with no test: --includes, includeIf identities, the self-check-author refusal and the retro's owed branches | Open | Low | 2026-11-18 | 2026-11-18 |
@@ -807,7 +807,8 @@
 | [BG1729](BG1729-us1326-did-not-converge-in-review-round-2.md) | US1326 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1730](BG1730-unittest-discovery-over-tools-tests-crashes-on-a.md) | unittest discovery over tools/tests crashes on a test module name the skill's tests also use, so US0253 AC2 reads red | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Open | Low | 2026-11-23 | 2026-11-23 |
-| [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Fixed | Low | 2026-11-23 | 2026-11-23 |
+| [BG1733](BG1733-transition-py-drops-a-status-decoration-such-as.md) | transition.py drops a status decoration such as '(partially superseded)' on every move | Open | Low | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

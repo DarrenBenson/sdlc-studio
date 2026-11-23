@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** sdlc-studio/rfcs/, changelog.d/BG1678.md, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
+> **Affects:** sdlc-studio/rfcs/, changelog.d/BG1678.md, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, tools/tests/test_supersession_records.py
 > **Evidence:** Run twenty-one lane T builder (BG1569), reconcile on the work-in-progress patch at 611367cf; split from BG1569 when 8 points tripped the oversized ceiling (US0854 AC1) at the push gate.
 > **Created:** 2026-11-21
 > **Created-by:** sdlc-studio file
@@ -37,3 +37,4 @@ Record a ruling (a decisions row) on what an Accepted RFC with no change request
 | 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review: AC2's grep passed on any mention of the id. It now needs a decisions row naming BG1678 that states the Accepted RFC state and what reconcile reports. AC1 passes at HEAD until BG1569's status lands, so the two land in one commit |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | D0611 records the ruling AC2 asks for (an Accepted RFC with no request or epic is decision-only, stays Accepted with 'none - <reason>', and never derives Delivered); decisions.md leaves Affects, since the row is on main |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects widened: D0611's decision-only rule needs one guard in reconcile.py's undecomposed check (a predicate in sdlc_md.py) with its test, since the check never read Decomposed-into |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + tools/tests/test_supersession_records.py, which pins RFC0009's status as Accepted (partially superseded); the derivation this unit runs moves it to Delivered |

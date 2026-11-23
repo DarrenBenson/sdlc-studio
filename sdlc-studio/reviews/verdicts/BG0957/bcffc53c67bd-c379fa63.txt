@@ -1,0 +1,6 @@
+UNIT: BG0957
+BRIEF: bcffc53c67bd-c379fa63
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED the live-rows route of _mutate_one_row_and_sweep is unpinned\: at 7716e9248 the mutant `if live:` -> `if False:` makes test_a_live_row_is_blanked_in_place_and_no_row_is_added fail (1 failed), and the unmutated tree passes. The two equivalence answers hold\: `if False:` on the emptied fixture takes the else branch either way as no live row exists, and `live[-1]` on a one-row fixture picks the same row, so neither changes an observable.

@@ -1,0 +1,79 @@
+{
+  "unit": "BG1256",
+  "digest": "9123ddeb94178bb7 at 1facbd964877",
+  "report": "sdlc-studio/.local/lane/landed/agent-accea3876a850eb90/BG1256-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "alias assignment census dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py",
+      "old": "        if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute)\n                and node.value.attr in _RUNNERS):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_a_call_through_a_local_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "from-import census dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py",
+      "old": "elif isinstance(node, ast.ImportFrom) and node.module == \"subprocess\":",
+      "new": "elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_a_call_through_a_local_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "generated scripts not read",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py",
+      "old": "    found = sum(_unconfined_raw_git_calls(text) for text in _generated_scripts(tree))",
+      "new": "    found = 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_git_run_inside_a_generated_script",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a call through a local name not matched",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py",
+      "old": "        elif not (isinstance(node.func, ast.Name) and node.func.id in aliases):\n            continue",
+      "new": "        else:\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_a_call_through_a_local_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "env keyword ignored for scripts",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py",
+      "old": "        if not any(kw.arg == \"env\" for kw in node.keywords):\n            found += 1",
+      "new": "        found += 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_git_run_inside_a_generated_script",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fake's staging call unconfined",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py",
+      "old": "subprocess.run([\"git\", \"add\", \"--\", stage], check=True, env=GENV)",
+      "new": "subprocess.run([\"git\", \"add\", \"--\", stage], check=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "late child's staging call unconfined",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py",
+      "old": "check=True, env=ENVV)\")",
+      "new": "check=True)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "direct case not given the caller's index",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py",
+      "old": "env = dict(env, GIT_INDEX_FILE=str(scratch))",
+      "new": "env = dict(env)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli",
+      "result": "survived",
+      "answer": "Equivalent by construction: dropping the variable from the case's own setup leaves nothing to write, so nothing can fail; the fake's-staging and late-child mutants fail only because the variable is present, which shows it reaches the child."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG0957: `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_epic_index_derived.py, changelog.d/BG0957.md
@@ -26,8 +26,10 @@ Make the negative control independent of what the live index happens to hold: wh
 
 - [ ] **AC1** With a live epic index holding no epic row, every row archived, the negative control still mutates a row and the sweep reports exactly that row
   - **Verify:** pytest tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** With live rows present, the test behaves as it does today
   - **Verify:** pytest tools/tests/test_epic_index_derived.py::EpicIndexRepoTests::test_every_row_is_derived_and_a_mutated_row_fails
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,0 +1,79 @@
+{
+  "unit": "BG1407",
+  "digest": "63f1273276324bd7 at cce4d3c548ad",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9fecf979267d8606/BG1407-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "place-left-out",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so its survivor needs an answer too; run such a mutant by hand in \"\n              \"the lane's own worktree or a detached worktree of the repository (`git worktree \"\n              \"add --detach`), never in a copy of the tests alone, which runs without the \"\n              \"project's own test configuration (a root conftest.py).\"]",
+      "new": "so its survivor needs an answer too.\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "place-left-out-of-the-brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so its survivor needs an answer too; run such a mutant by hand in \"\n              \"the lane's own worktree or a detached worktree of the repository (`git worktree \"\n              \"add --detach`), never in a copy of the tests alone, which runs without the \"\n              \"project's own test configuration (a root conftest.py).\"]",
+      "new": "so its survivor needs an answer too.\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_says_where_a_hand_run_mutant_runs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "place-on-a-self-check-record-line",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so its survivor needs an answer too; run such a mutant by hand in \"\n              \"the lane's own worktree or a detached worktree of the repository (`git worktree \"\n              \"add --detach`), never in a copy of the tests alone, which runs without the \"\n              \"project's own test configuration (a root conftest.py).\"]",
+      "new": "so its survivor needs an answer too.\",\n              \"   Before critic.py self-check record, run such a mutant by hand in \"\n              \"the lane's own worktree or a detached worktree of the repository (`git worktree \"\n              \"add --detach`), never in a copy of the tests alone, which runs without the \"\n              \"project's own test configuration (a root conftest.py).\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_says_where_a_hand_run_mutant_runs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "place-on-its-own-line",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so its survivor needs an answer too; run such a mutant by hand in \"\n              \"the lane's own worktree",
+      "new": "so its survivor needs an answer too.\",\n              \"   Run such a mutant by hand in \"\n              \"the lane's own worktree",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "detached-worktree-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"the lane's own worktree or a detached worktree of the repository (`git worktree \"\n              \"add --detach`), never",
+      "new": "\"the lane's own worktree, never",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lane-worktree-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "run such a mutant by hand in \"\n              \"the lane's own worktree or a detached",
+      "new": "run such a mutant by hand in \"\n              \"a detached",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-not-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "add --detach`), never in a copy of the tests alone, which runs without the \"\n              \"project's own test configuration (a root conftest.py).\"]",
+      "new": "add --detach`).\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-control-unit-given-a-test-file",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "old": "            _project(root, \"US0110\", \"src/widget.py\")\n",
+      "new": "            _project(root, \"US0110\", \"src/widget.py, tests/test_widget.py\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

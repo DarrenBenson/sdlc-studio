@@ -1,0 +1,6 @@
+UNIT: BG1538
+BRIEF: 82951fb91b78-214b50e2
+VERDICT: REJECT
+ISSUES: [new] US1168's Revision History row (US1168 line 47) says the regroom removed "the Depends line on a finished unit", but at the base ref e09d378e4 the story carried no Depends line (`git show e09d378e4:` the story has none\; `git log -S'Depends on:** US1167'` shows it was already gone at 151ff0380), so the row credits this diff with a change it did not make and AC1's Depends clause was satisfied before the unit began
+BLOCKING: [new] US1168's Revision History row
+RULINGS: Claims checked by execution. AC1 to AC3 Verify lines pass under verify_ac dry-run (3 of 3). D0495, D0507 and D0512 read as the story and epic now say (31-lane cap, check folded into the neutrality lane that runs tools/check_neutrality.py, EP0312's two criteria retired with D0512 named\, bar US1168 alone). The neutrality lane exists at .githooks/pre-commit:307 running one script. Prior US1168 history rows are unchanged\, one row added. The story's planned files check_census_marker.py and test_census_marker_lane.py do not exist yet, which is expected of a Draft regroom. Fix is a wording correction of the one row.

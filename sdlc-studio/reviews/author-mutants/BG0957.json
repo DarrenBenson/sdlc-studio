@@ -1,16 +1,25 @@
 {
   "unit": "BG0957",
-  "digest": "743821fe2282835e at a808c4d4343e",
-  "report": "sdlc-studio/.local/lane/landed/agent-aed0d63eaf14d2a10/BG0957-mutation-edits.json",
+  "digest": "bc9f50db490fe10f at 7716e9248413",
+  "report": "sdlc-studio/.local/lane/landed/agent-a4bc4fe9c9e06fb4a/BG0957-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "emptied branch taken always",
+      "mutant": "emptied branch taken always (live route)",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "    if live:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_a_live_row_is_blanked_in_place_and_no_row_is_added",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "emptied branch taken always (fixture a)",
       "file": "tools/tests/test_epic_index_derived.py",
       "old": "    if live:\n",
       "new": "    if False:\n",
       "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
       "result": "survived",
-      "answer": "Truly equivalent on the fixture: its live index holds no row, so `live` is empty and the else branch runs either way. On a live index with rows the mutant would take the archive path over the union, which includes the live rows, and still reports exactly the one blanked row, so it changes the route and not the verdict."
+      "answer": "Equivalent on the emptied fixture, whose live index has no row; the live-rows route is pinned by the second test, which kills the same mutant."
     },
     {
       "mutant": "live branch taken always",
@@ -20,6 +29,33 @@
       "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
       "result": "killed",
       "answer": ""
+    },
+    {
+      "mutant": "live row not blanked",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "mutated = text.replace(victim, blanked(victim), 1)",
+      "new": "mutated = text",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_a_live_row_is_blanked_in_place_and_no_row_is_added",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live row blanked by appending",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "mutated = text.replace(victim, blanked(victim), 1)",
+      "new": "mutated = text + blanked(victim) + '\\n'",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_a_live_row_is_blanked_in_place_and_no_row_is_added",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live victim is the last row",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "victim = live[0]",
+      "new": "victim = live[-1]",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_a_live_row_is_blanked_in_place_and_no_row_is_added",
+      "result": "survived",
+      "answer": "Equivalent: the fixture holds one live row, so first and last are the same row; a row choice among several live rows is not a criterion."
     },
     {
       "mutant": "archived row not written blanked",
