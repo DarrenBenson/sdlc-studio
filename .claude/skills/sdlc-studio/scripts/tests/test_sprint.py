@@ -2304,6 +2304,255 @@ class RegistryAdviceSeamTests(unittest.TestCase):
                  "add": ["sdlc-studio/reviews/command-audit.md"]}]}])
 
 
+def _reach_project(root: Path, affects: str | None = "scripts/tool.py",
+                   extra: dict | None = None, git: bool = True) -> None:
+    """The criteria's project: `scripts/tool.py`, three test modules that import or run it, one
+    that imports `toolkit` only, and a Ready story whose `Affects` is `affects` (none for None).
+    Every file is tracked unless `git` is False."""
+    files = {
+        "scripts/tool.py": "def run():\n    return 1\n",
+        "tests/test_tool_import.py": "import tool\n",
+        "tests/test_tool_from.py": "from tool import run\n",
+        "tests/test_tool_cli.py": ('import subprocess\n\n\ndef test_cli():\n'
+                                   '    subprocess.run(["python3", "scripts/tool.py"])\n'),
+        "tests/test_toolkit.py": "import toolkit\n",
+        **(extra or {})}
+    for rel, body in files.items():
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+    if affects is not None:
+        _verified_story(root, 1, affects, ["shell true"])
+    if git:
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["add", "-A"], root)
+
+
+_REACH_LINE = ("    US0001: scripts/tool.py -> tests/test_tool_cli.py, tests/test_tool_from.py, "
+               "tests/test_tool_import.py")
+_REACH_HEADER = "Test modules outside"
+
+
+class PlanTestModuleAdvisoryTests(unittest.TestCase):
+    """The plan names, per unit, the tracked test modules outside its `Affects` that import or run
+    a `.py` file it declares: advice beside the registry advice, never a refusal, read from the
+    project's own `git ls-files` and never from a walk of a tree holding worktree copies."""
+
+    def _plan(self, root: Path, *extra: str) -> tuple[int, str]:
+        out = io.StringIO()
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            rc = _load().main(["plan", "--stories", "Ready", "--root", str(root), "--no-fetch",
+                               "--skip-personas", *extra])
+        return rc, out.getvalue()
+
+    def _block(self, out: str) -> list[str]:
+        """The advisory's header and the four-space lines under it; [] when no header."""
+        lines = out.splitlines()
+        heads = [i for i, ln in enumerate(lines) if _REACH_HEADER in ln]
+        self.assertLessEqual(len(heads), 1, "the header is printed once")
+        if not heads:
+            return []
+        block = [lines[heads[0]]]
+        for ln in lines[heads[0] + 1:]:
+            if not ln.startswith("    "):
+                break
+            block.append(ln)
+        return block
+
+    def _json(self, root: Path) -> dict:
+        rc, out = self._plan(root, "--format", "json")
+        self.assertEqual(rc, 0, out)
+        return json.loads(out)["breakdown"]
+
+    def test_the_plan_lists_test_modules_that_import_or_run_a_declared_script(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            block = self._block(out)
+            self.assertEqual(len(block), 2, out)
+            self.assertTrue(block[0].startswith("  ") and not block[0].startswith("   "), block)
+            self.assertIn("(advisory - nothing is refused)", block[0])
+            self.assertEqual(block[1], _REACH_LINE)
+            self.assertNotIn("test_toolkit.py", "\n".join(block))
+
+    def test_the_list_rides_beside_the_registry_advice_and_refuses_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            bd = self._json(root)
+            self.assertEqual(bd["test_advisories"], [{"id": "US0001", "items": [
+                {"script": "scripts/tool.py",
+                 "tests": ["tests/test_tool_cli.py", "tests/test_tool_from.py",
+                           "tests/test_tool_import.py"]}]}])
+            self.assertEqual(bd["affects_advisories"], [])
+            _config(root, "sprint:\n  affects_check: block\n")
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [_REACH_LINE])
+            rc, js = self._plan(root, "--format", "json")
+            self.assertEqual(rc, 0, js)
+            self.assertIn("US0001", [u["id"] for u in json.loads(js)["batch"]])
+
+    def test_a_test_module_in_the_units_affects_is_not_listed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, tests/test_tool_import.py")
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                "    US0001: scripts/tool.py -> tests/test_tool_cli.py, tests/test_tool_from.py"])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, tests/test_tool_import.py, "
+                                 "tests/test_tool_from.py, tests/test_tool_cli.py")
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out), [])
+            self.assertNotIn("US0001: scripts/tool.py", out)
+
+    def test_a_unit_with_no_script_or_no_reaching_test_prints_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, None, {
+                "docs/guide.md": "# guide\n", "scripts/lonely.py": "X = 1\n",
+                "tests/test_docs.py": 'import guide\n\nOPEN = "docs/guide.md"\n'}, git=False)
+            _verified_story(root, 2, "docs/guide.md", ["shell true"])
+            _verified_story(root, 3, "scripts/lonely.py", ["shell true"])
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out), [])
+            self.assertNotIn("US0002:", out)
+            self.assertNotIn("US0003:", out)
+            self.assertEqual(self._json(root)["test_advisories"], [])
+
+    def test_only_the_projects_own_tracked_test_modules_are_read(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            gitutil.git(["commit", "-qm", "fixture"], root)
+            gitutil.git(["worktree", "add", "-q", ".claude/worktrees/w1"], root)
+            self.assertTrue((root / ".claude/worktrees/w1/tests/test_tool_import.py").is_file())
+            (root / "tests/test_scratch_tool.py").write_text("import tool\n", encoding="utf-8")
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [_REACH_LINE])
+
+    def test_a_script_many_modules_reach_is_listed_to_a_cap(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            more = {f"tests/test_tool_more_{n:02d}.py": "import tool\n" for n in range(1, 13)}
+            _reach_project(root, extra=more)
+            every = sorted(["tests/test_tool_cli.py", "tests/test_tool_from.py",
+                            "tests/test_tool_import.py", *more])
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                f"    US0001: scripts/tool.py -> {', '.join(every[:10])}, "
+                "+5 more (--format json lists all)"])
+            self.assertEqual(self._json(root)["test_advisories"][0]["items"][0]["tests"], every)
+
+    def test_exactly_the_cap_is_listed_with_no_count(self) -> None:
+        """Ten modules fill the cap and leave nothing out, so no `+0 more` is printed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            more = {f"tests/test_tool_more_{n:02d}.py": "import tool\n" for n in range(1, 8)}
+            _reach_project(root, extra=more)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            line = self._block(out)[1]
+            self.assertEqual(line.count(", "), 9, line)
+            self.assertTrue(line.endswith(", tests/test_tool_more_07.py"), line)
+
+    def test_each_import_and_run_form_is_read_and_near_miss_names_are_not(self) -> None:
+        """Imports are matched by module name, a run by the whole file name: a longer name that
+        ends in the script's (`mytool.py`, `my-tool.py`, `a.tool.py`) or a different suffix
+        (`tool.pyi`) reaches nothing, and `from pkg import x` reaches only a script in `pkg/`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, scripts/lib/surface.py", {
+                "scripts/lib/surface.py": "X = 1\n",
+                "tests/test_r_alias.py": "import os, pkg.tool as t  # a comment, with tool2\n",
+                "tests/test_r_dotted.py": "from pkg.tool import run\n",
+                "tests/test_r_pkg.py": "from lib import (\n    other,\n    surface as s,\n)\n",
+                "tests/test_r_paren.py": "from lib import (surface)\n",
+                "tests/test_r_nested.py": "def test_x():\n    from tool import run\n",
+                "tests/test_r_quoted.py": "CMD = ['python3', 'tool.py']\n",
+                "tests/test_m_names.py": ('A = "scripts/mytool.py"\nB = "my-tool.py"\n'
+                                          'C = "a.tool.py"\nD = "tool.pyi"\n'),
+                "tests/test_m_pkg.py": "from other import surface\nfrom lib import surfaces\n",
+                "tests/test_m_comment.py": "import os  # see tool, surface\nimport  # none\n",
+                "tests/helper_tool.py": "import tool\n"})
+            (root / "tests/test_r_bytes.py").write_bytes(b"import tool\n\xff\xfe\n")
+            gitutil.git(["add", "-A"], root)
+            items = {i["script"]: i["tests"]
+                     for i in self._json(root)["test_advisories"][0]["items"]}
+            self.assertEqual(items["scripts/lib/surface.py"],
+                             ["tests/test_r_paren.py", "tests/test_r_pkg.py"])
+            self.assertEqual(items["scripts/tool.py"], sorted([
+                "tests/test_r_alias.py", "tests/test_r_bytes.py", "tests/test_r_dotted.py",
+                "tests/test_r_nested.py", "tests/test_r_quoted.py", "tests/test_tool_cli.py",
+                "tests/test_tool_from.py", "tests/test_tool_import.py"]))
+
+    def test_a_project_below_the_repository_root_reads_only_its_own_modules(self) -> None:
+        """Paths are the project's own, and a module above the project root is not read."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            root = repo / "proj"
+            root.mkdir()
+            _reach_project(root, git=False)
+            (repo / "tests").mkdir()
+            (repo / "tests/test_up.py").write_text("import tool\n", encoding="utf-8")
+            gitutil.git(["init", "-q"], repo)
+            gitutil.git(["add", "-A"], repo)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [_REACH_LINE])
+
+    def test_no_checkout_and_a_deleted_module_list_nothing_and_refuse_nothing(self) -> None:
+        """Outside a checkout, with no git to run, and over a tracked module gone from the tree,
+        the plan still runs; only the modules it can read are listed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, git=False)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out), [])
+            text = (root / "sdlc-studio/stories/US0001-x.md").read_text(encoding="utf-8")
+            sp = _load()
+            for exc in (FileNotFoundError("git"), subprocess.TimeoutExpired("git", 30)):
+                with unittest.mock.patch.object(sp.subprocess, "run", side_effect=exc):
+                    self.assertEqual(sp.reaching_test_advisories(root, text), [])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            (root / "tests/test_tool_from.py").unlink()
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                "    US0001: scripts/tool.py -> tests/test_tool_cli.py, tests/test_tool_import.py"])
+
+    def test_the_scan_is_made_once_per_cache(self) -> None:
+        """One `git ls-files` read serves every unit of a plan; a fresh cache reads again."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            text = (root / "sdlc-studio/stories/US0001-x.md").read_text(encoding="utf-8")
+            sp, cache = _load(), {}
+            with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
+                first = sp.reaching_test_advisories(root, text, cache)
+                (root / "tests/test_tool_new.py").write_text("import tool\n", encoding="utf-8")
+                gitutil.git(["add", "-A"], root)
+                self.assertEqual(sp.reaching_test_advisories(root, text, cache), first)
+                fresh = sp.reaching_test_advisories(root, text)
+            self.assertEqual(len(first[0]["tests"]), 3)
+            self.assertIn("tests/test_tool_new.py", fresh[0]["tests"])
+
+
 class DerivedClusterFileTests(unittest.TestCase):
     """US0291/CR0347: the collision analysis saw only what somebody DECLARED, and test files
     are almost never declared - so the one file parallel work most often shares was the one

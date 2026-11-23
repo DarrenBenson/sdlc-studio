@@ -1118,6 +1118,69 @@ def registry_advisories(repo_root: Path | str, text: str, cache: dict | None = N
     return out
 
 
+#: The human plan names this many test modules per script; `--format json` lists every one.
+REACHING_TEST_CAP = 10
+#: Both patterns open on a literal, so the search skips to it: one opening on a character class or
+#: `^` tries every position, and over a repository's test modules that costs seconds. An import
+#: statement is read after a newline (the text is read with one put before it). A `.py` file name
+#: is read on the reversed text, as `yp.` and then the name, with no word character after `.py`
+#: and no `.` before the name, so `a.tool.py` is not `tool.py`.
+_REACH_IMPORT = re.compile(r"\n[ \t]*(?:from[ \t]+([\w.]+)[ \t]+import[ \t]+(\([^)]*\)|[^#\n]*)"
+                           r"|import[ \t]+([^#\n]*))")
+_REACH_FILE = re.compile(r"yp\.(?<!\wyp\.)[\w-]+(?!\.)")
+
+
+def reaching_test_advisories(repo_root: Path | str, text: str,
+                             cache: dict | None = None) -> list[dict]:
+    """`[{script, tests}]`: per `.py` file a unit's `Affects` declares, the test modules outside
+    that `Affects` which import it or name its file, as a command running it does.
+
+    A test module is a `test_*.py` file `git ls-files` lists under the project root, so an
+    untracked module and the copies a worktree under the project holds are never read. A module
+    imports `pkg/tool.py` by `import tool`, `import x.tool`, `from tool import ...`,
+    `from x.tool import ...` or `from pkg import tool`, and runs it when `tool.py` stands in its
+    text as a whole file name (not `mytool.py` or `tool.pyi`). Read by pattern rather than
+    parsed, and matched by name, so two scripts sharing a file name share their list. The scan is
+    made once per `cache`, which the plan shares across its units.
+
+    ADVISORY BY CONSTRUCTION, like `registry_advisories`: it returns findings and decides
+    nothing, and a project outside a git checkout has none."""
+    root = Path(repo_root)
+    cache = {} if cache is None else cache
+    declared = {_affect_key(root, p) for p in _affects_files(text)}
+    key = ("reaching tests", str(root))
+    if key not in cache:
+        cache[key] = index = []
+        try:                                 # outside a checkout git prints no paths
+            ls = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--",
+                                 ":(glob)**/test_*.py"], capture_output=True, timeout=30).stdout
+        except (OSError, subprocess.SubprocessError):
+            ls = b""                         # no git to run, or it hung
+        for rel in sorted(os.fsdecode(r) for r in ls.split(b"\0") if r):
+            try:
+                src = (root / rel).read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue                     # tracked but gone from the working tree
+            names: set = set()
+            for frm, what, plain in _REACH_IMPORT.findall("\n" + src):
+                if frm:
+                    pkg = frm.rsplit(".", 1)[-1]
+                    names |= {pkg} | {f"{pkg}.{n.split()[0]}" for n in what.strip("()").split(",")
+                                      if n.strip()}
+                else:
+                    names |= {n.split()[0].rsplit(".", 1)[-1] for n in plain.split(",")
+                              if n.strip()}
+            index.append((rel, names, {f[::-1] for f in _REACH_FILE.findall(src[::-1])}))
+    out: list[dict] = []
+    for script in sorted(k for k in declared if k.endswith(".py")):
+        p = Path(script)
+        tests = [rel for rel, names, files in cache[key] if rel not in declared
+                 and (p.stem in names or f"{p.parent.name}.{p.stem}" in names or p.name in files)]
+        if tests:
+            out.append({"script": script, "tests": tests})
+    return out
+
+
 def _page_threshold_advisories(root: Path, declared: set, cache: dict) -> list[dict]:
     """Declared reference pages near the reading-guide threshold or their budget ceiling.
 
@@ -2415,6 +2478,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     sources_by_unit: dict[str, dict] = {}
     affects_advisories: list[dict] = []
     registry_advice: list[dict] = []
+    test_advice: list[dict] = []
     parsers: dict = {}             # one load per script across the batch
     decompose: list[dict] = []
     for it in batch:
@@ -2454,6 +2518,9 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         reg = registry_advisories(root, text, parsers)
         if reg:
             registry_advice.append({"id": it["id"], "items": reg})
+        reach = reaching_test_advisories(root, text, parsers)
+        if reach:
+            test_advice.append({"id": it["id"], "items": reach})
         # The size demanded depends on WHAT the unit is. A story/bug is groomed by `Points`; a
         # CR/RFC by a T-shirt `Size`. LEGACY TOLERANCE: a CR filed before this rule carries
         # `Points` and no `Size` (the earlier gate forced it) - it still counts as sized, so the
@@ -2553,6 +2620,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "clusters": _shared_file_clusters(files_by_unit, sources_by_unit),
             "affects_advisories": affects_advisories,
             "registry_advisories": registry_advice,
+            "test_advisories": test_advice,
             "decompose": decompose,
             "triage": _batch_triage(root, [it["id"] for it in batch]),
             "probable_duplicates": probable_duplicates(root, batch),
@@ -4719,6 +4787,22 @@ def _render_registry_advisories(data: dict) -> None:
             print(f"    {unit['id']}: {it['what']} -> {', '.join(it['add'])}")
 
 
+def _render_test_advisories(data: dict) -> None:
+    """Test modules outside a unit's `Affects` that import or run a script it declares, the ones
+    a change to that script can turn red. ADVISORY: it changes no exit code, batch or verdict."""
+    items = (data.get("breakdown") or {}).get("test_advisories") or []
+    if not items:
+        return
+    print("  Test modules outside the units' Affects that import or run a script they declare "
+          "(advisory - nothing is refused):")
+    for unit in items:
+        for it in unit["items"]:
+            shown = it["tests"][:REACHING_TEST_CAP]
+            rest = len(it["tests"]) - len(shown)
+            more = f", +{rest} more (--format json lists all)" if rest else ""
+            print(f"    {unit['id']}: {it['script']} -> {', '.join(shown)}{more}")
+
+
 def _render_decompose(data: dict) -> None:
     """CRs doing enough work to warrant stories. Only a story carries executable `Verify:`
     lines, so an un-decomposed CR of this size reaches Done on prose alone."""
@@ -5341,6 +5425,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_clusters(data)
     _render_affects_advisories(data, args.root)
     _render_registry_advisories(data)
+    _render_test_advisories(data)
     _render_unspecified_criteria(unspecified)
     _render_triage(data)
     _render_decompose(data)
