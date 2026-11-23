@@ -1,6 +1,6 @@
 # BG1717: BG1625 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1625.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py
@@ -27,13 +27,17 @@ Fix each finding above, then deliver BG1625 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1625 AC1 still passes: Given a Verify line using `-k 'a or b'`, when `critic.py brief` prints the replay of the author's mutants, then it prints the real selected tests or refuses the expression by name, never ids such as `a` and `b` as selectors. Fails on: bogus selectors printed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** BG1625 AC2 still passes: Given a read-only sdlc-studio/reviews/author-mutants/ directory, when `critic.py self-check record --mutants-from <report>` runs, then it exits non-zero saying the kept list was not written and adds no self-check row; a malformed kept list is refused with a named error, not a crash. Fails on: the row added while the message says nothing was written, and a malformed kept list crashing the brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** BG1625 AC3 still passes: Given a kept list written for a unit, when its file is read, then it holds a path relative to the repository root, and a report of the wrong kind or version is refused. Fails on: an absolute local path in a committed file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests
+  - **Verified:** yes (2026-11-23)
 
 - [ ] **AC5** The round 3 REJECT finding no longer holds: an attached value holding an `=` that is not directly after the option letter is read whole, pinned by a case such as `-m'device(serial=1)'` and its cluster `-qm'device(serial=1)'` in `test_a_cluster_of_short_flags_is_read_as_pytest_reads_it`; the mutant that splits at the first `=` (`attached.partition("=")[2]`) fails it (critic.py:3072, 3095-3096; verdict aa5575a8c536-f9c40d5c, D0591).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC6** The round 3 REJECT finding no longer holds: `changelog.d/BG1625.md` states exactly how a value joined to its option by `=` is read, including the Python 3.10 difference for a cluster such as `-qk=add`, which argparse on 3.10 keeps as `=add`.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 

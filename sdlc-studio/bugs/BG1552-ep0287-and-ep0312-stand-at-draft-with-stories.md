@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, changelog.d/BG1552.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py, sdlc-studio/epics/_index.md, sdlc-studio/epics/archive/v6.1/epic.md, sdlc-studio/epics/EP0284-review-seats-chosen-by-what-a-change-touches.md, sdlc-studio/epics/EP0285-persona-goals-become-checks-the-stories-seats-and.md, sdlc-studio/epics/EP0326-a-sprint-drives-each-unit-s-lane-to.md, sdlc-studio/epics/EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md, changelog.d/BG1552.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md Line 3 (`> **Status:** Draft`) and the Story Breakdown; sdlc-studio/prd.md lines 333-334; sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md line 3; `epic_status_stale_drift` in .claude/skills/sdlc-studio/scripts/reconcile.py (about line 1032)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -38,9 +38,12 @@ Add a detector to reconcile.py that reports an epic at Draft or Ready when any d
 - [ ] **AC3** Given the Draft epic with a Done child, when `reconcile.py apply` runs and detect runs again, then the epic's Status line reads In Progress, its index row agrees, the second detect reports nothing for it, and an epic whose every child is terminal is still left to the existing lane unchanged. Fails on: apply leaving the epic at Draft, or apply closing an all-terminal epic the existing lane only reports.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_writes_in_progress_and_a_second_detect_is_clean
 - [ ] **AC4** Given the fix has landed, when reconcile is applied in this repository, then EP0287 and EP0312 read In Progress in their own files and in the epic index, and reference-epic.md states the derived rule for Done children beside its In Progress line. Fails on: either epic still reading Draft, or the reference page stating a rule the script does not hold.
+  - **Verify:** grep -q '^> \*\*Status:\*\* In Progress' sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md && grep -q '^> \*\*Status:\*\* In Progress' sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md && grep -Eq '^\| \[EP0287\].*\| In Progress \|' sdlc-studio/epics/_index.md && grep -Eq '^\| \[EP0312\].*\| In Progress \|' sdlc-studio/epics/_index.md && pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_reference_epic_states_the_rule_the_script_holds
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened before landing to what the derived In Progress rule touches: the two close and known-issues tests whose fixtures move a story under a Draft epic, the epic-status-stale hint in lib/sdlc_md.py, the epic index and its v6.1 archive rows, and EP0284, EP0285, EP0326 and EP0327, which detect now reports; found by the REF builder |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4 gains the Verify line the REF builder ran: both epics and their index rows read In Progress, and the reference test pins the rule |

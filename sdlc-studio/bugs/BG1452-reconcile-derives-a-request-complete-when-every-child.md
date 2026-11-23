@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG1452.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/refine.md, changelog.d/BG1452.md
 > **Evidence:** Run twelve (RUN-01M7E52T) orchestrator friction log
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Let refine mark a request decomposed in part (naming the criteria left), and hav
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened before landing: transition._request_terminal_gate must read the new Unrefined record, or a hand-set Complete still closes a request refined in part, and help/refine.md must document --unrefined; found by the REF builder |

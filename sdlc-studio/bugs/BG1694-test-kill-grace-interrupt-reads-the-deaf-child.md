@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, changelog.d/BG1694.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, changelog.d/BG1694.md
 > **Evidence:** .local/run21/land-RBG1470b.log: FAILED test_kill_grace_interrupt.py::KillGraceInterruptTests::test_an_interrupted_grace_sigkills_the_group_and_propagates, ValueError at line 66; test_kill_grace_interrupt.py:29-31 (DEAF writes with open().write), :64-66 (_child reads at once). Introduced by 09cf0766.
 > **Created:** 2026-11-21
 > **Created-by:** sdlc-studio file
@@ -26,9 +26,12 @@ In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an intege
 
 - [ ] **AC1** The behaviour described is corrected: `KillGraceInterruptTests._child` reads child.pid with int(`read_text())` as soon as the fake CLI has marked its SIGTERM.
 - [ ] **AC2** The proposed fix lands, pinned by a test: In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an integer before reading it, and have the deaf child write it atomically (write a...
+- [ ] **AC3** Given the machine under load, when `test_lane_land_commit_timeout_group.py` runs, then `LandCommitTimeoutKillsHooksTests._pid` waits under a bound until the hook's pid file holds an integer before reading it, and the hook writes it atomically. Fails on: `ValueError: invalid literal for int() with base 10: ''` from `_pid`, as a run twenty-three commit hit at load 13.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC3 added and Affects widened: test_lane_land_commit_timeout_group's `_pid` reads the hook's pid file before the hook writes it, the same race, which blocked the EFCI commit at load 13 in run twenty-three |

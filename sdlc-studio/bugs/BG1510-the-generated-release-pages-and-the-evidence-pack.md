@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py, changelog.d/BG1510.md
+> **Affects:** .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py, .claude/skills/sdlc-studio/reference-scripts-domain.md, changelog.d/BG1510.md
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -44,3 +44,4 @@ A tag can ship pages that misstate the signed evidence and the open-defect discl
 | 2026-11-16 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to tests/test_lean_tag_no_close_owed.py, which pins tag-check and record-green behaviour this fix changes (the REL builder stopped on it before building) |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to help/gate.md, whose tag-check sentence (asks only whether the gate was green and CI passed) the freshness check makes untrue; found by the REL builder |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to reference-scripts-domain.md, whose tag-check entry says it refuses only a stamp naming another commit; the freshness check also refuses stale release records; found by the REL builder |

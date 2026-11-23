@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** docs/why-sdlc-studio.md, tools/tests/test_doc_claims.py, sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md, changelog.d/BG1549.md
+> **Affects:** docs/why-sdlc-studio.md, tools/tests/test_doc_claims.py, sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md, docs/whitepaper.md, changelog.d/BG1549.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at docs/why-sdlc-studio.md line 285-287 ('A team grown from your project'), against .claude/skills/sdlc-studio/scripts/transition.py:1003-1011 and reference-bug.md:269
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -40,3 +40,4 @@ Correct the sentence in docs/why-sdlc-studio.md to claim what the gate enforces:
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC2 given the Verify line the DOC builder wrote and ran green; it had none |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to docs/whitepaper.md, whose sentence that sprint sign moves a bug to Fixed only if its criteria and recorded run speak for it is the same over-claim; found by the DOC2 builder |

@@ -1,6 +1,6 @@
 # BG1625: The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1625.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py
@@ -26,12 +26,15 @@ Store a root-relative path; roll the row back or say the write failed; refuse a 
 
 - [ ] **AC1** Given a Verify line using `-k 'a or b'`, when `critic.py brief` prints the replay of the author's mutants, then it prints the real selected tests or refuses the expression by name, never ids such as `a` and `b` as selectors. Fails on: bogus selectors printed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests
+  - **Verified:** yes (2026-11-23)
 
 - [ ] **AC2** Given a read-only sdlc-studio/reviews/author-mutants/ directory, when `critic.py self-check record --mutants-from <report>` runs, then it exits non-zero saying the kept list was not written and adds no self-check row; a malformed kept list is refused with a named error, not a crash. Fails on: the row added while the message says nothing was written, and a malformed kept list crashing the brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests
+  - **Verified:** yes (2026-11-23)
 
 - [ ] **AC3** Given a kept list written for a unit, when its file is read, then it holds a path relative to the repository root, and a report of the wrong kind or version is refused. Fails on: an absolute local path in a committed file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,0 +1,133 @@
+{
+  "unit": "BG0997",
+  "digest": "e05931f2cd556278 at f85e0417412a",
+  "report": "sdlc-studio/.local/lane/landed/agent-a73e738b402c31ae8/BG0997-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "old lookup under the dashless key only",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "    want = sdlc_md.norm_id(rid)\n    prefix",
+      "new": "    return decisions.waiver_for(root, f\"{WAIVER_RULE}:{sdlc_md.norm_id(rid)}\")\n    want = sdlc_md.norm_id(rid)\n    prefix",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "old lookup, against a dashed sequential waiver",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "    want = sdlc_md.norm_id(rid)\n    prefix",
+      "new": "    return decisions.waiver_for(root, f\"{WAIVER_RULE}:{sdlc_md.norm_id(rid)}\")\n    want = sdlc_md.norm_id(rid)\n    prefix",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_dashed_sequential_waiver_now_waives_its_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subject id compared as written",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "if \":\" not in tail and sdlc_md.norm_id(tail) == want:",
+      "new": "if \":\" not in tail and tail == want:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unit id not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "    want = sdlc_md.norm_id(rid)\n",
+      "new": "    want = rid\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id_and_the_dashless_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "superseded rows read as accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "if rec[\"status\"] != \"accepted\" or not decision.startswith(prefix):",
+      "new": "if not decision.startswith(prefix):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prefix anchor dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "if rec[\"status\"] != \"accepted\" or not decision.startswith(prefix):",
+      "new": "if rec[\"status\"] != \"accepted\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "further segment accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "if \":\" not in tail and sdlc_md.norm_id(tail) == want:",
+      "new": "if sdlc_md.norm_id(tail) == want:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision case kept",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "decision = rec[\"decision\"].lower()",
+      "new": "decision = rec[\"decision\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scan stops at the first non-matching row",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "            continue\n        tail = decision",
+      "new": "            break\n        tail = decision",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "waiver prefix loses its colon",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "prefix = f\"{decisions.WAIVER_PREFIX} {WAIVER_RULE}:\"",
+      "new": "prefix = f\"{decisions.WAIVER_PREFIX} {WAIVER_RULE}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subject tail sliced one character late",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "tail = decision[len(prefix):]",
+      "new": "tail = decision[len(prefix) + 1:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "match returns nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "            return rec[\"id\"]\n    return None\n\n\ndef _classify",
+      "new": "            return None\n    return None\n\n\ndef _classify",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the neighbour asserted waived",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
+      "old": "        units = self._waived_units(f\"rule:engagement-floor:{self.WAIVED}\")\n        self.assertTrue(units[self.WAIVED][\"waived\"])\n        self.assertFalse(units[self.WAIVED][\"violation\"])\n        self.assertFalse(units[self.NEIGHBOUR][\"waived\"])",
+      "new": "        units = self._waived_units(f\"rule:engagement-floor:{self.WAIVED}\")\n        self.assertTrue(units[self.WAIVED][\"waived\"])\n        self.assertFalse(units[self.WAIVED][\"violation\"])\n        self.assertTrue(units[self.NEIGHBOUR][\"waived\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the dashless spelling asserted not waived",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
+      "old": "            self.assertTrue(units[self.WAIVED][\"waived\"], spelling)",
+      "new": "            self.assertFalse(units[self.WAIVED][\"waived\"], spelling)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id_and_the_dashless_form",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
