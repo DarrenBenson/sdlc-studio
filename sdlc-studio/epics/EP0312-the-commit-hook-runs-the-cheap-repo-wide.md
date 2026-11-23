@@ -22,15 +22,18 @@ Decomposed from CR0671. Delivers the work CR0671 requested.
 - [ ] A test module can declare `# test-selection: sweep`, and `gate.select_tests` adds every sweep module to each commit's selection while their recorded total run time stays within a 30 s budget; a test pins that a change to scripts/sprint.py now selects `test_doc_claims.py.`
 - [ ] `test_doc_claims`, `test_precommit_floor_pending`, `test_root_census`, the `test_skill_tests_env` scrub sweep, the `test_gitutil` raw-git sweep and the commit-hook hermeticity test carry the marker, and the RealRepoTests of `test_test_census.py` stay at the push gate.
 - [ ] A pre-commit lane refuses a staged new test module whose head has no `test-census-subject` marker, naming the marker to add, and passes a module that carries one.
-- [ ] Replayed in a throwaway clone, the run-six commits that turned `test_doc_claims.py` and `test_precommit_floor_pending.py` red, and the landings BG1236 later repaired, are each refused at commit by the sweep lane.
-- [ ] Before and after: the next sprint's report shows no round-1 blocking finding of the sweep-red class and no unit added for a push-gate sweep red.
+- [x] Replayed in a throwaway clone, the run-six commits that turned `test_doc_claims.py` and `test_precommit_floor_pending.py` red, and the landings BG1236 later repaired, are each refused at commit by the sweep lane. Retired under D0512 (not built).
+- [x] Before and after: the next sprint's report shows no round-1 blocking finding of the sweep-red class and no unit added for a push-gate sweep red. Retired under D0512 (not built).
 
 > Carried from the request. Author each story's own ACs against its
 > slice while grooming - these are the epic's completion bar, not any
 > single story's.
+>
+> D0512: the epic is complete when US1168 is done; its bar is US1168 alone.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-23 | Dani Okafor (BG1538) | Corrected under D0512: the run-six replay and the before-and-after reading are retired, the bar is US1168 alone |

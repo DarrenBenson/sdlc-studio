@@ -99,8 +99,15 @@ esac
 # .pytest_cache is gitignored rather than absent, and rsync copies untracked files - so a dev
 # machine that has run the suite (which the gate does) shipped its test cache into the installed
 # skill, and --delete then churned it on every port.
+#
+# CHANGELOG.md sits at the root of the installed skill but not of the skill source: install.sh
+# copies the repository's own CHANGELOG.md in so `project upgrade` can digest it offline, so
+# the --delete sweep removed it on every port. The root-anchored exclude spares only that one
+# file (a CHANGELOG.md deeper down is still swept); it is shipped below the way the installer
+# does, and compared by the check.
 RSYNC=(rsync -rci --delete --exclude='.local' --exclude='__pycache__' \
-       --exclude='.pytest_cache' "$SRC/" "$target_abs/")
+       --exclude='.pytest_cache' --exclude='/CHANGELOG.md' "$SRC/" "$target_abs/")
+CHANGELOG="CHANGELOG.md"
 
 if [[ "$CHECK" -eq 1 ]]; then
   # Report, never fail, the two states that are not drift.
@@ -125,6 +132,11 @@ if [[ "$CHECK" -eq 1 ]]; then
     /^\*deleting/ { p = substr($0, 13); if (p !~ /\/$/) print; next }
     /^[<>ch.][fLDS]/ { print; next }
   ')"
+  # The one file the exclude hides from the comparison is still a mirror target: a repository
+  # that holds a CHANGELOG.md has shipped it, so a copy lacking it or holding another is drift.
+  if [[ -f "$CHANGELOG" ]] && ! cmp -s "$CHANGELOG" "$target_abs/$CHANGELOG"; then
+    drift="${drift:+$drift$'\n'}>fc........ $CHANGELOG"
+  fi
   if [[ -z "$drift" ]]; then
     echo "forward-port check: in sync - $target_abs matches $repo_abs/$SRC"
     exit 0
@@ -143,6 +155,11 @@ if [[ "$APPLY" -ne 1 ]]; then
 fi
 mkdir -p "$target_abs"
 "${RSYNC[@]}"
+# Ship the repository's CHANGELOG.md as install.sh does; none in the repository, nothing to ship
+# (a copy already in the target is then left as it is).
+if [[ -f "$CHANGELOG" ]]; then
+  cp "$CHANGELOG" "$target_abs/$CHANGELOG"
+fi
 # Excluding a path also removes it from --delete's view, so a cache already sitting in the target
 # would survive every future port - the exclude turns a reaped orphan into a permanent one. Two
 # kinds of exclude are in play and they need opposite treatment: `.local` is the consuming copy's

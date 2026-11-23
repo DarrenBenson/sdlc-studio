@@ -182,6 +182,63 @@ class ReleaseBarTests(unittest.TestCase):
         unread = bar("--at", "no-such-rev")
         self.assertEqual(2, unread.returncode, unread.stdout + unread.stderr)
 
+    def _committed(self, *bugs):
+        """A fixture repository with `bugs` committed; returns (root, run-git, run-bar)."""
+        import os
+        import shutil
+        import subprocess
+        root = self._corpus(*bugs)
+        self.addCleanup(shutil.rmtree, root, True)
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        env.update({"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+                    "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                    "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
+
+        def git(*args):
+            return subprocess.run(["git", "-C", str(root), *args], env=env, check=True,
+                                  capture_output=True, text=True).stdout.strip()
+
+        def bar(*extra):
+            return subprocess.run([sys.executable, str(Path(ki.__file__)), "bar", "--root",
+                                   str(root), *extra], env=env, capture_output=True, text=True,
+                                  timeout=60)
+
+        git("init", "-q", "-b", "main")
+        git("add", "-A")
+        git("commit", "-q", "-m", "the corpus")
+        return root, git, bar
+
+    def test_a_high_filed_after_the_named_commit_does_not_break_the_bar_at_it(self):
+        """BG1540 AC1: a release's bar is judged at the commit that cut it, so a High filed
+        afterwards turns neither that release nor a Done story's criterion red. MUTANTS: `--at`
+        accepted and ignored (the working tree is judged); the export reading the head, not REV."""
+        root, git, bar = self._committed(("BG0001", "Fixed", "High"))
+        cut = git("rev-parse", "HEAD")
+        (root / ki.BUGS_REL / "BG0002-x.md").write_text(
+            "# BG0002: t\n\n> **Status:** Open\n> **Severity:** High\n", encoding="utf-8")
+        git("add", "-A")
+        git("commit", "-q", "-m", "a High filed after the cut")
+        at_cut = bar("--at", cut)
+        self.assertEqual(0, at_cut.returncode, at_cut.stdout + at_cut.stderr)
+        self.assertIn("release bar met", at_cut.stdout)
+        plain = bar()
+        self.assertEqual(1, plain.returncode, "the plain verb must still judge the working tree")
+        self.assertIn("BG0002 (High)", plain.stderr)
+
+    def test_a_high_open_at_the_named_commit_still_breaks_the_bar(self):
+        """BG1540 AC2: `--at` does not pass a finding that was open at the commit, even when it
+        is fixed afterwards; it names the bug and exits non-zero. MUTANTS: `--at` judging the
+        working tree (the later fix hides the High); the verdict forced to met."""
+        root, git, bar = self._committed(("BG0001", "Open", "High"))
+        cut = git("rev-parse", "HEAD")
+        bug = root / ki.BUGS_REL / "BG0001-x.md"
+        bug.write_text(bug.read_text(encoding="utf-8").replace("Open", "Fixed"), encoding="utf-8")
+        git("commit", "-q", "-am", "fixed after the cut")
+        at_cut = bar("--at", cut)
+        self.assertNotEqual(0, at_cut.returncode, at_cut.stdout + at_cut.stderr)
+        self.assertIn("BG0001 (High)", at_cut.stderr)
+        self.assertEqual(0, bar().returncode, "the plain verb reads the fixed working tree")
+
 
 class BarPopulationTests(unittest.TestCase):
     """BG0621 - WHICH findings the bar and the page can see at all.
