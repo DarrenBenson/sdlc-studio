@@ -1,41 +1,167 @@
 {
   "unit": "US1326",
-  "digest": "11b2c616896182cb at 514fba18ced2",
-  "report": "sdlc-studio/.local/lane/landed/agent-ad962e12fe3451bd5/US1326-mutation-edits.json",
+  "digest": "0ae152c728aee74c at 2a6a15919532",
+  "report": "sdlc-studio/.local/lane/landed/agent-a359fab9dfa17ccaf/US1326-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "S12-comment-cut-at-comma",
+      "mutant": "cache-keyed-on-unit-text",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "_REACH_COMMENT = re.compile(r\"#[^\\n]*\")",
-      "new": "_REACH_COMMENT = re.compile(r\"#[^\\n,]*\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_comment_holding_a_comma_inside_a_parenthesised_import_hides_no_name",
+      "old": "key = (\"reaching tests\", str(root))",
+      "new": "key = (\"reaching tests\", str(root), text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_two_unit_plan_scans_the_test_modules_once",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "S13-list-comment-cut-at-comma",
+      "mutant": "scan-without-a-declared-script",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "r\"(\\([^)#]*(?:#[^\\n]*\\n[^)#]*)*\\)|[^#\\n]*)",
-      "new": "r\"(\\([^)#]*(?:#[^\\n,]*\\n[^)#]*)*\\)|[^#\\n]*)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_comment_holding_a_comma_inside_a_parenthesised_import_hides_no_name",
+      "old": "    if not scripts:\n",
+      "new": "    if not declared:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "S14-comment-not-stripped",
+      "mutant": "every-declared-key-a-script",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "listed = _REACH_COMMENT.sub(\"\", what).strip(\"()\").split(\",\")",
-      "new": "listed = what.strip(\"()\").split(\",\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_comment_holding_a_comma_inside_a_parenthesised_import_hides_no_name",
+      "old": "scripts = sorted(k for k in declared if k.endswith(\".py\"))",
+      "new": "scripts = sorted(k for k in declared)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "S15-comment-lazy",
+      "mutant": "scripts-reverse-sorted",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "_REACH_COMMENT = re.compile(r\"#[^\\n]*\")",
-      "new": "_REACH_COMMENT = re.compile(r\"#[^\\n]*?\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_comment_holding_a_comma_inside_a_parenthesised_import_hides_no_name",
+      "old": "scripts = sorted(k for k in declared if k.endswith(\".py\"))",
+      "new": "scripts = sorted((k for k in declared if k.endswith(\".py\")), reverse=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_header_says_the_list_is_a_name_match_that_may_over_list",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "breakdown-scans-unasked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "reaching_test_advisories(root, text, parsers) if test_reach else []",
+      "new": "reaching_test_advisories(root, text, parsers)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "key-present-unasked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "**({\"test_advisories\": test_advice} if test_reach else {}),",
+      "new": "\"test_advisories\": test_advice,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "breakdown-default-on",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "skip_personas: bool = False,\n              test_reach: bool = False) -> dict:",
+      "new": "skip_personas: bool = False,\n              test_reach: bool = True) -> dict:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "build-plan-default-on",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "               test_reach: bool = False) -> dict:",
+      "new": "               test_reach: bool = True) -> dict:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "build-plan-always-asks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "breakdown(root, batch, skip_personas, test_reach=test_reach)",
+      "new": "breakdown(root, batch, skip_personas, test_reach=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-never-asks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                          test_reach=True)",
+      "new": "                          test_reach=False)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_plan_lists_test_modules_that_import_or_run_a_declared_script",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "name-kept-surrogate-escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "r.decode(\"utf-8\", \"replace\")",
+      "new": "os.fsdecode(r)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_test_module_name_that_is_not_utf8_leaves_the_plan_exiting_0",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "read-by-shown-name",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "(root / os.fsdecode(raw))",
+      "new": "(root / rel)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_test_module_name_that_is_not_utf8_leaves_the_plan_exiting_0",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index-reverse-sorted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "sorted({(r.decode(\"utf-8\", \"replace\"), r) for r in ls.split(b\"\\0\") if r})",
+      "new": "sorted({(r.decode(\"utf-8\", \"replace\"), r) for r in ls.split(b\"\\0\") if r}, reverse=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_plan_lists_test_modules_that_import_or_run_a_declared_script",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty-entry-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": " for r in ls.split(b\"\\0\") if r})",
+      "new": " for r in ls.split(b\"\\0\")})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_plan_lists_test_modules_that_import_or_run_a_declared_script",
+      "result": "survived",
+      "answer": "EQUIVALENT: git's -z listing ends in a NUL, so the last entry is empty; it decodes to '' and root / '' is the project root, whose read_text raises IsADirectoryError, an OSError the next guard skips, so no module is added (probed: the AC1 plan prints the same line)."
+    },
+    {
+      "mutant": "header-claims-import-or-run",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    print(\"  Test modules outside the units' Affects that name a script they declare, matched \"\n          \"by name alone, so some may never import or run it (advisory - nothing is refused):\")",
+      "new": "    print(\"  Test modules outside the units' Affects that import or run a script they declare \"\n          \"(advisory - nothing is refused):\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_header_says_the_list_is_a_name_match_that_may_over_list",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-names-valid-utf8",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "for byte in (b\"\\xe9\", b\"\\xe8\"):",
+      "new": "for byte in (b\"e\", b\"f\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_test_module_name_that_is_not_utf8_leaves_the_plan_exiting_0",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "names-shown-alike-merged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "sorted({(r.decode(\"utf-8\", \"replace\"), r) for r in ls.split(b\"\\0\") if r})",
+      "new": "sorted({r.decode(\"utf-8\", \"replace\"): r for r in ls.split(b\"\\0\") if r}.items())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_test_module_name_that_is_not_utf8_leaves_the_plan_exiting_0",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-declares-a-script",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "_reach_project(root, \"docs/guide.md, tests/\"",
+      "new": "_reach_project(root, \"docs/guide.md, scripts/tool.py\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared",
       "result": "killed",
       "answer": ""
     }

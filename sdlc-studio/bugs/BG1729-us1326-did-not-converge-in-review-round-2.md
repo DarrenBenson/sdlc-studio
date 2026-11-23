@@ -1,6 +1,6 @@
 # BG1729: US1326 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/US1326.md
@@ -27,16 +27,22 @@ Fix each finding above, then deliver US1326 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** US1326 AC1 still passes: The plan lists each test module outside a unit's Affects that imports or runs a script it declares
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_plan_lists_test_modules_that_import_or_run_a_declared_script
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** US1326 AC2 still passes: The list rides beside the registry advice and refuses nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_the_list_rides_beside_the_registry_advice_and_refuses_nothing
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** US1326 AC3 still passes: A test module the unit already declares is not listed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_test_module_in_the_units_affects_is_not_listed
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC5** US1326 AC4 still passes: A unit that declares no script, or a script no test reaches, prints nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_unit_with_no_script_or_no_reaching_test_prints_nothing
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC6** US1326 AC5 still passes: Only the project's own tracked test modules are read
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_only_the_projects_own_tracked_test_modules_are_read
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC7** US1326 AC6 still passes: A script many test modules reach is listed to a cap, with the rest counted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanTestModuleAdvisoryTests::test_a_script_many_modules_reach_is_listed_to_a_cap
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,0 +1,169 @@
+{
+  "unit": "BG1730",
+  "digest": "595280b5bee42ca6 at f2263d2f977c",
+  "report": "sdlc-studio/.local/lane/landed/agent-a32599da5b739a8e4/BG1730-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "compare the union of the two listings, not their intersection",
+      "file": "tools/tests/test_test_census.py",
+      "old": "sorted((tools & skill) - {cls._PACKAGE_MARKER})",
+      "new": "sorted((tools | skill) - {cls._PACKAGE_MARKER})",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop the package-marker exclusion",
+      "file": "tools/tests/test_test_census.py",
+      "old": "sorted((tools & skill) - {cls._PACKAGE_MARKER})",
+      "new": "sorted(tools & skill)",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exclude the wrong file as the package marker",
+      "file": "tools/tests/test_test_census.py",
+      "old": "_PACKAGE_MARKER = \"__init__.py\"",
+      "new": "_PACKAGE_MARKER = \"conftest.py\"",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "list every file, not only .py files",
+      "file": "tools/tests/test_test_census.py",
+      "old": "{p.name for p in (root / rel).glob(\"*.py\")}",
+      "new": "{p.name for p in (root / rel).glob(\"*\")}",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "list only test_*.py, so a shared helper passes",
+      "file": "tools/tests/test_test_census.py",
+      "old": "{p.name for p in (root / rel).glob(\"*.py\")}",
+      "new": "{p.name for p in (root / rel).glob(\"test_*.py\")}",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "compare the tools listing with itself",
+      "file": "tools/tests/test_test_census.py",
+      "old": "glob(\"*.py\")} for rel in cls._SUITE_DIRS)",
+      "new": "glob(\"*.py\")} for rel in cls._SUITE_DIRS[:1] * 2)",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "make the census assertion vacuous",
+      "file": "tools/tests/test_test_census.py",
+      "old": "            [], shared,",
+      "new": "            shared, shared,",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "leave the shared names out of the failure message",
+      "file": "tools/tests/test_test_census.py",
+      "old": "stop: {shared}; rename",
+      "new": "stop; rename",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "remove the empty-listing guard",
+      "file": "tools/tests/test_test_census.py",
+      "old": "self.assertTrue(any((root / rel).glob(\"*.py\")),",
+      "new": "self.assertTrue(True or any((root / rel).glob(\"*.py\")),",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard only the tools folder",
+      "file": "tools/tests/test_test_census.py",
+      "old": "for rel in self._SUITE_DIRS:              # an empty",
+      "new": "for rel in self._SUITE_DIRS[:1]:              # an empty",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard only the skill folder",
+      "file": "tools/tests/test_test_census.py",
+      "old": "for rel in self._SUITE_DIRS:              # an empty",
+      "new": "for rel in self._SUITE_DIRS[1:]:              # an empty",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "aim the tree census at a root that holds neither folder",
+      "file": "tools/tests/test_test_census.py",
+      "old": "self._assert_none_shared(REPO)",
+      "new": "self._assert_none_shared(REPO / \"nowhere\")",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tolerate one shared name in the census assertion",
+      "file": "tools/tests/test_test_census.py",
+      "old": "            [], shared,",
+      "new": "            [], shared[1:],",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop the first shared name the census reads",
+      "file": "tools/tests/test_test_census.py",
+      "old": "sorted((tools & skill) - {cls._PACKAGE_MARKER})",
+      "new": "sorted((tools & skill) - {cls._PACKAGE_MARKER})[1:]",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "point the skill side at the scripts folder, not its tests folder",
+      "file": "tools/tests/test_test_census.py",
+      "old": "scripts/tests\")\n    _PACKAGE_MARKER",
+      "new": "scripts\")\n    _PACKAGE_MARKER",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "point the tools side at tools, not tools/tests",
+      "file": "tools/tests/test_test_census.py",
+      "old": "_SUITE_DIRS = (\"tools/tests\", \".claude/skills/sdlc-studio/scripts/tests\")\n    _PACKAGE_MARKER",
+      "new": "_SUITE_DIRS = (\"tools\", \".claude/skills/sdlc-studio/scripts/tests\")\n    _PACKAGE_MARKER",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard only that each folder exists, so an empty one reads clean",
+      "file": "tools/tests/test_test_census.py",
+      "old": "self.assertTrue(any((root / rel).glob(\"*.py\")),",
+      "new": "self.assertTrue((root / rel).is_dir(),",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard that each folder holds any file, not a .py",
+      "file": "tools/tests/test_test_census.py",
+      "old": "self.assertTrue(any((root / rel).glob(\"*.py\")),",
+      "new": "self.assertTrue(any((root / rel).glob(\"*\")),",
+      "test": "tools/tests/test_test_census.py::SharedModuleNameTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

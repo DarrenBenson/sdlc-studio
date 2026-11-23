@@ -1,6 +1,6 @@
 # BG1730: unittest discovery over tools/tests crashes on a test module name the skill's tests also use, so US0253 AC2 reads red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_migrate_config.py, tools/tests/test_config_refusal_pages.py, tools/tests/test_test_census.py, sdlc-studio/bugs/BG1634-three-reference-pages-still-say-the-scripts-fall.md, sdlc-studio/bugs/BG1642-config-py-show-prints-a-runtimeerror-traceback-without.md, changelog.d/BG1730.md
@@ -32,10 +32,13 @@ Rename the tools-side module to a name of its own (it pins the reference pages' 
 
 - [ ] **AC1** Given the repository, when `python3 -m unittest discover -s tools/tests -k NoiseShapeDetectorTests` runs from its root, then discovery imports every tools/tests module from tools/tests and the noise-shape tests pass, so US0253 AC2 reads green. Fails on: `ImportError: 'test_lean_migrate_config' module incorrectly imported`, raised because tools/tests and the skill's tests both hold a `test_lean_migrate_config.py`.
   - **Verify:** shell python3 -m unittest discover -s tools/tests -k NoiseShapeDetectorTests
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given the tools-side page check renamed to `tools/tests/test_config_refusal_pages.py`, when its tests run, then both still pass, BG1634's Verify line and BG1642's Affects name the new path, and neither names the old tools-side path. Fails on: a Verify line left naming `tools/tests/test_lean_migrate_config.py`, which reads red once the file is gone.
   - **Verify:** shell python3 -m pytest -q tools/tests/test_config_refusal_pages.py && ! grep -q 'tools/tests/test_lean_migrate_config' sdlc-studio/bugs/BG1634-*.md sdlc-studio/bugs/BG1642-*.md
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given a tools/tests module whose file name a module under `.claude/skills/sdlc-studio/scripts/tests` also uses, when `tools/tests/test_test_census.py` runs, then a census test fails naming the shared file name, and it passes on the tree as it stands once the rename lands. Fails on: a census that reads each tests folder alone, so a second shared name could land unseen while the pytest suite stays green.
-  - **Verify:** pytest tools/tests/test_test_census.py
+  - **Verify:** pytest tools/tests/test_test_census.py::SharedModuleNameTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 
@@ -43,3 +46,4 @@ Rename the tools-side module to a name of its own (it pins the reference pages' 
 | --- | --- | --- |
 | 2026-11-23 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Groomed: the steps restated, three executable criteria (discovery green, the rename and its references, a census guard against a shared module name) |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC3's Verify narrowed to the new census class: the whole census module takes 7 to 13 minutes under load and timed out at the 120 s default |
