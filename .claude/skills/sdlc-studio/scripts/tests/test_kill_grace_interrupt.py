@@ -65,6 +65,24 @@ def _read_pid(path: Path) -> int | None:
         return None
 
 
+class _Clock:
+    """Stands in for the `time` module a wait loop reads. `sleep` moves `now` on without
+    sleeping, so a case reads how long a wait ran on this clock, never on the wall, and a busy
+    machine cannot fail it. A wait that runs past `limit` raises, so a loop that never gives
+    up ends the case instead of hanging it."""
+
+    def __init__(self, limit: float = 60) -> None:
+        self.now, self.limit = 0.0, limit
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+        if self.now > self.limit:
+            raise AssertionError(f"the wait ran past {self.limit} s on the test's clock")
+
+
 @unittest.skipUnless(hasattr(os, "killpg") and Path("/proc/self/stat").exists(),
                      "process groups and /proc are needed to see the child")
 class KillGraceInterruptTests(base._LaneCase):
@@ -146,13 +164,27 @@ class KillGraceInterruptTests(base._LaneCase):
                 self.assertEqual(proc.pid, self._child())
 
     def test_child_gives_up_at_its_bound(self) -> None:
-        """MUTANT: `_child` ignores the bound it is handed, or reads without waiting (ValueError,
-        not the timeout): a child.pid that never fills fails the case by name, inside the bound."""
+        """MUTANT: `_child` ignores the bound it is handed, gives up before it, or reads without
+        waiting (it returns None, not the timeout): a child.pid that never fills fails the case
+        by name once the bound has passed and before one second has, both read on `_Clock`,
+        so the case bounds no duration the wall clock measured."""
         (self.log / "child.pid").write_text("", encoding="utf-8")
-        started = time.monotonic()
-        with self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in child.pid"):
+        clock = _Clock()
+        with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
+                self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in child.pid"):
             self._child(0.2)
-        self.assertLess(time.monotonic() - started, 10, "the wait ignored its bound")
+        self.assertGreaterEqual(clock.now, 0.2, "the wait gave up before its bound")
+        self.assertLess(clock.now, 1, "the wait ignored its bound")
+
+    def test_the_clock_ends_a_wait_that_never_gives_up(self) -> None:
+        """MUTANT: `_Clock.sleep` never raises at its limit. A wait whose bound lies past the
+        limit then times out on its own bound, where the clock must end it at the limit: a
+        loop that never gives up would otherwise hang the case rather than fail it."""
+        clock = _Clock(limit=1)
+        with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
+                self.assertRaisesRegex(AssertionError, "the wait ran past 1 s on the test's clock"):
+            _wait_for(lambda: False, 10, "a check that never passes")
+        self.assertLess(clock.now, 2, "the clock ran on past its limit")
 
     def test_the_deaf_child_moves_its_pid_into_place(self) -> None:
         """MUTANT: the deaf child writes child.pid in place, `open(path, 'w')` creating it empty

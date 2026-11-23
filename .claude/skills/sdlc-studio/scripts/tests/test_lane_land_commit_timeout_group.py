@@ -18,6 +18,7 @@ import sys
 import threading
 import time
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -80,6 +81,24 @@ def _read_pid(path: Path) -> int | None:
         return int(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+
+
+class _Clock:
+    """Stands in for the `time` module a wait loop reads. `sleep` moves `now` on without
+    sleeping, so a case reads how long a wait ran on this clock, never on the wall, and a busy
+    machine cannot fail it. A wait that runs past `limit` raises, so a loop that never gives
+    up ends the case instead of hanging it."""
+
+    def __init__(self, limit: float = 60) -> None:
+        self.now, self.limit = 0.0, limit
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+        if self.now > self.limit:
+            raise AssertionError(f"the wait ran past {self.limit} s on the test's clock")
 
 
 class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
@@ -244,13 +263,28 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
                 self.assertEqual(proc.pid, self._pid("hook.pid"))
 
     def test_pid_gives_up_at_its_bound(self) -> None:
-        """MUTANT: `_pid` ignores the bound it is handed, or reads without waiting (ValueError,
-        not the timeout): a pid file that never fills fails the case by name, inside the bound."""
+        """MUTANT: `_pid` ignores the bound it is handed, gives up before it, or reads without
+        waiting (it returns None, not the timeout): a pid file that never fills fails the case
+        by name once the bound has passed and before one second has, both read on `_Clock`,
+        so the case bounds no duration the wall clock measured."""
         (self.dir / "hook.pid").write_text("", encoding="utf-8")
-        started = time.monotonic()
-        with self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in hook.pid"):
+        clock = _Clock()
+        with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
+                self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in hook.pid"):
             self._pid("hook.pid", 0.2)
-        self.assertLess(time.monotonic() - started, 10, "the wait ignored its bound")
+        self.assertGreaterEqual(clock.now, 0.2, "the wait gave up before its bound")
+        self.assertLess(clock.now, 1, "the wait ignored its bound")
+
+    def test_the_clock_ends_a_wait_that_never_gives_up(self) -> None:
+        """MUTANT: `_Clock.sleep` never raises at its limit. A wait whose bound lies past the
+        limit then times out on its own bound, where the clock must end it at the limit: a
+        loop that never gives up would otherwise hang the case rather than fail it."""
+        (self.dir / "hook.pid").write_text("", encoding="utf-8")
+        clock = _Clock(limit=1)
+        with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
+                self.assertRaisesRegex(AssertionError, "the wait ran past 1 s on the test's clock"):
+            self._pid("hook.pid", 10)
+        self.assertLess(clock.now, 2, "the clock ran on past its limit")
 
     def test_the_hook_moves_its_pid_files_into_place(self) -> None:
         """MUTANT: the hook writes a pid file in place, `echo $$ > file` creating it empty
