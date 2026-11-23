@@ -228,6 +228,16 @@ _SIGNER_LIMIT = re.compile(r"\bcannot tell a person from an agent session\b[^.]*
 _HUMAN_AUTHOR = re.compile(r"\bunless the ledger records that author as a person\b", re.I)
 
 
+#: A clause that refuses: a verb that refuses, rejects, bars, blocks or excludes, or a verb that
+#: accepts, admits, allows, lets, names or signs, or the verb be, with not, never, cannot or n't
+#: in front of it, at most one word apart.
+_REFUSAL = re.compile(r"\b(?:refus|reject|bar(?:s|red)?\b|block|exclud)"
+                      r"|(?:\bnot|\bnever|\bcannot|n't)\s+(?:\w+\s+)?"
+                      r"(?:(?:accept|admit|allow|let|name|sign)\w*|be)\b", re.I)
+#: The qualification that the check reads the name, unless a clause widens it ("or by any other").
+_BY_NAME = re.compile(r"\bby name\b(?!,?\s+or\b)", re.I)
+
+
 def reference_entry(text: str, heading: str = "### `evidence_pack.py`") -> str:
     """The body under a reference page's script heading, up to the next heading, or empty."""
     rest = text.partition(f"\n{heading}\n")[2]
@@ -252,8 +262,8 @@ def signer_check_problems(body: str) -> list[str]:
     """The signer check stated as more or less than it enforces: a refusal of agents stated
     without saying it reads the name, a refusal or its exception left out, or the limit unsaid."""
     problems = [f"states the agent refusal as absolute: {c[:60]}" for c in clauses(body)
-                if re.search(r"\brefus", c, re.I) and re.search(r"\bagents?\b", c, re.I)
-                and not re.search(r"\bby name\b", c, re.I)]
+                if _REFUSAL.search(c) and re.search(r"\bagents?\b", c, re.I)
+                and not _BY_NAME.search(c)]
     stated = signer_refusals(body)
     problems += [f"does not state the refusal of {name}" for name in SIGNER_REFUSALS
                  if name not in stated]
@@ -384,12 +394,29 @@ class FactualWordingTests(unittest.TestCase):
         found = signer_check_problems(old)
         self.assertTrue(found[0].startswith("states the agent refusal as absolute"), found)
         self.assertEqual(len(found), 6, found)
-        self.assertEqual(signer_check_problems(good + " It refuses agents."),
-                         ["states the agent refusal as absolute: It refuses agents."])
-        # Not a refusal of agents: one that says it reads the name, one of something else, and
-        # an agent named in a sentence that refuses nothing.
+        # A refusal of agents in any refusing verb, or a negated one that admits, with no word
+        # that the check reads the name, or with one widened past the name.
+        for absolute in ("It refuses agents.", "It rejects an agent as the accountable person.",
+                         "It bars agents from signing.", "It is barred to an agent.",
+                         "It blocks an agent named as accountable.",
+                         "It excludes an agent from the accountable role.",
+                         "It will not accept an agent as the accountable person.",
+                         "It won't admit an agent as accountable.",
+                         "It does not allow an agent to sign.", "It cannot let an agent sign.",
+                         "The pack never names an agent as the accountable person.",
+                         "It would never knowingly sign for an agent.",
+                         "An agent can never be the accountable person.",
+                         "It refuses every agent, by name or by any other sign.",
+                         "It refuses every agent by name, or by any other sign."):
+            with self.subTest(absolute=absolute):
+                self.assertEqual(signer_check_problems(f"{good} {absolute}"),
+                                 [f"states the agent refusal as absolute: {absolute}"])
+        # Not a refusal of agents: one that says it reads the name, one of something else, an
+        # agent named in a sentence that refuses nothing, and a negation too far from its verb.
         for said in (" It refuses as accountable any signer that reads as an agent by name.",
-                     " It refuses an unsigned report.", " No agent is the accountable person."):
+                     " It refuses an unsigned report.", " No agent is the accountable person.",
+                     " It does not know who signed, an agent or a person.",
+                     " It prints an agent's barcode."):
             with self.subTest(said=said):
                 self.assertEqual(signer_check_problems(good + said), [])
         self.assertEqual(signer_check_problems(good.replace("unless the ledger", "if the ledger")),
@@ -425,6 +452,9 @@ class FactualWordingTests(unittest.TestCase):
                "it refuses an unsigned report or an agent named as accountable.")
         self.assertTrue(signer_check_problems(old)[0].startswith(
             "states the agent refusal as absolute"))
+        self.assertEqual(signer_check_problems(f"{entry} It never names an agent as accountable."),
+                         ["states the agent refusal as absolute: It never names an agent as "
+                          "accountable."])
         two = self.GOOD_SIGNER.replace("a blank principal, ", "")
         self.assertNotEqual(signer_refusals(two), signer_refusals(self.GOOD_SIGNER))
         self.assertNotEqual(signer_limit_stated(two.replace("cannot tell", "x")),
@@ -432,6 +462,14 @@ class FactualWordingTests(unittest.TestCase):
         heading = "### `evidence_pack.py`"
         self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA.\n\n### `flow.py`\n\nB.\n"),
                          "\nA.\n\n")
+        # Any heading ends the entry, so the next section's text is never read as the entry's.
+        for level in ("#", "##", "####", "######"):
+            with self.subTest(level=level):
+                self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA.\n\n{level} Next\n\n"
+                                                 "It refuses agents.\n"), "\nA.\n\n")
+        # Seven hashes, or a hash inside a line, is not a heading.
+        self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA # b.\n####### c\n"),
+                         "\nA # b.\n####### c\n")
         self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA.\n"), "\nA.\n")
         self.assertEqual(reference_entry("Intro.\n\n### `flow.py`\n\nB.\n"), "")
 

@@ -49,6 +49,7 @@ SPRINT = SKILL / "scripts" / "sprint.py"
 SPRINT_REF = SKILL / "reference-sprint.md"
 STORY_TEMPLATE = SKILL / "templates" / "core" / "story.md"
 WHY_PAGE = REPO / "docs" / "why-sdlc-studio.md"
+WHITEPAPER = REPO / "docs" / "whitepaper.md"
 BUGS = REPO / "sdlc-studio" / "bugs"
 
 
@@ -275,10 +276,31 @@ class LaneObligationDocsTests(unittest.TestCase):
                       "reference-sprint.md must point at the obligations, not restate them")
 
 
-#: The over-claim: a sentence saying a bug reaches Fixed only when its criteria pass. A story
-#: named between Fixed and the condition makes the condition the story's.
-_BUG_PASS_CLAIM = re.compile(r"\bFixed\b(?:(?!\bstor(?:y|ies)\b)[^.;])*?\bonly (?:when|if)\b"
-                             r"[^.;]*?\bcriteria\b[^.;]*?\bpass")
+#: A gap inside one clause that names no story: a story named between Fixed and the condition
+#: makes the condition the story's.
+_NOT_STORY = r"(?:(?!\bstor(?:y|ies)\b).)*?"
+#: What a page may call a bug's criteria, what it may call their passing or having run, and a
+#: requirement.
+_CHECKS = r"\b(?:criteri(?:a|on)|Verify\b[:`]*\s+lines?|tests?)\b"
+_PASS = r"\b(?:pass\w*|green|run|ran)\b"
+_MUST = r"\b(?:must|ha(?:s|ve) to|needs? to)\b"
+#: A refusal not negated by the word before it, and a criterion that has not run.
+_REFUSES = r"(?<!not )(?<!never )(?<!n't )\b(?:refus\w*|cannot|can't)\b"
+_NEVER_RUN = r"\b(?:(?:never|not(?: yet)?)(?: been)? (?:run|ran)|unrun)\b"
+#: What the Fixed gate does not enforce, each read inside one clause (a sentence or a semicolon
+#: clause): that a bug's criteria must pass or have run, said three ways, or that a criterion
+#: never run refuses Fixed. The first shape a clause matches is the one reported.
+_OVER_CLAIMS = {
+    "a bug's criteria must pass or run (a condition on Fixed)": re.compile(
+        rf"\bFixed\b{_NOT_STORY}\b(?:only (?:when|if|once|after)|until|unless)\b.*?{_CHECKS}"
+        rf".*?{_PASS}"),
+    "a bug's criteria must pass or run (a requirement after Fixed)": re.compile(
+        rf"\bFixed\b{_NOT_STORY}{_CHECKS}.*?{_MUST}.*?{_PASS}"),
+    "a bug's criteria must pass or run (a requirement before Fixed)": re.compile(
+        rf"{_CHECKS}.*?{_MUST}.*?{_PASS}[^,]*?\bFixed\b"),
+    "a criterion never run refuses Fixed": re.compile(
+        rf"(?:{_REFUSES}[^,]*?\bFixed\b|\bFixed\b{_NOT_STORY}{_REFUSES}){_NOT_STORY}{_NEVER_RUN}"),
+}
 #: What the account of the closing gates says instead, each in a paragraph that names Fixed.
 _GATE_CLAIMS = {
     "a story reaches Done only when its executable criteria have passed": re.compile(
@@ -292,13 +314,24 @@ _GATE_CLAIMS = {
 _BUG_FIX_CLAIMED = {"Fixed", "Verified", "Closed"}
 
 
+def over_claim_problems(text: str) -> list[str]:
+    """Each clause of a page claiming what `transition.py` does not enforce of a bug's criteria
+    (`_OVER_CLAIMS`). A clause ends at a semicolon or full stop followed by a space, so the full
+    stop in a name such as `transition.py` does not end one."""
+    problems = []
+    for p in re.split(r"\n\s*\n", text):
+        for clause in (c.strip() for c in re.split(r"[.;]\s", _norm(p))):
+            name = next((n for n, shape in _OVER_CLAIMS.items() if shape.search(clause)), None)
+            if name:
+                problems.append(f"claims {name}: {clause[:70]}")
+    return problems
+
+
 def fixed_gate_problems(text: str) -> list[str]:
-    """Each sentence of a page saying a bug reaches Fixed only when its criteria pass, which
-    `transition.py` does not enforce, and each true claim its account of the closing gates
-    leaves out of every paragraph that names Fixed."""
+    """Each over-claim on a page (`over_claim_problems`), and each true claim its account of the
+    closing gates leaves out of every paragraph that names Fixed."""
     paragraphs = [_norm(p) for p in re.split(r"\n\s*\n", text)]
-    problems = [f"claims a bug's criteria must pass: {m.group(0)[:70]}"
-                for p in paragraphs for m in _BUG_PASS_CLAIM.finditer(p)]
+    problems = over_claim_problems(text)
     gate = [p for p in paragraphs if re.search(r"\bFixed\b", p)]
     problems += [f"the closing gates do not say {name!r}" for name, pattern in _GATE_CLAIMS.items()
                  if not any(pattern.search(p) for p in gate)]
@@ -347,24 +380,81 @@ class FixedGateClaimTests(unittest.TestCase):
 
     def test_the_why_page_claims_only_what_the_fixed_gate_enforces(self) -> None:
         self.assertEqual(fixed_gate_problems(WHY_PAGE.read_text(encoding="utf-8")), [])
+        self.assertEqual(over_claim_problems(WHITEPAPER.read_text(encoding="utf-8")), [])
         # Planted failures beside a positive control.
         good = ("Closing gates for Done and Fixed (a story reaches Done only when its executable "
                 "criteria have passed; a bug is refused Fixed when nothing speaks for the fix, "
                 "or when a recorded run of its criteria is red).")
         self.assertEqual(fixed_gate_problems(good), [])
-        for over in ("a story reaches Done, and a bug Fixed, only when its criteria pass",
-                     "A bug reaches Fixed only when its criteria pass.",
-                     "A story reaches Done or Fixed only if its acceptance criteria passed."):
+        condition, after, before, unrun = _OVER_CLAIMS
+        for name, over in (
+                (condition, "a story reaches Done, and a bug Fixed, only when its criteria pass"),
+                (condition, "A bug reaches Fixed only when its criteria pass."),
+                (condition, "A story reaches Done or Fixed only if its acceptance criteria "
+                            "passed."),
+                (condition, "A bug reaches Fixed only once its criteria pass."),
+                (condition, "A bug reaches Fixed only after its criteria pass."),
+                (condition, "No bug reaches Fixed until its criteria pass."),
+                (condition, "A bug cannot be Fixed unless every criterion passes."),
+                (condition, "A bug reaches Fixed only when its `Verify:` lines pass."),
+                (condition, "A bug reaches Fixed only when each Verify line passes."),
+                (condition, "A bug reaches Fixed only after its tests pass."),
+                (condition, "A bug reaches Fixed only once its regression test passes."),
+                (condition, "A bug reaches Fixed only when its criteria are green."),
+                (condition, "A bug reaches Fixed only when its criteria must pass."),
+                (condition, "`sprint sign` moves the bug to Fixed only if its criteria and "
+                            "recorded verification run speak for it."),
+                (condition, "A bug reaches Fixed only after its criteria ran."),
+                (condition, "A bug is Fixed only when reviewed.The criteria pass on their own."),
+                (after, "For Fixed, its criteria must have run."),
+                (after, "To reach Fixed, a bug's criteria must pass."),
+                (after, "For Fixed, every criterion has to pass."),
+                (after, "For Fixed, its criteria have to pass."),
+                (after, "For Fixed, its tests need to pass."),
+                (after, "For Fixed, each criterion needs to pass."),
+                (before, "A bug's criteria must pass before it is Fixed."),
+                (unrun, "A bug cannot reach Fixed while a criterion is unrun."),
+                (unrun, "A bug can't reach Fixed while a criterion has not yet run."),
+                (unrun, "Fixed is refused when a `Verify:` line has not been run."),
+                (unrun, "The gate refuses Fixed to a bug whose criteria never ran."),
+                (unrun, "The gate will refuse Fixed when a criterion has never run."),
+                (unrun, "`sprint sign` moves a bug to Fixed through `transition.py`, which refuses "
+                        "it when a criterion has never run.")):
             with self.subTest(over=over):
                 found = fixed_gate_problems(good + "\n\n" + over)
                 self.assertEqual(len(found), 1, found)
-                self.assertTrue(found[0].startswith("claims a bug's criteria must pass"), found)
-        # A sentence or clause break, or a story named before the condition, takes it off Fixed.
-        for story in ("A bug is Fixed. A story reaches Done only when its criteria pass.",
-                      "A bug can be Fixed; Done comes only when its criteria pass.",
-                      "Done and Fixed: stories reach Done only when their criteria pass."):
-            with self.subTest(story=story):
-                self.assertEqual(fixed_gate_problems(good + "\n\n" + story), [])
+                self.assertTrue(found[0].startswith(f"claims {name}: "), found)
+        # A refusal the gate does not make, added to the account's own list of refusals.
+        found = fixed_gate_problems(good.replace("is red)", "is red, or when any criterion has "
+                                                              "never run)"))
+        self.assertEqual(len(found), 1, found)
+        self.assertTrue(found[0].startswith(f"claims {unrun}: "), found)
+        # A sentence or clause break, a story named before the condition, no requirement, or a
+        # refusal negated, kept off Fixed or made the story's, takes the claim off the Fixed gate.
+        for true in ("A bug is Fixed. A story reaches Done only when its criteria pass.",
+                     "A bug can be Fixed; Done comes only when its criteria pass.",
+                     "Done and Fixed: stories reach Done only when their criteria pass.",
+                     "Done and Fixed differ, for a story reaches Done only when its criteria pass.",
+                     "A bug is Fixed only when reviewed. The criteria pass on their own.",
+                     "A bug is Fixed only when reviewed; the criteria pass on their own.",
+                     "A bug reaches Fixed only if its criteria speak for it.",
+                     "A bug reaches Fixed when its criteria pass.",
+                     "Done and Fixed: a story's criteria must pass for Done.",
+                     "Its criteria may pass before it is Fixed.",
+                     "A story's criteria must pass before Done, and a bug is refused Fixed when "
+                     "nothing speaks for the fix.",
+                     "A bug reaches Fixed even when a criterion has never run.",
+                     "A bug is not refused Fixed when a criterion has never run.",
+                     "The gate never refuses Fixed when a criterion has never run.",
+                     "The gate doesn't refuse Fixed when a criterion has never run.",
+                     "A story is refused Done, but a bug reaches Fixed even when a criterion has "
+                     "never run.",
+                     "A bug reaches Fixed, and a story is refused Done when a criterion has never "
+                     "run.",
+                     "A bug is refused Fixed when nothing speaks for the fix, and a story is "
+                     "refused Done when a criterion has never run."):
+            with self.subTest(true=true):
+                self.assertEqual(fixed_gate_problems(good + "\n\n" + true), [])
         for name in _GATE_CLAIMS:
             with self.subTest(dropped=name):
                 cut = good.replace(name.removeprefix("or when "), "something else")
@@ -401,6 +491,19 @@ class FixedGateClaimTests(unittest.TestCase):
         self.assertEqual(bug_record_problems(good.replace(f" {test}::test_the_corpus_verify_job"
                                                           "_installs_a_declared_subset",
                                                           f" {test.partition('::')[0]}")), [])
+        # A name is defined only by a class or def that starts its line after any indent: a
+        # module constant, or a def in a comment, is not a test.
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "t.py").write_text("WORKFLOW = 'test_it'\nclass Named:\n    def test_it("
+                                            "self):\n        pass\n# def test_said\n",
+                                            encoding="utf-8")
+            record = good.replace(test + "::test_the_corpus_verify_job_installs_a_declared_subset",
+                                  "t.py::{}")
+            self.assertEqual(bug_record_problems(record.format("Named::test_it"), Path(tmp)), [])
+            for name in ("WORKFLOW", "test_said"):
+                with self.subTest(undefined=name):
+                    self.assertEqual(bug_record_problems(record.format(name), Path(tmp)),
+                                     [f"AC1 names {name}, which t.py does not define"])
         # A marker outside the criteria is not a recorded run of them.
         unrun = good.replace("  - **Verified:** yes (2026-11-23)\n", "")
         self.assertEqual(bug_record_problems(unrun + "\n## Notes\n\n- **Verified:** yes (x)\n"),

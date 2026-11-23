@@ -370,8 +370,9 @@ repository, which builds itself through its own pipeline:
    re-runs style, links and structural validation plus the tests the change touches,
    and the push runs the full suite. The paperwork ships in the same commit as the code.
 5. The sprint closes with one command that files a one-page report. The operator reads
-   it and signs the run: `sprint sign` moves the bug to Fixed only if its criteria and
-   recorded verification run speak for it.
+   it and signs the run: `sprint sign` moves the bug to Fixed through the gate
+   `transition.py` enforces, which refuses it when nothing speaks for the fix (no criterion
+   ticked and none carrying a `Verify:` line) or when a recorded run of its criteria is red.
 
 The result, for an auditor, is that any change can be walked backwards: commit to
 artefact, artefact to criteria, criteria to verification output, verification to an
