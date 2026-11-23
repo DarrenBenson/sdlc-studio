@@ -2,8 +2,8 @@
   "schema": 1,
   "run_id": "RUN-01M80RTZ",
   "started_at": "2026-11-22T04:29:45Z",
-  "ended_at": null,
-  "outcome": "running",
+  "ended_at": "2026-11-23T01:36:31Z",
+  "outcome": "partial",
   "goal": "done",
   "batch": [
     "BG0970",
@@ -6892,5 +6892,15 @@
   "report": "RPT0041",
   "report_fingerprint": "60ac2d7a65abc6b1",
   "report_window_end": "2026-11-23T01:28:51Z",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0155",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-11-23T01:36:31Z",
+    "report": "RPT0041",
+    "fingerprint": "60ac2d7a65abc6b1",
+    "delegated": true,
+    "decision": "D0545"
+  },
   "evidence_schema": "1.0"
 }
