@@ -276,6 +276,26 @@ class BuilderBriefTests(_Isolated):
         return [m.group(1)]
 
 
+    def test_the_brief_says_where_a_hand_run_mutant_runs(self) -> None:
+        """The lane brief's hand-in instruction for the unit's MUTANTS.json carries critic's
+        where-to-run sentence, so a builder runs a mutant the runner cannot run in a worktree,
+        never in a copy of the tests alone. Mutant: the sentence put on a line naming
+        `self-check record`, which `_hand_in_self_check` replaces, so the brief drops it."""
+        root = _project(self._tmp.name)
+        out = _brief(root, "US0102")
+        mutants = "US0102-mutants.json"
+        lines = [ln for ln in out.splitlines()
+                 if f"goes in {mutants} as {{mutant, test, result, answer}}" in ln]
+        self.assertEqual(1, len(lines), out)
+        for want in ("run such a mutant by hand in the lane's own worktree or a detached "
+                     "worktree of the repository (`git worktree add --detach`), never in a copy "
+                     "of the tests alone",):
+            self.assertIn(want, lines[0])
+        real = critic.author_self_check(root, "US0102")
+        place = real[real.index("run such a mutant by hand"):].split("\n", 1)[0]
+        self.assertIn(place, lines[0], "the brief's sentence is not critic's own")
+        self.assertNotIn("self-check record", out)
+
 #: The rows the deliver table must hold, as (Do, Command, Instead of) cells.
 DELIVER_ROWS = (
     ("Build a unit",

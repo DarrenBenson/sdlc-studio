@@ -234,8 +234,20 @@ def _write_of(use: dict, target: Path, text: str):
     return False
 
 
+def _resolved(value) -> Path | None:
+    """`value`, a path a transcript or its metadata holds, resolved; None when it is not a
+    non-empty string or path, or cannot be resolved: a NUL in it, or a loop of links, which
+    Python before 3.13 refuses with RuntimeError. So a bad record costs only itself."""
+    if not isinstance(value, (str, Path)) or not value:
+        return None
+    try:
+        return Path(value).resolve()
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
 def _names(value, target: Path) -> bool:
-    return isinstance(value, str) and bool(value) and Path(value).resolve() == target
+    return _resolved(value) == target
 
 
 def _carried(write: tuple, data: bytes) -> bool:
@@ -363,7 +375,7 @@ def _edited_before_brief(repo_root: Path, f: Path, affects: list[str], issued: l
     except (OSError, ValueError):
         meta = {}
     tree = meta.get(WORKTREE_KEY) if isinstance(meta, dict) else None
-    roots = [Path(r).resolve() for r in (tree, repo_root) if isinstance(r, (str, Path)) and r]
+    roots = [r for r in (_resolved(tree), _resolved(repo_root)) if r]
     briefs = {json.dumps(str(v), ensure_ascii=False)[1:-1].encode("utf-8")
               for p in issued for v in (Path(p), Path(p).resolve())}
     names = {json.dumps(a, ensure_ascii=False)[1:-1].encode("utf-8") for a in affects}
@@ -389,8 +401,8 @@ def _affected(value, roots: list[Path], affects: list[str]) -> str | None:
     an Affects file or a file under an Affects folder; else None."""
     if not isinstance(value, str) or not Path(value).is_absolute():
         return None
-    path = Path(value).resolve()
-    for root in roots:
+    path = _resolved(value)
+    for root in roots if path else ():
         try:
             rel = path.relative_to(root).as_posix()
         except ValueError:

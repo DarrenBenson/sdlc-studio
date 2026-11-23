@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -379,6 +380,194 @@ class SignedReportIsVerifiedTests(unittest.TestCase):
                 proc = self.refused(edit, "RPT0002", "unsigned in the run record")
                 self.assertNotIn("RPT0001", proc.stderr, "only the unsigned report is named")
 
+
+def head(root: Path) -> str:
+    return gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
+
+
+def shown(root: Path, rev: str, rel: str) -> dict:
+    """The JSON file at `rel` as commit `rev` holds it."""
+    return json.loads(gitutil.git(["show", f"{rev}:{rel}"], root, text=True).stdout)
+
+
+def accountable(pack: str, unit: str) -> list[str]:
+    return [ln for ln in section(pack, unit) if ln.startswith("- Accountable:")]
+
+
+class SealedSignatureTests(unittest.TestCase):
+    """A run record is as editable as the report it signs, so the signature of record is the one
+    the record held when it first signed the report: the seal commit. A later commit that
+    rewrites the record's signature refuses the pack, naming the report and the seal commit; one
+    that leaves it alone still builds, over the sealed signature."""
+
+    def forged(self, edits) -> tuple[subprocess.CompletedProcess, str]:
+        """Seal the project, build it once as the control, then commit `edits` (path, change)
+        in one later commit and build again: the refusal and the seal commit."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            sealed = head(root)
+            control = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(0, control.returncode, control.stderr)
+            (root / PACK_REL).unlink()
+            for rel, change in edits:
+                edit_json(root, rel, change)
+            gitutil.git(["commit", "-qam", "rewritten after the seal"], root)
+            before = snapshot(root)
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertNotEqual(0, proc.returncode, proc.stdout)
+            self.assertEqual(before, snapshot(root), "a refusal writes no pack")
+            self.assertFalse((root / PACK_REL).exists())
+            return proc, sealed
+
+    def test_figures_and_signature_rewritten_after_the_seal_refuse_the_pack(self) -> None:
+        """The figure moves to 13, both fingerprints on the report are re-stamped to it and the
+        run record's signature fingerprint is set to agree, so every check at the build revision
+        passes: only the seal commit still holds what was signed."""
+        forged = {}
+
+        def report_change(data: dict) -> None:
+            data["sections"][0]["rows"][0]["unit_points"]["value"] = 13
+            forged["fp"] = data["fingerprint"] = data["signature"]["fingerprint"] = (
+                sprint_report.fingerprint(data))
+
+        def record_change(rec: dict) -> None:
+            rec["signature"]["fingerprint"] = forged["fp"]
+
+        proc, sealed = self.forged([("sdlc-studio/reports/RPT0001.json", report_change),
+                                    (run_record_rel("RPT0001"), record_change)])
+        self.assertIn("RPT0001: its run record", proc.stderr)
+        self.assertIn(f"sealed at {sealed[:12]}", proc.stderr)
+        self.assertIn("differs on fingerprint from the one sealed", proc.stderr)
+        self.assertNotIn("RPT0002", proc.stderr, "only the rewritten report is named")
+
+    def test_a_principal_rewritten_after_the_seal_refuses_the_pack(self) -> None:
+        def change(data: dict) -> None:
+            data["signature"]["principal"] = "Kim Other"
+
+        proc, sealed = self.forged([("sdlc-studio/reports/RPT0002.json", change),
+                                    (run_record_rel("RPT0002"), change)])
+        self.assertIn("RPT0002: its run record", proc.stderr)
+        self.assertIn(f"sealed at {sealed[:12]}", proc.stderr)
+        self.assertIn("differs on principal from the one sealed", proc.stderr)
+        self.assertNotIn("Kim Other", proc.stdout)
+        self.assertNotIn("RPT0001", proc.stderr, "only the rewritten report is named")
+
+    def test_commits_after_the_seal_that_leave_the_signature_alone_still_build(self) -> None:
+        """A story, the verdict ledger and the run record's other fields each change in a later
+        commit: the pack builds, and each accountable line names the principal and fingerprint
+        the seal commit's run record holds."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            sealed = head(root)
+            held = {rid: shown(root, sealed, run_record_rel(rid))["signature"]
+                    for rid in ("RPT0001", "RPT0002")}
+            write(root, S2, US0002.replace("report their size", "report their size in mm"))
+            gitutil.git(["commit", "-qam", "a story after the seal"], root)
+            ledger = root / "sdlc-studio/reviews/critic-verdicts.md"
+            write(root, "sdlc-studio/reviews/critic-verdicts.md", ledger.read_text(
+                encoding="utf-8") + verdict_row("US0002", "APPROVE", "qa-seat", "builder-c",
+                                                "2026-11-13"))
+            gitutil.git(["commit", "-qam", "the ledger after the seal"], root)
+            edit_json(root, run_record_rel("RPT0001"),
+                      lambda rec: rec.update(closed_at="2026-11-14T09:00:00Z"))
+            gitutil.git(["commit", "-qam", "the run record's other fields after the seal"], root)
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            pack = (root / PACK_REL).read_text(encoding="utf-8")
+            self.assertIn("in mm", pack, "the build read the later story")
+            self.assertIn("qa-seat APPROVE (2026-11-13)", "\n".join(section(pack, "US0002")),
+                          "the build read the later ledger")
+            self.assertEqual(accountable(pack, "US0001"), [
+                f"- Accountable: {held['RPT0001']['principal']}, who signed its report on "
+                f"2026-11-10 over fingerprint {held['RPT0001']['fingerprint']}."])
+            self.assertEqual(accountable(pack, "US0002"), [
+                f"- Accountable: {held['RPT0002']['principal']}, who signed its report on "
+                f"2026-11-12 over fingerprint {held['RPT0002']['fingerprint']}."])
+
+    def test_the_seal_is_read_from_the_history_of_the_revision_built(self) -> None:
+        """Two branches each sealed their own signature of RPT0001: Dana Reviewer's on the
+        checked-out branch, Kim Other's on `side`. Built at `side`, the pack reads side's seal,
+        never the checked-out branch's, and names Kim Other."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["commit", "-q", "--allow-empty", "-m", "start"], root)
+            gitutil.git(["branch", "side"], root)
+            gitutil.git(["checkout", "-q", "side"], root)
+            project(root, rpt1_sig=signature("RPT0001", "Kim Other"))
+            gitutil.git(["checkout", "-q", "-"], root)
+            project(root)
+            for rev, principal in (("HEAD", "Dana Reviewer"), ("side", "Kim Other")):
+                with self.subTest(rev=rev):
+                    proc = subprocess.run(
+                        [sys.executable, "-B", str(RELEASE_CUT), "--root", str(root),
+                         "evidence-pack", "--version", "6.4.0", "--reports", "RPT0001",
+                         "--rev", rev],
+                        cwd=str(root), capture_output=True, text=True, env=gitutil.git_env())
+                    self.assertEqual(0, proc.returncode, proc.stderr)
+                    pack = (root / PACK_REL).read_text(encoding="utf-8")
+                    self.assertTrue(accountable(pack, "US0001")[0].startswith(
+                        f"- Accountable: {principal}, who signed"), pack)
+                    (root / PACK_REL).unlink()
+
+    def test_a_seal_naming_the_report_in_lower_case_is_found(self) -> None:
+        """The run record's signature names its report as the run record check reads it, case
+        and spaces aside, so a record signing ` rpt0001` is sealed and builds as before."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root, rpt1_sig=signature(" rpt0001"))
+            proc = run_pack(root, "RPT0001")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+
+    def test_the_seal_is_the_first_commit_whose_record_signs_the_report(self) -> None:
+        """Before the signing commit the run record was unreadable, removed, a list and signed
+        another report: none is the seal, so the project builds. A later re-dating of the signature
+        on both is refused, naming the signing commit. A history git cannot read refuses rather
+        than trusting the record at the build revision."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rel = run_record_rel("RPT0001")
+            gitutil.git(["init", "-q"], root)
+            write(root, rel, "{not json\n")
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "an unreadable record"], root)
+            (root / rel).unlink()
+            gitutil.git(["commit", "-qam", "the record removed"], root)
+            write(root, rel, "[]\n")
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "a record that is a list"], root)
+            write(root, rel, json.dumps({"run_id": run_of("RPT0001"), "signature": {
+                "principal": "Kim Other", "signed_at": "2026-11-01T09:00:00Z",
+                "report": "RPT0009", "fingerprint": "feedfacefeedface"}}) + "\n")
+            gitutil.git(["commit", "-qam", "a record signing another report"], root)
+            project(root)
+            sealed = head(root)
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            (root / PACK_REL).unlink()
+            for path in (rel, "sdlc-studio/reports/RPT0001.json"):
+                edit_json(root, path, lambda data: data["signature"].update(
+                    signed_at="2026-11-20T09:00:00Z"))
+            gitutil.git(["commit", "-qam", "re-dated"], root)
+            proc = run_pack(root, "RPT0001")
+            self.assertNotEqual(0, proc.returncode, proc.stdout)
+            self.assertIn(f"sealed at {sealed[:12]}", proc.stderr)
+            self.assertIn("differs on signed_at from the one sealed", proc.stderr)
+            import evidence_pack  # noqa: PLC0415 - in process, to fail the history read alone
+            data = json.loads((root / "sdlc-studio/reports/RPT0001.json").read_text(
+                encoding="utf-8"))
+            real = evidence_pack._git
+            with unittest.mock.patch.object(
+                    evidence_pack, "_git",
+                    lambda r, *a: None if a[:1] == ("log",) else real(r, *a)):
+                held, why = evidence_pack._verified_signature(root, head(root), "RPT0001", data)
+            self.assertEqual({}, held)
+            self.assertIn(f"no commit in the history of its run record {rel}", why)
+            held, why = evidence_pack._verified_signature(
+                root, sealed, "RPT0001", shown(root, sealed, "sdlc-studio/reports/RPT0001.json"))
+            self.assertEqual(("", "Dana Reviewer"), (why, held["principal"]))
 
 class CommittedOnlyTests(unittest.TestCase):
     def test_working_tree_edits_do_not_change_the_pack(self) -> None:

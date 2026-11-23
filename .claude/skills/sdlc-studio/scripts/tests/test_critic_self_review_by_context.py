@@ -22,6 +22,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -261,6 +262,152 @@ class SelfReviewByContextTests(unittest.TestCase):
             self.assertIn("agent:r1", row["source"].split())
             self.assertIndependent(root, "US0001", row)
 
+
+    def _nul_case(self, d: str, edits: list[str], *, writes: tuple = ("",),
+                  writer: str | None = None, meta_tree: str | None = None
+                  ) -> tuple[subprocess.CompletedProcess, dict]:
+        """Record US0001's verdict over a transcript in which `writer` (the main thread when
+        None) first edits each path of `edits` (each a string, so it may hold a NUL), then is
+        handed the brief and writes the verdict once per suffix in `writes`, the clean write
+        last; an entry that is not a string is a Write whose `file_path` is that value, its
+        content the verdict path. `meta_tree` stands in the subagent's recorded worktree path."""
+        base, root, cwd, home = self._dirs(d)
+        _project(root, "US0001")
+        path, stem, argv = _brief(cwd, root, "US0001")
+        written = _block("US0001", stem, "Looks right.\n")
+        path.write_text(written, encoding="utf-8")
+        t = _Transcripts(base / "t", root)
+        if writer:
+            t.tool(None, "00:00", "Agent", prompt="build and review the unit")
+            t.said(writer, "00:00", "build and review the unit")
+        for n, edited in enumerate(edits, start=1):
+            t.tool(writer, f"00:0{n}", "Edit", file_path=edited, old_string="return 1",
+                   new_string="return 2")
+        t.said(writer, "00:05", f"[tool_result] write your verdict to:\n{path}")
+        for n, suffix in enumerate(writes, start=6):
+            if isinstance(suffix, str):
+                t.tool(writer, f"00:0{n}", "Write", file_path=str(path) + suffix, content=written)
+            else:
+                t.tool(writer, f"00:0{n}", "Write", file_path=suffix, content=str(path))
+        folder = t.flush()
+        if meta_tree is not None:
+            meta = folder / SESSION / "subagents" / f"agent-{writer}.meta.json"
+            meta.write_text(json.dumps({**json.loads(meta.read_text(encoding="utf-8")),
+                                        "worktreePath": meta_tree}), encoding="utf-8")
+        rec = _critic(cwd, *argv, "--reviewer", REVIEWER, "--author", AUTHOR,
+                      "--root", str(root), env=_env(folder, home))
+        return rec, {"root": root, "rows": _rows(root, "US0001")}
+
+    def test_a_nul_path_in_a_transcript_is_skipped(self) -> None:
+        """A transcript Edit naming the unit's file with a NUL appended cannot be resolved; it is
+        skipped, so the record is written and, with no other edit, independent. Mutant: the
+        guard re-raising, which refuses the record with `embedded null character`."""
+        with tempfile.TemporaryDirectory() as d:
+            unit = str(Path(d) / "proj" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [unit + "\0"])
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertNotIn("null character", rec.stderr)
+            self.assertEqual(1, len(got["rows"]))
+            self.assertEqual("APPROVE", got["rows"][-1]["verdict"])
+            self.assertIndependent(got["root"], "US0001", got["rows"][-1])
+
+    def test_a_nul_path_does_not_hide_a_later_edit_of_the_unit(self) -> None:
+        """The NUL Edit costs only itself: the clean Edit of the unit after it, before the brief,
+        still makes the row a self-review. Mutant: the scan abandoned at the first path it
+        cannot resolve (or the whole check giving up), which records the row as independent."""
+        with tempfile.TemporaryDirectory() as d:
+            unit = str(Path(d) / "proj" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [unit + "\0", unit])
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertRegex(rec.stderr, r"WARNING: .*src/unit\.py")
+            self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
+
+    def test_a_nul_path_beside_the_verdict_write_is_skipped(self) -> None:
+        """A Write of the verdict path with a NUL appended, before the briefed agent's real write,
+        is skipped, and the writer is found from the real write: the row names agent r1, with no
+        last writer, and r1's earlier edit of the unit makes it a self-review. Mutant: `_names`
+        re-raising, which refuses the record; or answering False for every path, which finds no
+        writer and leaves the row with no agent and no self-review."""
+        with tempfile.TemporaryDirectory() as d:
+            unit = str(Path(d) / "proj" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [unit], writes=("\0", ""), writer="r1")
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            tokens = got["rows"][-1]["source"].split()
+            self.assertIn(f"session:{SESSION}", tokens)
+            self.assertIn("agent:r1", tokens)
+            self.assertFalse(any(t.startswith("last-writer:") for t in tokens), tokens)
+            self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
+
+    def test_an_unresolvable_worktree_path_costs_only_itself(self) -> None:
+        """The writer's recorded worktree path is read from the harness's own files too: one
+        holding a NUL is skipped as a root, and the edit under the repository root still
+        counts. An empty one names no tree, so an edit under the folder the record runs from
+        is not an edit of the unit. Mutants: the worktree resolved unguarded, which refuses the
+        record; an empty worktree path resolved, to that folder, which makes it a self-review."""
+        with tempfile.TemporaryDirectory() as d:
+            unit = str(Path(d) / "proj" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [unit], writer="r1", meta_tree=f"{d}/wt\0")
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
+        with tempfile.TemporaryDirectory() as d:
+            elsewhere = str(Path(d) / "elsewhere" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [elsewhere], writer="r1", meta_tree="")
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertIndependent(got["root"], "US0001", got["rows"][-1])
+
+    def test_a_path_that_is_not_a_string_costs_only_itself(self) -> None:
+        """A Write whose `file_path` is a number or a list, beside the verdict path, names no file
+        and is skipped; the writer is still found from its real write. Mutant: the guard
+        resolving any truthy value, which raises TypeError and refuses the record."""
+        for odd in (7, ["a"]):
+            with self.subTest(odd=odd), tempfile.TemporaryDirectory() as d:
+                unit = str(Path(d) / "proj" / "src" / "unit.py")
+                rec, got = self._nul_case(d, [unit], writes=(odd, ""), writer="r1")
+                self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+                self.assertIn("agent:r1", got["rows"][-1]["source"].split())
+                self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
+
+    def test_a_path_whose_resolution_raises_costs_only_itself(self) -> None:
+        """`resolve()` raises RuntimeError for a loop of links on Python 3.10 to 3.12, whatever
+        `strict` says, and can raise OSError; the test makes it raise each on any version, for
+        one path only. That path resolves to nothing, so it names no verdict write and no edit of
+        the unit, while the clean path beside it is still read. Mutants: either error dropped
+        from the guard's except clause, which raises out of the record instead."""
+        vp = critic.verdict_provenance
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d).resolve()
+            unit = root / "src" / "unit.py"
+            bad = str(root / "unresolvable" / "unit.py")
+            real = Path.resolve
+            for error in (RuntimeError("Symlink loop from 'unresolvable'"),
+                          OSError(40, "Too many levels of symbolic links")):
+                def resolve(self, *args, error=error, **kwargs):
+                    if "unresolvable" in str(self):
+                        raise error
+                    return real(self, *args, **kwargs)
+                with self.subTest(error=type(error).__name__), unittest.mock.patch.object(
+                        type(unit), "resolve", resolve):
+                    with self.assertRaises(type(error)):
+                        Path(bad).resolve()
+                    self.assertIsNone(vp._resolved(bad))
+                    self.assertFalse(vp._names(bad, unit))
+                    self.assertTrue(vp._names(str(unit), unit))
+                    self.assertIsNone(vp._affected(bad, [root], ["src/unit.py"]))
+                    self.assertEqual("src/unit.py",
+                                     vp._affected(str(unit), [root], ["src/unit.py"]))
+
+    def test_a_path_under_a_loop_of_links_costs_only_itself(self) -> None:
+        """A transcript path running through a loop of symbolic links, which Python before 3.13
+        refuses to resolve with RuntimeError, is skipped; the clean edit after it still counts."""
+        with tempfile.TemporaryDirectory() as d:
+            loop = Path(d) / "loop"
+            loop.mkdir()
+            (loop / "a").symlink_to(loop / "b")
+            (loop / "b").symlink_to(loop / "a")
+            unit = str(Path(d) / "proj" / "src" / "unit.py")
+            rec, got = self._nul_case(d, [str(loop / "a" / "unit.py"), unit])
+            self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+            self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
 
 if __name__ == "__main__":
     unittest.main()

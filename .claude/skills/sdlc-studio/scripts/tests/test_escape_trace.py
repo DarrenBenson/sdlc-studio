@@ -252,5 +252,127 @@ class EscapeTraceTests(unittest.TestCase):
             self.assertEqual("v6.4.0", escape.release_tag(root, "v6.4.0"))
 
 
+
+def _span(d: str, *messages: str) -> Path:
+    """A project whose v1.0.0 holds one commit per message and v0.9.0 the stories before them:
+    US0001, US0003, US0004, US0005 and US0006 each on scripts/a.py. Only the commits after
+    v0.9.0 are v1.0.0's own, so a unit counts only where one of `messages` names it."""
+    root = Path(d)
+    for sub in ("stories", "bugs", "reviews"):
+        (root / "sdlc-studio" / sub).mkdir(parents=True)
+    gitutil.git(["init", "-q"], root)
+    for sid in ("US0001", "US0003", "US0004", "US0005", "US0006"):
+        _story(root, sid, "scripts/a.py")
+    _commit(root, "chore: start")
+    gitutil.git(["tag", "v0.9.0"], root)
+    for message in messages:
+        _commit(root, message)
+    gitutil.git(["tag", "v1.0.0"], root)
+    return root
+
+
+def _trace(root: Path) -> tuple[int, dict, str]:
+    rc, out, err = _cli(["trace", "--bug", "BG0001", "--root", str(root), "--format", "json"])
+    return rc, (json.loads(out) if rc == 0 else {}), out + err
+
+
+class EscapeTraceUnitsTests(unittest.TestCase):
+    """The units a release shipped are those its commits own - the ids a subject names and a
+    `Refs:` trailer names - never an id a `Mentions:` trailer names, which owns no file."""
+
+    def test_a_unit_named_only_in_a_mentions_trailer_is_not_proposed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "docs(D0001): rule the release\n\nMentions: US0005")
+            _bug(root)
+            rc, _got, said = _trace(root)
+            self.assertEqual(2, rc, said)
+            self.assertIn("release v1.0.0 tags no unit", said)
+            self.assertNotIn("US0005", said)
+            self.assertEqual([], escape.release_units(root, "v1.0.0"))
+
+    def test_a_subject_unit_a_mentions_trailer_names_is_not_proposed(self) -> None:
+        """The commit-msg hook writes `Mentions:` for a subject id that owns none of the staged
+        files, so the subject naming it does not make it shipped; the `Refs:` id beside it is."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "docs(US0001, US0005): rule the total\n\n"
+                            "Refs: US0001\nmentions:  US0005")
+            _bug(root)
+            rc, got, said = _trace(root)
+            self.assertEqual(0, rc, said)
+            self.assertEqual(["US0001"], got["units"])
+            self.assertEqual(["US0001"], [p["unit"] for p in got["proposals"]])
+
+    def test_a_subject_or_refs_unit_is_still_proposed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "feat(US0001, US0003): share the total\n\nRefs: US0001\n"
+                            "Refs: US0003", "feat(US0006): round the total")
+            _bug(root)
+            rc, got, said = _trace(root)
+            self.assertEqual(0, rc, said)
+            self.assertEqual(["US0001", "US0003", "US0006"],
+                             sorted(p["unit"] for p in got["proposals"]))
+        # A `Refs:` trailer owns its unit even where the subject names none, and a body line that
+        # is not a trailer owns nothing.
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "chore: tidy the basket\n\nThe slip came from US0005.\n\n"
+                            "Refs: US0004, US0006")
+            _bug(root)
+            rc, got, said = _trace(root)
+            self.assertEqual(0, rc, said)
+            self.assertEqual(["US0004", "US0006"], got["units"])
+
+
+class EscapeTraceDocumentedRulesTests(unittest.TestCase):
+    """The rules the module documents: the verdict proposed is the latest APPROVE, not the latest
+    row; the escaped bug is never its own cause; a bug with no Affects is refused."""
+
+    def test_the_latest_approve_is_proposed_not_a_later_reject(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "feat(US0001): total the basket")
+            _bug(root)
+            with contextlib.redirect_stderr(io.StringIO()):
+                critic.record_verdict(root, "US0001", "APPROVE", reviewer="Lena Marsh (product)",
+                                      author="builder-1")
+                critic.record_verdict(root, "US0001", "REJECT", reviewer="Sam Eriksson (qa)",
+                                      author="builder-1", issues="a late finding")
+            rows = critic.unit_review_rounds(root, "US0001")
+            self.assertEqual("REJECT", str(rows[-1]["verdict"]).upper()[:6])
+            rc, got, said = _trace(root)
+            self.assertEqual(0, rc, said)
+            verdict = got["proposals"][0]["verdict"]
+            self.assertEqual("APPROVE", verdict["verdict"])
+            self.assertEqual("Lena Marsh (product)", verdict["reviewer"])
+
+    def test_the_escaped_bug_is_never_proposed_as_its_own_cause(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "fix(BG0001): an earlier fix", "feat(US0001): total the basket")
+            _bug(root)
+            self.assertIn("BG0001", escape.release_units(root, "v1.0.0"))
+            rc, got, said = _trace(root)
+            self.assertEqual(0, rc, said)
+            self.assertEqual(["US0001"], got["units"])
+            self.assertEqual(["US0001"], [p["unit"] for p in got["proposals"]])
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "fix(BG0001): an earlier fix")
+            _bug(root)
+            rc, _got, said = _trace(root)
+            self.assertEqual(2, rc, said)
+            self.assertIn("release v1.0.0 tags no unit", said)
+
+    def test_a_bug_with_no_affects_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _span(d, "feat(US0001): total the basket")
+            bug = _bug(root)
+            bug.write_text(bug.read_text(encoding="utf-8").replace(
+                "> **Affects:** scripts/a.py\n", ""), encoding="utf-8")
+            before = _snapshot(root)
+            for extra in ([], ["--confirm", "US0001"]):
+                rc, out, err = _cli(["trace", "--bug", "BG0001", "--root", str(root),
+                                     "--format", "json", *extra])
+                self.assertEqual(2, rc, out + err)
+                self.assertIn("BG0001 names no Affects", err)
+                self.assertNotIn("US0001", out)
+            self.assertEqual(before, _snapshot(root))
+
 if __name__ == "__main__":
     unittest.main()

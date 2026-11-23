@@ -7,10 +7,12 @@ fix, most shared files first, each with the verdict the review ledger recorded f
 seat that gave it. It writes nothing. `--confirm UNIT` records one proposal on the bug, as
 `Escaped-via` and `Escaped-verdict`, and refuses a unit that is not among the proposals.
 
-The units a release shipped are the story and bug ids named in the messages of the commits the
-release's tag holds and the previous tag does not. Without a release on the bug, or with one that
-tags no unit, nothing is proposed: a guess from the bug's prose would point somewhere nobody can
-check. Verdicts are read through `critic`'s public readers, the one authority on the ledger.
+The units a release shipped are the story and bug ids owned by the commits the release's tag
+holds and the previous tag does not: the ids a commit's subject names and no `Mentions:` trailer
+names (a mentioned id owns none of the commit's files), and the ids its `Refs:` trailers name.
+Without a release on the bug, or with one that tags no unit, nothing is proposed: a guess from
+the bug's prose would point somewhere nobody can check. Verdicts are read through `critic`'s
+public readers, the one authority on the ledger.
 
 `to-class --bug BGxxxx --class NAME --rule ... --behaviour ...` turns a confirmed escape's
 written Root Cause into a failure class in the lessons store, through `lessons.class_add`:
@@ -32,11 +34,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import critic  # noqa: E402
+import engagement_floor  # noqa: E402
 import lessons  # noqa: E402
 
 #: The artefact types a release ships as units, and so the only ones a trace proposes.
 UNIT_TYPES = ("story", "bug")
 _UNIT_ID_RE = re.compile(r"(?<![A-Za-z0-9])(?:US|BG)-?\d{4,}(?![0-9])", re.I)
+#: The record separator between commit messages in the log a release is read from.
+_MSG_SEP = "\x1e"
 
 
 class TraceRefused(Exception):
@@ -72,8 +77,23 @@ def release_tag(root: Path | str, name: str) -> str | None:
     return None
 
 
+def _owned_ids(message: str) -> list[str]:
+    """The unit ids one commit message owns, in the order named: those its subject line names
+    that no `Mentions:` trailer names, then those its `Refs:` trailers name (an id both name is
+    listed twice, and `release_units` keeps the first). The trailers are read in the grammar
+    `engagement_floor` defines for them; an id the body's prose names outside a trailer is not
+    owned."""
+    def ids(line_re: re.Pattern[str]) -> list[str]:
+        return [i for m in line_re.finditer(message) for i in _UNIT_ID_RE.findall(m.group(1))]
+    mentioned = {sdlc_md.norm_id(i) for i in ids(engagement_floor._MENTIONS_LINE_RE)}
+    subject = message.strip().split("\n", 1)[0]
+    return ([i for i in _UNIT_ID_RE.findall(subject) if sdlc_md.norm_id(i) not in mentioned]
+            + ids(engagement_floor._REFS_LINE_RE))
+
+
 def release_units(root: Path, release: str) -> list[str]:
-    """The story and bug ids on disk that the commits of `release` name, in first-seen order.
+    """The story and bug ids on disk that the commits of `release` own (`_owned_ids`), in
+    first-seen order.
 
     `release` is resolved to its tag by `release_tag`, so either spelling of a tagged version
     is read. The commits are those the tag holds and the tag before it does not (every commit it
@@ -86,7 +106,8 @@ def release_units(root: Path, release: str) -> list[str]:
     prev = (_git(root, "describe", "--tags", "--abbrev=0", f"{tag}^") or "").strip()
     span = f"{prev}..{tag}" if prev else tag
     seen: list[str] = []
-    for found in _UNIT_ID_RE.findall(_git(root, "log", "--format=%B", span) or ""):
+    log = _git(root, "log", f"--format=%B{_MSG_SEP}", span) or ""
+    for found in (i for message in log.split(_MSG_SEP) for i in _owned_ids(message)):
         hit = sdlc_md.find_by_id(root, found)
         if not hit or hit[1] not in UNIT_TYPES:
             continue

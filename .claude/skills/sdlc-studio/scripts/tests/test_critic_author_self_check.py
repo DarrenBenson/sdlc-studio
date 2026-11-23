@@ -216,5 +216,32 @@ class AuthorStepsTests(unittest.TestCase):
                 self.assertIn("marker M9", critic.author_self_check(root, "US0104"))
 
 
+    def test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree(self) -> None:
+        """The sentence sending a mutant the runner cannot run to MUTANTS.json says where to run
+        it: the lane's own worktree or a detached worktree of the repository, never a copy of
+        the tests alone, which runs without the project's root conftest.py. Mutants: the place
+        left out; either worktree named alone; the copy of the tests not refused; the place put
+        on a line of its own, apart from the MUTANTS.json sentence. Control: a unit with no test
+        file is sent nowhere, since it has no mutant to run by hand."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0109", "src/widget.py, tests/test_widget.py")
+            r = _brief(root, "US0109")
+            self.assertEqual(0, r.returncode, r.stderr)
+            section = _section(r.stderr)
+            line = _line(section, "CLAIMS.json lists each claim")
+            sent = line[line.index("A mutant the runner cannot run goes in MUTANTS.json"):]
+            self.assertNotIn(". ", sent.rstrip("."), "the place is not in the same sentence")
+            for want in ("run such a mutant by hand in the lane's own worktree",
+                         "or a detached worktree of the repository (`git worktree add --detach`)",
+                         "never in a copy of the tests alone",
+                         "the project's own test configuration (a root conftest.py)"):
+                self.assertIn(want, sent)
+            self.assertEqual(1, section.count("worktree add --detach"), section)
+            _project(root, "US0110", "src/widget.py")
+            r = _brief(root, "US0110")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertNotIn("worktree", _section(r.stderr))
+
 if __name__ == "__main__":
     unittest.main()

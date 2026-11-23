@@ -3030,7 +3030,10 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
               "runner's report, kept whole with the record so the review replays it. A mutant "
               "the runner cannot run goes in MUTANTS.json as {mutant, test, result, answer}, "
               "recorded with --mutants MUTANTS.json beside --mutants-from and judged with the "
-              "report's rows, so its survivor needs an answer too."]
+              "report's rows, so its survivor needs an answer too; run such a mutant by hand in "
+              "the lane's own worktree or a detached worktree of the repository (`git worktree "
+              "add --detach`), never in a copy of the tests alone, which runs without the "
+              "project's own test configuration (a root conftest.py)."]
     return "\n".join(lines)
 
 

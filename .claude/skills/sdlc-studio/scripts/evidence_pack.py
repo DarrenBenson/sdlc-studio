@@ -25,10 +25,15 @@ report and to the run's tracked record under `sdlc-studio/reports/runs`, so the 
 record is the signature of record: a report whose run record holds no signature, signs another
 report, or disagrees with the report's own signature on principal, date or fingerprint refuses
 the build, and so does a report whose figures no longer re-derive (`sprint_report.fingerprint`) the
-fingerprint the run record signed. Each change's accountable line names the run record's
-principal and that verified fingerprint. A signature entered under delegation
-(`sprint_report.delegation`) is said to be so on the line, with the decision that authorised
-it; the report and the run record must agree on it, and one that names no decision refuses.
+fingerprint the run record signed. The run record is as editable as the report, so the signature
+it holds is checked against its seal: the first commit in the record's history, reachable from
+the revision built, whose record signs the report. A record whose signature differs from the
+sealed one in any field refuses the build, naming the seal commit, however well the report
+agrees with it; a later commit that leaves the record's signature alone still builds. Each
+change's accountable line names the run record's principal and that verified fingerprint. A
+signature entered under delegation (`sprint_report.delegation`) is said to be so on the line,
+with the decision that authorised it; the report and the run record must agree on it, and one
+that names no decision refuses.
 """
 from __future__ import annotations
 
@@ -167,12 +172,28 @@ def principal_refusal(signature: dict, authors: list[str] | tuple[str, ...] = ()
     return None
 
 
+def _seal(root: Path, sha: str, rel: str, rid: str) -> tuple[str | None, dict | None]:
+    """`(commit, signature)`: the first commit in the history of run record `rel` reachable from
+    `sha` whose record holds a signature of report `rid`, and that signature. A commit whose
+    record cannot be read, holds no signature or signs another report is passed over; `(None,
+    None)` when no commit signs `rid` or git cannot read the history."""
+    for commit in (_git(root, "log", "--reverse", "--format=%H", sha, "--", rel) or "").split():
+        try:
+            record = json.loads(_show(root, commit, rel) or "")
+        except ValueError:
+            continue
+        sig = record.get("signature") if isinstance(record, dict) else None
+        if isinstance(sig, dict) and str(sig.get("report") or "").strip().upper() == rid:
+            return commit, sig
+    return None, None
+
+
 def _verified_signature(root: Path, sha: str, rid: str, report: dict) -> tuple[dict, str]:
-    """`(signature, "")`: the signature the report's run record holds at `sha`, when the report's
-    figures still re-derive the fingerprint it signed and the report's own signature agrees with
-    it on principal, date, fingerprint, report and delegation; `({}, why)` otherwise. A
-    signature only the report carries is unsigned in the run record, however its `signed_at`
-    reads."""
+    """`(signature, "")`: the signature the report's run record holds at `sha`, when it is the
+    signature sealed when the record first signed the report (`_seal`), the report's figures
+    still re-derive the fingerprint it signed and the report's own signature agrees with it on
+    principal, date, fingerprint, report and delegation; `({}, why)` otherwise. A signature only
+    the report carries is unsigned in the run record, however its `signed_at` reads."""
     run_id = str(report.get("run_id") or "").strip()
     if not _RUN_RE.match(run_id):
         return {}, (f"the report names no run ({run_id!r}), so no run record holds its "
@@ -191,6 +212,15 @@ def _verified_signature(root: Path, sha: str, rid: str, report: dict) -> tuple[d
     signs = str(held.get("report") or "").strip().upper()
     if signs != rid:
         return {}, f"its run record {rel} signs {signs or 'no report'}, not {rid}"
+    seal, sealed = _seal(root, sha, rel, rid)
+    if seal is None:
+        return {}, (f"no commit in the history of its run record {rel} could be read as signing "
+                    f"{rid}, so the signature it holds cannot be checked against its seal")
+    if sealed != held:
+        changed = ", ".join(sorted(k for k in {*sealed, *held} if sealed.get(k) != held.get(k)))
+        return {}, (f"its run record {rel} holds a signature that differs on {changed} from "
+                    f"the one sealed at {seal[:12]}, the first commit whose run record signed "
+                    f"{rid}: the signature was rewritten after it was sealed")
     want = str(held["fingerprint"]).strip()
     derived = sprint_report.fingerprint(report)
     if derived != want:
