@@ -125,19 +125,22 @@ class EvidenceIdentifierTests(unittest.TestCase):
 
 class TitleMarkdownTests(unittest.TestCase):
     """AC3: a title holding two identifiers that begin with underscores, filed, passes
-    markdownlint in the bug file and in the index."""
+    markdownlint in the bug file and in the index. Beside the criterion's own title, two with a
+    bracket before a parenthetical that is no link destination, which is prose to safe."""
 
-    TITLE = "_mode_and_cutoff and _check disagree"
+    TITLES = ("_mode_and_cutoff and _check disagree", "arr[0](_a and _b) differs",
+              "handlers[kind](_row, _seat) drops the seat")
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls._td = tempfile.TemporaryDirectory()
-        cls.root = Path(cls._td.name)
-        cls.body, cls.row = _file(cls.root, cls.TITLE)
+        cls._tds = [tempfile.TemporaryDirectory() for _ in cls.TITLES]
+        cls.roots = [Path(td.name) for td in cls._tds]
+        cls.filed = [_file(root, title) for root, title in zip(cls.roots, cls.TITLES)]
 
     @classmethod
     def tearDownClass(cls) -> None:
-        cls._td.cleanup()
+        for td in cls._tds:
+            td.cleanup()
 
     def _lint(self, path: Path) -> subprocess.CompletedProcess:
         lint = _markdownlint()
@@ -148,17 +151,22 @@ class TitleMarkdownTests(unittest.TestCase):
 
     def test_neither_line_holds_an_underscore_outside_a_code_span(self) -> None:
         """Runs with or without markdownlint: the underscores MD037 reads as emphasis."""
-        self.assertNotIn("_", _bare(self.body.splitlines()[0]))
-        self.assertNotIn("_", _bare(self.row))
+        for title, (body, row) in zip(self.TITLES, self.filed):
+            with self.subTest(title=title):
+                self.assertNotIn("_", _bare(body.splitlines()[0]))
+                self.assertNotIn("_", _bare(row))
 
     def test_the_bug_file_passes_markdownlint(self) -> None:
-        path = next((self.root / "sdlc-studio" / "bugs").glob("BG*.md"))
-        r = self._lint(path)
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        for title, root in zip(self.TITLES, self.roots):
+            with self.subTest(title=title):
+                r = self._lint(next((root / "sdlc-studio" / "bugs").glob("BG*.md")))
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_the_index_passes_markdownlint(self) -> None:
-        r = self._lint(self.root / "sdlc-studio" / "bugs" / "_index.md")
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        for title, root in zip(self.TITLES, self.roots):
+            with self.subTest(title=title):
+                r = self._lint(root / "sdlc-studio" / "bugs" / "_index.md")
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 class LinkDestinationTests(unittest.TestCase):
@@ -208,6 +216,26 @@ class LinkDestinationTests(unittest.TestCase):
         """An unclosed `](` exempts nothing on the lines after it."""
         self.assertEqual(file_finding._md_safe("an open ](here\nand my_var)"),
                          "an open ](here\nand `my_var)`")
+
+    def test_a_parenthetical_holding_whitespace_is_no_destination(self) -> None:
+        """The reviewer's two titles, and a parenthetical whose first word reads as a path."""
+        self.assertEqual(file_finding._md_safe("arr[0](_a and _b) differs"),
+                         "arr[0](`_a` and `_b`) differs")
+        self.assertEqual(file_finding._md_safe("handlers[kind](_row, _seat) drops the seat"),
+                         "handlers[kind](`_row`, `_seat`) drops the seat")
+        self.assertEqual(file_finding._md_safe("f[k](a.b and c_d)"), "f[k](a.b and `c_d)`")
+
+    def test_a_destination_must_read_as_a_path_or_url(self) -> None:
+        self.assertEqual(file_finding._md_safe("handlers[kind](_row)"), "handlers[kind](`_row`)")
+        self.assertEqual(file_finding._md_safe('[k](_a "t.x")'), '[k](`_a` "t.x")')
+        for dest in ("x/my_y", "my_y.md", "#my_anchor", "mailto:my_y"):
+            with self.subTest(dest=dest):
+                self.assertEqual(file_finding._md_safe(f"[a_b]({dest})"), f"[`a_b`]({dest})")
+
+    def test_a_link_title_and_an_angle_bracket_destination_are_kept(self) -> None:
+        for link in ('[a](x/my_y "the t_z")', "[a](x/my_y 'the t_z')", "[a](<my y_z.md>)"):
+            with self.subTest(link=link):
+                self.assertEqual(file_finding._md_safe(link), link)
 
 
 if __name__ == "__main__":

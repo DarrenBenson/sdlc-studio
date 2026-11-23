@@ -41,6 +41,15 @@ MIXED = (f"From the scripts folder:\n$ {CMD}\nThe import_error names it.\n\n"
          "1. python3 -m pytest -q x_test.py  \n2. Read the my_output line\n\n"
          "```sh\nexport A_B=1; my_tool --x_y\n```\nthen check _a and _b.\n```\npython3 y_z.py")
 
+#: The reviewer's commands that run over more than one line, each run from the scripts folder:
+#: a quoted program, a here-document and a backslash continuation.
+MULTI = {"quoted": 'python3 -c "\nfrom lib import sdlc_md\nprint(sdlc_md.__name__)\n"',
+         "heredoc": "python3 - <<'EOF'\nfrom lib import sdlc_md\nprint(sdlc_md.__name__)\nEOF",
+         "backslash": 'python3 -c \\\n  "from lib import sdlc_md; print(sdlc_md.__name__)"'}
+
+#: The reviewer's backslash-continued pytest, which has no test file here to run.
+PYTEST = "python3 -m pytest -q \\\n  tests/test_x.py::test_my_case"
+
 
 def _markdownlint() -> str | None:
     """The markdownlint the repo's lane runs: on PATH, in this checkout, or in the main checkout
@@ -76,6 +85,24 @@ class _Fixture(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._td.cleanup()
+
+    def _clear(self) -> None:
+        for p in (self.root / "sdlc-studio" / "bugs").glob("*.md"):
+            p.unlink()
+
+    def _lint(self, body: str) -> None:
+        """markdownlint over the filed bug under the skill's config and the repository's own,
+        the one this repository's markdown lane runs over a filed bug."""
+        lint = _markdownlint()
+        if lint is None:
+            self.skipTest("markdownlint is not installed (npm install) - the lint lane enforces this")
+        path = next((self.root / "sdlc-studio" / "bugs").glob("BG*.md"))
+        self.assertEqual(path.read_text(encoding="utf-8"), body)
+        repo = SCRIPTS.parents[3] / ".markdownlint.json"  # absent from an installed copy
+        for config in (SCRIPTS.parent / ".markdownlint.json", *[repo][:repo.exists()]):
+            r = subprocess.run([lint, "-c", str(config), str(path)], capture_output=True,
+                               text=True, check=False)
+            self.assertEqual(r.returncode, 0, f"{config}:\n{r.stdout}{r.stderr}")
 
     def _doc(self, **fields) -> str:
         p = self.root / "finding.json"
@@ -392,24 +419,6 @@ class FiledShapesTests(_Fixture):
                 "Depends on": ("printf '> **Status:** Ready · **Depends on:** US0001\\n' > s.md "
                                "&& python3 sprint.py plan")}
 
-    def _clear(self) -> None:
-        for p in (self.root / "sdlc-studio" / "bugs").glob("*.md"):
-            p.unlink()
-
-    def _lint(self, body: str) -> None:
-        """markdownlint over the filed bug under the skill's config and the repository's own,
-        the one this repository's markdown lane runs over a filed bug."""
-        lint = _markdownlint()
-        if lint is None:
-            self.skipTest("markdownlint is not installed (npm install) - the lint lane enforces this")
-        path = next((self.root / "sdlc-studio" / "bugs").glob("BG*.md"))
-        self.assertEqual(path.read_text(encoding="utf-8"), body)
-        repo = SCRIPTS.parents[3] / ".markdownlint.json"  # absent from an installed copy
-        for config in (SCRIPTS.parent / ".markdownlint.json", *[repo][:repo.exists()]):
-            r = subprocess.run([lint, "-c", str(config), str(path)], capture_output=True,
-                               text=True, check=False)
-            self.assertEqual(r.returncode, 0, f"{config}:\n{r.stdout}{r.stderr}")
-
     def test_a_filed_command_declares_no_field_its_head_did_not(self) -> None:
         sdlc_md = file_finding.sdlc_md
         base = self.file("plain steps")
@@ -464,6 +473,158 @@ class FiledShapesTests(_Fixture):
         self._clear()
         self.assertEqual(_section(self.create("```text\nexport A_B=1\n```"), "Steps to Reproduce"),
                          "```text\nexport A_B=1\n```")
+
+
+class MultiLineCommandTests(_Fixture):
+    """AC1 for a command that runs over more than one line: kept whole in one fence, through the
+    shipped creators, run and linted."""
+
+    def _run(self, fenced: str) -> None:
+        """Run a fence's content, dedented to its fence's column, from the scripts folder."""
+        lines = fenced.split("\n")
+        pad = len(lines[0]) - len(lines[0].lstrip())
+        r = subprocess.run(["bash", "-c", "\n".join(ln[pad:] for ln in lines[1:-1])],
+                           cwd=SCRIPTS, capture_output=True, text=True, check=False)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "lib.sdlc_md"), r.stderr)
+
+    def test_command_survives_filing_whole_when_it_spans_lines(self) -> None:
+        for name, cmd in {**MULTI, "pytest": PYTEST}.items():
+            self._clear()
+            with self.subTest(command=name):
+                self.assertEqual(_section(self.file(cmd), "Steps to Reproduce"),
+                                 f"```text\n{cmd}\n```")
+
+    def test_command_survives_filing_over_lines_and_still_runs_when_copied(self) -> None:
+        for name, cmd in MULTI.items():
+            self._clear()
+            with self.subTest(command=name):
+                self._run(_section(self.file(cmd), "Steps to Reproduce"))
+
+    def test_command_survives_filing_over_lines_through_both_creators(self) -> None:
+        self.assertEqual(_section(self.create(MULTI["heredoc"]), "Steps to Reproduce"),
+                         f"```text\n{MULTI['heredoc']}\n```")
+        self._clear()
+        self.assertEqual(_section(self.batch(MULTI["quoted"]), "Steps to Reproduce"),
+                         f"```text\n{MULTI['quoted']}\n```")
+
+    def test_command_survives_filing_over_lines_as_a_list_item(self) -> None:
+        heredoc = MULTI["heredoc"].replace("\n", "\n   ")
+        body = self.file(f"1. {heredoc}\n2. Read the my_output line")
+        steps = _section(body, "Steps to Reproduce")
+        self.assertEqual(steps, f"1. <!-- -->\n\n   ```text\n   {heredoc}\n   ```\n\n"
+                                "2. Read the `my_output` line")
+        self._run(re.search(r"   ```text\n.*?\n   ```", steps, re.S).group(0))
+        self._lint(body)
+
+    def test_command_survives_filing_over_lines_beside_prose_lint_clean(self) -> None:
+        steps = "\n".join(f"Then the {name} one:\n{cmd}" for name, cmd in MULTI.items())
+        body = self.file(steps + "\nand the my_output line")
+        for cmd in MULTI.values():
+            self.assertIn(f"\n\n```text\n{cmd}\n```\n\n", body)
+        self.assertIn("```\n\nand the `my_output` line", body)
+        self._lint(body)
+
+
+class MultiLineShapesTests(unittest.TestCase):
+    """Where a command that runs over lines ends, read as the shell reads it."""
+
+    @staticmethod
+    def safe(text: str) -> str:
+        return file_finding._steps_safe(text)
+
+    def test_a_quote_no_later_line_closes_continues_nothing(self) -> None:
+        self.assertEqual(self.safe('printf "a_b\nthe my_var line'),
+                         '```text\nprintf "a_b\n```\n\nthe `my_var` line')
+
+    def test_a_line_a_backslash_joins_stays_though_its_quote_never_closes(self) -> None:
+        self.assertEqual(self.safe("rg a \\\n'b\nc_d"), "```text\nrg a \\\n'b\n```\n\n`c_d`")
+
+    def test_an_apostrophe_between_letters_opens_no_quote(self) -> None:
+        self.assertEqual(self.safe("rg x && it doesn't match\nthe my_var line\nit's here"),
+                         "```text\nrg x && it doesn't match\n```\n\nthe `my_var` line\nit's here")
+
+    def test_a_quote_opening_a_word_continues_to_the_line_that_closes_it(self) -> None:
+        self.assertEqual(self.safe("rg 'my_a\nmy_b' x\nthe my_var line"),
+                         "```text\nrg 'my_a\nmy_b' x\n```\n\nthe `my_var` line")
+
+    def test_a_comment_opens_no_quote(self) -> None:
+        self.assertEqual(self.safe("rg x  # users' data\nthe my_var line\nend'"),
+                         "```text\nrg x  # users' data\n```\n\nthe `my_var` line\nend'")
+
+    def test_a_hash_inside_a_word_is_no_comment(self) -> None:
+        self.assertEqual(self.safe("rg a#'my_b\nmy_c'"), "```text\nrg a#'my_b\nmy_c'\n```")
+
+    def test_a_backslash_before_a_blank_line_continues_nothing(self) -> None:
+        self.assertEqual(self.safe("rg x \\\n\nthe my_var line"),
+                         "```text\nrg x \\\n```\n\nthe `my_var` line")
+
+    def test_an_escaped_quote_opens_no_quote(self) -> None:
+        self.assertEqual(self.safe('rg \\" x\nthe my_var" line'),
+                         '```text\nrg \\" x\n```\n\nthe `my_var`" line')
+
+    def test_an_escaped_quote_inside_double_quotes_does_not_close_it(self) -> None:
+        cmd = 'rg "say \\"hi\nmy_b"'
+        self.assertEqual(self.safe(cmd), f"```text\n{cmd}\n```")
+
+    def test_a_single_quote_closes_only_on_a_single_quote(self) -> None:
+        cmd = "rg 'a \\ \"\nmy_b'"
+        self.assertEqual(self.safe(cmd + "\nthe my_var line"),
+                         f"```text\n{cmd}\n```\n\nthe `my_var` line")
+
+    def test_a_heredoc_no_later_line_ends_continues_nothing(self) -> None:
+        self.assertEqual(self.safe("bash <<EOF\nmy_var here"),
+                         "```text\nbash <<EOF\n```\n\n`my_var` here")
+
+    def test_a_dashed_double_quoted_heredoc_runs_to_its_delimiter(self) -> None:
+        cmd = 'python3 - <<-"PY"\nprint(my_a)\n\tPY'
+        self.assertEqual(self.safe(cmd + "\nthe my_var line"),
+                         f"```text\n{cmd}\n```\n\nthe `my_var` line")
+
+    def test_a_heredoc_opened_on_a_joined_line_runs_to_its_delimiter(self) -> None:
+        cmd = "python3 \\\n  - <<EOF\nprint(my_a)\nEOF"
+        self.assertEqual(self.safe(cmd), f"```text\n{cmd}\n```")
+
+    def test_a_heredoc_no_line_ends_leaves_the_next_heredoc_unread(self) -> None:
+        """The first body never ends, so the shell never reaches the second."""
+        self.assertEqual(self.safe("bash <<A <<B\nmy_b\nB"),
+                         "```text\nbash <<A <<B\n```\n\n`my_b`\nB")
+
+    def test_two_heredocs_run_to_their_delimiters_in_turn(self) -> None:
+        cmd = "bash <<A <<B\nmy_a\nA\nmy_b\nB"
+        self.assertEqual(self.safe(cmd + "\nthe my_var line"),
+                         f"```text\n{cmd}\n```\n\nthe `my_var` line")
+
+    def test_a_here_string_is_no_heredoc(self) -> None:
+        self.assertEqual(self.safe("rg x <<<EOF\nEOF"), "```text\nrg x <<<EOF\n```\n\nEOF")
+
+    def test_a_shift_inside_quotes_is_no_heredoc(self) -> None:
+        self.assertEqual(self.safe('python3 -c "print(a<<b)"\nb'),
+                         '```text\npython3 -c "print(a<<b)"\n```\n\nb')
+
+    def test_a_quote_after_a_heredoc_opener_is_read_before_its_body(self) -> None:
+        cmd = "python3 - <<'EOF' | rg 'my_a\nmy_b'\nmy_c\nEOF"
+        self.assertEqual(self.safe(cmd), f"```text\n{cmd}\n```")
+
+    def test_a_heredoc_body_starts_after_its_opener_line_ends(self) -> None:
+        """The delimiter as the backslash's next word is an argument, not the body's end."""
+        cmd = "bash <<A \\\nA\nmy_b\nA"
+        self.assertEqual(self.safe(cmd), f"```text\n{cmd}\n```")
+
+    def test_only_the_first_lines_prompt_drops_and_the_body_is_not_read_as_markdown(self) -> None:
+        self.assertEqual(self.safe("$ bash <<EOF\n$ HOME\n1. my_a\n```\nEOF"),
+                         "````text\nbash <<EOF\n$ HOME\n1. my_a\n```\nEOF\n````")
+
+    def test_an_items_lines_move_to_its_column_as_a_block(self) -> None:
+        """The body keeps its indentation relative to the command; a blank line in it stays
+        empty and is not counted as the least indented."""
+        self.assertEqual(self.safe("1. bash <<EOF\n  my_a\n\n  EOF"),
+                         "1. <!-- -->\n\n   ```text\n    bash <<EOF\n   my_a\n\n   EOF\n   ```")
+        self.assertEqual(self.safe("1. bash <<EOF\nmy_a\nEOF"),
+                         "1. <!-- -->\n\n   ```text\n      bash <<EOF\n   my_a\n   EOF\n   ```")
+
+    def test_a_continuation_command_over_lines_keeps_the_items_column(self) -> None:
+        self.assertEqual(self.safe("1. Run:\n   rg 'my_a\n\n   my_b'\n2. next"),
+                         "1. Run:\n\n   ```text\n   rg 'my_a\n\n   my_b'\n   ```\n\n2. next")
 
 
 if __name__ == "__main__":

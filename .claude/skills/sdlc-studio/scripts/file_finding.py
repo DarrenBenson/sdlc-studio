@@ -1668,9 +1668,12 @@ def _md_safe(text) -> str:
     like `)[1]` are a rarer residual, noted in the CR.)
 
     A bare http(s) URL is code-spanned first (`_code_urls`), so the token pass below sees it
-    inside a span and leaves its underscores alone. A link or image destination (`](...)`, up to
-    its first `)` on the same line) is left as written too, since a backtick inside it breaks the
-    link; the link text before it is safed as prose."""
+    inside a span and leaves its underscores alone. A link or image destination is left as
+    written too, since a backtick inside it breaks the link, when it reads as a path or URL
+    (`_LINK_DEST_RE`): it holds no whitespace and holds a `/`, `.`, `#` or `:`, or it sits in
+    angle brackets, and a quoted title after it is kept with it. Any other bracket before a
+    parenthetical, such as `handlers[kind](_row, _seat)`, is prose and safed whole. The link
+    text before a destination is safed as prose."""
     parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
@@ -1679,8 +1682,13 @@ def _md_safe(text) -> str:
     return "`".join(parts)
 
 
-#: A markdown link or image destination: `](`, then everything up to the first `)` on its line.
-_LINK_DEST_RE = re.compile(r"(\]\([^)\n]*\))")
+#: A markdown link or image destination after its link text's `]`: either one in angle brackets,
+#: or one holding no whitespace that reads as a path or URL by holding a `/`, `.`, `#` or `:`,
+#: then an optional quoted title, then its `)`. A destination holds no whitespace outside angle
+#: brackets (CommonMark), so `handlers[kind](_row, _seat)` stays prose.
+_LINK_DEST_RE = re.compile(
+    r"(\]\((?:<[^<>\n]*>|(?=[^\s)]*[/.#:])[^\s)]+)"
+    r"(?:[^\S\n]+(?:\"[^\"\n]*\"|'[^'\n]*'))?\))")
 
 
 #: A bare http(s) URL: not after a letter or digit (no autolink starts there), not inside
@@ -1798,6 +1806,74 @@ def _indent(line: str) -> int:
     return len(line) - len(line.lstrip())
 
 
+def _fenced_at(lines: list[str], col: int) -> list[str]:
+    """A command's lines fenced at a list item's content column `col`, moved there as a block so
+    their indentation relative to each other is kept, a blank line among them left empty; outside
+    a list (`col` 0) they are kept byte for byte."""
+    if not col:
+        return _fence(lines)
+    cut = min(_indent(ln) for ln in lines if ln.strip())
+    return _fence([" " * col + ln[cut:] if ln.strip() else "" for ln in lines], " " * col)
+
+
+#: A here-document's opener, read outside quotes: `<<` (not the `<<<` of a here-string), an
+#: optional `-`, then its delimiter word, bare or quoted.
+_HEREDOC_RE = re.compile(r"(?<!<)<<-?[^\S\n]*(['\"]?)([A-Za-z_][\w.-]*)\1")
+
+
+def _shell_read(line: str, quote: str) -> tuple[str, list[str], bool]:
+    """Read one line of a shell command entered with `quote` open (`""` for none), as the shell
+    reads it: the quote still open at its end, the here-document delimiters it opens, and
+    whether it ends on a backslash that continues it. A backslash escapes the next character
+    outside single quotes, and a `#` opening a word outside quotes starts a comment. A `'`
+    between two letters or digits is read as an apostrophe (`doesn't`), not an opening quote,
+    so a sentence fenced for its shell operator does not run on into the prose after it."""
+    words: list[str] = []
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if quote == "'":
+            quote = "" if c == "'" else quote
+        elif c == "\\":
+            if i == len(line) - 1:
+                return quote, words, True
+            i += 1  # the character it escapes
+        elif quote:
+            quote = "" if c == '"' else quote
+        elif c == '"' or c == "'" and not (line[i - 1:i].isalnum() and line[i + 1:i + 2].isalnum()):
+            quote = c
+        elif c == "#" and not line[i - 1:i].strip():
+            break
+        elif m := _HEREDOC_RE.match(line, i):
+            words.append(m.group(2))
+        i += 1
+    return quote, words, False
+
+
+def _command_lines(first: str, rest: list[str]) -> int:
+    """How many of the lines after a command's first line are part of it, read as the shell
+    reads them (`_shell_read`): a line ending on a backslash runs on to the next unless that
+    line is blank, a quote left open runs on to the line that closes it, and a here-document's
+    body runs from the line after its opener's to the line that is its delimiter, indentation
+    aside. A quote no later line closes, or a delimiter no later line is, takes no line with it,
+    so a stray quote cannot take the prose after it."""
+    quote, words, more = _shell_read(first, "")
+    end = n = 0
+    while n < len(rest) and (quote or more and rest[n].strip()):
+        entered = quote
+        quote, opened, more = _shell_read(rest[n], quote)
+        words += opened
+        n += 1
+        if not (quote and entered):  # a line a backslash joined, or one closing the quote
+            end = n
+    for word in words:
+        stop = next((k for k in range(end, len(rest)) if rest[k].strip() == word), None)
+        if stop is None:
+            break
+        end = stop + 1
+    return end
+
+
 def _steps_safe(text) -> str:
     """Markdown-safe a Steps to Reproduce value without breaking the commands in it.
 
@@ -1805,33 +1881,43 @@ def _steps_safe(text) -> str:
     command substitution, so a repro copied from the filed bug no longer ran. The value is read
     line by line instead:
 
-    - a fenced block the author wrote is kept as written up to its closing fence, read by the
-      fence reader the other markdown tools share (`sdlc_md.fence_step`), and is closed at the
-      end if the author left it open, so it cannot swallow the next section; a line opening on
-      a backtick run with another backtick after it is inline code (CommonMark), not a fence;
+    - a fenced block the author wrote is kept up to its closing fence, read by the fence reader
+      the other markdown tools share (`sdlc_md.fence_step`), as written save for the metadata
+      guard below, and is closed at the end if the author left it open, so it cannot swallow
+      the next section; a line opening on a backtick run with another backtick after it is
+      inline code (CommonMark), not a fence;
     - a line that is a command (`_command_line`) is kept inside a fenced block labelled `text`
       (`_fence`), consecutive command lines sharing one, with a blank line on each side (MD031);
       outside a list its lines are kept byte for byte;
+    - a command runs on over the lines the shell reads as its own (`_command_lines`): after a
+      backslash ending its line, inside a quote it left open to the line that closes it, and
+      through a here-document's body to its delimiter. Those lines join its fence as written,
+      however they read, so a quoted program or a heredoc body is not safed;
     - a list item whose body is a command keeps its marker, its line holding `_ITEM_LEAD`, and
-      the command is fenced beneath it at the item's content column;
+      the command is fenced beneath it at the item's content column, the lines it runs on over
+      moving there with it as a block;
     - a command inside a list item, on a continuation line or on an unindented line straight
       after the item (CommonMark's lazy line), is fenced at that item's content column, so the
       list keeps its numbering (MD029). Its lines move to that column as a block, keeping their
       indentation relative to each other, and an unindented prose line straight after such a
       fence is indented to the column too, so it stays in the item it continued;
-    - a `$ ` prompt before a command is dropped from its fence (`_PROMPT_RE`);
+    - a `$ ` prompt opening a command is dropped from its fence (`_PROMPT_RE`), and one opening
+      a line the command runs on over is kept;
     - every other run of lines is prose and takes `_prose_safe` whole, so a value with no
       command in it is written exactly as before.
 
     Last, the metadata-line guard `_prose_safe` applies (`_META_DECL_RE`) runs over the whole
     result, fences included, since `extract_field` reads a `**Field:**` declaration inside a
-    fence as readily as outside: a command holding one keeps its fence, with that declaration's
-    bold markers escaped as the prose's are."""
+    fence as readily as outside: a command or an author's fenced block holding one keeps its
+    fence, with that declaration's bold markers escaped as the prose's are, so that one line is
+    no longer byte for byte."""
     segs: list[tuple[str, list[tuple[str, int]]]] = []  # (kind, [(line, its item's column)])
     fence = None  # the (marker, run length) of the author's open fenced block
     cols: list[int] = []  # the content column of each list item open at this line
     blank = False
-    for line in str(text).split("\n"):
+    lines, at = str(text).split("\n"), 0
+    while at < len(lines):
+        line, at = lines[at], at + 1
         stripped = line.strip()
         if fence is not None:
             segs[-1][1].append((line, 0))
@@ -1856,6 +1942,9 @@ def _steps_safe(text) -> str:
             kind = "item" if _command_line(item.group(2)) else "prose"
         else:
             kind = "command" if _command_line(line) else "prose"
+        if kind != "prose":  # the lines a command runs on over are one row with it
+            more = _command_lines(line, lines[at:])
+            line, at = "\n".join(lines[at - 1:at + more]), at + more
         if segs and segs[-1][0] == kind:
             segs[-1][1].append((line, col))
         else:
@@ -1871,14 +1960,14 @@ def _steps_safe(text) -> str:
                 " " * col + ln.lstrip() if lazy and ln.strip() and _indent(ln) < col else ln
                 for ln, col in rows))
         elif kind == "command":
-            lines, col = [_unprompted(ln) for ln, _c in rows], rows[0][1]
-            cut = min(_indent(ln) for ln in lines) if col else 0
-            block = "\n".join(_fence([" " * col + ln[cut:] for ln in lines], " " * col))
+            cmd = "\n".join(_unprompted(ln) for ln, _c in rows)
+            block = "\n".join(_fenced_at(cmd.split("\n"), rows[0][1]))
         elif kind == "item":
             items = []
-            for m in (_LIST_ITEM_RE.match(ln) for ln, _c in rows):
-                pad = " " * len(m.group(1))
-                fenced = _fence([pad + _unprompted(m.group(2))], pad)
+            for head, *more in (ln.split("\n") for ln, _c in rows):
+                m = _LIST_ITEM_RE.match(head)
+                pad = len(m.group(1))
+                fenced = _fenced_at([" " * pad + _unprompted(m.group(2)), *more], pad)
                 items.append("\n".join([m.group(1) + _ITEM_LEAD, "", *fenced]))
             block = "\n\n".join(items)
         else:
