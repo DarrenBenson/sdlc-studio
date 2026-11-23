@@ -34,9 +34,11 @@ Fill the Decision section of both RFCs with the outcome, the date, the rationale
 - [ ] **AC2** Given this repository's RFCs after the fix, when the new rule reads them, then it reports nothing: the Decision sections of RFC0063 and RFC0064 state the outcome, the date, the rationale, the decisions that resolved each open question and the spawned CRs. Fails on: either RFC still reading pending under Status Accepted.
   - **Verify:** pytest tools/tests/test_lint_corpus.py::CorpusLaneRunsOnThisRepo::test_no_accepted_rfc_here_has_a_pending_decision
 - [ ] **AC3** Given RFC0063's workstream table after the fix, when rows WS2, WS5 (the monthly budget view), WS6 (the model scorecard) and WS7 are read, then each names a CR that is also in the Decomposed-into line, or the decision that defers it, and each RFC carries a Revision History row for the correction. Fails on: a workstream row promising a new CR that no unit or recorded deferral carries.
+  - **Verify:** pytest tools/tests/test_lint_corpus.py::CorpusLaneRunsOnThisRepo::test_rfc0063_deferred_workstreams_name_a_request_or_ruling
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review: AC3 had no Verify line. It now names a test the builder adds to test_lint_corpus.py, reading RFC0063's delivery column (the fourth) for WS2, WS5, WS6 and WS7: no '(new)', and a CR also in Decomposed-into or a decision id. The check, run by hand at HEAD, reports all four unresolved |

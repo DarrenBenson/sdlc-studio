@@ -30,14 +30,15 @@ Regroom US1168 in its story file: add `tools/check_census_marker.py` and `tools/
 ## Acceptance Criteria
 
 - [ ] **AC1** Given US1168 as dropped from 6.4 under D0495, when it is regroomed under D0507, then its criteria have the census-marker check run inside an existing commit-hook lane's script, the lane count stays at 31, and its `Depends on` line no longer names a finished unit. Fails on: a criterion that adds a 32nd lane, or the story still reading as it did when it was dropped.
-  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
+  - **Verify:** shell f="$(ls sdlc-studio/stories/US1168-*.md)"; grep -q 'D0495' "$f" && grep -E '^> [*][*]Affects:[*][*]' "$f" | grep -q 'tools/check_census_marker.py' && ! grep -qE 'run fourteen|the new lane is listed' "$f"
 - [ ] **AC2** Given EP0312's completion criteria, when the epic is corrected under D0512, then the run-six replay and the before-and-after report reading are marked retired with the decision named, and the epic's bar is US1168 alone. Fails on: either criterion left open with no owner.
-  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
-- [ ] **AC3** Given the corrected story, when the planner's readiness report is run over US1168, then it lists US1168 as groomed. Fails on: US1168 refused as ungroomed or blocked.
-  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
+  - **Verify:** shell e="$(ls sdlc-studio/epics/EP0312-*.md)"; grep 'Replayed in a throwaway clone' "$e" | grep -q 'D0512' && grep 'Before and after' "$e" | grep -q 'D0512'
+- [ ] **AC3** Given the corrected story, when the planner's readiness report is run over US1168, then it lists US1168 as groomed. Fails on: a regroom that leaves a criterion with no executable Verify line (passes at HEAD: a positive control).
+  - **Verify:** shell f="$(ls sdlc-studio/stories/US1168-*.md)"; n="$(grep -cE '^- [*][*]AC[0-9]+' "$f")"; test "$n" -ge 1 && test "$n" -eq "$(grep -cE '^  - [*][*]Verify:[*][*] (pytest|shell) ' "$f")"
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review (all three seats): the three manual reads could not fail. AC1 now checks US1168 cites D0495, names tools/check_census_marker.py in Affects and drops the run-fourteen and new-lane text; AC2 checks EP0312's replay and before-and-after criteria name D0512; AC3 checks every US1168 criterion keeps an executable Verify. AC1 and AC2 fail at HEAD |

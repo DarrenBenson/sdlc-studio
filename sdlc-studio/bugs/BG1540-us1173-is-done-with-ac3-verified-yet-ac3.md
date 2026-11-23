@@ -33,9 +33,11 @@ Give the `bar` subcommand of `tools/known_issues.py` an `--at` option that judge
 - [ ] **AC2** Given a corpus with a High bug open at commit C, when `bar --at C` runs, then the bar is not met, the bug is named and the exit status is non-zero; and `bar` with no `--at` still judges the working tree. Fails on: `--at` passing a finding that was open at the commit, or changing what the plain verb reads.
   - **Verify:** pytest tools/tests/test_known_issues.py::ReleaseBarTests::test_a_high_open_at_the_named_commit_still_breaks_the_bar
 - [ ] **AC3** Given the US1173 story file after the fix, when AC3 is read, then its Verify line judges the bar at the commit that cut 6.4.0, the Notes line defending the live read is corrected, the Revision History records the change, and each earlier release-cut story found with the same live Verify line is filed. Fails on: a Done story whose criterion reddens when a High is filed between releases.
+  - **Verify:** shell grep -A1 -E '^- [*][*]AC3:[*][*]' "$(ls sdlc-studio/stories/US1173-*.md)" | grep 'Verify:' | grep -q -- 'known_issues.py bar --at '
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review: AC3 had no Verify line. It now checks US1173's AC3 Verify judges the bar with --at. Fails at HEAD, where it reads the live corpus |

@@ -27,10 +27,11 @@ Record a ruling (a decisions row) on what an Accepted RFC with no change request
 - [ ] **AC1** Given BG1569's Delivered status is in, when reconcile.py detect runs on this repository, then it reports 0 drift items across sdlc-studio/rfcs/. Fails on: the 56 request-derivable and undecomposed items lane T measured.
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect | grep -q 'drift_items=0'
 - [ ] **AC2** Given an Accepted RFC with no change request, when the ruling is read in sdlc-studio/decisions.md, then it names that RFC state and what reconcile reports for it. Fails on: no ruling recorded, so 20 RFCs read as undecomposed with no decision behind them.
-  - **Verify:** shell grep -q 'BG1678' sdlc-studio/decisions.md
+  - **Verify:** shell grep -E '^[|] D[0-9]{4} [|].*BG1678' sdlc-studio/decisions.md | grep -i 'accepted' | grep -qi 'reconcile'
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review: AC2's grep passed on any mention of the id. It now needs a decisions row naming BG1678 that states the Accepted RFC state and what reconcile reports. AC1 passes at HEAD until BG1569's status lands, so the two land in one commit |
