@@ -133,13 +133,16 @@ class CriticReplaySelectorTests(unittest.TestCase):
         word; `-r` is pytest's own value option. One `=` directly after that letter is dropped,
         as argparse drops it (`-k=add` filters by `add`, `-k==add` by `=add`; Python 3.10's keeps
         it in a cluster such as `-qk=add`), and `-k=` is an empty value that leaves the next word
-        a target. A long option written `--opt=value` carries its value, so the next word stays a
-        target. Mutants: a cluster ending in `k` skipped as a plain option, so its expression's
-        words print as selectors; `-r` left out of the value options, so its value prints as one;
-        the letters read on past the one that took the rest of the word, so `-km` takes the next
-        word as an `-m` expression; the `=` kept, so `-k=add` names `=add`; every leading `=`
-        dropped; the `=` dropped only after a lone `-k`, never in a cluster; `-k=` taking the
-        next word; a long `--opt=value` taking the next word as well."""
+        a target. Any other `=` is part of the value: `-m'device(serial=1)'`, alone or in the
+        cluster `-qm'device(serial=1)'`, filters by `device(serial=1)`. A long option written
+        `--opt=value` carries its value, so the next word stays a target. Mutants: a cluster
+        ending in `k` skipped as a plain option, so its expression's words print as selectors;
+        `-r` left out of the value options, so its value prints as one; the letters read on past
+        the one that took the rest of the word, so `-km` takes the next word as an `-m`
+        expression; the `=` kept, so `-k=add` names `=add`; every leading `=` dropped; the `=`
+        dropped only after a lone `-k`, never in a cluster; `-k=` taking the next word; a long
+        `--opt=value` taking the next word as well; the value split at its first `=`, or its
+        last, wherever it falls, so `-m'device(serial=1)'` names `1)`."""
         for verify, want in (
                 ("pytest tests/a.py -qk 'add or sign'", (["tests/a.py"], ["-k 'add or sign'"])),
                 ("pytest -vm 'slow and not flaky' tests/a.py",
@@ -154,6 +157,12 @@ class CriticReplaySelectorTests(unittest.TestCase):
                 ("pytest -qk='add or sign' tests/a.py", (["tests/a.py"], ["-k 'add or sign'"])),
                 ("pytest tests/a.py -k==add", (["tests/a.py"], ["-k =add"])),
                 ("pytest -k= tests/a.py", (["tests/a.py"], [])),
+                ("pytest tests/a.py -m'device(serial=1)'",
+                 (["tests/a.py"], ["-m 'device(serial=1)'"])),
+                ("pytest tests/a.py -qm'device(serial=1)'",
+                 (["tests/a.py"], ["-m 'device(serial=1)'"])),
+                ("pytest -m='device(serial=1)' tests/a.py",
+                 (["tests/a.py"], ["-m 'device(serial=1)'"])),
                 ("pytest -p=no:cacheprovider tests/a.py", (["tests/a.py"], [])),
                 ("pytest --deselect=tests/a.py::T::slow tests/b.py", (["tests/b.py"], []))):
             with self.subTest(verify=verify):
