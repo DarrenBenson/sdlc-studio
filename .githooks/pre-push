@@ -284,6 +284,9 @@ for tag_pair in $tag_names; do
     if [ "$cv_rc" -eq 1 ]; then
       echo "pre-push: tag $tag_name names $tag_version, and the version check above did not find $tag_version declared by every home at its commit - tag the version the tree declares, or bump every home to $tag_version, commit, and tag that commit" >&2
       exit 1
+    elif [ "$cv_rc" -eq 3 ]; then
+      echo "pre-push: the version check crashed on tag $tag_name (exit 3, traceback above), so it compared nothing - not a version mismatch; the tag is refused until the check runs" >&2
+      exit 1
     elif [ "$cv_rc" -ne 0 ]; then
       echo "pre-push: the version check could not run on tag $tag_name (exit $cv_rc, see above) - the tag is refused until it can" >&2
       exit 1

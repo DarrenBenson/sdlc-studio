@@ -87,8 +87,9 @@ commit, a missing stamp, a stamp holding anything but the sha of a commit here (
 stamp included) or naming another commit, a generated evidence page that differs from what the
 committed signed reports render, the last cut version's evidence pack missing or not what its
 named reports rebuild to (once a signed report is committed), a record it cannot read, and CI
-not passed on the forge unless the clone has no remote or one `gh` cannot query. So a tag never
-asserts a green measured on a different tree, or ships records older than the reports beside it.
+not passed on the forge, which is skipped only with no remote or with remotes a signed-in `gh`
+reports are on no GitHub host (a `gh` missing or not signed in refuses). So a tag never asserts
+a green measured on a different tree, or ships records older than the reports beside it.
 
 ### `evidence_pack.py`
 

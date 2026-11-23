@@ -566,5 +566,24 @@ class ExpectedVersionTests(unittest.TestCase):
                     self.assertIn(said, err)
                     self.assertIn("fatal: bad object", err)
 
+    def test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit(self) -> None:
+        """A check that raises prints its traceback and exits 3: never the 1 a caller reads as
+        a version mismatch, nor the 2 of a commit it could not read. Through the same entry
+        point a mismatch still exits 1 and an agreement 0. MUTANT: let the exception escape
+        (Python's exit 1), exit 1 or 2 for it, or drop the traceback."""
+        with tempfile.TemporaryDirectory() as d:
+            _fixture(Path(d), "6.4.0", "6.4.0", "6.4.0", "6.4.0", "6.4.0")
+            for expect, want in (("6.4.0", 0), ("6.5.0", 1)):
+                with self.subTest(expect), contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(want, check_versions.run(["--root", d, "--expect", expect]))
+            err = io.StringIO()
+            with mock.patch.object(check_versions, "_judge", side_effect=RuntimeError("boom")), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = check_versions.run(["--root", d, "--expect", "6.4.0"])
+        self.assertEqual(3, rc, err.getvalue())
+        self.assertIn("RuntimeError: boom", err.getvalue())
+        self.assertIn("VERSIONS: the check crashed", err.getvalue())
+
 if __name__ == "__main__":
     unittest.main()

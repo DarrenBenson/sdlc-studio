@@ -1186,5 +1186,56 @@ class TagNameMatchesTheTreeTests(unittest.TestCase):
         self.assertNotIn("is not the page for", r.stderr)
         self.assertEqual([], fx.gate_calls())
 
+    def test_a_tag_is_judged_at_its_own_commit_not_at_head(self) -> None:
+        """A tag pushed onto an older commit is held to what that commit declares, though HEAD
+        has since bumped every home and re-cut the page for the next series. MUTANT: read the
+        version homes, or the page's series, at HEAD rather than at the tagged commit."""
+        fx = self._clone()
+        older = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        skill = ".claude/skills/sdlc-studio"
+        for rel in ("package.json", "README.md", f"{skill}/SKILL.md",
+                    f"{skill}/templates/version.yaml"):
+            path = fx.clone / rel
+            path.write_text(path.read_text(encoding="utf-8").replace("6.4.0", "6.5.0"),
+                            encoding="utf-8")
+        changelog = fx.clone / "CHANGELOG.md"
+        changelog.write_text(changelog.read_text(encoding="utf-8").replace(
+            "## [6.4.0]", "## [6.5.0] - 2026-11-30\n\n## [6.4.0]"), encoding="utf-8")
+        (fx.clone / known_issues.PAGE_REL).write_text(known_issues.render(fx.clone, "6.5.0"),
+                                                      encoding="utf-8")
+        _git(fx.clone, "add", "-A")
+        _git(fx.clone, "commit", "-q", "-m", "declare 6.5.0")
+        self.assertNotEqual(older, _git(fx.clone, "rev-parse", "HEAD").stdout.strip())
+        r = fx.hook_direct(f"refs/tags/v6.4.0 {older} refs/tags/v6.4.0 {'0' * 40}\n")
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertIn(f"Version 6.4.0 declared by every authoritative location at {older}",
+                      r.stderr)
+        self.assertEqual(["--boundary release"], fx.gate_calls())
+        # Named for HEAD's version, the older commit is refused by the version check itself,
+        # not only by the page's series.
+        r = fx.hook_direct(f"refs/tags/v6.5.0 {older} refs/tags/v6.5.0 {'0' * 40}\n")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("tag v6.5.0 names 6.5.0", r.stderr)
+        self.assertIn("package.json declares 6.4.0, not 6.5.0", r.stderr)
+        self.assertEqual(["--boundary release"], fx.gate_calls())
+
+    def test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch(self) -> None:
+        """A version check that raises exits 3 with its traceback, and the hook says the check
+        crashed rather than that the tree declares another version, and still refuses. A tracked
+        markdown file that is not UTF-8 is one real way it crashes today; should reading one
+        stop crashing, choose another. MUTANT: let the crash exit 1, or drop the hook's branch
+        that names it."""
+        fx = self._clone()
+        (fx.clone / "docs" / "notes.md").write_bytes(b"\xff\xfe not UTF-8\n")
+        _git(fx.clone, "add", "-A")
+        _git(fx.clone, "commit", "-q", "-m", "a markdown file that is not UTF-8")
+        r = self._feed(fx, "refs/tags/v6.4.0")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("UnicodeDecodeError", r.stderr)
+        self.assertIn("the version check crashed on tag v6.4.0 (exit 3", r.stderr)
+        self.assertNotIn("names 6.4.0", r.stderr)
+        self.assertNotIn("could not run", r.stderr)
+        self.assertEqual([], fx.gate_calls())
+
 if __name__ == "__main__":
     unittest.main()

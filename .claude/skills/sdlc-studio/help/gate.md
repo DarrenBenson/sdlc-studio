@@ -245,9 +245,11 @@ operators look rather than discovered sprints later.
 (`release_cut.py tag-check`) asks three things of the tagged commit, never whether a close is
 owed: that the gate was recorded green on it, that the generated evidence page and the evidence
 pack for the version CHANGELOG.md last cut are current with the signed reports it holds, and that
-CI passed on it on the forge, unless the clone has no remote or one `gh` cannot query. The
-detector could not read a unit delivered through a carry bug or closed by a ruling, so as a
-gate it refused work that had been closed. Passing the flag exits 2 and names its retirement.
+CI passed on it on the forge. The forge is skipped only for a clone with no remote, or one whose
+remotes a signed-in `gh` reports are on no GitHub host; a `gh` that is missing or not signed in
+refuses the tag. The detector could not read a unit delivered through a carry bug or closed by a
+ruling, so as a gate it refused work that had been closed. Passing the flag exits 2 and names
+its retirement.
 
 `release_cut.py evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy` writes the release's
 evidence pack under `sdlc-studio/reports/` from the named signed reports as committed. An unsigned

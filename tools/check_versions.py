@@ -37,8 +37,9 @@ Usage:
     python3 tools/check_versions.py [--root DIR] [--strict]
     python3 tools/check_versions.py [--root DIR] --expect X.Y.Z [--at REV]
 
-Exits 1 on any mismatch or unparseable location, and 2 when --at names
-no commit the repository can read.
+Exits 1 on any mismatch or unparseable location, 2 when --at names no
+commit the repository can read, and 3 when the check itself crashes, its
+traceback printed, so a caller never reads a crash as a mismatch.
 """
 from __future__ import annotations
 
@@ -52,6 +53,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import traceback
 from pathlib import Path
 
 SKILL_DIR = ".claude/skills/sdlc-studio"
@@ -395,5 +397,22 @@ def _judge(root: Path, args: argparse.Namespace, listing: list[str] | None = Non
     return 1 if errors else 0
 
 
+#: The exit of a check that crashed: never 1, which a caller reads as a version mismatch, nor 2,
+#: a commit that could not be read.
+EXIT_CRASHED = 3
+
+
+def run(argv: list[str] | None = None) -> int:
+    """`main`, with an uncaught exception reported in full and exited as EXIT_CRASHED rather than
+    the 1 Python gives a traceback, which the pre-push hook would read as a mismatch."""
+    try:
+        return main(argv)
+    except Exception:  # noqa: BLE001 - reported in full, then a distinct exit code
+        traceback.print_exc()
+        print(f"VERSIONS: the check crashed (traceback above), so no version was compared - "
+              f"exit {EXIT_CRASHED}, never a mismatch", file=sys.stderr)
+        return EXIT_CRASHED
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())

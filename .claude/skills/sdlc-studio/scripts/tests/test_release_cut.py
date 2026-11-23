@@ -730,6 +730,44 @@ class GeneratedPagesFreshTests(unittest.TestCase):
         self.assertIn("the generated evidence page and the evidence pack for the version "
                       "CHANGELOG.md last cut are current with the signed reports it holds", text)
 
+    def test_the_pages_name_exactly_when_the_forge_is_not_asked(self) -> None:
+        """The pages said CI was skipped for a remote `gh` cannot query, but a `gh` missing or
+        not signed in refuses the tag (`unknown`, ForgeCiTests); only a clone with no remote, or
+        remotes a signed-in `gh` reports are on no GitHub host (`unsupported`), skip the forge.
+        MUTANT: restore the sentence that grants a missing `gh` the skip."""
+        pages = {"help/gate.md": ("The forge is skipped only for a clone with no remote",
+                                  "a `gh` that is missing or not signed in refuses the tag"),
+                 "reference-scripts-domain.md": ("which is skipped only with no remote",
+                                                 "(a `gh` missing or not signed in refuses)")}
+        for rel, (skip, refusal) in pages.items():
+            with self.subTest(rel):
+                text = " ".join((SCRIPT.parent.parent / rel).read_text(encoding="utf-8").split())
+                self.assertNotIn("one `gh` cannot query", text)
+                self.assertIn(skip, text)
+                self.assertIn("a signed-in `gh` reports are on no GitHub host", text)
+                self.assertIn(refusal, text)
+
+    def test_a_signature_left_uncommitted_is_not_read_as_committed(self) -> None:
+        """The reports are read as committed, like the page and the pack: a page regenerated over
+        a signature the working tree holds and the commit does not is refused, though the
+        working tree's reports render it exactly. MUTANT: copy each listed report's body from
+        the working tree rather than from the tagged commit."""
+        root = self._release()
+        epb.seal(root, epb.report("RPT0003", [("US0004", epb.S4, 1, "delivered")],
+                                  epb.signature("RPT0003", "Lee Operator", "2026-11-20T10:00:00Z")))
+        r = _cli(SPRINT_REPORT, root, "evidence", "--out", PAGE)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("RPT0003", (root / PAGE).read_text(encoding="utf-8"))
+        _git(root, "add", "--", PAGE)
+        _git(root, "commit", "-q", "-m", "the page, its signature left uncommitted")
+        self.assertTrue(_git(root, "status", "--porcelain", "--",
+                             "sdlc-studio/reports/RPT0003.json"),
+                        "the fixture must leave the signature in the working tree only")
+        r = self._tag(root)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"{PAGE} differs from what the signed reports at the tagged commit render",
+                      r.stderr)
+
     def test_no_cut_version_or_no_signed_report_owes_no_pack(self) -> None:
         """The scope: a pack is owed only for a cut version whose project has a signed report,
         and a page is judged only when it carries the generation markers, so a project that
