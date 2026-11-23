@@ -1300,6 +1300,87 @@ class PersonaWellFormedTests(unittest.TestCase):
             named = [f["message"].split(" still holds")[0] for f in validate.check_personas(repo)]
             self.assertEqual(named, ['section "{{extra section}}"', 'section "Notes"'])
 
+    STRAY = "Maya types {{ in her editor to open a template slot."
+
+    def test_a_stray_brace_in_prose_does_not_swallow_the_next_section(self):
+        """An unclosed `{{` in prose is no slot and joins nothing past its own paragraph, so the
+        End Goals slot after it is still named, and the filled Who They Are is not. Dies if a
+        wrapped slot's join crosses a blank line, a heading or another placeholder."""
+        card = self.FILLED.replace("Maya runs a two-person studio and ships weekly.", self.STRAY)
+        self.assertNotEqual(card, self.FILLED)
+        first = "1. {{the most important thing they want to achieve}}\n"
+        for goals in (first + "2. Spend less time on paperwork", first + "2. {{the next}}"):
+            with self.subTest(goals=goals), tempfile.TemporaryDirectory() as d:
+                repo = pathlib.Path(d)
+                dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+                (dd / "maya.md").write_text(
+                    card.replace("1. Ship a release she trusts\n2. Spend less time on paperwork",
+                                 goals),
+                    encoding="utf-8")
+                rc, out = self._run_personas(repo)
+                self.assertEqual(rc, 0, out)
+                self.assertNotIn("personas look well-formed.", out)
+                self.assertEqual(re.findall(r'section "([^"]*)"', out), ["End Goals"], out)
+
+    #: Where a wrapped slot's join stops: each text and the sections `_persona_unfilled_sections`
+    #: names in it. A bare `{{ a` line and its closing `b }}` across a bound are two lines and
+    #: neither is a slot; read whole they would be one.
+    WRAP_BOUNDS = [
+        ("## A\n\n{{a slot that\nwraps over two lines}}\n", ["A"]),      # one paragraph: joined
+        ("## A\n\n{{ a\n\nb }}\n", []),                                  # a blank line
+        ("## A\n\n{{ a\n  \nb }}\n", []),                                # a line of spaces
+        ("## A\n\n{{ a\n## B }}\n", []),                                  # a heading
+        ("## A\n\n{{ a\n```\nb }}\n```\n", []),                           # a backtick fence
+        ("## A\n\n{{ a\n~~~\nb }}\n~~~\n", []),                           # a tilde fence
+        ("## A\n\n{{ a\n| b }}\n", []),                                   # a table row
+        ("## A\n\n- uses {{ often\n- {{a note}}\n", ["A"]),               # another placeholder
+        ("## A\n\n{{a\nb}}\nc}}\n", ["A"]),                                # the first close ends it
+    ]
+
+    def test_a_wrapped_slot_is_joined_within_its_own_paragraph_only(self):
+        for text, want in self.WRAP_BOUNDS:
+            with self.subTest(text=text):
+                self.assertEqual(validate._persona_unfilled_sections(text), want)
+
+    LEAD_SLOT = "> {{one line on who she is}}"
+
+    def test_validate_and_status_agree_on_the_title(self):
+        """`validate.py personas` warns on the title exactly when status counts the card as naming
+        nobody: a bold slot title is the slot, a filled title over a slot line is not (that line
+        is named as the text above the first section), and a card whose bytes are not UTF-8 is
+        read alike by both. Dies if validate reads the title any other way than status does."""
+        status = loader.load_script("status")
+        filled = self.FILLED.encode("utf-8")
+        cards = [  # (card bytes, title still the slot, lead text holds a slot)
+            (self.TEMPLATE.read_bytes(), True, False),
+            (filled.replace(b"# Maya Okafor", b"# **{{full_name}}**"), True, False),
+            (filled.replace(b"# Maya Okafor\n", b"# Maya Okafor\n\n"
+                            + self.LEAD_SLOT.encode() + b"\n"), False, True),
+            (b"{{a slot line above the title}}\n" + filled, False, True),
+            (self.TEMPLATE.read_bytes() + b"\n\xff\n", True, False),
+            (filled, False, False),
+        ]
+        for body, slot_title, slot_lead in cards:
+            with self.subTest(body=body[:40]), tempfile.TemporaryDirectory() as d:
+                root = pathlib.Path(d)
+                dd = root / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+                (dd / "maya.md").write_bytes(body)
+                msgs = [f["message"] for f in validate.check_personas(root)]
+                self.assertEqual(any(m.startswith("the title still holds") for m in msgs),
+                                 slot_title, msgs)
+                self.assertEqual(status.personas_present(root), not slot_title)
+                self.assertEqual(
+                    any(m.startswith("the text above the first section still holds")
+                        for m in msgs), slot_lead, msgs)
+
+    def test_status_still_counts_a_card_it_cannot_read(self):
+        """A `.md` path under personas/ that cannot be read at all still counts, as before."""
+        status = loader.load_script("status")
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / "sdlc-studio" / "personas" / "maya.md").mkdir(parents=True)
+            self.assertTrue(status.personas_present(root))
+
     ROLE_SLOT = "{{primary / secondary / supplemental / negative / customer / served}}"
 
     def _primary_copy(self, repo, name):
@@ -2264,16 +2345,24 @@ class PlaceholderBaselineTests(unittest.TestCase):
     def test_emit_baseline_emits_the_placeholder_record(self):
         """The placeholder record is captured from the checker's own output, one record per
         redirect: `--emit-baseline placeholder` prints only `ID:{{token}}` lines and the bare flag
-        still prints only the criteria record. Dies if placeholder findings carry no key, if the
-        two records share one print, or if the emitted spelling is not the one the reader reads."""
+        still prints only the criteria record. Each record line is the bare token, never the line
+        it sits on, so the story template's labelled `**Points:**` slot and a bulleted slot
+        print as their tokens, and a token found on two lines prints once. Dies if placeholder
+        findings carry no key, if the two records share one print, if a token repeats, or if the
+        emitted spelling is not the one the reader reads."""
         with tempfile.TemporaryDirectory() as d:
             repo = Path(d)
-            story = self._story(repo, self.V3)
+            story = self._story(repo, self.V3, token="{{what changes and why}}\n\n"
+                                "**Points:** {{1|2|3|5|8|13|20}}\n\n- {{a bulleted slot}}\n\n"
+                                "{{what changes and why}}")
             self._story(repo, "US9997", status="Draft")   # in flight: nothing to baseline
             _write(repo, "sdlc-studio/bugs/BG9990-x.md",
                    "# BG9990: x\n\n> **Status:** Fixed\n\n## Summary\n\nbroke at a.py:12\n")
+            self.assertEqual(self._sev(story, repo), ["error"] * 4, "four slot lines, all errors")
             placeholder, raw = self._emit(repo, "placeholder")
-            self.assertEqual(placeholder, ["US01JQK3F8:{{what changes and why}}"], raw)
+            self.assertEqual(placeholder, ["US01JQK3F8:{{1|2|3|5|8|13|20}}",
+                                           "US01JQK3F8:{{a bulleted slot}}",
+                                           "US01JQK3F8:{{what changes and why}}"], raw)
             self.assertIn(validate._PLACEHOLDER_BASELINE, raw,
                           "the header names the file the record is redirected into")
             criteria, raw_c = self._emit(repo)
@@ -2282,8 +2371,8 @@ class PlaceholderBaselineTests(unittest.TestCase):
             self.assertIn(validate._CRITERIA_BASELINE, raw_c)
 
             self._baseline(repo, raw)                      # redirected, never hand-written
-            self.assertEqual(self._sev(story, repo), ["warning"],
-                             "the emitted record must quieten the finding it was captured from")
+            self.assertEqual(self._sev(story, repo), ["warning"] * 4,
+                             "the emitted record must quieten every finding it was captured from")
             self.assertEqual(self._emit(repo, "placeholder")[0], placeholder,
                              "re-capturing keeps a finding the record already waives")
 

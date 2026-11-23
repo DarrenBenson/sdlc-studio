@@ -470,9 +470,9 @@ a request from them*. For **Customer / Served**, Experience Goals and Scenario a
 the template's "Cast-role variants" note.
 
 **Checking it.** `python3 "$CLAUDE_SKILL_DIR/scripts/validate.py" personas` flags a persona that is
-missing a section for its cast role, or whose title or a section still holds an unfilled
-`{{...}}` template slot (advisory; its one error is two Primaries declaring the same Interface -
-it allows the Negative and Customer/Served variants). `persona review` runs it.
+missing a section for its cast role, or whose title is still an unfilled `{{...}}` template
+slot or whose text holds one (advisory; its one error is two Primaries declaring the same
+Interface - it allows the Negative and Customer/Served variants). `persona review` runs it.
 
 ## Validation rules {#persona-rules}
 
@@ -482,9 +482,9 @@ carries its rule name; a review cites it by that name. `persona_review.py check`
 
 | Rule | Severity | Fires when |
 | --- | --- | --- |
-| `persona-cast-role` | warning | a card's Quick Reference declares no Cast role; a cell still holding a `{{...}}` template slot declares none |
-| `persona-section` | warning | a card lacks a section its cast role needs (`missing section: <name>`), or its title or a section still holds an unfilled `{{...}}` template slot, a line outside a fenced block whose value is the placeholder and nothing else (one finding per section, naming it) |
-| `persona-one-primary` | error, warning | two Primaries declare the same Interface (error); more than one Primary while any declares none (warning); an Interface cell still holding a `{{...}}` template slot declares none |
+| `persona-cast-role` | warning | a card's Quick Reference declares no Cast role; a cell that is still a `{{...}}` template slot declares none, though a role beside a slot (`Primary {{note}}`) is declared |
+| `persona-section` | warning | a card lacks a section its cast role needs (`missing section: <name>`), its `#` title is still a `{{...}}` template slot, the reading by which `status` stops counting the card, or the text above its first section or a section still holds one: a line outside a fenced block whose value is the placeholder and nothing else, read whole where it wraps within its own paragraph (one finding per section, naming it) |
+| `persona-one-primary` | error, warning | two Primaries declare the same Interface (error); more than one Primary while any declares none (warning); an Interface cell that is still a `{{...}}` template slot declares none, as a Cast role cell does |
 | `persona-layout` | warning | persona-shaped files sit outside the flat `personas/` layout, or only the legacy `personas.md` holds personas |
 | `persona-legacy` | warning | the legacy `personas.md` is unreadable, unfilled boilerplate or holds no persona |
 | `persona-goal-verify` | warning | an End goal's own nested Verify line is empty, an unfilled `{{...}}` placeholder or one the `verify_ac` lint flags (`npm test`); named by card and goal number. A Verify elsewhere on the card is not read |

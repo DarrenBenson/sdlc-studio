@@ -125,8 +125,10 @@ def personas_present(repo_root: Path | str) -> bool:
     flat `personas.md`. A seeded registry with no entries declares nobody - that is the honest
     "no personas yet". Reading `personas.md` alone sent every project whose registry init's
     guided flow seeds back to the persona rung for ever. A card whose `# ` title is still the
-    template's `{{...}}` slot names nobody either, so a copy of the template is not a persona;
-    validate reads the slot (`persona_card_names_nobody`), so the two cannot disagree on it."""
+    template's `{{...}}` slot names nobody either, so a copy of the template is not a persona.
+    `validate.py personas` warns on a card's title through the same reader and the same test
+    (`read_card`, `persona_card_names_nobody`), so on a card both read the two cannot disagree
+    on whether its title is still the slot."""
     base = Path(repo_root) / "sdlc-studio"
     if (base / "personas.md").exists():
         return True
@@ -138,10 +140,15 @@ def personas_present(repo_root: Path | str) -> bool:
 
 
 def _names_a_persona(card: Path) -> bool:
-    """False only for a card whose title is still an unfilled template slot. An unreadable or
-    non-UTF-8 card reads as empty and so still counts, as every card did before."""
+    """False only for a card whose title is still an unfilled template slot. The card is read as
+    `validate.py personas` reads it, a byte that is not UTF-8 replaced; a card that cannot be
+    read at all still counts, as every card did before."""
     import validate  # noqa: PLC0415 - deferred: only a project with cards pays for the import
-    return not validate.persona_card_names_nobody(sdlc_md.read_text_safe(card))
+    try:
+        text, _ = validate.read_card(card, "warning")
+    except OSError:
+        return True
+    return not validate.persona_card_names_nobody(text)
 
 
 BACKLOG_TYPES: tuple[str, ...] = ("cr", "story", "epic", "bug", "rfc", "issue")

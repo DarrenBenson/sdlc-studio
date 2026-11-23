@@ -1300,7 +1300,8 @@ def _persona_cast_role(text: str) -> str | None:
 def persona_card_names_nobody(text: str) -> bool:
     """True when a persona card's `# ` title is still an unfilled `{{...}}` template slot, as in
     a copy of the template: such a card names no persona. A card with no `# ` title, or a filled
-    one, is not judged here."""
+    one, is not judged here. `check_personas` warns on the title through this function and
+    `status.py` stops counting the card through it, so the two read a title alike."""
     title = sdlc_md.extract_h1_title(text)
     return title is not None and _unfilled(title)
 
@@ -1310,24 +1311,35 @@ def _headings(text: str) -> list[str]:
 
 
 _ORDINAL = re.compile(r"^\s*\d+[.)]\s+")
+# A placeholder wrapped over lines, read whole only inside its own paragraph: no line it runs
+# into is blank, opens with `#`, is a fence line or a table row, or holds a `{` before the
+# closing `}}`, so a stray `{{` in prose never reaches a later section's heading or slot.
+_WRAPPED_SLOT = re.compile(r"\{\{[^}\n]*(?:\n(?![ \t]*(?:#|```|~~~|\||$))[^{}\n]*)+\}\}", re.M)
 
 
 def _persona_unfilled_sections(text: str) -> list[str]:
     """The sections of a persona card still holding an unfilled template slot, in card order and
-    each once: "" for the title (the text above the first `##` heading), else the heading.
+    each once: "" for the text above the first `##` heading, else the heading. The `# ` title
+    line is never read here: `persona_card_names_nobody` alone judges it.
 
     A slot is a line whose value is a `{{...}}` placeholder and nothing else, the bar
     `_check_placeholders` sets: the value of a table row is its last cell, and a bullet, a
     numbered item, a heading marker or a bold label is not part of it, so a heading that is a
-    slot names its own section. A placeholder that wraps over lines is read whole, and a fenced
-    block is sample text, so a slot inside one is not read. Prose that mentions `{{name}}`
-    syntax keeps its words and is never a slot."""
+    slot names its own section. A placeholder that wraps over the lines of one paragraph is read
+    whole (`_WRAPPED_SLOT` sets the bounds), and a fenced block is sample text, so a slot inside
+    one is not read. Prose that mentions `{{name}}` syntax keeps its words and is never a
+    slot."""
     found: list[str] = []
-    section, fence = "", None
-    for line in _PLACEHOLDER.sub(lambda m: m.group(0).replace("\n", " "), text).splitlines():
+    section, fence, end = "", None, 0
+    title = sdlc_md.H1_RE.search(text)
+    joined = _WRAPPED_SLOT.sub(lambda m: m.group(0).replace("\n", " "), text)  # same length
+    for raw in joined.splitlines(keepends=True):
+        line, start, end = raw.splitlines()[0], end, end + len(raw)
         fence, is_fence_line = sdlc_md.fence_step(line.strip(), fence)
         if is_fence_line or fence is not None:
             continue
+        if title is not None and start <= title.start() < end:
+            continue  # the title line, judged by persona_card_names_nobody
         heading = re.match(r"^##+\s+(.*)$", line)
         if heading:
             section = heading.group(1).strip()
@@ -1386,9 +1398,10 @@ def check_personas(root: Path) -> list[dict]:
     persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
     Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
     for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
-    optional. The title and each section still holding an unfilled `{{...}}` template slot also
-    warn (`persona-section`), naming the section, so a copy of the template is never a clean
-    pass, and a Cast role cell that is still a slot declares no role. When the flat glob
+    optional. A title that is still an unfilled `{{...}}` template slot, and the text above the
+    first section or a section still holding one, also warn (`persona-section`), naming where,
+    so a copy of the template is never a clean pass, and a Cast role cell that is still a slot
+    declares no role. When the flat glob
     inspects nothing but
     persona-shaped files sit nested in subdirs, emit a `persona-layout` advisory rather than a
     clean pass on an empty inspection (LL0008). The same rationale covers the legacy flat
@@ -1438,8 +1451,10 @@ def check_personas(root: Path) -> list[dict]:
             if not ok:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
-        for name in _persona_unfilled_sections(text):
-            where = f'section "{name}"' if name else "the title"
+        wheres = ["the title"] if persona_card_names_nobody(text) else []
+        wheres += [f'section "{name}"' if name else "the text above the first section"
+                   for name in _persona_unfilled_sections(text)]
+        for where in wheres:
             out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                         "message": f"{where} still holds an unfilled template placeholder "
                                    "({{...}}) - a persona is well-formed when every section "
