@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_selected.py
+> **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_selected.py, changelog.d/US1190.md
 > **Epic:** EP0325
 > **Points:** 5
 > **Persona:** Rowan Achterberg
@@ -52,3 +52,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + the unit's changelog fragment |

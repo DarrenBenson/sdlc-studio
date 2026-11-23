@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py, changelog.d/BG0967.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py, changelog.d/BG0967.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py
 > **Evidence:** Found running a consuming project on the installed skill 6.1.0, 2026-10-07; confirmed by reading the code at sdlc-studio main fb1ce886. Filing BG0949-BG0952 here: every `python3 -c "..."` repro had identifiers such as sdlc_md and critic.parse_verdict_block( wrapped in backticks, and each had to be re-fenced by hand.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -65,3 +65,4 @@ A dozen-line `_steps_safe` doing exactly this, in a throwaway copy at HEAD, pass
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
 | 2026-11-23 | Dani Okafor (engineering) | Groomed for run twenty-four: reproduced at 3791e519 (the classifier still back-ticks names inside commands it does not know and pulls prose into its fences); the classifier is replaced by one rule, write the Steps as given save the metadata guard and the close of an open fence, explained in the Proposed Fix; four executable criteria, three failing at HEAD and one guarding the two kept changes; Affects narrowed to the four files the fix touches; Points 2 to 3 |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + test_file_finding_bare_url.py and test_quiet_success.py: both filed a bare URL in the Steps and pinned its back-ticking, which D0610 retires; their URL shapes move to a field the filer still wraps |

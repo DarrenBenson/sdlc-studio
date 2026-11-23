@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .githooks/commit-msg, CONTRIBUTING.md, tools/tests/test_commit_suites_remote.py
+> **Affects:** .githooks/commit-msg, CONTRIBUTING.md, tools/tests/test_commit_suites_remote.py, changelog.d/US1191.md, sdlc-studio/tsd.md, sdlc-studio/trd.md
 > **Epic:** EP0325
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -52,3 +52,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + the unit's changelog fragment, and the TSD and TRD sentences that say a commit's suites run locally and the gate host is push-only, which this unit makes untrue |
