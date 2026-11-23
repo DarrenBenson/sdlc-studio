@@ -29,6 +29,21 @@
 #       preflight refuses with 4, before the gate starts, naming each missing release prerequisite
 #       (Python 3.10, pdftotext: `gate_prereqs.py check --release`).
 #
+#   remote-gate.sh staged --test <module> [--test <module>]...
+#       What the commit-msg hook runs when this clone names a host: the host runs only the named
+#       test modules, through the tree's own `gate.py --run-tests`, against exactly the tree this
+#       clone's index stages - the index GIT_INDEX_FILE names when it is set, as it is under
+#       `git commit`. The tree is written from a copy of that index and wrapped as a commit on
+#       HEAD that no ref here points at, so this clone's HEAD, index, working tree and refs are
+#       left as they were, and neither an unstaged edit nor an untracked file goes with it. It is
+#       sent and run as a push is, under the host's lock, but waits at most STAGED_LOCK_WAIT
+#       seconds for that lock where a push waits as long as it takes: a commit is not held behind
+#       a push's gate. Exits: 0 the selection passed, 1 it failed, whatever its own exit (its
+#       output is relayed); 3 and 4 as above, and 5 when another run held the host's lock past
+#       that wait, none of them a verdict on the tests; and 2 when it could not start, as when
+#       the call names no module, or a module that may not travel: one starting with '-' or '/',
+#       or holding anything but letters, digits, '.', '_', '-', '/' and ':'.
+#
 #   remote-gate.sh doctor
 #       Whether the configured host can judge a push: git on its ssh PATH, Node and npm, and every
 #       Python distribution on this clone's one prerequisite list (`requirements-dev.txt`, read by
@@ -36,7 +51,8 @@
 #       the host could not be reached. `tools/enable-hooks.sh` runs it when a host is configured.
 #
 #   remote-gate.sh remote --clone <id> --commit <sha> --run <token>
-#                         (--boundary <b> [--suite <s>] | --release [--carry NAME=VALUE]...)
+#                         (--boundary <b> [--suite <s>] [--test <module>]...
+#                          | --release [--carry NAME=VALUE]...)
 #       The host side. Never installed on the host: `push` streams it from the PUSHED COMMIT's own
 #       copy of this file, so the host always runs the version being judged.
 #
@@ -61,10 +77,17 @@ GATE_DIR="sdlc-gate"
 DEFAULT_SSH="ssh -o BatchMode=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
 TRANSPORT_FAILED=3
 HOST_SETUP_FAILED=4
+HOST_BUSY=5
+# The most a commit's selection (`staged`) waits for the host's lock, in seconds, before it
+# leaves with HOST_BUSY. A push, a suite and a release gate wait for as long as it takes.
+STAGED_LOCK_WAIT=60
+LOCK_TIMED_OUT=50     # flock's exit when that wait runs out: outside 64-78, the <sysexits.h>
+                      # range flock reports its own failures in
 SCRIPT_END="__REMOTE_GATE_SCRIPT_END__"
 # The settings of a release gate's environment that travel to the host with it (US1114).
 VERIFY_COUNTS=(SDLC_VERIFY_TIMEOUT SDLC_VERIFY_BATCH_TIMEOUT SDLC_VERIFY_WORKERS)
 BOUNDARY_SWITCHES=(SDLC_STUDIO_BOUNDARY_SUITE)
+staged=""             # set by `staged` alone: the one caller whose --test modules may go to a host
 
 die() { echo "remote-gate: $1" >&2; exit "${2:-2}"; }
 
@@ -78,7 +101,7 @@ carried_ok() {
 }
 
 parse() {
-  commit="" boundary="push" clone="" run="" suite="" release="" named="" carry=()
+  commit="" boundary="push" clone="" run="" suite="" release="" named="" carry=() tests=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --commit) commit="${2:-}"; shift 2 ;;
@@ -88,8 +111,15 @@ parse() {
       --suite) suite="${2:-}"; shift 2 ;;
       --release) release=1; shift ;;
       --carry) carry+=("${2:-}"); shift 2 ;;
+      --test) [ $# -ge 2 ] || die "--test needs a test module after it"; tests+=("$2"); shift 2 ;;
       *) die "unknown argument: $1" ;;
     esac
+  done
+  # A module travels inside single quotes on the host's command line, so it holds only what a
+  # repository path or a pytest node id needs, and never starts with '-' or '/'.
+  local module
+  for module in "${tests[@]}"; do
+    [[ $module =~ ^[A-Za-z0-9._][A-Za-z0-9._/:-]*$ ]] || die "--test needs a test module path, not '$module'"
   done
   case "$boundary" in push|release) ;; *) die "--boundary must be push or release, not '$boundary'" ;; esac
   case "$suite" in ""|scripts|tools|all) ;; *) die "--suite must be scripts, tools or all, not '$suite'" ;; esac
@@ -108,6 +138,12 @@ parse() {
 
 transport_failed() {
   echo "remote-gate: the gate host $host could not judge commit $commit: $1." >&2
+  # A selection's caller decides what runs in its place, so the staged mode says nothing of that.
+  if [ "${#tests[@]}" -gt 0 ]; then
+    echo "  Check that this clone reaches it: ssh $host true" >&2
+    echo "  or run the selection on this machine: python3 .claude/skills/sdlc-studio/scripts/gate.py --run-tests ${tests[*]}" >&2
+    exit "$TRANSPORT_FAILED"
+  fi
   echo "  nothing ran locally in its place. Check that this clone reaches it: ssh $host true" >&2
   if [ -n "$suite" ]; then
     echo "  or run the suite on this machine: SDLC_GATE_LOCAL=1 tools/run-suite.sh $suite" >&2
@@ -121,6 +157,8 @@ transport_failed() {
 
 cmd_push() {
   parse "$@"
+  [ "${#tests[@]}" -eq 0 ] || [ -n "$staged" ] \
+    || die "--test goes with staged, which judges the staged tree: remote-gate.sh staged --test <module>"
   # The release gate's settings, judged before anything connects. One unset here is not sent.
   [ "${#carry[@]}" -eq 0 ] || die "--carry is the host side's: set the variable in this shell instead"
   local name
@@ -201,6 +239,7 @@ while os.getppid() == parent:
   trap 'kill "$feeder_pid" ${ssh_pid:+"$ssh_pid"} 2>/dev/null; exit 130' INT TERM HUP
   local job_args=" --boundary '$boundary'" setting
   [ -n "$suite" ] && job_args+=" --suite '$suite'"
+  for setting in "${tests[@]}"; do job_args+=" --test '$setting'"; done
   if [ -n "$release" ]; then
     job_args=" --release"
     for setting in "${carry[@]}"; do job_args+=" --carry '$setting'"; done
@@ -218,8 +257,13 @@ while os.getppid() == parent:
   local ran="the gate"
   [ -n "$suite" ] && ran="the $suite suite"
   [ -n "$release" ] && ran="the release gate"
+  [ "${#tests[@]}" -gt 0 ] && ran="the selected test modules"
   if [ "$rc" -eq "$HOST_SETUP_FAILED" ]; then
     echo "remote-gate: $host did not run $ran for commit $commit - see the host's output above." >&2
+  elif [ "$rc" -eq "$HOST_BUSY" ]; then
+    echo "remote-gate: $host is busy: another run held its gate lock past ${STAGED_LOCK_WAIT}s, so $ran did not run there." >&2
+  elif [ "$rc" -ne 0 ] && [ "${#tests[@]}" -gt 0 ]; then
+    echo "remote-gate: the selected test modules were red on $host for the staged tree (commit $commit) - see the host's output above." >&2
   elif [ "$rc" -ne 0 ] && [ -n "$suite" ]; then
     echo "remote-gate: the $suite suite was red on $host for commit $commit - see the host's output above." >&2
   elif [ "$rc" -ne 0 ] && [ -n "$release" ]; then
@@ -237,6 +281,48 @@ while os.getppid() == parent:
     echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --boundary $boundary" >&2
   fi
   return "$rc"
+}
+
+cmd_staged() {
+  local -a picked=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --test) [ $# -ge 2 ] || die "--test needs a test module after it"; picked+=(--test "$2"); shift 2 ;;
+      *) die "unknown argument: $1" ;;
+    esac
+  done
+  [ "${#picked[@]}" -gt 0 ] || die "staged names no test module to run: pass --test <module> for each one selected"
+  # The tree, written from a COPY of the index: a write-tree records its trees back into the index
+  # it reads, which here is this clone's own, or under `git commit -a` or a commit of named paths
+  # the lock file git commits from. Python makes, copies and removes the scratch file, because
+  # this side runs on a PATH holding only git, bash and python3.
+  local index tree sent
+  local -a parent=()
+  index="$(git rev-parse --git-path index)"       # the one GIT_INDEX_FILE names, when it is set
+  tree="$(python3 -c '
+import os, shutil, subprocess, sys, tempfile
+fd, scratch = tempfile.mkstemp(prefix="remote-gate-index.")
+os.close(fd)
+try:
+    shutil.copyfile(sys.argv[1], scratch)
+    out = subprocess.run(["git", "write-tree"], env={**os.environ, "GIT_INDEX_FILE": scratch},
+                         stdout=subprocess.PIPE, text=True)
+finally:
+    for path in (scratch, scratch + ".lock"):
+        if os.path.exists(path):
+            os.remove(path)
+print(out.stdout.strip())
+raise SystemExit(out.returncode)
+' "$index")" || die "could not write the tree staged in $index"
+  # A commit on HEAD (none, before the first commit) that no ref here points at, under an identity
+  # of its own, so a clone with no identity configured can still send it.
+  git rev-parse -q --verify HEAD >/dev/null && parent=(-p HEAD)
+  sent="$(GIT_AUTHOR_NAME=remote-gate GIT_AUTHOR_EMAIL=remote-gate@localhost \
+      GIT_COMMITTER_NAME=remote-gate GIT_COMMITTER_EMAIL=remote-gate@localhost \
+      git commit-tree "$tree" "${parent[@]}" -m "remote-gate: the staged tree, judged on the gate host")" \
+    || die "could not wrap the staged tree as a commit to send"
+  staged=1
+  cmd_push --commit "$sent" "${picked[@]}"
 }
 
 cmd_remote() {
@@ -282,14 +368,27 @@ sys.stdin.buffer.read()
 os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   watch_pid=$!
 
-  # One run at a time on this host. A waiting run says so, and names the run it waits for.
+  # One run at a time on this host. A waiting run says so, and names the run it waits for. A
+  # commit's selection waits at most STAGED_LOCK_WAIT seconds, then leaves with HOST_BUSY, which
+  # its caller reads as no verdict; every other run waits for as long as the lock is held.
   exec 9>"$base/run.lock"
   if ! flock -n 9; then
-    echo "remote gate: waiting for the run holding $here's gate lock: $(cat "$base/run.holder" 2>/dev/null || echo unknown)"
-    flock 9 &
+    local -a bound=()
+    local waits="waiting for"
+    if [ "${#tests[@]}" -gt 0 ]; then
+      bound=(-E "$LOCK_TIMED_OUT" -w "$STAGED_LOCK_WAIT") waits="waiting up to ${STAGED_LOCK_WAIT}s for"
+    fi
+    echo "remote gate: $waits the run holding $here's gate lock: $(cat "$base/run.holder" 2>/dev/null || echo unknown)"
+    flock "${bound[@]}" 9 &
     lock_pid=$!
-    wait "$lock_pid" || die "could not take $here's gate lock"
+    wait "$lock_pid"
+    local took=$?
     lock_pid=""
+    if [ "$took" -eq "$LOCK_TIMED_OUT" ]; then
+      echo "remote gate: $here is busy: the run above held its gate lock past ${STAGED_LOCK_WAIT}s, so the selection did not run here"
+      exit "$HOST_BUSY"
+    fi
+    [ "$took" -eq 0 ] || die "could not take $here's gate lock"
   fi
   echo "run $run, commit $commit, clone $clone, since $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$base/run.holder"
 
@@ -325,6 +424,12 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   elif [ -n "$release" ]; then
     what="the release gate" job_log="" doing="judging $commit with gate.py --release"
     job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --release)
+  # With --test, a commit's selection: the named modules alone, as the commit hook runs them.
+  elif [ "${#tests[@]}" -gt 0 ]; then
+    what="the selected test modules" job_log=""
+    doing="running ${#tests[@]} selected test module(s) on $commit"
+    job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --root . --run-tests "${tests[@]}")
+    export SDLC_GATE_LOCAL=1          # the selection runs HERE: never sent on to a host of its own
   # The boundary gate runs inside the commit's green-run noise gate, as the pre-push hook runs it
   # locally: what a passing test printed under pytest's capture is held to CI's noise budget.
   elif [ -f tools/run-suite.sh ] && [[ "$(< tools/run-suite.sh)" == *"--noise-gate"* ]]; then
@@ -351,13 +456,16 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   # process it starts inherits that, so a suite test that interrupts a hook it runs could not; the
   # gate is execed with both back at their defaults. SIGPIPE and SIGXFSZ go back too: the Python
   # that execs the gate ignores both at its own start, and an ignored signal survives exec.
-  # A boundary gate or a suite runs its `boundary_only` tests. The release gate instead gets the
-  # four carried settings as the pusher has them, set or unset, so it reads them as a local
-  # `gate.py --release` there would.
+  # A boundary gate or a suite runs its `boundary_only` tests. A commit's selection does not,
+  # whatever the host's gate-env.sh sets, as the commit hook's own run leaves them to the push. The
+  # release gate instead gets the four carried settings as the pusher has them, set or unset, so
+  # it reads them as a local `gate.py --release` there would.
   if [ -n "$release" ]; then
     unset "${VERIFY_COUNTS[@]}" "${BOUNDARY_SWITCHES[@]}"
     local setting
     for setting in "${carry[@]}"; do export "${setting?}"; done
+  elif [ "${#tests[@]}" -gt 0 ]; then
+    unset SDLC_STUDIO_BOUNDARY_SUITE
   else
     export SDLC_STUDIO_BOUNDARY_SUITE=1
   fi
@@ -372,10 +480,10 @@ os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
   gate_pid=""
   echo "remote gate: exit $rc after $((SECONDS - t0))s"
   [ "$rc" -ne 0 ] && [ -n "$job_log" ] && echo "remote gate: the full log is on $here $job_log"
-  # A suite run or a release gate is green or red and nothing else: its own exit 4 (pytest's
-  # usage error) must not reach the pusher as 4, which there means this host's setup refused
-  # before anything ran, nor its 255 as a dropped connection.
-  [ -n "$suite$release" ] && [ "$rc" -ne 0 ] && rc=1
+  # A suite run, a selection or a release gate is green or red and nothing else: its own exit 4
+  # (pytest's usage error) must not reach the pusher as 4, which there means this host's setup
+  # refused before anything ran, nor its 255 as a dropped connection.
+  { [ -n "$suite$release" ] || [ "${#tests[@]}" -gt 0 ]; } && [ "$rc" -ne 0 ] && rc=1
   exit "$rc"
 }
 
@@ -457,8 +565,9 @@ PY
 
 case "${1:-}" in
   push) shift; cmd_push "$@" ;;
+  staged) shift; cmd_staged "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;
   host-doctor) shift; cmd_host_doctor "$@" ;;
   remote) shift; cmd_remote "$@" ;;
-  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release | --suite scripts|tools|all | --release] | doctor" >&2; exit 2 ;;
+  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release | --suite scripts|tools|all | --release] | staged --test <module> [--test <module>]... | doctor" >&2; exit 2 ;;
 esac

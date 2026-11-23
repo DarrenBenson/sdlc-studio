@@ -200,7 +200,8 @@ Three git hooks run the gate, installed by `tools/enable-hooks.sh`, in the order
 1. `.githooks/pre-commit` runs the cheap guards over the staged change and decides whether the
    unit suites are needed. `.githooks/pre-commit --list` prints its lanes.
 2. `.githooks/commit-msg` checks the message rules, then runs only the test modules the staged
-   change selects. `.githooks/commit-msg --list` prints its lanes.
+   change selects, on the gate host when one is set (see below). `.githooks/commit-msg --list`
+   prints its lanes.
 3. `.githooks/pre-push` runs the full suite once, at the boundary of what is pushed. A branch
    push runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds
    the slow release lanes (release rehearsal and module-alone). Before the gate, the hook checks
@@ -209,13 +210,14 @@ Three git hooks run the gate, installed by `tools/enable-hooks.sh`, in the order
 
 #### The gate host
 
-A clone can have its push gate judged on another machine. `git config sdlc.gateHost <host>` names
-the host, as ssh names it, and `.githooks/pre-push` then sends exactly the commit being pushed to
-a repository kept there for this clone and runs the gate on that host through
-`tools/remote-gate.sh`, whose host side comes from the pushed commit's own copy. Two more keys,
-both in this clone's git config, shape it: `sdlc.gateSsh` replaces the default ssh transport, and
-`sdlc.gateCloneId` keys this clone's state on the host, written on first use. Where the gate
-runs:
+A clone can have its push gate, and a commit's selected test modules, judged on another
+machine; a commit's modules run on this machine instead when the host gives no verdict
+(`tools/remote-gate.sh staged`). `git config sdlc.gateHost <host>` names the host, as ssh
+names it, and `.githooks/pre-push` then sends exactly the commit being pushed to a repository
+kept there for this clone and runs the gate on that host through `tools/remote-gate.sh`, whose
+host side comes from the pushed commit's own copy. Two more keys, both in this clone's git
+config, shape it: `sdlc.gateSsh` replaces the default ssh transport, and `sdlc.gateCloneId` keys
+this clone's state on the host, written on first use. Where the gate runs:
 
 | `sdlc.gateHost` | `SDLC_GATE_LOCAL` in the push's environment | The push gate |
 | --- | --- | --- |

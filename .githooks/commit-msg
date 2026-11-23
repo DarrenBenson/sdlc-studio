@@ -35,10 +35,12 @@
 # Degrades honestly: with no python3, no script, or an unreadable message the check is
 #   skipped and never blocks a legitimate commit.
 #
-# 2. THE UNIT SUITES. Run only when pre-commit selected them and left its handover record.
-# Every exemption above releases the MESSAGE check alone - a conflicted merge resolved by
-# hand still runs pre-commit, so it still pays for the suites exactly as it did before, and
-# a plain `git merge` (which runs this hook but not pre-commit) still pays for nothing.
+# 2. THE UNIT SUITES. Run only when pre-commit selected them and left its handover record, and
+# on the gate host when this clone names one (`sdlc.gateHost`), here when it names none, when
+# SDLC_GATE_LOCAL=1, or when the host gives no verdict. Every exemption above releases the
+# MESSAGE check alone - a conflicted merge resolved by hand still runs pre-commit, so it still
+# pays for the suites exactly as it did before, and a plain `git merge` (which runs this hook
+# but not pre-commit) still pays for nothing.
 #
 # Opt-in: both jobs run only in a clone that has enabled the tracked hooks
 #   (bash tools/enable-hooks.sh -> core.hooksPath=.githooks). Never forced on a consuming
@@ -321,17 +323,52 @@ scrub=(/usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_F
        -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM
        -u GIT_PREFIX)
 
+# THE GATE HOST. With `sdlc.gateHost` named, a selection is judged on that host, against exactly
+# the tree this commit stages (`tools/remote-gate.sh staged`), and no suite runs here. Only the
+# host's 0 (green) or 1 (red) is a verdict. Any other exit is not one - 3 the host could not be
+# reached, 4 its setup refused before a test ran, 5 another run held its lock past the short wait
+# a commit allows, anything else remote-gate could not start - so the hook says so in one line,
+# shown on a pass too, and runs the same selection here at once, as it does with no host named.
+# An interrupt while the host judges ends the hook, as it ends the command substitution
+# remote-gate runs in, so nothing starts here. SDLC_GATE_LOCAL=1 (that value only) keeps the
+# selection here, as it keeps a push's gate. GIT_INDEX_FILE goes through unscrubbed: it names the
+# index being committed.
+host_rc=""
+gate_host="$(git config --get sdlc.gateHost 2>/dev/null || true)"
+if [ -n "$selectors" ] && [ -n "$gate_host" ] && [ "${SDLC_GATE_LOCAL:-}" != "1" ]; then
+  host_args=()
+  for s in $selectors; do host_args+=(--test "$s"); done
+  host_out="$(bash tools/remote-gate.sh staged "${host_args[@]}" 2>&1)"
+  host_exit=$?
+  case "$host_exit" in
+    0|1) host_rc="$host_exit" ;;
+    3) host_cause="it could not be reached" ;;
+    4) host_cause="its setup refused before any test ran" ;;
+    5) host_cause="it was busy: another run held its gate lock past the wait a commit allows" ;;
+    *) host_cause="tools/remote-gate.sh exited $host_exit before any test verdict" ;;
+  esac
+  if [ -z "$host_rc" ]; then
+    host_line="commit-msg: the gate host $gate_host did not judge the selected suites: $host_cause; running them on this machine"
+    if [ -n "$hook_buf" ]; then printf '%s\n' "$host_line" >&4; else printf '%s\n' "$host_line" >&2; fi
+    printf '%s\n' "$host_out" | sed 's/^/       /' >&2
+  fi
+fi
+host_verdict() { printf '%s\n' "$host_out"; return "$host_rc"; }
+
 ran_pytest=0
-if [ -n "$selectors" ] && python3 -c 'import pytest' >/dev/null 2>&1; then
-  # THE SELECTED RUN: one pytest invocation over both trees, across every core when pytest-xdist
-  # is installed, with the `serial_only` tests after (`gate.py --run-tests`). pytest captures a
-  # passing test's output, so the green-run noise ratchet in tools/skill-tests.sh is held where
-  # the whole suite runs under it: in CI.
+if [ -n "$selectors" ] && python3 -c 'import pytest' >/dev/null 2>&1 || [ -n "$host_rc" ]; then
+  # THE SELECTED RUN: the host's verdict when it gave one, otherwise one pytest invocation over
+  # both trees, across every core when pytest-xdist is installed, with the `serial_only` tests
+  # after (`gate.py --run-tests`). pytest captures a passing test's output, so the green-run noise
+  # ratchet in tools/skill-tests.sh is held where the whole suite runs under it: in CI.
   ran_pytest=1
+  # shellcheck disable=SC2206 # the selection is a list of words, split on purpose
+  unit_run=("${scrub[@]}" python3 "$skill/gate.py" --root . --run-tests $selectors)
+  [ -n "$host_rc" ] && unit_run=(host_verdict)
   run "unit-tests" \
-    "every selected test module passes (in parallel when pytest-xdist is installed)" \
+    "every selected test module passes, on the gate host sdlc.gateHost names when it gives a verdict (in parallel when pytest-xdist is installed)" \
     "fix the code or the test named above; re-run: python3 $skill/gate.py --run-tests <module>" \
-    -- "${scrub[@]}" python3 "$skill/gate.py" --root . --run-tests $selectors
+    -- "${unit_run[@]}"
   [ "$fail" -eq 0 ] && printf '%s\n' "$last_run_out" | grep '^unit-tests:' | sed 's/^/       /'
   if [ "$fail" -ne 0 ]; then
     mkdir -p sdlc-studio/.local 2>/dev/null

@@ -94,7 +94,8 @@ SDLC Studio dogfoods itself - it is built with its own lifecycle. A few non-nego
   whether it has all of that, naming each gap with its install route, and `tools/enable-hooks.sh`
   runs it whenever a host is configured. `sdlc.gateSsh` replaces the default ssh transport. A host that cannot be reached refuses
   the push rather than running the gate here, and `SDLC_GATE_LOCAL=1 git push` runs it on this
-  machine for one push.
+  machine for one push. A commit's selected test modules run on the same host, falling back to
+  this machine when it gives no verdict ([hooks and the push](#hooks-and-the-push)).
 - **Trunk-based, small green units.** Commit to `main` in small, individually-green increments; CI
   re-runs the same gate on push, plus a coverage floor (>= 80% of the runtime scripts) and a
   `bandit` security scan. Branches are for isolation, not ceremony.
@@ -151,6 +152,16 @@ because the script will not write over it.
 
 A push runs the full suite once plus the core gate lanes, and a tag adds the slow release
 lanes. The gate prints each lane it runs and its cost.
+
+**A commit's selected suites run on the gate host too.** With a host named, the commit-msg hook
+sends the test modules pre-commit selected to the gate host `sdlc.gateHost` names, which runs
+them against exactly the tree being committed (`tools/remote-gate.sh staged`), and runs none of
+them here; the host's pass or failure is the verdict on them. The hook falls back to running
+them on this machine when the host cannot be reached, when its setup refuses before a test
+runs, or when another run holds its lock for more than a minute, and says so in one line: a
+commit waits at most that long behind a push, where a push waits its turn as before.
+`SDLC_GATE_LOCAL=1` keeps them on this machine, for one commit as for one push, and a clone
+naming no host runs them here as before.
 
 **Pushes go straight to main and a red main is read before the next push (D0181).** The
 pre-push hook asks the forge for the latest push-triggered Lint run on main before it runs the

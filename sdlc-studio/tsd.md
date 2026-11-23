@@ -613,7 +613,9 @@ the Node one from `package.json`.
    fail on push. `npm install` closes that gap.
 2. **Commit message (local, enforced):** `.githooks/commit-msg` checks the message rules first,
    so a message defect is refused in seconds, then runs only the test modules the staged change
-   selects (`gate.py --suite-decision --help` names the routes), in parallel. The commit's time is
+   selects (`gate.py --suite-decision --help` names the routes), in parallel, on the gate host
+   when one is set (`tools/remote-gate.sh staged`), and on this machine when none is set,
+   `SDLC_GATE_LOCAL=1` is set, or the host gives no verdict. The commit's time is
    reported against an advisory 90-second budget, not refused, and a docs or artefact commit runs
    only the modules whose `test-census-subject` names a file it stages, beside the sweeps. A
    module, or a class of one, marked `# test-selection: sweep` in its first 40 lines joins every
@@ -817,8 +819,8 @@ The two markers in `pytest.ini` shape a pytest run: a `serial_only` test runs in
 phase after the parallel one, and a `boundary_only` test is left out of a commit's selected run
 and runs at the push and in CI. `boundary.py` gives the unittest runner the same deferral. The
 hooks run the suites: `commit-msg` runs the modules a commit's change selects through
-`gate.py --run-tests`, and `pre-push` runs `gate.py --boundary push` (on the gate host when one
-is set; see Pipeline Stages), whose `full-suite` lane runs both suites once, inside
+`gate.py --run-tests`, and `pre-push` runs `gate.py --boundary push`, each on the gate host when
+one is set (see Pipeline Stages), whose `full-suite` lane runs both suites once, inside
 `tools/run-suite.sh --noise-gate`.
 
 ---
