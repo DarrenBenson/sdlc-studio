@@ -64,9 +64,14 @@ HAIKU_USD = (2 * 0.10 + 35 * 0.50 + 17126 * 0.20 + 11382 * 0.01) / 1e6
 
 FAKE = r'''#!{python}
 import json, os, subprocess, sys, time
-LATE = ("import subprocess, sys, time; time.sleep(float(sys.argv[2])); "
+# the caller's repository variables never reach a `git add` the fake runs, as in the test's own
+# calls through `gitutil`: a hook's `GIT_INDEX_FILE` must not name the index the fake stages into
+GENV = {{k: v for k, v in os.environ.items() if k not in {locating!r}}}
+LATE = ("import os, subprocess, sys, time; "
+        "ENVV = {{k: v for k, v in os.environ.items() if k not in {locating!r}}}; "
+        "time.sleep(float(sys.argv[2])); "
         "open(sys.argv[1], 'w').write('LATE = 1'); "
-        "subprocess.run(['git', 'add', '--', sys.argv[1]], check=True)")
+        "subprocess.run(['git', 'add', '--', sys.argv[1]], check=True, env=ENVV)")
 # a child that answers SIGTERM by creating its marker 0.3 s later and writing TERM into it
 # 0.2 s after that, then exits: the marker exists, empty, before it holds TERM
 TRAP = ("import signal, sys, time\n"
@@ -86,7 +91,7 @@ stage = os.environ.get("FAKE_STAGE")
 if stage:
     with open(stage, "w") as fh:
         fh.write("LANE = 1\n")
-    subprocess.run(["git", "add", "--", stage], check=True)
+    subprocess.run(["git", "add", "--", stage], check=True, env=GENV)
 late = os.environ.get("FAKE_LATE")
 if late:
     # a child that writes and stages `late` 4 s after it starts, while this CLI waits on it
@@ -115,6 +120,10 @@ if out and os.environ.get("FAKE_MODE") != "silent":
     sys.stdout.write(open(out).read())
 sys.exit(int(os.environ.get("FAKE_EXIT", "0")))
 '''
+
+
+def _fake_source() -> str:
+    return FAKE.format(python=sys.executable, locating=gitutil.REPO_LOCATING_GIT_VARS)
 
 
 def _write(root: Path, rel: str, body: str) -> None:
@@ -209,7 +218,7 @@ class _LaneCase(unittest.TestCase):
                _rs().TRANSCRIPTS_ENV: str(base / "transcripts")}
         for binary, fixture, _flags, _model in HARNESSES.values():
             path = self.bin / binary
-            path.write_text(FAKE.format(python=sys.executable), encoding="utf-8")
+            path.write_text(_fake_source(), encoding="utf-8")
             path.chmod(0o755)
             env["FAKE_OUT_" + binary.replace("-", "_").upper()] = str(FIXTURES / fixture)
         env["PATH"] = _confined_path(self.bin)
@@ -495,6 +504,58 @@ class LaneRunTests(_LaneCase):
                 self.assertIn("unmetered", out)
                 self.assertIn(rec["reason"], out)
 
+    def test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli(self) -> None:
+        """BG1256 AC1. A caller's `GIT_INDEX_FILE`, as a git hook sets it, must not be the index
+        a lane or its fake CLI stages into. Run in the failed-CLI case, where the fake stages
+        `src/lane.py` itself, in the timeout case, where the test stages it, and with the fake run
+        by hand, where nothing between it and the caller's environment scrubs it, staging itself
+        and through the late child it starts; the scratch index
+        is a copy of the worktree's own, so a write into it changes its bytes. The staged file
+        reaching the worktree's real index is the positive control: the cases did stage.
+        MUTANTS: the fake's `git add` run on the inherited environment (the scratch index gains
+        `src/lane.py`); the timeout hook's stage run on the inherited environment; the fake's `git add`
+        run with no `env`."""
+        self._open_run()
+        for name, env in (("fail", {"FAKE_EXIT": "3"}), ("timeout", {}), ("direct", {}),
+                          ("direct-late", {})):
+            with self.subTest(case=name):
+                wt = self._worktree(f"wt-idx-{name}")
+                index = Path(_git(wt, "rev-parse", "--absolute-git-dir")) / "index"
+                scratch = self.root.parent / f"scratch-index-{name}"
+                shutil.copyfile(index, scratch)
+                before = scratch.read_bytes()
+                staged = wt / "src" / ("late.py" if name == "direct-late" else "lane.py")
+                real = lanes._run_in_group
+
+                def hang(cmd, *a, wt=wt, real=real, **kw):
+                    if Path(cmd[0]).name == "codex" and not os.environ.get("FAKE_STAGE"):
+                        _write(wt, "src/lane.py", "LANE = 1\n")
+                        gitutil.git(["add", "--", "src/lane.py"], wt)
+                        raise subprocess.TimeoutExpired(cmd, kw.get("timeout"))
+                    return real(cmd, *a, **kw)
+
+                env = dict(env, GIT_INDEX_FILE=str(scratch))
+                if name == "direct-late":
+                    # the child the fake starts stages the file itself, 0 s after it starts
+                    env.update(FAKE_LATE=str(staged), FAKE_LATE_SLEEP="0")
+                elif name != "timeout":
+                    env["FAKE_STAGE"] = str(staged)
+                hook = (unittest.mock.patch.object(lanes, "_run_in_group", side_effect=hang)
+                        if name == "timeout" else contextlib.nullcontext())
+                with unittest.mock.patch.dict(os.environ, env), hook:
+                    if name.startswith("direct"):
+                        # the lane scrubs the caller's repository variables from its child's
+                        # environment, so only the fake run by hand shows what its own `git add`
+                        # does with them
+                        subprocess.run([str(self.bin / "codex")], cwd=str(wt), check=False,
+                                       env=dict(os.environ), capture_output=True)
+                    else:
+                        self._run("codex", "--worktree", str(wt))
+                self.assertEqual(before, scratch.read_bytes(),
+                                 "the caller's index was written by the lane or its fake CLI")
+                self.assertEqual(f"src/{staged.name}",
+                                 _git(wt, "diff", "--cached", "--name-only"))
+
     # -- AC4 --------------------------------------------------------------------------------
     def test_the_template_names_lane_run_for_a_harness_without_subagents(self) -> None:
         """AC4. MUTANTS: the template naming only the subagent route (no paragraph names
@@ -722,7 +783,7 @@ class LaneExecFailureTests(_LaneCase):
         self.assertIn(str(cli), out)
         self.assertNotIn("Traceback", out)
         self.assertNotIn(UNIT, in_flight())
-        cli.write_text(FAKE.format(python=sys.executable), encoding="utf-8")
+        cli.write_text(_fake_source(), encoding="utf-8")
         rc, out = self._run("codex", "--worktree", str(wt))
         self.assertEqual(0, rc, out)
         self.assertIn(UNIT, in_flight())

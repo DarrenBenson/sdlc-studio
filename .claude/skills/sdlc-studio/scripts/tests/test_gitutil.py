@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 
 TESTS_DIR = Path(__file__).resolve().parent
@@ -288,16 +289,59 @@ UNCONFINED_RAW_GIT_CALLS: dict[str, int] = {}
 _RUNNERS = frozenset({"run", "check_output", "check_call", "call", "Popen"})
 
 
+def _runner_aliases(tree: ast.AST) -> set[str]:
+    """Local names bound to a `subprocess` entry point: `run = subprocess.run`, `from subprocess
+    import run as r`. A call through one is a process start the attribute match cannot see."""
+    names = set()
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute)
+                and node.value.attr in _RUNNERS):
+            names.update(t.id for t in node.targets if isinstance(t, ast.Name))
+        elif isinstance(node, ast.ImportFrom) and node.module == "subprocess":
+            names.update(a.asname or a.name for a in node.names if a.name in _RUNNERS)
+    return names
+
+
+def _generated_scripts(tree: ast.AST) -> list[str]:
+    """String constants naming git that are themselves Python source, so a script a test writes out for a
+    fake CLI to run is read too. A string that does not parse (`"git init"`) is prose, not code."""
+    found = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and "git" in node.value:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    ast.parse(node.value)
+            except (SyntaxError, ValueError):
+                continue
+            found.append(node.value)
+    return found
+
+
+def _src(text: str) -> str:
+    """A fixture's source with `GIT` lowered to `git`. The sweep reads this module too, and a
+    fixture spelling `["git", ...]` out in a string would itself be counted as a generated
+    script's call; spelled `GIT` it is not one until it is lowered here, at run time."""
+    return text.replace("GIT", "git")
+
+
 def _unconfined_raw_git_calls(source: str) -> int:
     """Count `subprocess.<runner>(["git", ...])` calls in `source` that pass no `env`.
 
-    AST-based, so `git` named in a comment, a docstring or a string body does not count.
+    AST-based, so `git` named in a comment, a docstring or a string body does not count. A call
+    through a local name bound to a runner counts, and so does one inside a string constant that
+    is itself Python source (a generated script); the script is read the same way, recursively.
     """
-    found = 0
-    for node in ast.walk(ast.parse(source)):
-        if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+    tree = ast.parse(source)
+    aliases = _runner_aliases(tree)
+    found = sum(_unconfined_raw_git_calls(text) for text in _generated_scripts(tree))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or not node.args:
             continue
-        if node.func.attr not in _RUNNERS or not node.args:
+        if isinstance(node.func, ast.Attribute):
+            if node.func.attr not in _RUNNERS:
+                continue
+        elif not (isinstance(node.func, ast.Name) and node.func.id in aliases):
             continue
         argv = node.args[0]
         if not (isinstance(argv, ast.List) and argv.elts
@@ -342,17 +386,44 @@ class UnconfinedRawGitCallSweepTests(unittest.TestCase):
     """
 
     def test_the_detector_counts_a_bare_git_call(self) -> None:
-        self.assertEqual(_unconfined_raw_git_calls('subprocess.run(["git", "init"], cwd=d)'), 1)
+        self.assertEqual(_unconfined_raw_git_calls(_src('subprocess.run(["GIT", "init"], cwd=d)')), 1)
 
     def test_the_detector_counts_a_bare_call_through_an_import_alias(self) -> None:
         """`test_sprint` imports `subprocess as _sp`, which hid 11 of BG0242's 35 sites from
         the obvious `subprocess.run(["git"` grep. The detector matches on the attribute, not on
         the name it hangs off, so an alias cannot hide a call site from it."""
-        self.assertEqual(_unconfined_raw_git_calls('_sp.run(["git", "init"], cwd=d)'), 1)
+        self.assertEqual(_unconfined_raw_git_calls(_src('_sp.run(["GIT", "init"], cwd=d)')), 1)
+
+    def test_the_detector_counts_a_call_through_a_local_name(self) -> None:
+        """BG1256 AC2: `test_lane_run` held one through a name bound to a runner. The same call
+        passing an `env` is not counted, and a local name bound to something else is not a
+        runner. MUTANTS: the alias census dropped (zero for the bare local name); the
+        `from subprocess import` form dropped."""
+        self.assertEqual(_unconfined_raw_git_calls(_src(
+            'import subprocess\nrun = subprocess.run\nrun(["GIT", "init"], cwd=d)')), 1)
+        self.assertEqual(_unconfined_raw_git_calls(_src(
+            'from subprocess import check_output as co\nco(["GIT", "log"])')), 1)
+        self.assertEqual(_unconfined_raw_git_calls(_src(
+            'import subprocess\nrun = subprocess.run\nrun(["GIT", "init"], env=e)')), 0)
+        self.assertEqual(_unconfined_raw_git_calls(_src('run = print\nrun(["GIT", "init"])')), 0)
+
+    def test_the_detector_counts_git_run_inside_a_generated_script(self) -> None:
+        """BG1256 AC3: a fake CLI's source held in a string. A string that only mentions git is
+        not counted, nor is a script whose call passes an `env`. MUTANTS: the generated-script
+        read dropped (zero for the script); the recursion dropped (a script held inside a script
+        reads zero)."""
+        script = _src('import subprocess\nsubprocess.run(["GIT", "add", "--", f])\n')
+        confined = _src('import subprocess\nsubprocess.run(["GIT", "add", "--", f], env=e)\n')
+        self.assertEqual(_unconfined_raw_git_calls(f"FAKE = {script!r}"), 1)
+        self.assertEqual(_unconfined_raw_git_calls(f"FAKE = {confined!r}"), 0)
+        self.assertEqual(_unconfined_raw_git_calls(f"FAKE = {'X = ' + repr(script)!r}"), 1)
+        self.assertEqual(_unconfined_raw_git_calls(
+            f"INNER = {script!r}\nFAKE = {'X = ' + repr(script)!r}"), 2)
+        self.assertEqual(_unconfined_raw_git_calls('x = "git add -A"\ny = "run git add"'), 0)
 
     def test_the_detector_ignores_a_call_that_passes_an_env(self) -> None:
         self.assertEqual(
-            _unconfined_raw_git_calls('subprocess.run(["git", "init"], env=git_env())'), 0)
+            _unconfined_raw_git_calls(_src('subprocess.run(["GIT", "init"], env=git_env())')), 0)
 
     def test_the_detector_ignores_git_named_in_a_string(self) -> None:
         self.assertEqual(_unconfined_raw_git_calls('x = "git init"\nprint("git")'), 0)
@@ -366,10 +437,10 @@ class UnconfinedRawGitCallSweepTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             probe = Path(d) / "test_probe.py"
-            probe.write_text('import subprocess as _sp\n'
-                             'subprocess.run(["git", "init"], cwd=".")\n'
-                             '_sp.run(["git", "add", "-A"], cwd=".")\n'
-                             'subprocess.run(["git", "log"], cwd=".", env={})\n',
+            probe.write_text(_src('import subprocess as _sp\n'
+                                  'subprocess.run(["GIT", "init"], cwd=".")\n'
+                                  '_sp.run(["GIT", "add", "-A"], cwd=".")\n'
+                                  'subprocess.run(["GIT", "log"], cwd=".", env={})\n'),
                              encoding="utf-8")
             self.assertEqual(_unconfined_by_module(Path(d)), {"test_probe": 2})
 

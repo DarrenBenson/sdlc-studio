@@ -745,7 +745,7 @@ class CannotJudgeTests(unittest.TestCase):
                "import subprocess\n"
                "def cmd(args):\n"
                "    def _git(*args):\n"
-               "        return subprocess.run(['git', *args], cwd=args_root)\n"
+               "        return subprocess.run(['git', *args], cwd=args_root, env=None)\n"
                "    def _split(tail):\n"
                "        args = shlex.split(tail)\n"
                "        return subprocess.run([*args])\n"

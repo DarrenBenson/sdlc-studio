@@ -133,8 +133,11 @@ def _modules_importing_a_sibling() -> dict[str, set[str]]:
     return out
 
 
-def _probe(mod: str, helpers: set[str]) -> str | None:
+def _probe(mod: str, helpers: set[str], scripts_dir: Path = SCRIPTS_DIR) -> str | None:
     """Run `tests.<mod>` through the module-name form; return the failure line, or None.
+
+    `scripts_dir` is the directory holding the `tests` package; the sweep passes the real one,
+    the mechanism cases pass a scratch copy so they write nothing into the repository.
 
     A FRESH INTERPRETER per module, and cwd is `scripts/` - the run form that omits the tests
     directory from `sys.path`. Importing every module in one process passes vacuously: the
@@ -150,7 +153,7 @@ def _probe(mod: str, helpers: set[str]) -> str | None:
     probe = (f"import importlib\nimportlib.import_module('tests.{mod}')\n"
              + "".join(f"importlib.import_module({h!r})\n" for h in sorted(helpers)))
     r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True,
-                       text=True, timeout=120, cwd=str(SCRIPTS_DIR))
+                       text=True, timeout=120, cwd=str(scripts_dir))
     if r.returncode == 0:
         return None
     return (r.stderr.strip().splitlines() or ["(no output)"])[-1]
@@ -168,13 +171,21 @@ class ProbeMechanismTests(unittest.TestCase):
     is whether the probe DETECTS the condition, not whether it is written a particular way.
     """
 
+    def setUp(self) -> None:
+        # A scratch `scripts/` holding a `tests` package with a stub sibling helper, so the
+        # fixtures never touch the repository's tree and the probe runs from the scratch copy.
+        self.scripts = Path(tempfile.mkdtemp(prefix="probe-fixture-"))
+        self.addCleanup(shutil.rmtree, self.scripts, True)
+        (self.scripts / "tests").mkdir()
+        (self.scripts / "tests" / "__init__.py").write_text("", encoding="utf-8")
+        (self.scripts / "tests" / "gitutil.py").write_text("git = None\n", encoding="utf-8")
+
     def _fixture(self, name: str, body: str) -> str:
-        path = TESTS_DIR / f"{name}.py"
-        path.write_text(body, encoding="utf-8")
-        self.addCleanup(path.unlink)
-        # A stale .pyc from a previous fixture of the same name would be imported instead.
-        self.addCleanup(shutil.rmtree, TESTS_DIR / "__pycache__", True)
+        (self.scripts / "tests" / f"{name}.py").write_text(body, encoding="utf-8")
         return name
+
+    def _probe(self, mod: str, helpers: set[str]) -> str | None:
+        return _probe(mod, helpers, self.scripts)
 
     def test_the_probe_catches_a_DEFERRED_sibling_import_with_no_path_setup(self) -> None:
         # Imports cleanly - the offending import is inside a function, so it does not run at
@@ -182,9 +193,9 @@ class ProbeMechanismTests(unittest.TestCase):
         # shape the sweep was blind to.
         mod = self._fixture("_probe_fixture_deferred",
                             "def uses_it():\n    from gitutil import git\n    return git\n")
-        self.assertIsNone(_probe(mod, set()),
+        self.assertIsNone(self._probe(mod, set()),
                           "importing alone must succeed - that is what made this shape invisible")
-        err = _probe(mod, {"gitutil"})
+        err = self._probe(mod, {"gitutil"})
         self.assertIsNotNone(err, "resolving the helper must catch what importing could not")
         self.assertIn("gitutil", err)
 
@@ -196,7 +207,27 @@ class ProbeMechanismTests(unittest.TestCase):
             "import sys\nfrom pathlib import Path\n"
             "sys.path.insert(0, str(Path(__file__).resolve().parent))\n"
             "import gitutil\n")
-        self.assertIsNone(_probe(mod, {"gitutil"}))
+        self.assertIsNone(self._probe(mod, {"gitutil"}))
+
+
+class ProbeIsolationTests(unittest.TestCase):
+    """The probe's fixtures live in a scratch directory, never in the repository's tree."""
+
+    @staticmethod
+    def _snapshot() -> dict[str, tuple[int, int]]:
+        return {str(p.relative_to(TESTS_DIR)): (p.stat().st_mtime_ns, p.stat().st_size)
+                for p in sorted(TESTS_DIR.rglob("*")) if p.is_file()}
+
+    def test_the_probe_fixtures_write_nothing_into_the_repository_tree(self) -> None:
+        before = self._snapshot()
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(ProbeMechanismTests)
+        result = unittest.TestResult()
+        suite.run(result)
+        self.assertEqual((result.errors, result.failures), ([], []))
+        self.assertGreater(result.testsRun, 1, "the probe cases did not run")
+        after = self._snapshot()
+        self.assertEqual(after, before,
+                         "a probe case created, removed or rewrote a file under tests/")
 
 
 class SiblingImportRunnabilityTests(unittest.TestCase):

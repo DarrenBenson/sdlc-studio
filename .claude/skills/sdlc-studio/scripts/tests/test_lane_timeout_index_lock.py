@@ -41,10 +41,11 @@ RUNS = 4
 #:          its own with nothing left in its group, and no SIGKILL is sent.
 FAKE = r'''#!{python}
 import os, signal, subprocess, sys, time
+GENV = {{k: v for k, v in os.environ.items() if k not in {locating!r}}}
 mode = os.environ["LOCK_FAKE"]
 if mode in ("leave", "drop"):
     lock = subprocess.run(["git", "rev-parse", "--git-path", "index.lock"], capture_output=True,
-                          text=True, check=True).stdout.strip()
+                          text=True, check=True, env=GENV).stdout.strip()
     open(lock, "x").close()
     if mode == "drop":
         sys.exit(0)
@@ -54,9 +55,9 @@ if mode == "loop":
     while True:
         with open(grow, "a") as fh:
             fh.write("x" * 262144)
-        subprocess.run(["git", "add", "--", grow], check=False)
+        subprocess.run(["git", "add", "--", grow], check=False, env=GENV)
 lock = subprocess.run(["git", "rev-parse", "--git-path", "index.lock"], capture_output=True,
-                      text=True, check=True).stdout.strip()
+                      text=True, check=True, env=GENV).stdout.strip()
 ready = os.path.join(os.environ["FAKE_LOG"], "ready")
 child = subprocess.Popen([sys.executable, "-c",
     "import signal, sys, time\n"
@@ -78,7 +79,7 @@ class TimedOutGitAddLeavesNoLockTests(base._LaneCase):
 
     def setUp(self) -> None:
         super().setUp()
-        (self.bin / "codex").write_text(FAKE.format(python=sys.executable), encoding="utf-8")
+        (self.bin / "codex").write_text(FAKE.format(python=sys.executable, locating=gitutil.REPO_LOCATING_GIT_VARS), encoding="utf-8")
 
     def _lock(self, wt: Path) -> Path:
         return Path(base._git(wt, "rev-parse", "--absolute-git-dir")) / "index.lock"

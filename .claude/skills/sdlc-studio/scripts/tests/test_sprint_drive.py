@@ -52,6 +52,7 @@ exit 0
 STUB = """#!{python}
 import json, os, re, subprocess, sys, time
 from pathlib import Path
+GENV = {{k: v for k, v in os.environ.items() if k not in {locating!r}}}
 argv = sys.argv[1:]
 prompt = argv[argv.index("-p") + 1]
 spec = json.loads(Path(os.environ["DRIVE_STUB_SPEC"]).read_text())
@@ -81,7 +82,7 @@ time.sleep(mine.get("sleep", 0))
 for rel, body in mine["files"].items():
     Path(rel).parent.mkdir(parents=True, exist_ok=True)
     Path(rel).write_text(body)
-    subprocess.run(["git", "add", "--", rel], check=True)
+    subprocess.run(["git", "add", "--", rel], check=True, env=GENV)
 for rel, body in mine.get("loose", {{}}).items():
     Path(rel).parent.mkdir(parents=True, exist_ok=True)
     Path(rel).write_text(body)
@@ -155,7 +156,7 @@ class _DriveFixture(unittest.TestCase):
         _write(base, "hooks/pre-commit", HOOK.format(log=self.log, refuse=self.refuse,
                                                      late=self.late, sleep=sleep)).chmod(0o755)
         gitutil.git(["config", "core.hooksPath", str(base / "hooks")], root)
-        _write(base, "bin/claude", STUB.format(python=sys.executable)).chmod(0o755)
+        _write(base, "bin/claude", STUB.format(python=sys.executable, locating=gitutil.REPO_LOCATING_GIT_VARS)).chmod(0o755)
         self.home = base / "home"
         (base / "no-transcripts").mkdir()
         self.env = gitutil.git_env(
