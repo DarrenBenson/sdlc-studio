@@ -1,266 +1,122 @@
 {
   "unit": "BG1545",
-  "digest": "c0153b4237388777 at 9b81a961fd1f",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae5d4c3a5db089be9/BG1545-mutation-edits.json",
+  "digest": "e27608dd5a0e1335 at 729e4b86ff14",
+  "report": "sdlc-studio/.local/lane/landed/agent-a99f364ab48a93ab4/BG1545-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "expect-not-strict",
-      "file": "tools/check_versions.py",
-      "old": "    strict = args.strict or args.expect is not None",
-      "new": "    strict = args.strict",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "expect-names-no-home",
-      "file": "tools/check_versions.py",
-      "old": "    if args.expect is not None:\n        errors += [",
-      "new": "    if False:\n        errors += [",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "missing-home-declares-none",
-      "file": "tools/check_versions.py",
-      "old": "for name, v in versions.items() if v is not None and v != args.expect]",
-      "new": "for name, v in versions.items() if v != args.expect]",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "changelog-not-held-to-expect",
-      "file": "tools/check_versions.py",
-      "old": "        elif args.expect is not None:\n            if changelog != args.expect:",
-      "new": "        elif False:\n            if changelog != args.expect:",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "at-reads-the-working-tree",
-      "file": "tools/check_versions.py",
-      "old": "        return _judge(Path(tmp), args, listing)",
-      "new": "        return _judge(Path(args.root), args)",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "listing-ignored",
-      "file": "tools/check_versions.py",
-      "old": "    for rel in tracked_markdown(root) if listing is None else listing:",
-      "new": "    for rel in tracked_markdown(root):",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "unreadable-commit-exits-1",
-      "file": "tools/check_versions.py",
-      "old": "            return 2",
-      "new": "            return 1",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_commit_that_cannot_be_read_is_refused_apart_from_a_mismatch",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every-file-home-asked-for",
-      "file": "tools/check_versions.py",
-      "old": "    specs = [home for home in _FILE_HOMES if home in tracked] + ([\"*.md\"] if markdown else [])",
-      "new": "    specs = list(_FILE_HOMES) + [\"*.md\"]",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_commit_that_cannot_be_read_is_refused_apart_from_a_mismatch",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-git-env-not-scrubbed",
-      "file": "tools/check_versions.py",
-      "old": "    env = {k: v for k, v in os.environ.items() if not k.startswith(\"GIT_\")}\n    return subprocess.run([\"git\", \"-C\", str(root), *args]",
-      "new": "    env = dict(os.environ)\n    return subprocess.run([\"git\", \"-C\", str(root), *args]",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "export-returns-no-listing",
-      "file": "tools/check_versions.py",
-      "old": "    return markdown",
-      "new": "    return None",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "plain-report-silent",
-      "file": "tools/check_versions.py",
-      "old": "    elif not errors:",
-      "new": "    elif errors:",
-      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-version-check-dropped",
+      "mutant": "hook reads the version homes at HEAD",
       "file": ".githooks/pre-push",
-      "old": "    python3 tools/check_versions.py --expect \"$tag_version\" --at \"$tag_commit\" 1>&2",
-      "new": "    true",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_naming_another_version_is_refused",
+      "old": "--expect \"$tag_version\" --at \"$tag_commit\"",
+      "new": "--expect \"$tag_version\" --at HEAD",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_is_judged_at_its_own_commit_not_at_head",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "hook-keeps-the-v",
+      "mutant": "hook reads the page series at HEAD",
       "file": ".githooks/pre-push",
-      "old": "  tag_version=\"${tag_name#v}\"",
-      "new": "  tag_version=\"$tag_name\"",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_matching_tag_and_a_branch_push_pass",
+      "old": "check --at \"$tag_commit\" --release",
+      "new": "check --at HEAD --release",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_is_judged_at_its_own_commit_not_at_head",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "hook-checks-branches-too",
+      "mutant": "hook drops the branch that names a crash",
       "file": ".githooks/pre-push",
-      "old": "    *) [ \"$boundary\" = \"release\" ] || boundary=\"push\" ;;",
-      "new": "    *) [ \"$boundary\" = \"release\" ] || boundary=\"push\"; tag_names=\"$tag_names $commit:${remote_ref#refs/heads/}\" ;;",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_matching_tag_and_a_branch_push_pass",
+      "old": "elif [ \"$cv_rc\" -eq 3 ]; then",
+      "new": "elif [ \"$cv_rc\" -eq 4 ]; then",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "hook-page-not-held-to-the-tag",
+      "mutant": "a crash exits 1, read as a mismatch",
+      "file": "tools/check_versions.py",
+      "old": "EXIT_CRASHED = 3",
+      "new": "EXIT_CRASHED = 1",
+      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a crash exits 2, read as an unreadable commit",
+      "file": "tools/check_versions.py",
+      "old": "EXIT_CRASHED = 3",
+      "new": "EXIT_CRASHED = 2",
+      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the script entry point bypasses the crash wrapper",
+      "file": "tools/check_versions.py",
+      "old": "sys.exit(run())",
+      "new": "sys.exit(main())",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the wrapper catches only RuntimeError",
+      "file": "tools/check_versions.py",
+      "old": "except Exception:  # noqa: BLE001 - reported in full, then a distinct exit code",
+      "new": "except RuntimeError:",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the wrapper discards what main decided",
+      "file": "tools/check_versions.py",
+      "old": "        return main(argv)\n    except Exception:",
+      "new": "        main(argv)\n        return 0\n    except Exception:",
+      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook lets a crashed check pass the tag",
       "file": ".githooks/pre-push",
-      "old": "  python3 tools/known_issues.py check --at \"$tag_commit\" --release \"$tag_version\" 1>&2",
-      "new": "  python3 tools/known_issues.py check --at \"$tag_commit\" 1>&2",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused",
+      "old": "so it compared nothing - not a version mismatch; the tag is refused until the check runs\" >&2\n      exit 1",
+      "new": "so it compared nothing - not a version mismatch; the tag is refused until the check runs\" >&2\n      exit 0",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "hook-could-not-run-read-as-mismatch",
-      "file": ".githooks/pre-push",
-      "old": "    if [ \"$cv_rc\" -eq 1 ]; then",
-      "new": "    if [ \"$cv_rc\" -ne 0 ]; then",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_check_that_could_not_run_is_not_reported_as_a_mismatch",
+      "mutant": "the traceback is not printed",
+      "file": "tools/check_versions.py",
+      "old": "        traceback.print_exc()\n",
+      "new": "",
+      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "series-check-off",
-      "file": "tools/known_issues.py",
-      "old": "        if named and (int(named[1]), int(named[2])) != (major, minor):",
-      "new": "        if False:",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused",
+      "mutant": "the crash line is not printed",
+      "file": "tools/check_versions.py",
+      "old": "print(f\"VERSIONS: the check crashed (traceback above)",
+      "new": "print(f\"VERSIONS: (traceback above)",
+      "test": "tools/tests/test_check_versions.py::ExpectedVersionTests::test_a_crash_exits_apart_from_a_mismatch_and_an_unreadable_commit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "release-not-passed-to-check",
-      "file": "tools/known_issues.py",
-      "old": "        return _bar(at) if args.mode == \"bar\" else _check(at, args.release)",
-      "new": "        return _bar(at) if args.mode == \"bar\" else _check(at)",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pre-bar-series-not-caught",
-      "file": "tools/known_issues.py",
-      "old": "        except ValueError as exc:\n            print(f\"{PAGE_REL} cannot be held",
-      "new": "        except KeyError as exc:\n            print(f\"{PAGE_REL} cannot be held",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_clone_without_the_version_check_is_told_and_the_page_is_still_read",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-version-unrunnable-passes",
-      "file": ".githooks/pre-push",
-      "old": "    elif [ \"$cv_rc\" -ne 0 ]; then",
-      "new": "    elif false; then",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_check_that_could_not_run_is_not_reported_as_a_mismatch",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-page-mismatch-unnamed",
-      "file": ".githooks/pre-push",
-      "old": "  if [ \"$series_rc\" -eq 1 ]; then",
-      "new": "  if false; then",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-page-unrunnable-passes",
-      "file": ".githooks/pre-push",
-      "old": "  elif [ \"$series_rc\" -ne 0 ]; then",
-      "new": "  elif false; then",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_check_that_could_not_run_is_not_reported_as_a_mismatch",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hook-missing-check-run-anyway",
-      "file": ".githooks/pre-push",
-      "old": "  if [ -f tools/check_versions.py ]; then",
-      "new": "  if true; then",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_clone_without_the_version_check_is_told_and_the_page_is_still_read",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pre-bar-series-passes",
-      "file": "tools/known_issues.py",
-      "old": "            print(f\"{PAGE_REL} cannot be held to {release}: {exc}\", file=sys.stderr)\n            return 1",
-      "new": "            print(f\"{PAGE_REL} cannot be held to {release}: {exc}\", file=sys.stderr)\n            return 0",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_clone_without_the_version_check_is_told_and_the_page_is_still_read",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "series-of-a-missing-heading-compared",
-      "file": "tools/known_issues.py",
-      "old": "        if named and (int(named[1]), int(named[2])) != (major, minor):",
-      "new": "        if (int(named[1]), int(named[2])) != (major, minor):",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_page_with_no_bar_heading_is_not_the_page_for_any_release",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the lean tag keeps a name no bar is recorded for",
-      "file": "tools/tests/test_lean_release_notes.py",
-      "old": "            _pp._git(fx.clone, \"tag\", \"v6.0.2\")\n            ok = fx.push(\"v6.0.2\")",
-      "new": "            _pp._git(fx.clone, \"tag\", \"v0.0.2\")\n            ok = fx.push(\"v0.0.2\")",
-      "test": "tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_the_page_is_checked_at_the_tag_only",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the injected check drops the release argument",
-      "file": "tools/tests/test_lean_release_notes.py",
-      "old": "'def _check(root, release=None):\\n'",
-      "new": "'def _check(root):\\n'",
-      "test": "tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_a_check_that_cannot_run_is_reported_as_such",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the misnamed tag names the declared version",
+      "mutant": "test tags HEAD, as every earlier case did, rather than the older commit",
       "file": "tools/tests/test_pre_push_hook.py",
-      "old": "        r = self._feed(fx, \"refs/tags/v6.5.0\")",
-      "new": "        r = self._feed(fx, \"refs/tags/v6.4.0\")",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_naming_another_version_is_refused",
+      "old": "r = fx.hook_direct(f\"refs/tags/v6.4.0 {older} refs/tags/v6.4.0",
+      "new": "r = fx.hook_direct(f\"refs/tags/v6.4.0 {_git(fx.clone, 'rev-parse', 'HEAD').stdout.strip()} refs/tags/v6.4.0",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_is_judged_at_its_own_commit_not_at_head",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the page is cut for the tag's own series",
+      "mutant": "test leaves the markdown UTF-8, so nothing crashes",
       "file": "tools/tests/test_pre_push_hook.py",
-      "old": "        fx = self._clone(page_release=\"6.3.0\")",
-      "new": "        fx = self._clone(page_release=\"6.4.0\")",
-      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused",
+      "old": "write_bytes(b\"\\xff\\xfe not UTF-8\\n\")",
+      "new": "write_bytes(b\"not a crash\\n\")",
+      "test": "tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_version_check_that_crashed_is_named_a_crash_not_a_mismatch",
       "result": "killed",
       "answer": ""
     }

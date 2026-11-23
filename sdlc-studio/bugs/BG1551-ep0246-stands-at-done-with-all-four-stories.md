@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md, sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md, changelog.d/BG1551.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md, sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_reconcile_blocked.py, changelog.d/BG1551.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md Status line and Story Breakdown; sdlc-studio/change-requests/CR0561 Status and Revision History; .claude/skills/sdlc-studio/scripts/reconcile.py:1095-1106 (epic_derived_status)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -46,3 +46,4 @@ Extend the epic status drift lane in reconcile.py so a terminal epic is also com
 | 2026-11-17 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4 gains the Verify line the REF builder ran: EP0246 reads Superseded by US0908 and CR0561 records its delivery |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4's Verify line runs through the shell verb: the grep verb reads `&&` and the rest as paths, which made it check only the first grep (BG1024 AC added) |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to sprint.py and a new close test: the round-one review found a sprint close refusing over this unit's terminal-epic item with a remedy that cannot clear it, and the fix is in `_close_reconcile`, exempting a drift item that carries `blocked_by` as gate.py's tally already does |

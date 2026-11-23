@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, changelog.d/BG1694.md
 > **Evidence:** .local/run21/land-RBG1470b.log: FAILED test_kill_grace_interrupt.py::KillGraceInterruptTests::test_an_interrupted_grace_sigkills_the_group_and_propagates, ValueError at line 66; test_kill_grace_interrupt.py:29-31 (DEAF writes with open().write), :64-66 (_child reads at once). Introduced by 09cf0766.
 > **Created:** 2026-11-21
@@ -24,8 +24,10 @@ In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an intege
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `KillGraceInterruptTests._child` reads child.pid with int(`read_text())` as soon as the fake CLI has marked its SIGTERM.
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an integer before reading it, and have the deaf child write it atomically (write a...
+- [ ] **AC1** Given the machine under load, when `test_kill_grace_interrupt.py` runs, then `KillGraceInterruptTests._child` waits under a bound (`_wait_for`) until child.pid holds an integer before reading it. Fails on: `ValueError: invalid literal for int() with base 10: ''` at `_child`, which refused run twenty-three's push of e2a109be on the gate host.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py
+- [ ] **AC2** Given the deaf child in `test_kill_grace_interrupt.py`, when it records its pid, then it writes a temporary name and moves it into place with `os.replace`, so a reader never sees an empty child.pid. Fails on: `open(path, 'w').write(pid)`, which creates the file empty before writing.
+  - **Verify:** shell grep -q 'os.replace' .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py && python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py
 - [ ] **AC3** Given the machine under load, when `test_lane_land_commit_timeout_group.py` runs, then `LandCommitTimeoutKillsHooksTests._pid` waits under a bound until the hook's pid file holds an integer before reading it, and the hook writes it atomically. Fails on: `ValueError: invalid literal for int() with base 10: ''` from `_pid`, as a run twenty-three commit hit at load 13.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py
 
@@ -35,3 +37,4 @@ In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an intege
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC3 added and Affects widened: test_lane_land_commit_timeout_group's `_pid` reads the hook's pid file before the hook writes it, the same race, which blocked the EFCI commit at load 13 in run twenty-three |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Groomed AC1 and AC2 into executable criteria and pointed at 2 for AC3's second test, after the race refused a push of e2a109be on the gate host; pulled into run twenty-three |

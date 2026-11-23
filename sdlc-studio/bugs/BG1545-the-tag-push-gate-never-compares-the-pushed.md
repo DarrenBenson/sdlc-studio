@@ -1,6 +1,6 @@
 # BG1545: The tag push gate never compares the pushed tag name with the version the tagged tree declares
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .githooks/pre-push, tools/check_versions.py, tools/known_issues.py, tools/tests/test_pre_push_hook.py, tools/tests/test_check_versions.py, tools/tests/test_lean_release_notes.py, changelog.d/BG1545.md
@@ -31,12 +31,16 @@ In the ref loop of .githooks/pre-push keep each pushed tag's name beside its com
 
 - [ ] **AC1** Given a clone whose version homes declare 6.4.0 and a tag named v6.5.0 on that commit, when the pre-push hook is fed the ref line for refs/tags/v6.5.0 with the gate lanes stubbed green, then it refuses the push, saying the tag names 6.5.0 and the tagged tree declares 6.4.0. Fails on: exit 0 for a tag whose name the tree does not declare.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_tag_naming_another_version_is_refused
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given the same clone, when the hook is fed a tag named v6.4.0 on that commit, or a branch push, then the new check passes it. Fails on: a matching tag or an ordinary branch push refused by the name check.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_matching_tag_and_a_branch_push_pass
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given `tools/check_versions.py` called with an expected version and a commit to read, when the version homes at that commit all declare the expected version, then it exits 0, and when any home declares another or the homes disagree, it exits non-zero naming the home. Fails on: the option reading the working tree instead of the commit, or passing a home that declares a different version.
   - **Verify:** pytest tools/tests/test_check_versions.py::ExpectedVersionTests::test_an_expected_version_is_compared_with_every_home_at_the_named_commit
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** Given a tagged commit whose docs/known-issues.md is headed for a series other than the tag's, when the hook is fed that tag, then the push is refused naming both series. Fails on: a tag that publishes another release's disclosure page.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::TagNameMatchesTheTreeTests::test_a_known_issues_page_for_another_series_is_refused
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

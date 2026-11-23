@@ -1,347 +1,68 @@
 {
   "unit": "BG1510",
-  "digest": "2ef788ae4e6b30d2 at 9b81a961fd1f",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae5d4c3a5db089be9/BG1510-mutation-edits.json",
+  "digest": "c4f626ad0ff4bff1 at 729e4b86ff14",
+  "report": "sdlc-studio/.local/lane/landed/agent-a99f364ab48a93ab4/BG1510-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "page-never-judged",
+      "mutant": "reports copied from the working tree, not the tagged commit",
       "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    found = [_evidence_page_refusal(page, reports) if page is not None else None,",
-      "new": "    found = [None,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
+      "old": "_committed(root, sha, f\"{reports_rel}/{name}\") or \"\"",
+      "new": "(root / reports_rel / name).read_text(encoding=\"utf-8\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_signature_left_uncommitted_is_not_read_as_committed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page-read-from-the-working-tree",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    page = _committed(root, sha, EVIDENCE_PAGE)",
-      "new": "    page = (root / EVIDENCE_PAGE).read_text(encoding='utf-8') if (root / EVIDENCE_PAGE).is_file() else None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "page-compared-unstripped",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if want.strip() == region.strip():",
-      "new": "    if want == region:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "page-missing-reports-reversed",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    missing = sorted(_row_reports(want) - _row_reports(region))",
-      "new": "    missing = sorted(_row_reports(region) - _row_reports(want))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hand-written-page-judged",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if docgen.BEGIN not in page and docgen.END not in page:\n        return None",
-      "new": "    if False:\n        return None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "records-read-with-nothing-to-judge",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if page is None and cut is None:\n        return []",
-      "new": "    if False:\n        return []",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pack-owed-on-a-cut-alone",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "if cut and reports else None]",
-      "new": "if cut else None]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "missing-pack-passes",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    pack = _committed(root, sha, rel)\n    if pack is None:",
-      "new": "    pack = _committed(root, sha, rel)\n    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "stale-pack-passes",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if _PACK_BUILT_AT_RE.sub(r\"\\1\\2\", rebuilt) != _PACK_BUILT_AT_RE.sub(r\"\\1\\2\", pack):",
-      "new": "    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pack-build-commit-compared",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if _PACK_BUILT_AT_RE.sub(r\"\\1\\2\", rebuilt) != _PACK_BUILT_AT_RE.sub(r\"\\1\\2\", pack):",
-      "new": "    if rebuilt != pack:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "cut-version-read-on-the-first-line-only",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "_CUT_VERSION_RE = re.compile(r\"^## \\[(\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?)\\]\", re.M)",
-      "new": "_CUT_VERSION_RE = re.compile(r\"^## \\[(\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?)\\]\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "headerless-pack-not-refused",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    named = _PACK_REPORTS_RE.search(pack)\n    if not named:",
-      "new": "    named = _PACK_REPORTS_RE.search(pack)\n    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "unbuildable-pack-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    except evidence_pack.PackError as exc:\n        return (f\"{rel} cannot be rebuilt",
-      "new": "    except KeyError as exc:\n        return (f\"{rel} cannot be rebuilt",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "non-utf8-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    except UnicodeDecodeError as exc:",
-      "new": "    except KeyError as exc:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "unreadable-record-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    except UnreadableRecord as exc:\n        stale = [",
-      "new": "    except KeyError as exc:\n        stale = [",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "git-failure-read-as-absent",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if proc.returncode != 0:\n        why = proc.stderr",
-      "new": "    if False:\n        why = proc.stderr",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_git_that_cannot_answer_refuses_rather_than_passes",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absent-git-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "        raise UnreadableRecord(f\"git could not read {what} ({exc!r})\") from exc",
-      "new": "        raise",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_git_that_cannot_answer_refuses_rather_than_passes",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "stale-records-not-refused",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if stale:\n        return False,",
-      "new": "    if False:\n        return False,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "git-failure-without-its-words",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "why = proc.stderr.decode(\"utf-8\", \"replace\").strip() or f\"exit {proc.returncode}\"",
-      "new": "why = proc.stderr.decode(\"utf-8\", \"replace\").strip()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_git_that_cannot_answer_refuses_rather_than_passes",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absent-file-read-as-unreadable",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if not _git_bytes(root, [\"ls-tree\", \"--name-only\", sha, \"--\", rel], what).strip():\n        return None",
-      "new": "    if False:\n        return None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "record-read-at-the-repository-root",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "[\"show\", f\"{sha}:./{rel}\"]",
-      "new": "[\"show\", f\"{sha}:{rel}\"]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_project_below_the_repository_root_is_read_at_its_own_paths",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "non-report-files-copied",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "            if fnmatch.fnmatch(name, \"RPT*.json\"):",
-      "new": "            if True:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "report-error-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "        except sprint_report.ReportError as exc:",
-      "new": "        except KeyError as exc:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "row-report-column-wrong",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "line.split(\"|\")[2].strip()",
-      "new": "line.split(\"|\")[1].strip()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "half-marked-page-not-judged",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if docgen.BEGIN not in page and docgen.END not in page:",
-      "new": "    if docgen.BEGIN not in page or docgen.END not in page:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "marker-error-not-caught",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    except docgen.MarkerError as exc:",
-      "new": "    except KeyError as exc:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_record_that_cannot_be_read_refuses_and_says_which",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "missing-reports-not-named",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if missing:",
-      "new": "    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hand-edited-table-passes",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    return (f\"{EVIDENCE_PAGE} differs from what",
-      "new": "    return None\n    return (f\"{EVIDENCE_PAGE} differs from what",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pack-command-names-no-reports",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    write = f\"`release_cut.py evidence-pack --version {version} --reports {','.join(reports)}`\"",
-      "new": "    pass",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pack-rebuilt-at-head",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "        rebuilt = evidence_pack.build_pack(root, version, reports, sha)",
-      "new": "        rebuilt = evidence_pack.build_pack(root, version, reports)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pack-reports-first-only",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "_PACK_REPORTS_RE = re.compile(r\"over the signed reports (RPT\\d+(?:, RPT\\d+)*)\\.\")",
-      "new": "_PACK_REPORTS_RE = re.compile(r\"over the signed reports (RPT\\d+)(?:, RPT\\d+)*\\.\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no-changelog-not-handled",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    cut = _CUT_VERSION_RE.search(_committed(root, sha, \"CHANGELOG.md\") or \"\")",
-      "new": "    cut = _CUT_VERSION_RE.search(_committed(root, sha, \"CHANGELOG.md\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "prerelease-cut-skipped",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "_CUT_VERSION_RE = re.compile(r\"^## \\[(\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?)\\]\", re.M)",
-      "new": "_CUT_VERSION_RE = re.compile(r\"^## \\[(\\d+\\.\\d+\\.\\d+)\\]\", re.M)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "records-skipped-when-one-is-absent",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    if page is None and cut is None:",
-      "new": "    if page is None or cut is None:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "page-judged-when-absent",
-      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "_evidence_page_refusal(page, reports) if page is not None else None,",
-      "new": "_evidence_page_refusal(page, reports) if True else None,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_no_cut_version_or_no_signed_report_owes_no_pack",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "help-says-the-tag-asks-only-gate-and-ci",
+      "mutant": "help page grants a missing gh the forge skip again",
       "file": ".claude/skills/sdlc-studio/help/gate.md",
-      "old": "(`release_cut.py tag-check`) asks three things of the tagged commit, never whether a close is\nowed: that the gate was recorded green on it, that the generated evidence page and the evidence\npack for the version CHANGELOG.md last cut are current with the signed reports it holds, and that\nCI passed on it on the forge, unless the clone has no remote or one `gh` cannot query.",
-      "new": "asks only whether\nthe gate was green on the tagged commit and CI passed on the forge (`release_cut.py tag-check`).",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_gate_help_names_every_question_the_tag_asks",
+      "old": "CI passed on it on the forge. The forge is skipped only for a clone with no remote, or one whose\nremotes a signed-in `gh` reports are on no GitHub host; a `gh` that is missing or not signed in\nrefuses the tag.",
+      "new": "CI passed on it on the forge, unless the clone has no remote or one `gh` cannot query.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_pages_name_exactly_when_the_forge_is_not_asked",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "workflow-step-dropped",
-      "file": ".claude/skills/sdlc-studio/templates/workflows/release-gate.md",
-      "old": "- [ ] **Regenerate the generated release pages after the last signature and filing.**",
-      "new": "- [ ] **Regenerate the pages.**",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_release_gate_workflow_names_the_pre_tag_regeneration_step",
+      "mutant": "help page drops the refusal of a missing or signed-out gh",
+      "file": ".claude/skills/sdlc-studio/help/gate.md",
+      "old": "; a `gh` that is missing or not signed in\nrefuses the tag.",
+      "new": ".",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_pages_name_exactly_when_the_forge_is_not_asked",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the fixture page is never generated",
+      "mutant": "reference grants a missing gh the forge skip again",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
+      "old": "not passed on the forge, which is skipped only with no remote or with remotes a signed-in `gh`\nreports are on no GitHub host (a `gh` missing or not signed in refuses).",
+      "new": "not passed on the forge unless the clone has no remote or one `gh` cannot query.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_pages_name_exactly_when_the_forge_is_not_asked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference drops the refusal of a missing or signed-out gh",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
+      "old": " (a `gh` missing or not signed in refuses).",
+      "new": ".",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_pages_name_exactly_when_the_forge_is_not_asked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test commits the signature with the page, so nothing is left uncommitted",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
-      "old": "            r = _cli(SPRINT_REPORT, root, \"evidence\", \"--out\", PAGE)\n            self.assertEqual(0, r.returncode, r.stdout + r.stderr)\n        if pack:",
-      "new": "            r = subprocess.CompletedProcess([], 0)\n        if pack:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated",
+      "old": "_git(root, \"add\", \"--\", PAGE)\n",
+      "new": "_git(root, \"add\", \"-A\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_signature_left_uncommitted_is_not_read_as_committed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test signs no report, so the page gains nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
+      "old": "epb.signature(\"RPT0003\", \"Lee Operator\", \"2026-11-20T10:00:00Z\")))\n        r = _cli(SPRINT_REPORT",
+      "new": "None))\n        r = _cli(SPRINT_REPORT",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_signature_left_uncommitted_is_not_read_as_committed",
       "result": "killed",
       "answer": ""
     }

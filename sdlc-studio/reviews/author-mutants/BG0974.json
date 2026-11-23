@@ -1,59 +1,140 @@
 {
   "unit": "BG0974",
-  "digest": "4d40017ff5030445 at 268b2933ef75",
-  "report": "sdlc-studio/.local/lane/landed/agent-aea46124416bbf9cc/BG0974-mutation-edits.json",
+  "digest": "2e1b17e985851979 at 774af9c781f4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad57b7426ec8fc12c/BG0974-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "link destination runs past its line",
+      "mutant": "link: any no-space destination exempt",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "_LINK_DEST_RE = re.compile(r\"(\\]\\([^)\\n]*\\))\")",
-      "new": "_LINK_DEST_RE = re.compile(r\"(\\]\\([^)]*\\))\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_ends_at_its_line",
+      "old": "|(?=[^\\s)]*[/.#:])[^\\s)]+)",
+      "new": "|[^\\s)]+)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "link destination runs to the last paren",
+      "mutant": "link: destination may hold whitespace",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "_LINK_DEST_RE = re.compile(r\"(\\]\\([^)\\n]*\\))\")",
-      "new": "_LINK_DEST_RE = re.compile(r\"(\\]\\([^\\n]*\\))\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_only_the_destination_is_exempt_and_the_link_text_is_still_safed",
+      "old": "(?=[^\\s)]*[/.#:])[^\\s)]+)",
+      "new": "(?=[^\\s)]*[/.#:])[^)]+)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_parenthetical_holding_whitespace_is_no_destination",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "any parenthesis is a destination",
+      "mutant": "link: path test reads past whitespace",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "_LINK_DEST_RE = re.compile(r\"(\\]\\([^)\\n]*\\))\")",
-      "new": "_LINK_DEST_RE = re.compile(r\"(\\([^)\\n]*\\))\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_only_the_destination_is_exempt_and_the_link_text_is_still_safed",
+      "old": "(?=[^\\s)]*[/.#:])",
+      "new": "(?=[^)]*[/.#:])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "destinations safed, link text left",
+      "mutant": "link: a slash is no path",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "for p in pieces[0::2]]",
-      "new": "for p in pieces[1::2]]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_an_evidence_link_to_an_underscored_file_is_kept_as_written",
+      "old": "[/.#:]",
+      "new": "[.#:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no destination exempt",
+      "mutant": "link: a dot is no path",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "pieces = _LINK_DEST_RE.split(parts[i])",
-      "new": "pieces = [parts[i]]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_title_link_to_an_underscored_file_is_kept_in_the_h1_and_the_row",
+      "old": "[/.#:]",
+      "new": "[/#:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: lint under a config that is not there",
+      "mutant": "link: an anchor is no path",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "[/.#:]",
+      "new": "[/.:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: a scheme is no URL",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "[/.#:]",
+      "new": "[/.#]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_destination_must_read_as_a_path_or_url",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: angle-bracket destination dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:<[^<>\\n]*>|(?=",
+      "new": "(?:(?=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_link_title_and_an_angle_bracket_destination_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: title dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"(?:[^\\S\\n]+(?:\\\"[^\\\"\\n]*\\\"|'[^'\\n]*'))?\\))\")",
+      "new": "r\"\\))\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_link_title_and_an_angle_bracket_destination_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: double-quoted title dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:\\\"[^\\\"\\n]*\\\"|'[^'\\n]*')",
+      "new": "(?:'[^'\\n]*')",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_link_title_and_an_angle_bracket_destination_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: single-quoted title dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:\\\"[^\\\"\\n]*\\\"|'[^'\\n]*')",
+      "new": "(?:\\\"[^\\\"\\n]*\\\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_link_title_and_an_angle_bracket_destination_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: the round-two pattern back",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"(\\]\\((?:<[^<>\\n]*>|(?=[^\\s)]*[/.#:])[^\\s)]+)\"\n    r\"(?:[^\\S\\n]+(?:\\\"[^\\\"\\n]*\\\"|'[^'\\n]*'))?\\))\")",
+      "new": "r\"(\\]\\([^)\\n]*\\))\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_neither_line_holds_an_underscore_outside_a_code_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link: the round-two pattern back, linted",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"(\\]\\((?:<[^<>\\n]*>|(?=[^\\s)]*[/.#:])[^\\s)]+)\"\n    r\"(?:[^\\S\\n]+(?:\\\"[^\\\"\\n]*\\\"|'[^'\\n]*'))?\\))\")",
+      "new": "r\"(\\]\\([^)\\n]*\\))\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_the_bug_file_passes_markdownlint",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the reviewer's call title expected bare",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py",
-      "old": "for config in (CONFIG, *[repo][:repo.exists()]):",
-      "new": "for config in (SKILL / 'x.json', *[repo][:repo.exists()]):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_title_link_to_an_underscored_file_is_kept_in_the_h1_and_the_row",
+      "old": "\"handlers[kind](`_row`, `_seat`) drops the seat\")",
+      "new": "\"handlers[kind](_row, _seat) drops the seat\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_parenthetical_holding_whitespace_is_no_destination",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: a title link expected broken",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py",
+      "old": "self.assertEqual(file_finding._md_safe(link), link)",
+      "new": "self.assertNotEqual(file_finding._md_safe(link), link)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::LinkDestinationTests::test_a_link_title_and_an_angle_bracket_destination_are_kept",
       "result": "killed",
       "answer": ""
     }

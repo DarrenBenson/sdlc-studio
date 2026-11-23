@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 286 |
+| Open | 284 |
 | In Progress | 0 |
-| Fixed | 1098 |
+| Fixed | 1101 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1725** |
+| **Total** | **1726** |
 
 ## All Bugs
 
@@ -585,7 +585,7 @@
 | [BG1507](BG1507-a-reviewer-that-sets-a-throwaway-home-and.md) | A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1508](BG1508-bg1506-s-tests-catch-only-the-unstamped-writer.md) | BG1506's tests catch only the unstamped writer's stale patch: pointing the at_close or at_sign patch back at the load-time module leaves its criteria green | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1509](BG1509-release-cut-never-restamps-the-releasing-repository-s.md) | release_cut never restamps the releasing repository's own sdlc-studio/.version, so each release needs a hand migrate --apply and CI's corpus check reds on US0926::AC1 until it gets one | Won't Fix | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
@@ -620,7 +620,7 @@
 | [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -642,7 +642,7 @@
 | [BG1564](BG1564-plan-py-archive-accepts-a-slug-with-parent.md) | plan.py archive accepts a slug with parent segments and moves a file from outside the plans directory | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1565](BG1565-the-trd-stamped-6-4-0-still-says.md) | The TRD stamped 6.4.0 still says persona-learning approval and signing are open stories and no learning is live | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1566](BG1566-the-generated-reference-catalogue-in-help-references-md.md) | The generated reference catalogue in help/references.md links all 58 references to paths that do not exist | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1569](BG1569-the-rfc-accept-workflow-spawns-crs-and-then.md) | The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1570](BG1570-the-evidence-pack-trusts-the-run-record-as.md) | The evidence pack trusts the run record as committed at the build revision, so one commit that edits a report's figures, its signature and its run record together still passes | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -801,6 +801,7 @@
 | [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1726](BG1726-readiness-detector-owed-reports-a-project-lens-as.md) | readiness detector-owed reports a project lens as PRD (None) and would declare a bare pack directory as the owed unit's Affects | Open | Low | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 
