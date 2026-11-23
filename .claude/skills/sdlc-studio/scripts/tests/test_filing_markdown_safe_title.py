@@ -161,5 +161,54 @@ class TitleMarkdownTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
+class LinkDestinationTests(unittest.TestCase):
+    """A markdown link to an underscored file keeps working on the lines the filer safes: the
+    token pass leaves a `](...)` destination alone (the reviewer's two inputs)."""
+
+    LINK = "[the filer test](scripts/tests/test_file_finding.py)"
+
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.root = Path(self._td.name)
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    def _lint_clean(self) -> None:
+        """The bug file and the index under the skill's config and the repository's own."""
+        lint = _markdownlint()
+        if lint is None:
+            self.skipTest("markdownlint is not installed (npm install) - the lint lane enforces this")
+        folder = self.root / "sdlc-studio" / "bugs"
+        repo = SKILL.parents[1] / ".markdownlint.json"  # absent from an installed copy
+        for config in (CONFIG, *[repo][:repo.exists()]):
+            r = subprocess.run([lint, "-c", str(config), *map(str, folder.glob("*.md"))],
+                               capture_output=True, text=True, check=False)
+            self.assertEqual(r.returncode, 0, f"{config}:\n{r.stdout}{r.stderr}")
+
+    def test_an_evidence_link_to_an_underscored_file_is_kept_as_written(self) -> None:
+        evidence = f"Found filing BG0959, see {self.LINK} for it"
+        body, _row = _file(self.root, "a plain title", "bug", "--evidence", evidence)
+        self.assertIn(f"\n> **Evidence:** {evidence}\n", body)
+        self._lint_clean()
+
+    def test_a_title_link_to_an_underscored_file_is_kept_in_the_h1_and_the_row(self) -> None:
+        title = f"see {self.LINK} for it"
+        body, row = _file(self.root, title)
+        self.assertEqual(body.splitlines()[0], f"# BG0001: {title}")
+        self.assertIn(f"| {title} |", row)
+        self._lint_clean()
+
+    def test_only_the_destination_is_exempt_and_the_link_text_is_still_safed(self) -> None:
+        self.assertEqual(file_finding._md_safe("see [the my_mod docs](a_b/c_d.md) and e_f (g_h x)"),
+                         "see [the `my_mod` docs](a_b/c_d.md) and `e_f` (`g_h` x)")
+        self.assertEqual(file_finding._md_safe("![a_b](img_c.png)"), "![`a_b`](img_c.png)")
+
+    def test_a_destination_ends_at_its_line(self) -> None:
+        """An unclosed `](` exempts nothing on the lines after it."""
+        self.assertEqual(file_finding._md_safe("an open ](here\nand my_var)"),
+                         "an open ](here\nand `my_var)`")
+
+
 if __name__ == "__main__":
     unittest.main()

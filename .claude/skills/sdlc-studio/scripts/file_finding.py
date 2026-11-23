@@ -1667,11 +1667,19 @@ def _md_safe(text) -> str:
     like `)[1]` are a rarer residual, noted in the CR.)
 
     A bare http(s) URL is code-spanned first (`_code_urls`), so the token pass below sees it
-    inside a span and leaves its underscores alone."""
+    inside a span and leaves its underscores alone. A link or image destination (`](...)`, up to
+    its first `)` on the same line) is left as written too, since a backtick inside it breaks the
+    link; the link text before it is safed as prose."""
     parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
-        parts[i] = _MD_TOKEN_RE.sub(r"`\1`", parts[i])
+        pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
+        pieces[0::2] = [_MD_TOKEN_RE.sub(r"`\1`", p) for p in pieces[0::2]]
+        parts[i] = "".join(pieces)
     return "`".join(parts)
+
+
+#: A markdown link or image destination: `](`, then everything up to the first `)` on its line.
+_LINK_DEST_RE = re.compile(r"(\]\([^)\n]*\))")
 
 
 #: A bare http(s) URL: not after a letter or digit (no autolink starts there), not inside
@@ -1728,7 +1736,7 @@ def _prose_safe(text) -> str:
 
 
 #: A list item: its marker (a bullet or a number, and the space after it), then its body, less
-#: any trailing whitespace (a code span ending in a space is MD038).
+#: any trailing whitespace.
 _LIST_ITEM_RE = re.compile(r"^(\s*(?:[-*+]|\d{1,9}[.)])\s+)(\S.*?)\s*$")
 
 
@@ -1745,20 +1753,48 @@ def _unprompted(line: str) -> str:
 def _command_line(line: str) -> bool:
     """True when one Steps to Reproduce line is a shell command to copy and run, rather than
     prose about one: `command_shaped` over the line's text outside its code spans, after an
-    optional `$ ` prompt. A sentence that quotes a command in a code span is prose."""
+    optional `$ ` prompt. So a line is a command when it opens with one, and also when it
+    carries a shell operator (`&&`, `||`, `$(`, a pipe into a tool) outside its code spans,
+    wherever the operator sits: such a sentence is fenced whole, its words kept as written. A
+    sentence that names a command with no operator, or quotes one in a code span, is prose."""
     text = _unprompted(line.strip())
     return command_shaped("".join(text.split("`")[0::2]))
 
 
-def _fence(lines: list[str]) -> str:
-    """Command lines as one fenced block, as given. The fence is longer than any backtick
-    run inside the commands, so none of them can close it early. It is left unlabelled: the
-    creators label it when they write the file (`sdlc_md.normalise_fence_languages`, MD040),
-    and a label here would sit inside the author's text, where the drop guard (`_probe`, which
-    keeps only letters and numbers) would no longer find a step with a command in its middle."""
+#: The language label the steps safing gives each fence it writes (MD040).
+_FENCE_LABEL = "text"
+
+#: That label closing a fence opener's line, which `_unlabelled` leaves out.
+_FENCE_LABEL_RE = re.compile(rf"(?m)(?<=```){_FENCE_LABEL}$")
+
+
+def _unlabelled(text: str) -> str:
+    """`text` less the `text` label of each fence opener, which is what the creators' drop
+    guards compare, on the author's value and on the rendered body alike: `_fence` writes the
+    label inside the author's words, where it would part the letters the guard looks for."""
+    return _FENCE_LABEL_RE.sub("", text)
+
+
+def _fence(lines: list[str], pad: str = "") -> list[str]:
+    """Command lines as one fenced block labelled `text` (MD040), its fences indented by `pad`
+    so a block inside a list item stays in the item. The fence is longer than any backtick run
+    inside the commands, so none of them can close it early."""
     longest = max((len(run) for run in re.findall(r"`+", "\n".join(lines))), default=0)
     mark = "`" * max(3, longest + 1)
-    return "\n".join([mark, *lines, mark])
+    return [pad + mark + _FENCE_LABEL, *lines, pad + mark]
+
+
+#: What the marker's line of a list item whose body is a command holds: an empty HTML comment,
+#: which renders as nothing. The fence cannot open on the marker's own line, where a fence
+#: reader that strips each line (the criteria parser, the fence labeller) sees no opener and
+#: takes the closer for one; under a bare marker it is MD031; and letters here would part the
+#: author's words for the drop guards.
+_ITEM_LEAD = "<!-- -->"
+
+
+def _indent(line: str) -> int:
+    """The width of the line's leading whitespace."""
+    return len(line) - len(line.lstrip())
 
 
 def _steps_safe(text) -> str:
@@ -1772,58 +1808,86 @@ def _steps_safe(text) -> str:
       fence reader the other markdown tools share (`sdlc_md.fence_step`), and is closed at the
       end if the author left it open, so it cannot swallow the next section; a line opening on
       a backtick run with another backtick after it is inline code (CommonMark), not a fence;
-    - a line that is a command (`_command_line`) is kept byte for byte inside a fenced block
+    - a line that is a command (`_command_line`) is kept inside a fenced block labelled `text`
       (`_fence`), consecutive command lines sharing one, with a blank line on each side (MD031);
-    - a list item whose body is a command keeps its place, the body in a code span, since a
-      fence cannot open on the marker's line; a body holding a backtick, which a one-backtick
-      span cannot hold, is left to the prose pass;
-    - a `$ ` prompt before a command is dropped from its fence or span (`_PROMPT_RE`);
+      outside a list its lines are kept byte for byte;
+    - a list item whose body is a command keeps its marker, its line holding `_ITEM_LEAD`, and
+      the command is fenced beneath it at the item's content column;
+    - a command inside a list item, on a continuation line or on an unindented line straight
+      after the item (CommonMark's lazy line), is fenced at that item's content column, so the
+      list keeps its numbering (MD029). Its lines move to that column as a block, keeping their
+      indentation relative to each other, and an unindented prose line straight after such a
+      fence is indented to the column too, so it stays in the item it continued;
+    - a `$ ` prompt before a command is dropped from its fence (`_PROMPT_RE`);
     - every other run of lines is prose and takes `_prose_safe` whole, so a value with no
       command in it is written exactly as before.
 
-    A command must open its line to be recognised: one written mid-sentence is prose."""
-    segs: list[tuple[str, list[str]]] = []
+    Last, the metadata-line guard `_prose_safe` applies (`_META_DECL_RE`) runs over the whole
+    result, fences included, since `extract_field` reads a `**Field:**` declaration inside a
+    fence as readily as outside: a command holding one keeps its fence, with that declaration's
+    bold markers escaped as the prose's are."""
+    segs: list[tuple[str, list[tuple[str, int]]]] = []  # (kind, [(line, its item's column)])
     fence = None  # the (marker, run length) of the author's open fenced block
+    cols: list[int] = []  # the content column of each list item open at this line
+    blank = False
     for line in str(text).split("\n"):
         stripped = line.strip()
         if fence is not None:
-            segs[-1][1].append(line)
+            segs[-1][1].append((line, 0))
             fence = sdlc_md.fence_step(stripped, fence)[0]
             continue
+        opens = None
         # a backtick run with another backtick after it is inline code, not an opener
         if not (stripped.startswith("```") and "`" in stripped.lstrip("`")):
-            fence = sdlc_md.fence_step(stripped, None)[0]
-            if fence is not None:
-                segs.append(("fence", [line]))
-                continue
+            opens = sdlc_md.fence_step(stripped, None)[0]
         item = _LIST_ITEM_RE.match(line)
+        # a line left of an item's content column ends the item after a blank line; an item or
+        # a fence ends it at once, since only a paragraph is continued by a lazy line
+        while stripped and cols and _indent(line) < cols[-1] and (blank or item or opens):
+            cols.pop()
+        blank, col = not stripped, (cols[-1] if cols else 0)
+        if opens is not None:
+            fence = opens
+            segs.append(("fence", [(line, col)]))
+            continue
         if item:
-            kind = "item" if "`" not in item.group(2) and _command_line(item.group(2)) else "prose"
+            cols.append(len(item.group(1)))
+            kind = "item" if _command_line(item.group(2)) else "prose"
         else:
             kind = "command" if _command_line(line) else "prose"
         if segs and segs[-1][0] == kind:
-            segs[-1][1].append(line)
+            segs[-1][1].append((line, col))
         else:
-            segs.append((kind, [line]))
+            segs.append((kind, [(line, col)]))
     if fence:
-        segs[-1][1].append(fence[0] * fence[1])
+        segs[-1][1].append((fence[0] * fence[1], 0))
     out, prev = "", None
-    for kind, lines in segs:
+    for kind, rows in segs:
         if kind == "prose":
-            block = _prose_safe("\n".join(lines))
+            # an unindented line after a fence of ours no longer continues the item lazily
+            lazy = prev in ("command", "item")
+            block = _prose_safe("\n".join(
+                " " * col + ln.lstrip() if lazy and ln.strip() and _indent(ln) < col else ln
+                for ln, col in rows))
         elif kind == "command":
-            block = _fence([_unprompted(ln) for ln in lines])
+            lines, col = [_unprompted(ln) for ln, _c in rows], rows[0][1]
+            cut = min(_indent(ln) for ln in lines) if col else 0
+            block = "\n".join(_fence([" " * col + ln[cut:] for ln in lines], " " * col))
         elif kind == "item":
-            block = "\n".join(m.group(1) + f"`{_unprompted(m.group(2))}`"
-                              for m in map(_LIST_ITEM_RE.match, lines))
+            items = []
+            for m in (_LIST_ITEM_RE.match(ln) for ln, _c in rows):
+                pad = " " * len(m.group(1))
+                fenced = _fence([pad + _unprompted(m.group(2))], pad)
+                items.append("\n".join([m.group(1) + _ITEM_LEAD, "", *fenced]))
+            block = "\n\n".join(items)
         else:
-            block = "\n".join(lines)
+            block = "\n".join(ln for ln, _c in rows)
         if prev is not None:
-            code = {prev, kind} & {"command", "fence"}
+            code = {prev, kind} & {"command", "item", "fence"}
             apart = code and out.rsplit("\n", 1)[-1].strip() and block.split("\n", 1)[0].strip()
             out += "\n\n" if apart else "\n"
         out, prev = out + block, kind
-    return out
+    return _META_DECL_RE.sub(r"\1\\*\\*\2\\*\\*", out)
 
 
 def _field_safe(key: str, text) -> str:
@@ -2200,8 +2264,9 @@ def _refuse_dropped(body: str, f: dict) -> None:
 
 
 def _probe(value) -> str:
-    """Alphanumerics only - compares CONTENT across any escaping the renderer applied."""
-    return "".join(c for c in str(value).lower() if c.isalnum())
+    """Alphanumerics only - compares CONTENT across any escaping the renderer applied, and
+    across the `text` label the steps safing gives a fence (`_unlabelled`)."""
+    return "".join(c for c in _unlabelled(str(value)).lower() if c.isalnum())
 
 
 def _render(type_: str, disp_id: str, title: str, today: str, f: dict,

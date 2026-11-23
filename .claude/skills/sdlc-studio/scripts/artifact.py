@@ -101,7 +101,7 @@ def _text(f: dict, key: str, placeholder: str) -> str:
     """Caller-supplied content for one section, else the scaffold placeholder the agent fills.
     Free text is prose-safed (markdown-safe plus the metadata-line guard), so a creator never
     mints a lint-red artefact nor a body line a reader takes for provenance; the commands in a
-    Steps to Reproduce value are kept runnable (`file_finding._field_safe`)."""
+    Steps to Reproduce value are fenced rather than back-ticked (`file_finding._field_safe`)."""
     val = f.get(key)
     return file_finding._field_safe(key, val) if isinstance(val, str) and val.strip() else placeholder
 
@@ -674,10 +674,17 @@ def _probe(value) -> str:
     Markdown-safing inserts escapes and the renderers wrap values in bullets and headings, so a
     literal substring test would report drops that never happened. Letters and digits pass
     through all of it unchanged, so comparing on those alone tests presence without testing
-    formatting."""
+    formatting (`_content`)."""
     if isinstance(value, (list, tuple)):
         value = value[0] if value else ""
-    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())[:30]
+    return _content(str(value or ""))[:30]
+
+
+def _content(text: str) -> str:
+    """Text as the drop guards compare it: its lower-cased letters and digits, less the `text`
+    label the steps safing gives a fence (`file_finding._unlabelled`), which the caller never
+    wrote and which would otherwise part the letters of a value with a command in its middle."""
+    return re.sub(r"[^a-z0-9]+", "", file_finding._unlabelled(text).lower())
 
 
 def _land_supplied(body: str, type_: str, f: dict) -> str:
@@ -691,7 +698,7 @@ def _land_supplied(body: str, type_: str, f: dict) -> str:
     standing in for."""
     for key, names in _LANDABLE_SECTIONS:
         probe = _probe(f.get(key))
-        if probe and probe not in re.sub(r"[^a-z0-9]+", "", body.lower()):
+        if probe and probe not in _content(body):
             content = (_criteria_body(type_, f) if key == "acs" and type_ in ("story", "bug")
                        else _rendered(key, f))
             body = _put_section(body, names, content)
@@ -706,7 +713,7 @@ def _refuse_dropped_content(body: str, type_: str, f: dict) -> None:
     the time a downstream floor objects the words are gone and someone has to invent
     replacements. Loud refusal at the moment of the drop is the only point where the content
     still exists to be saved."""
-    haystack = re.sub(r"[^a-z0-9]+", "", body.lower())
+    haystack = _content(body)
     for key in _MUST_LAND:
         probe = _probe(f.get(key))
         if probe and probe not in haystack:
@@ -786,8 +793,9 @@ _REV_SECTION_RE = re.compile(r"^##\s+Revision History\b.*$", re.M | re.I)
 
 def _rendered(key: str, f: dict) -> str:
     """One field's content as the markdown its section takes: a bullet list for the list
-    fields, markdown-safed prose otherwise (`file_finding._field_safe`, which keeps the commands
-    in a Steps to Reproduce value runnable). Empty when the caller supplied nothing."""
+    fields, markdown-safed prose otherwise (`file_finding._field_safe`, which fences the commands
+    in a Steps to Reproduce value rather than back-ticking them). Empty when the caller supplied
+    nothing."""
     if key in ("options", "acs"):
         items = _list(f, key)
         return "".join(f"- **{o}**\n" for o in items) if items else ""

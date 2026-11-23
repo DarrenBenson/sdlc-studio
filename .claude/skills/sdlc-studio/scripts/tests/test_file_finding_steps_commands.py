@@ -82,7 +82,7 @@ class _Fixture(unittest.TestCase):
         p.write_text(json.dumps(fields), encoding="utf-8")
         return str(p)
 
-    def file(self, steps: str, type_: str = "bug") -> str:
+    def file(self, steps: str, type_: str = "bug", fix: str = "f") -> str:
         """File one finding through `file_finding.py file`; return the written body."""
         extra = (["--severity", "low", "--points", "1", "--ac", "the repro runs",
                   "--verify", "pytest tests/test_x.py"] if type_ == "bug"
@@ -90,7 +90,7 @@ class _Fixture(unittest.TestCase):
         r = subprocess.run(
             [sys.executable, str(FILER), "file", "--root", str(self.root), "--type", type_,
              "--title", "a repro command", *extra, "--affects", "src/thing.py",
-             "--fields-file", self._doc(summary="s", steps=steps, fix="f")],
+             "--fields-file", self._doc(summary="s", steps=steps, fix=fix)],
             capture_output=True, text=True, check=False)
         self.assertEqual(r.returncode, 0, f"the filer refused the fixture:\n{r.stdout}{r.stderr}")
         folder = "bugs" if type_ == "bug" else "change-requests"
@@ -180,30 +180,30 @@ class StepsShapesTests(unittest.TestCase):
     def test_prose_around_a_command_is_still_safed_and_the_fence_stands_apart(self) -> None:
         steps = f"From the scripts folder:\n{CMD}\nThe import_error names it."
         self.assertEqual(self.safe(steps),
-                         f"From the scripts folder:\n\n```\n{CMD}\n```\n\n"
+                         f"From the scripts folder:\n\n```text\n{CMD}\n```\n\n"
                          "The `import_error` names it.")
 
     def test_a_prompt_is_dropped_so_the_fence_runs_as_pasted(self) -> None:
         """MD014 refuses a block whose every command shows a `$`, and a pasted `$` does not run;
         the indentation before the prompt is kept."""
         self.assertEqual(self.safe(f"$ {CMD}\n  $  git status"),
-                         f"```\n{CMD}\n  git status\n```")
+                         f"```text\n{CMD}\n  git status\n```")
 
     def test_a_blank_line_already_beside_a_command_is_not_doubled(self) -> None:
         steps = f"Run:\n\n{CMD}\n\nThen read it."
-        self.assertEqual(self.safe(steps), f"Run:\n\n```\n{CMD}\n```\n\nThen read it.")
+        self.assertEqual(self.safe(steps), f"Run:\n\n```text\n{CMD}\n```\n\nThen read it.")
 
     def test_two_commands_apart_keep_one_blank_line_between_their_fences(self) -> None:
         self.assertEqual(self.safe(f"{CMD}\n\ngit status"),
-                         f"```\n{CMD}\n```\n\n```\ngit status\n```")
+                         f"```text\n{CMD}\n```\n\n```text\ngit status\n```")
 
     def test_consecutive_command_lines_share_one_fence(self) -> None:
         steps = f"git status\n{CMD}"
-        self.assertEqual(self.safe(steps), f"```\ngit status\n{CMD}\n```")
+        self.assertEqual(self.safe(steps), f"```text\ngit status\n{CMD}\n```")
 
     def test_a_fence_beside_an_authors_fence_stands_apart(self) -> None:
         block = "```sh\nexport A_B=1\n```"
-        self.assertEqual(self.safe(f"{block}\n{CMD}"), f"{block}\n\n```\n{CMD}\n```")
+        self.assertEqual(self.safe(f"{block}\n{CMD}"), f"{block}\n\n```text\n{CMD}\n```")
 
     def test_an_authors_fenced_block_is_left_verbatim(self) -> None:
         block = f"```sh\n{CMD}\nexport A_B=1\n```"
@@ -228,24 +228,12 @@ class StepsShapesTests(unittest.TestCase):
         self.assertEqual(self.safe(f"```\n{CMD}"), f"```\n{CMD}\n```")
         self.assertEqual(self.safe(f"````text\n{CMD}"), f"````text\n{CMD}\n````")
 
+    def test_an_unclosed_tilde_fence_is_closed_on_its_own_marker(self) -> None:
+        self.assertEqual(self.safe(f"~~~\n{CMD}\n\n## Next"), f"~~~\n{CMD}\n\n## Next\n~~~")
+
     def test_a_fence_outlasts_a_backtick_run_inside_the_command(self) -> None:
         cmd = "python3 -c \"print('```')\""
-        self.assertEqual(self.safe(cmd), f"````\n{cmd}\n````")
-
-    def test_a_command_that_is_a_list_items_body_is_code_spanned_in_place(self) -> None:
-        steps = f"1. {CMD}\n2. Read the my_output line"
-        self.assertEqual(self.safe(steps), f"1. `{CMD}`\n2. Read the `my_output` line")
-
-    def test_consecutive_command_items_each_keep_their_marker(self) -> None:
-        self.assertEqual(self.safe("1. git status\n  * $ python3 a_b.py  "),
-                         "1. `git status`\n  * `python3 a_b.py`")
-
-    def test_a_list_items_command_holding_a_backtick_is_left_to_the_prose_pass(self) -> None:
-        """A single-backtick span cannot hold a backtick, so that body is safed as prose."""
-        self.assertEqual(self.safe("- grep -n `x` my_file"), "- grep -n `x` `my_file`")
-
-    def test_a_list_item_is_never_fenced_even_with_a_shell_operator(self) -> None:
-        self.assertEqual(self.safe("- run a_b && c"), "- `run a_b && c`")
+        self.assertEqual(self.safe(cmd), f"````text\n{cmd}\n````")
 
     def test_a_line_that_only_quotes_a_command_in_a_code_span_is_prose(self) -> None:
         steps = "See `git log && true` in snake_case output"
@@ -256,8 +244,226 @@ class StepsShapesTests(unittest.TestCase):
         self.assertEqual(self.safe(steps), file_finding._prose_safe(steps))
 
     def test_only_the_steps_field_takes_the_command_rule(self) -> None:
-        self.assertEqual(file_finding._field_safe("steps", CMD), f"```\n{CMD}\n```")
+        self.assertEqual(file_finding._field_safe("steps", CMD), f"```text\n{CMD}\n```")
         self.assertEqual(file_finding._field_safe("summary", CMD), file_finding._prose_safe(CMD))
+
+
+class ListItemCommandTests(unittest.TestCase):
+    """A command written as a list item, or on an item's continuation line, is fenced inside the
+    item, so the list keeps its numbering."""
+
+    @staticmethod
+    def safe(text: str) -> str:
+        return file_finding._steps_safe(text)
+
+    def test_a_command_that_is_a_list_items_body_is_fenced_under_its_marker(self) -> None:
+        steps = f"1. {CMD}\n2. Read the my_output line"
+        self.assertEqual(self.safe(steps), f"1. <!-- -->\n\n   ```text\n   {CMD}\n   ```\n\n"
+                                           "2. Read the `my_output` line")
+
+    def test_consecutive_command_items_each_keep_their_marker_and_fence(self) -> None:
+        self.assertEqual(self.safe("1. git status\n  * $ python3 a_b.py  "),
+                         "1. <!-- -->\n\n   ```text\n   git status\n   ```\n\n"
+                         "  * <!-- -->\n\n    ```text\n    python3 a_b.py\n    ```")
+
+    def test_a_list_items_command_holding_a_backtick_is_fenced_not_safed(self) -> None:
+        self.assertEqual(self.safe("- grep -n `x` my_file"),
+                         "- <!-- -->\n\n  ```text\n  grep -n `x` my_file\n  ```")
+
+    def test_every_list_marker_shape_is_read_as_an_item(self) -> None:
+        for marker in ("-", "*", "+", "1.", "1)", "10.", "123456789."):
+            pad = " " * (len(marker) + 1)
+            with self.subTest(marker=marker):
+                self.assertEqual(self.safe(f"{marker} rg -q x"),
+                                 f"{marker} <!-- -->\n\n{pad}```text\n{pad}rg -q x\n{pad}```")
+
+    def test_a_ten_digit_number_is_not_a_list_marker(self) -> None:
+        self.assertEqual(self.safe("1234567890. rg -q x"), "1234567890. rg -q x")
+
+    def test_a_command_on_an_items_continuation_line_is_fenced_inside_the_item(self) -> None:
+        """The reviewer's input: a column-0 fence here ended the list, and the next step was
+        refused by MD029."""
+        steps = ('1. From the scripts folder run:\n   python3 -c "import sys\\; from lib import '
+                 'sdlc_md"\n2. Read the my_output line')
+        self.assertEqual(self.safe(steps),
+                         '1. From the scripts folder run:\n\n   ```text\n   python3 -c "import '
+                         'sys\\; from lib import sdlc_md"\n   ```\n\n2. Read the `my_output` line')
+
+    def test_a_continuation_command_takes_the_items_own_content_column(self) -> None:
+        """Two spaces after the marker put the item's text, and so its fence, in column four."""
+        self.assertEqual(self.safe("1.  From here run:\n    python3 a_b.py"),
+                         "1.  From here run:\n\n    ```text\n    python3 a_b.py\n    ```")
+
+    def test_a_lazy_command_and_the_prose_after_it_are_indented_into_the_item(self) -> None:
+        """Unindented lines straight after an item continue it (CommonMark's lazy line); once a
+        fence stands between, they are indented to stay in it."""
+        steps = "1. Run:\npython3 a_b.py\nthen read c_d\n2. Next"
+        self.assertEqual(self.safe(steps), "1. Run:\n\n   ```text\n   python3 a_b.py\n   ```\n\n"
+                                           "   then read `c_d`\n2. Next")
+
+    def test_a_lazy_line_after_an_authors_fence_is_left_where_it_was(self) -> None:
+        steps = "1. Run:\n\n   ```sh\n   export A=1\n   ```\nthen read c_d"
+        self.assertEqual(self.safe(steps), "1. Run:\n\n   ```sh\n   export A=1\n   ```\n\n"
+                                           "then read `c_d`")
+
+    def test_a_command_after_a_blank_line_left_of_the_item_is_not_in_it(self) -> None:
+        self.assertEqual(self.safe("1. Run it\n\npython3 a_b.py"),
+                         "1. Run it\n\n```text\npython3 a_b.py\n```")
+
+    def test_an_authors_fence_left_of_the_item_ends_it_at_once(self) -> None:
+        steps = "1. Run it\n```sh\nexport A=1\n```\npython3 a_b.py"
+        self.assertEqual(self.safe(steps),
+                         "1. Run it\n\n```sh\nexport A=1\n```\n\n```text\npython3 a_b.py\n```")
+
+    def test_a_nested_items_continuation_command_takes_the_nested_column(self) -> None:
+        steps = "1. Step\n   - sub step:\n     python3 a_b.py\n\n   python3 c_d.py\n2. Next"
+        self.assertEqual(self.safe(steps),
+                         "1. Step\n   - sub step:\n\n     ```text\n     python3 a_b.py\n     ```\n\n"
+                         "   ```text\n   python3 c_d.py\n   ```\n\n2. Next")
+
+    def test_two_blank_lines_do_not_end_the_item(self) -> None:
+        self.assertEqual(self.safe("1. Run it\n\n\n   python3 a_b.py"),
+                         "1. Run it\n\n\n   ```text\n   python3 a_b.py\n   ```")
+
+    def test_a_command_outside_a_list_keeps_its_own_indentation(self) -> None:
+        self.assertEqual(self.safe("  rg -q x"), "```text\n  rg -q x\n```")
+
+    def test_a_lazy_line_after_a_command_item_is_indented_and_a_blank_line_is_not(self) -> None:
+        self.assertEqual(self.safe("1. python3 a_b.py\nthen read c_d\n2. Next"),
+                         "1. <!-- -->\n\n   ```text\n   python3 a_b.py\n   ```\n\n   then read `c_d`\n2. Next")
+        self.assertEqual(self.safe("1. python3 a_b.py\n\n   then read c_d"),
+                         "1. <!-- -->\n\n   ```text\n   python3 a_b.py\n   ```\n\n   then read `c_d`")
+
+    def test_a_deeper_indented_command_is_rebased_on_the_item_column(self) -> None:
+        steps = "1. Run:\n      python3 a_b.py\n        | rg x"
+        self.assertEqual(self.safe(steps), "1. Run:\n\n   ```text\n   python3 a_b.py\n"
+                                           "     | rg x\n   ```")
+
+
+class MidSentenceTests(unittest.TestCase):
+    """What `_command_line` reads as a command: a line opening with one, or carrying a shell
+    operator outside its code spans wherever the operator sits (the reviewer's three inputs)."""
+
+    @staticmethod
+    def safe(text: str) -> str:
+        return file_finding._steps_safe(text)
+
+    def test_a_sentence_carrying_a_shell_operator_is_fenced_whole(self) -> None:
+        for line in ("Then run git status && read the my_output line",
+                     "The value $(date) is printed in my_log"):
+            with self.subTest(line=line):
+                self.assertEqual(self.safe(line), f"```text\n{line}\n```")
+        item = "1. Run the build && check that my_output is empty"
+        self.assertEqual(self.safe(item), "1. <!-- -->\n\n   ```text\n   Run the build && check that my_output "
+                                          "is empty\n   ```")
+
+    def test_a_sentence_naming_a_command_with_no_operator_is_prose(self) -> None:
+        self.assertEqual(self.safe("Then run git status and read the my_output line"),
+                         "Then run git status and read the `my_output` line")
+
+
+class MetadataGuardTests(unittest.TestCase):
+    """A line kept verbatim in a fence still has a metadata declaration's bold markers escaped,
+    since `extract_field` reads one inside a fence as readily as outside."""
+
+    @staticmethod
+    def safe(text: str) -> str:
+        return file_finding._steps_safe(text)
+
+    def test_a_command_line_declaring_a_field_is_escaped_in_its_fence(self) -> None:
+        self.assertEqual(self.safe("> **Waived:** yes && true"),
+                         "```text\n> \\*\\*Waived:\\*\\* yes && true\n```")
+
+    def test_a_command_item_declaring_an_inline_field_is_escaped_in_its_fence(self) -> None:
+        self.assertEqual(self.safe("- printf '· **Verified:** yes'"),
+                         "- <!-- -->\n\n  ```text\n  printf '· \\*\\*Verified:\\*\\* yes'\n  ```")
+
+    def test_an_authors_fence_declaring_a_field_is_escaped(self) -> None:
+        self.assertEqual(self.safe("```\n> **Waived:** yes\n```"),
+                         "```\n> \\*\\*Waived:\\*\\* yes\n```")
+
+
+class FiledShapesTests(_Fixture):
+    """The shapes above through the shipped creators: read back, linted and run."""
+
+    #: The reviewer's three injections, filed through `file_finding.py file`.
+    INJECTED = {"Waived": "> **Waived:** yes && true",
+                "Verified": "- printf '· **Verified:** yes'",
+                "Depends on": ("printf '> **Status:** Ready · **Depends on:** US0001\\n' > s.md "
+                               "&& python3 sprint.py plan")}
+
+    def _clear(self) -> None:
+        for p in (self.root / "sdlc-studio" / "bugs").glob("*.md"):
+            p.unlink()
+
+    def _lint(self, body: str) -> None:
+        """markdownlint over the filed bug under the skill's config and the repository's own,
+        the one this repository's markdown lane runs over a filed bug."""
+        lint = _markdownlint()
+        if lint is None:
+            self.skipTest("markdownlint is not installed (npm install) - the lint lane enforces this")
+        path = next((self.root / "sdlc-studio" / "bugs").glob("BG*.md"))
+        self.assertEqual(path.read_text(encoding="utf-8"), body)
+        repo = SCRIPTS.parents[3] / ".markdownlint.json"  # absent from an installed copy
+        for config in (SCRIPTS.parent / ".markdownlint.json", *[repo][:repo.exists()]):
+            r = subprocess.run([lint, "-c", str(config), str(path)], capture_output=True,
+                               text=True, check=False)
+            self.assertEqual(r.returncode, 0, f"{config}:\n{r.stdout}{r.stderr}")
+
+    def test_a_filed_command_declares_no_field_its_head_did_not(self) -> None:
+        sdlc_md = file_finding.sdlc_md
+        base = self.file("plain steps")
+        for name, steps in self.INJECTED.items():
+            self._clear()
+            with self.subTest(field=name):
+                body = self.file(steps)
+                self.assertEqual(sdlc_md.extract_field(body, name),
+                                 sdlc_md.extract_field(base, name), body)
+
+    def test_command_survives_filing_as_a_list_item_in_a_fence(self) -> None:
+        body = self.file(f"1. {CMD}\n2. Read the my_output line")
+        steps = _section(body, "Steps to Reproduce")
+        self.assertEqual(steps, f"1. <!-- -->\n\n   ```text\n   {CMD}\n   ```\n\n2. Read the `my_output` line")
+        m = re.search(r"```text\n   (.*)\n   ```", steps)
+        r = subprocess.run(["bash", "-c", m.group(1)], cwd=SCRIPTS, capture_output=True,
+                           text=True, check=False)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "lib.sdlc_md"), r.stderr)
+        self._lint(body)
+
+    def test_an_item_command_leaves_the_criteria_and_a_later_fence_readable(self) -> None:
+        """The item's fence opens on a line of its own, so the fence readers that strip a line
+        pair it: the criteria parser still finds the criteria, and the labeller labels the fix's
+        bare fence rather than the item's closer."""
+        body = self.file("1. rg -q x", fix="Patch it:\n\n```\nexport A=1\n```")
+        self.assertIn("1. <!-- -->\n\n   ```text\n   rg -q x\n   ```\n", body)
+        self.assertIn("Patch it:\n\n```text\nexport A=1\n```", body)
+        r = subprocess.run([sys.executable, str(SCRIPTS / "verify_ac.py"), "run", "--id",
+                            "BG0001", "--dry-run", "--root", str(self.root)],
+                           capture_output=True, text=True, check=False)
+        self.assertIn("ac=1 ", r.stdout + r.stderr)  # parsed; the Verify itself has no file to run
+        self._lint(body)
+
+    def test_a_continuation_command_files_lint_clean(self) -> None:
+        """The reviewer's MD029 input, filed and linted."""
+        self._lint(self.file('1. From the scripts folder run:\n   python3 -c "import sys\\; from '
+                             'lib import sdlc_md"\n2. Read the my_output line'))
+
+    def test_lazy_nested_and_wide_numbered_commands_file_lint_clean(self) -> None:
+        self._lint(self.file("1. Run:\npython3 a_b.py\nthen read c_d\n2. Step\n   - sub step:\n"
+                             "     python3 e_f.py\n3. Next\n4. a\n5. b\n6. c\n7. d\n8. e\n9. f\n"
+                             "10. From here:\n    python3 g_h.py\n11. rg -q x"))
+
+    def test_command_survives_filing_with_a_text_label_through_both_creators(self) -> None:
+        """The drop guards read past a fence's `text` label on both sides: the steps safing's
+        own, here mid-value, and an author's."""
+        steps = f"From the scripts folder:\n{CMD}\n```text\nexport A_B=1\n```"
+        want = f"From the scripts folder:\n\n```text\n{CMD}\n```\n\n```text\nexport A_B=1\n```"
+        self.assertEqual(_section(self.file(steps), "Steps to Reproduce"), want)
+        self._clear()
+        self.assertEqual(_section(self.create(steps), "Steps to Reproduce"), want)
+        self._clear()
+        self.assertEqual(_section(self.create("```text\nexport A_B=1\n```"), "Steps to Reproduce"),
+                         "```text\nexport A_B=1\n```")
 
 
 if __name__ == "__main__":
