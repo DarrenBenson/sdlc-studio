@@ -440,13 +440,14 @@ class WaiverTests(unittest.TestCase):
 
     def test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id(self):
         """A superseded or a revisited row waives nothing, as `decisions.waiver_for` reads it; a
-        subject with a further `:` segment, before the id or inside it, or an id the waived one
-        only begins with, names no unit, though the id key would read the colon away; nor does
-        a row that only mentions the subject."""
+        subject with a further `:` segment, before the id, inside it or after it, or an id the
+        waived one only begins with, names no unit, though the id key would read the colon away;
+        nor does a row that only mentions the subject."""
         rows = ((f"waiver: rule:engagement-floor:{self.WAIVED}", "superseded"),
                 (f"waiver: rule:engagement-floor:{self.WAIVED}", "revisited"),
                 ("waiver: rule:engagement-floor:bg-01:jqk3f8", "accepted"),
                 (f"waiver: rule:engagement-floor:other:{self.WAIVED}", "accepted"),
+                (f"waiver: rule:engagement-floor:{self.WAIVED}:ac2", "accepted"),
                 ("waiver: rule:engagement-floor:bg-01jqk3f", "accepted"),
                 ("ruling: rule:engagement-floor:bg-01jqk3f8", "accepted"),
                 (f"see waiver: rule:engagement-floor:{self.WAIVED}", "accepted"))

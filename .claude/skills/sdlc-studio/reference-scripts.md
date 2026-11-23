@@ -192,9 +192,11 @@ lists every script with a one-line summary; open the linked page for the full en
   source files in place, and the gate refuses to pass while one is open. No per-target ledger
   is kept: `register`, `retract`, `retractions` and `audit` are retired and refused by name.
 - `reconcile.py` - Builds the artifact-file census and reports `_index.md` drift as JSON.
-  `settle` applies the mechanical drift (indexes, and each epic whose units are all terminal,
-  closed to its derived Done or Superseded) and restages exactly what it wrote; a commit hook
-  runs it, and a file carrying unstaged work is left and named, never staged.
+  `settle` applies the mechanical drift and restages exactly what it wrote: the indexes, each
+  epic whose units are all terminal closed to its derived Done or Superseded, and each Draft,
+  Ready or Approved epic with a unit delivered or under way moved In Progress, both through the
+  epic's own gates. A commit hook runs it; a file carrying unstaged work is left and named,
+  never staged.
 - `status.py` - `pillars`: four-pillar census (Requirements/Code/Tests/Reviews) as JSON
 - `validate.py` - `check`: lint artifact structure (ID, Status vocabulary, title, AC presence, an optional
 - `conformance.py` - The lifecycle-conformance gate. `detect_conformance` reports per-story stages (decomposed -> AC -> verifiabl...

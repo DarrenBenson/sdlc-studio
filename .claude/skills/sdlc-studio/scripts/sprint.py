@@ -6172,6 +6172,14 @@ def _close_reconcile(root, retro_id, state):
         ids = ", ".join(d["id"] for d in blocked)
         return True, (f"no mechanical drift; {len(blocked)} request(s) awaiting another gate "
                       f"({ids}) - reported, not clearable by apply"), ""
+    # Any other item carrying `blocked_by` is someone's decision too (a Done epic that delivered
+    # nothing is its owner's to move or keep), so it is exempt as the commit gate's tally exempts
+    # it: reported, and the ceremony goes on. Only when every item is one.
+    owned = [d for d in drift if d.get("blocked_by")]
+    if len(owned) == len(drift):
+        ids = ", ".join(d["id"] or d["type"] for d in owned)
+        return True, (f"no mechanical drift; {len(owned)} item(s) awaiting a decision ({ids}) "
+                      f"- reported, not clearable by apply"), ""
     # ONE LINE PER DRIFT ITEM, from the structured sweep: the step's detail becomes one known
     # issue per line, and `detect`'s printed summary and guidance are not drift.
     return False, "\n".join(f"{d['kind']} {d['id'] or d['type']}: {d['fix']}" for d in drift), \
@@ -7472,12 +7480,20 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
         # request another gate refuses cannot be cleared by the command this message names, so
         # blocking on it strands the sign-off behind a decision nobody in this run can make.
         blocked = [d for d in reconcile.derivable_request_drift(root) if d.get("blocked_by")]
-        if not (blocked and _only_blocked_derivable_drift(root, blocked)):
-            print("close: final reconcile reports drift - run `reconcile.py apply`",
-                  file=sys.stderr)
-            return 1
-        print(f"close: {len(blocked)} request(s) awaiting another gate "
-              f"({', '.join(d['id'] for d in blocked)}) - reported, not clearable by apply")
+        if blocked and _only_blocked_derivable_drift(root, blocked):
+            print(f"close: {len(blocked)} request(s) awaiting another gate "
+                  f"({', '.join(d['id'] for d in blocked)}) - reported, not clearable by apply")
+        else:
+            # ... and any other item carrying `blocked_by`, as the reconcile step exempts it.
+            drift = reconcile.detect_all(root)[1]
+            owned = [d for d in drift if d.get("blocked_by")]
+            if not owned or len(owned) != len(drift):
+                print("close: final reconcile reports drift - run `reconcile.py apply`",
+                      file=sys.stderr)
+                return 1
+            print(f"close: {len(owned)} item(s) awaiting a decision "
+                  f"({', '.join(d['id'] or d['type'] for d in owned)}) - reported, not "
+                  f"clearable by apply")
     # THE GATE MUST JUDGE THE STATE THE CLOSE LEAVES BEHIND, not the one it started from. The
     # chain runs `gate` at step 4, while every unit still sits at Review; this cascade then moves
     # them to Done, and conformance requires evidence at Done that Review does not. So a close

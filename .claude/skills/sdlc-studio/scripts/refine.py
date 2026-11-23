@@ -70,8 +70,9 @@ def _ac_heading(criterion: str, limit: int = 100) -> str:
 #: A criterion that already opens with its own `AC1:` label (the shape a request written to the
 #: story template carries). The seed prepends `### ACn: `, so an unstripped label landed twice in
 #: one heading. Two spellings: a label closed in bold, with a separator inside the bold, after
-#: it or none (`**AC1** text` and `**AC1:** text` are the rows the skill's own filers write),
-#: and a label with no closing bold, which needs a separator. Nothing else is touched, so a
+#: it or none (`**AC1** text` and `**AC1:** text`, the rows the skill writes for a bug's and a
+#: story's criteria, which a request copied from one carries), and a label with no closing
+#: bold, which needs a separator. Nothing else is touched, so a
 #: criterion that merely mentions AC2 mid-sentence, or opens on a bold phrase, keeps its text.
 _AC_LABEL_RE = re.compile(r"^(?:\*+\s*AC\s*\d+\s*[:.)\]-]?\s*\*+\s*[:.)\]-]?"
                           r"|\**\s*AC\s*\d+\**\s*[:.)\]-])\s+", re.I)
@@ -1352,9 +1353,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--unrefined", metavar="AC3,AC4",
                    help="the request's criteria this refine leaves undecomposed, by label (ACn is "
                         "its nth criterion): recorded on the request's `Unrefined:` field and not "
-                        "seeded, and neither reconcile nor `transition.py set` takes the request "
-                        "to its successful terminal while any is left. An unknown label is "
-                        "refused with nothing minted")
+                        "seeded. Where the project enforces the two-backlog workflow "
+                        "(`two_backlog.enforce`), neither reconcile nor `transition.py set` takes "
+                        "the request to its successful terminal while any is left. An unknown "
+                        "label is refused with nothing minted")
     a.add_argument("--skip-personas", action="store_true",
                    help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")

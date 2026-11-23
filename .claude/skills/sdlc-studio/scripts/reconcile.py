@@ -1136,8 +1136,8 @@ def epic_terminal_undelivered_drift(repo_root: Path | str) -> list[dict]:
     Reported under `epic-status-stale` and NEVER written: a terminal status may record a ruling
     (the request was met another way), so neither `apply` nor `settle` rewrites it. The item
     carries `derived`, not `target`, which is the key `settled_items` and `settle` act on, and
-    a `blocked_by`, so the commit gate reports it without refusing the commit: the call is the
-    epic's owner's. The owner moves the epic with `transition.py`, or records the ruling that
+    a `blocked_by`, so the commit gate reports it without refusing the commit, and a sprint close
+    reports it without refusing the close: the call is the epic's owner's. The owner moves the epic with `transition.py`, or records the ruling that
     keeps it as a `Decision-Override:` on the epic, the recorded escape the transition gates
     honour, read off its own line by their reader, and this lane then leaves it. A line with no
     reason after it records no ruling.
@@ -1190,9 +1190,18 @@ def epic_partial_delivery_drift(repo_root: Path | str) -> list[dict]:
     The live lane above derives an epic only once EVERY child is terminal, so a partly delivered
     epic kept the status it was minted with and read as work not started, to `status` and to
     backlog triage, while its stories shipped. A finished breakdown is left to that lane, so the
-    two never name one epic. `apply_epic_partial_delivery` writes this one, through
-    `transition.py`: starting an epic is not a completion, so no ruling can be lost.
+    two never name one epic. Starting an epic is not a completion, so no ruling can be lost: the
+    item carries `target`, so `settle` moves it at commit (and the commit gate reports it as
+    settled rather than counting it), and `apply_epic_partial_delivery` moves it on `apply`, each
+    through `transition.py`, whose gates decide.
+
+    The move is asked of `transition` first, as a dry run. An epic whose own gates refuse it (one
+    missing a section `quality.require_full_sections` requires, say) is not reported: no command
+    this lane could name would clear it, and a commit that only starts a story must not be
+    refused over the epic's sections. It reads as it did before this lane existed until its
+    gates pass.
     """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
     root = Path(repo_root)
     vocab = sdlc_md.STATUS_VOCAB.get("epic", [])
     if _EPIC_WORKING not in vocab:
@@ -1209,12 +1218,17 @@ def epic_partial_delivery_drift(repo_root: Path | str) -> list[dict]:
         if not moved:
             continue
         eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        try:
+            transition.transition(root, eid, _EPIC_WORKING, dry_run=True)
+        except (ValueError, FileNotFoundError):
+            continue          # the epic's own gates hold it where it is
         drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
                       "file_status": canon, "index_status": None, "moved": moved,
-                      "derived": _EPIC_WORKING,
+                      "target": _EPIC_WORKING,
                       "fix": f"{eid} is `{canon}` but its breakdown has work delivered or under "
                              f"way ({', '.join(moved)}), so it derives `{_EPIC_WORKING}` - "
-                             f"`reconcile apply` moves it there through `transition.py`"})
+                             f"`reconcile apply` moves it there through `transition.py`, and "
+                             f"`reconcile settle` does so at commit"})
     return drift
 
 
@@ -1222,8 +1236,9 @@ def apply_epic_partial_delivery(repo_root: Path | str, dry_run: bool = False) ->
     """Move every epic `epic_partial_delivery_drift` names to `In Progress`.
 
     Returns {"synced": [id, ...], "unapplied": [{"id", "target", "reason"}, ...]}. Goes through
-    `transition.transition`, as `apply_derivable_requests` does, so the index row follows and
-    the epic's own gates decide; a refusal is returned as data and the rest still run.
+    `transition.transition`, as `apply_derivable_requests` does, never forced, so the index row
+    follows and the epic's own gates decide; a refusal the detector's dry run did not foresee is
+    returned as data and the rest still run.
     """
     import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
     root = Path(repo_root)
@@ -1231,10 +1246,10 @@ def apply_epic_partial_delivery(repo_root: Path | str, dry_run: bool = False) ->
     unapplied: list[dict] = []
     for d in epic_partial_delivery_drift(root):
         try:
-            transition.transition(root, d["id"], d["derived"], dry_run=dry_run)
+            transition.transition(root, d["id"], d["target"], dry_run=dry_run)
             done.append(d["id"])
         except (ValueError, FileNotFoundError) as exc:
-            unapplied.append({"id": d["id"], "target": d["derived"],
+            unapplied.append({"id": d["id"], "target": d["target"],
                               "reason": (str(exc).strip() or type(exc).__name__).splitlines()[0]})
     return {"synced": done, "unapplied": unapplied}
 
@@ -3541,7 +3556,7 @@ def settled_items(repo_root: Path | str, drift: list[dict]) -> list[dict]:
 
     DERIVED from the writers' own dry runs, never from the kind alone: an index row `apply_type`
     reports it cannot write (`unapplied`, `missing_unapplied`, an unplaceable summary row, a
-    structurally broken index) is not settled, and nor is an epic whose derived close
+    structurally broken index) is not settled, and nor is an epic whose derived move
     `transition` would refuse. Claiming otherwise would tell the committer a fix is coming that
     never lands. Every other kind, and every other type, is left out.
     """
@@ -3635,9 +3650,10 @@ def settle(repo_root: Path | str) -> dict:
     """Apply the drift `settled_items` names and restage exactly the files the fix wrote.
 
     Two writers, each the one that already owns the change: `transition.transition` closes every
-    epic `epic_status_stale_drift` reports, to its DERIVED status and through the epic's own
-    gates; then `apply_type` regenerates every pipeline index. A refusal or a fault on one epic
-    or one index is recorded and the rest still run; nothing is forced.
+    epic `epic_status_stale_drift` reports and starts every epic `epic_partial_delivery_drift`
+    reports, each to its DERIVED status and through the epic's own gates; then `apply_type`
+    regenerates every pipeline index. A refusal or a fault on one epic or one index is recorded
+    and the rest still run; nothing is forced.
 
     The fix reads the WORKING TREE, so the author's unstaged work must not reach the commit
     through it, directly or derived. A written file is restaged only when it had no unstaged
@@ -3647,21 +3663,23 @@ def settle(repo_root: Path | str) -> dict:
     why this compares hashes before and after rather than restaging every tracked change. Under
     a temporary index (`_temporary_index`) nothing is written or staged at all.
 
-    Returns {skipped: reason|None, closed: [(id, from, to)], refused: [(id, reason)],
-    restaged: [path], left: [path], index_refused: [(type, reason)]}.
+    Returns {skipped: reason|None, closed: [(id, from, to)], started: [(id, from, to)],
+    refused: [(id, reason)], restaged: [path], left: [path], index_refused: [(type, reason)]}.
     """
     import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
     root = Path(repo_root).resolve()
     # git reports paths from the top of the work tree, which need not be the project root.
     top = Path(_git(root, "rev-parse", "--show-toplevel").strip()).resolve()
-    out: dict = {"skipped": _temporary_index(top), "closed": [], "refused": [], "restaged": [],
-                 "left": [], "index_refused": []}
+    out: dict = {"skipped": _temporary_index(top), "closed": [], "started": [], "refused": [],
+                 "restaged": [], "left": [], "index_refused": []}
     if out["skipped"]:
         return out
     before = _unstaged(top)
     stale = []
     with sdlc_md.corpus_cache():
-        for d in epic_status_stale_drift(root):
+        lanes = ([("closed", d) for d in epic_status_stale_drift(root)]
+                 + [("started", d) for d in epic_partial_delivery_drift(root)])
+        for lane, d in lanes:
             hit = sdlc_md.find_by_id(root, d["id"])
             text = sdlc_md.read_text_safe(hit[0]) if hit else ""
             inputs = [hit] + [sdlc_md.find_by_id(root, u) for u in declared_breakdown_ids(text)]
@@ -3671,11 +3689,11 @@ def settle(repo_root: Path | str) -> dict:
                 out["refused"].append((d["id"], f"it derives from unstaged edits in "
                                                 f"{', '.join(dirty)} - stage them first"))
             else:
-                stale.append(d)
-    for d in stale:
+                stale.append((lane, d))
+    for lane, d in stale:
         try:
             transition.transition(root, d["id"], d["target"])
-            out["closed"].append((d["id"], d["file_status"], d["target"]))
+            out[lane].append((d["id"], d["file_status"], d["target"]))
         except Exception as exc:  # noqa: BLE001 - one epic's fault must not stop the rest
             out["refused"].append((d["id"], (str(exc).strip() or type(exc).__name__)
                                    .splitlines()[0]))
@@ -3712,6 +3730,8 @@ def cmd_settle(args: argparse.Namespace) -> int:
         return 0
     for eid, frm, to in res["closed"]:
         print(f"settled {eid}: {frm} -> {to} (every breakdown unit is terminal)")
+    for eid, frm, to in res["started"]:
+        print(f"settled {eid}: {frm} -> {to} (a breakdown unit is delivered or under way)")
     for path in res["restaged"]:
         print(f"restaged {path}")
     for path in res["left"]:
@@ -3719,7 +3739,7 @@ def cmd_settle(args: argparse.Namespace) -> int:
               f"fix is in the working tree and NOT staged - review it and stage it yourself "
               f"(git add -p {path})")
     for eid, reason in res["refused"]:
-        print(f"left {eid}: its derived close was refused - {reason}")
+        print(f"left {eid}: its derived move was refused - {reason}")
     for type_, reason in res["index_refused"]:
         print(f"left the {type_} index: {reason}")
     return 0

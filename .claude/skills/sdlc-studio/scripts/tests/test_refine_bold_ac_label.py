@@ -1,10 +1,13 @@
-"""BG0995: refine strips the bold `**ACn**` label the skill's own filers write.
+"""BG0995: refine strips a bold `**ACn**` label from a request's criteria.
 
-`file_finding.criteria_block` writes `- [ ] **ACn** text` and `artifact.py`'s story block
-writes `**ACn:** text` (the colon inside the bold). The seed's label pattern wanted a separator
-AFTER the closing bold, so neither stripped and a request the skill itself filed seeded
-`### AC1: **AC1** text`, the BG0291 defect back for the house style. Each test drives
-`refine.refine` over a throwaway workspace and reads the headings it seeded.
+The skill writes a bug's and a story's criteria with a bold label: `file_finding.criteria_block`
+writes a bug's `- [ ] **ACn** text`, and `artifact.py`'s story block writes `**ACn:** text` (the
+colon inside the bold). Neither request filer writes such a row (`file_finding.py file --type cr`
+and `artifact.py new --type cr` write `- [ ] text`), but a request whose criteria carry one,
+copied from a bug or a story or written in that style by hand, seeded `### AC1: **AC1** text`:
+the seed's label pattern wanted a separator AFTER the closing bold, the BG0291 defect back for
+the bold spellings. Each test drives `refine.refine` over a throwaway workspace and reads the
+headings it seeded, or asks the label stripper directly.
 """
 from __future__ import annotations
 
@@ -72,6 +75,25 @@ class BoldAcLabelTests(unittest.TestCase):
         self.assertIn("**AC1**", block)
         self.assertEqual(_seed(block), ["### AC1: the gate refuses an unsigned run",
                                         "### AC2: the report names the run"])
+
+    def test_every_filer_form_strips_past_nine_criteria(self) -> None:
+        # A request with ten or more criteria: the bold label's number has two digits.
+        plain = [f"criterion {n} holds" for n in range(1, 10)]
+        bold = ["**AC10** ten criteria", "**AC 11)** eleven, spaced and bracketed",
+                "**AC12:** twelve"]
+        headings = _seed("\n".join(f"- [ ] {c}" for c in plain + bold))
+        self.assertEqual(headings[9:], ["### AC10: ten criteria",
+                                        "### AC11: eleven, spaced and bracketed",
+                                        "### AC12: twelve"])
+        self.assertEqual(headings[:9], [f"### AC{n}: {c}" for n, c in enumerate(plain, 1)])
+
+    def test_every_filer_form_strips_each_separator_and_spacing_in_the_bold(self) -> None:
+        # Every separator inside the bold, and the spaces each part of the label may carry.
+        for raw in ("**AC10** text", "**AC12:** text", "**AC 12** text", "**AC9)** text",
+                    "**AC9]** text", "**AC9-** text", "** AC9** text", "**AC9 :** text",
+                    "**AC9: ** text", "**AC9** : text", "*AC9* text"):
+            with self.subTest(criterion=raw):
+                self.assertEqual(refine._strip_ac_label(raw), "text")
 
     def test_every_filer_form_strips_and_a_non_label_bold_is_kept(self) -> None:
         # A bold run that only starts with an id is prose, not a label, and keeps its text;

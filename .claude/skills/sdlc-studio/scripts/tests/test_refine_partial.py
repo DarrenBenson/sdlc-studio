@@ -180,6 +180,26 @@ class RefinePartialTests(unittest.TestCase):
         self.assertEqual(headings, ["### AC1: the first criterion holds",
                                     "### AC2: the third criterion holds"])
 
+    def test_refining_into_an_existing_epic_seeds_only_the_criteria_it_refines(self) -> None:
+        # The `--into` path: another request's refine mints the shared epic first.
+        other = self.cr.with_name("CR0002-y.md")
+        other.write_text(self._cr_text().replace("CR-0001", "CR-0002"), encoding="utf-8")
+        code, out, err = _run(refine.main, "apply", "--request", "CR0002", "--epic-title",
+                              "Shared", "--story", "Theirs|2", "--skip-personas",
+                              "--root", str(self.root))
+        self.assertEqual(code, 0, err)
+        epic = re.search(r"-> (EP\d+)", out).group(1)
+        code, out, err = _run(refine.main, "apply", "--request", "CR0001", "--into", epic,
+                              "--story", "Ours|3", "--unrefined", "AC3,AC4", "--skip-personas",
+                              "--root", str(self.root))
+        self.assertEqual(code, 0, err)
+        story_id = re.search(r"story\(ies\): (US\d+)", out).group(1)
+        story = sdlc_md.find_by_id(self.root, story_id)[0].read_text(encoding="utf-8")
+        headings = [ln for ln in story.splitlines() if ln.startswith("### AC")]
+        self.assertEqual(headings, ["### AC1: the first criterion holds",
+                                    "### AC2: the second criterion holds"])
+        self.assertEqual(sdlc_md.extract_field(self._cr_text(), "Unrefined"), "AC3, AC4")
+
     def test_a_multi_story_epic_carries_only_the_criteria_it_refines(self) -> None:
         self.assertEqual(self._refine("--unrefined", "AC1")[0], 0)
         epic = sdlc_md.artifact_files("epic", self.root)[0].read_text(encoding="utf-8")
