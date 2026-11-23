@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** sdlc-studio/rfcs/, sdlc-studio/decisions.md, changelog.d/BG1678.md
+> **Affects:** sdlc-studio/rfcs/, changelog.d/BG1678.md
 > **Evidence:** Run twenty-one lane T builder (BG1569), reconcile on the work-in-progress patch at 611367cf; split from BG1569 when 8 points tripped the oversized ceiling (US0854 AC1) at the push gate.
 > **Created:** 2026-11-21
 > **Created-by:** sdlc-studio file
@@ -35,3 +35,4 @@ Record a ruling (a decisions row) on what an Accepted RFC with no change request
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Run twenty-four goal review: AC2's grep passed on any mention of the id. It now needs a decisions row naming BG1678 that states the Accepted RFC state and what reconcile reports. AC1 passes at HEAD until BG1569's status lands, so the two land in one commit |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | D0611 records the ruling AC2 asks for (an Accepted RFC with no request or epic is decision-only, stays Accepted with 'none - <reason>', and never derives Delivered); decisions.md leaves Affects, since the row is on main |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, conftest.py, tools/tests/test_conftest_env.py, changelog.d/BG1731.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py, conftest.py, tools/tests/test_conftest_env.py, changelog.d/BG1731.md
 > **Evidence:** GitHub Actions scheduled run 45196238545 (corpus-verify, 65dc7d62): red-criteria 2, NEW US1112::AC4; passes locally on Python 3.14 at 94b4b86e
 > **Created:** 2026-11-23
 > **Created-by:** sdlc-studio file
@@ -55,3 +55,4 @@ test that runs the lane with the variable set to a scratch file.
 | 2026-11-23 | sdlc-studio | Filed |
 | 2026-11-23 | Sam Eriksson (qa) | Groomed for run twenty-four: root cause found from the CI log and the code, and reproduced locally on 3.14.8: CI sets `SDLC_VERIFY_RED_DETAIL`, the test passes it to the nested lane, and `_record_red` reruns the over-ceiling node for the record (663edcd12, BG1578); Python 3.12 is not the cause. Three executable criteria, a control among them; Affects narrowed to verify_ac.py and the lane test; 3 to 2 points |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | AC4 folds in the same-class leak the qa groom found: every fixture inherits CI's SDLC_VERIFY_RED_DETAIL and writes its own reds into the corpus record; the fix unsets it in conftest.py. Affects + conftest.py, tools/tests/test_conftest_env.py; Points 3 |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + test_corpus_verify_red_detail.py, which AC3's Verify targets (the plan's advisory) |
