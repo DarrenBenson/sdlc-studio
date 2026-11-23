@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/config.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, tools/tests/test_lean_migrate_config.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/config.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, tools/tests/test_config_refusal_pages.py
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -32,3 +32,4 @@ Route config.py's `_yaml` through `sdlc_md.require_pyyaml` so show refuses in on
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-23 | sdlc-studio | Renamed the tools-side page check to tools/tests/test_config_refusal_pages.py in Affects, so unittest discovery over tools/tests no longer clashes with the skill test module of the old name (BG1730) |

@@ -840,6 +840,84 @@ class DuplicateTestClassTests(unittest.TestCase):
                          "one name should both be present in the AST")
 
 
+class SharedModuleNameTests(unittest.TestCase):
+    """No module file name may be held by both suite folders.
+
+    `python3 -m unittest discover -s tools/tests` imports each module by its bare name, so once
+    a `tools/tests` module has put the skill's tests folder on the import path, a name both
+    folders hold loads the skill's module and discovery stops with "module incorrectly
+    imported". pytest runs with `--import-mode=importlib` (pytest.ini) and imports each file by
+    its path, so the pytest suite stays green over the same tree. Each folder alone is clean;
+    only the two listings side by side show the clash, so the census compares them.
+
+    Every `.py` file counts, a helper as well as a `test_*.py` module, because a helper is
+    imported by its bare name too. `__init__.py` does not: it is each folder's package marker.
+    """
+
+    _SUITE_DIRS = ("tools/tests", ".claude/skills/sdlc-studio/scripts/tests")
+    _PACKAGE_MARKER = "__init__.py"
+
+    @classmethod
+    def shared_names(cls, root: Path) -> list[str]:
+        """The `.py` file names both suite folders under `root` hold, sorted."""
+        tools, skill = ({p.name for p in (root / rel).glob("*.py")} for rel in cls._SUITE_DIRS)
+        return sorted((tools & skill) - {cls._PACKAGE_MARKER})
+
+    def _assert_none_shared(self, root: Path) -> None:
+        for rel in self._SUITE_DIRS:              # an empty listing shares nothing, so refuse it
+            self.assertTrue(any((root / rel).glob("*.py")),
+                            f"{rel} holds no module under {root}, so the census has no listing "
+                            f"to compare and would pass on nothing")
+        shared = self.shared_names(root)
+        self.assertEqual(
+            [], shared,
+            f"these module file names are in both {self._SUITE_DIRS[0]} and "
+            f"{self._SUITE_DIRS[1]}, so `unittest discover -s tools/tests` can import the "
+            f"skill's module under the tools name and stop: {shared}; rename the tools-side "
+            f"module")
+
+    def test_no_module_file_name_is_in_both_suite_folders(self) -> None:
+        """MUTANT: give a tools/tests module the file name of a skill test module."""
+        self._assert_none_shared(REPO)
+
+    def test_a_shared_name_fails_naming_it(self) -> None:
+        """The control: a planted shared name, test module and helper alike, fails by name.
+
+        A name in one folder only, a shared non-Python file and the shared package marker are
+        planted beside it and must not be reported, so the census is neither a union of the
+        two listings nor a comparison of every file.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, only in zip(self._SUITE_DIRS, ("test_tools_only.py", "test_skill_only.py")):
+                folder = root / rel
+                folder.mkdir(parents=True)
+                for name in ("__init__.py", "test_shared.py", "helper.py", "data.json", only):
+                    (folder / name).write_text("", encoding="utf-8")
+            self.assertEqual(["helper.py", "test_shared.py"], self.shared_names(root))
+            with self.assertRaises(AssertionError) as caught:
+                self._assert_none_shared(root)
+        # The census's own message names them, not only unittest's list diff beside it.
+        self.assertIn("['helper.py', 'test_shared.py']; rename the tools-side module",
+                      str(caught.exception))
+
+    def test_a_missing_folder_is_refused_not_read_as_clean(self) -> None:
+        """The control for the wrong tree: a census aimed where a suite folder is not.
+
+        A census over a root that lacks one folder finds no shared name for the same reason an
+        empty census does, so it is refused, naming the folder it could not list. Each folder is
+        left out in turn, so a guard that checks only one of them fails here.
+        """
+        for missing, present in ((1, 0), (0, 1)):
+            with self.subTest(missing=self._SUITE_DIRS[missing]), \
+                    tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / self._SUITE_DIRS[present]).mkdir(parents=True)
+                (root / self._SUITE_DIRS[present] / "test_only.py").write_text("", encoding="utf-8")
+                self.assertEqual([], self.shared_names(root))
+                with self.assertRaises(AssertionError) as caught:
+                    self._assert_none_shared(root)
+                self.assertIn(f"{self._SUITE_DIRS[missing]} holds no module", str(caught.exception))
 
 
 class AttributionTests(unittest.TestCase):
