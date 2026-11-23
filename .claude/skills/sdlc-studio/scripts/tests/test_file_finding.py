@@ -1512,6 +1512,21 @@ class DuplicateRefusalTests(unittest.TestCase):
                 self.assertIn("> **Distinct-from:** BG0001", body.splitlines())
                 head = body.split("\n## ", 1)[0]
                 self.assertIn("> **Distinct-from:** BG0001", head)
+        # Two duplicates left unanswered: the refusal's hint names both, and the ruling it hints
+        # files at the first attempt.
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        self._existing(root, "BG0002", self.EXISTING, status="Fixed")
+        rc, out, err = self._bug(root, self.NEW)
+        self.assertEqual(1, rc, out + err)
+        for named in ("BG0001 [Open]", "BG0002 [Fixed]"):
+            self.assertIn(named, err)
+        hint = re.search(r"file it with --distinct-from (\S+) to record", err)
+        self.assertIsNotNone(hint, err)
+        self.assertEqual(["BG0001", "BG0002"], sorted(hint.group(1).split(",")))
+        rc, out, err = self._bug(root, self.NEW, "--distinct-from", hint.group(1))
+        self.assertEqual(0, rc, err)
+        self.assertRegex(out.splitlines()[0], r"^filed BG0003 -> ")
         # A ruling on two artefacts is one comma-separated list, each id as its file names it.
         root = self._root()
         self._existing(root, "BG0001", self.EXISTING)
@@ -1552,6 +1567,11 @@ class DuplicateRefusalTests(unittest.TestCase):
                 self.assertEqual(1, rc, out + err)
                 self.assertTrue(err.startswith("file refused:"), err)
                 self.assertIn("--distinct-from BG0999 names no artefact", err)
+                self.assertEqual(before, self._snapshot(root))
+                # The library filer resolves a ruling too, refusing the same id before an id
+                # is minted, so no caller records a ruling against an artefact that is not there.
+                with self.assertRaisesRegex(ValueError, "--distinct-from BG0999 names no artefact"):
+                    ff.file_finding(root, "bug", self.NEW, {**BUG, "distinct_from": missing})
                 self.assertEqual(before, self._snapshot(root))
 
     def test_the_refusal_reads_declared_paths_and_the_lens_bar_at_or_above(self) -> None:
@@ -1660,6 +1680,15 @@ class DuplicateRefusalTests(unittest.TestCase):
         self.assertTrue(Path(res["path"]).is_file())
         self.assertEqual(["BG0001"], [c["id"] for c in res["duplicate_warnings"]])
         self.assertEqual(["src/thing.py"], res["duplicate_warnings"][0]["shared"])
+        self.assertNotIn("Distinct-from", Path(res["path"]).read_text(encoding="utf-8"))
+        # A ruling passed to the library is resolved there as the CLI resolves it: the finding
+        # files, and the line records the id as its file names it, not as it was passed.
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        res = ff.file_finding(root, "bug", self.NEW, {**BUG, "distinct_from": "bg-0001"})
+        self.assertEqual("BG0002", res["id"])
+        head = Path(res["path"]).read_text(encoding="utf-8").split("\n## ", 1)[0]
+        self.assertIn("> **Distinct-from:** BG0001", head.splitlines())
 
 class FiledCriteriaTests(unittest.TestCase):
     """US0516/CR0458: a filed bug carried Steps to Reproduce and a Proposed Fix and NO acceptance

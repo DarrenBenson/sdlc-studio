@@ -90,8 +90,8 @@ def _tokens(*parts: str) -> set[str]:
     words = re.findall(r"[a-z0-9_]+", _blank_ids(" ".join(parts)).lower())
     # Drop an artefact's OWN id token (it leaks in from the `US0001:` or `BG-01JQK3F8:` H1
     # prefix): two duplicates carry different ids, and counting them would drive similar wording
-    # apart. `_ID_TOKEN_RE` still drops the lower-case and three-digit spellings the id pattern
-    # does not read.
+    # apart. `_ID_TOKEN_RE` still drops the three-digit spelling, in either case (`US123`,
+    # `us123`), which the id pattern does not read, since its v2 form needs four digits.
     return {w for w in words
             if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w)}
 

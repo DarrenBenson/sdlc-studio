@@ -559,9 +559,14 @@ class V3IdTokenTests(TriageBase):
         for text in ("BG-01JQK3F8: regression of US-01JQK3G2 fixed",
                      "CR-0001: regression of RFC-0002 fixed",
                      "BG0001: regression of US0002 fixed",
-                     "bg0001: regression of us123 fixed"):
+                     "bg0001: regression of us123 fixed",
+                     "US123: regression of BG012 fixed"):
             with self.subTest(text=text):
                 self.assertEqual({"regression", "fixed"}, backlog_triage._tokens(text))
+        # An id is replaced by a space, never by nothing, so the words either side of an id
+        # glued to them by underscores stay two words.
+        self.assertEqual("snake_ _case", backlog_triage._blank_ids("snake_BG-01JQK3F8_case"))
+        self.assertEqual({"snake_", "_case"}, backlog_triage._tokens("snake_BG0001_case"))
         # An id opening a file stem is blanked, and the slug after it kept.
         self.assertEqual({"pinned", "total", "slug"},
                          backlog_triage._tokens("pinned in BG-01JQK3F8-total-slug.md"))

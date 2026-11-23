@@ -174,7 +174,9 @@ class EscapeTraceTests(unittest.TestCase):
         """The tag is v6.4.0 and CHANGELOG.md calls the release [6.4.0]. Filing by the changelog's
         spelling stores the tag's, so the trace reads the release instead of refusing it as no
         tag; and a record that already holds the changelog spelling is read through the same
-        resolver rather than refused."""
+        resolver rather than refused. Either stored spelling keeps the bound of the tag before
+        it: v6.3.0 shipped US0002 over the same file, and neither the trace nor `--confirm`
+        reads it as a unit of v6.4.0."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             for sub in ("stories", "bugs", "reviews"):
@@ -183,6 +185,8 @@ class EscapeTraceTests(unittest.TestCase):
             (root / "scripts" / "a.py").write_text("x = 1\n", encoding="utf-8")
             gitutil.git(["init", "-q"], root)
             _commit(root, "chore: start")
+            _story(root, "US0002", "scripts/a.py")
+            _commit(root, "feat(US0002): an earlier total")
             gitutil.git(["tag", "v6.3.0"], root)
             _story(root, "US0001", "scripts/a.py")
             _commit(root, "feat(US0001): total the basket")
@@ -203,19 +207,35 @@ class EscapeTraceTests(unittest.TestCase):
             path = Path(filed["path"])
             lines = path.read_text(encoding="utf-8").splitlines()
             self.assertIn("> **Shipped-in:** v6.4.0", lines)
-            rc, out, err = _cli(["trace", "--bug", filed["id"], "--root", str(root),
-                                 "--format", "json"])
-            self.assertEqual(0, rc, err)
-            got = json.loads(out)
-            self.assertEqual(["US0001"], got["units"])
-            self.assertEqual(["US0001"], [p["unit"] for p in got["proposals"]])
-            # A record written before filing resolved the spelling is traced too.
-            path.write_text(path.read_text(encoding="utf-8").replace(
-                "> **Shipped-in:** v6.4.0", "> **Shipped-in:** 6.4.0"), encoding="utf-8")
-            rc, out, err = _cli(["trace", "--bug", filed["id"], "--root", str(root),
-                                 "--format", "json"])
-            self.assertEqual(0, rc, err)
-            self.assertEqual(["US0001"], json.loads(out)["units"])
+            # The filed spelling, then a record written before filing resolved the spelling: each
+            # is traced to v6.4.0's own unit, US0001, and never to US0002, which v6.3.0 shipped.
+            for stored in ("v6.4.0", "6.4.0"):
+                with self.subTest(stored=stored):
+                    kept = [ln for ln in path.read_text(encoding="utf-8").splitlines()
+                            if not ln.startswith(("> **Escaped-via:**",
+                                                  "> **Escaped-verdict:**"))]
+                    path.write_text("\n".join(
+                        f"> **Shipped-in:** {stored}" if ln.startswith("> **Shipped-in:**")
+                        else ln for ln in kept) + "\n", encoding="utf-8")
+                    rc, out, err = _cli(["trace", "--bug", filed["id"], "--root", str(root),
+                                         "--format", "json"])
+                    self.assertEqual(0, rc, err)
+                    got = json.loads(out)
+                    self.assertEqual(stored, got["release"])
+                    self.assertEqual(["US0001"], got["units"])
+                    self.assertEqual(["US0001"], [p["unit"] for p in got["proposals"]])
+                    before = path.read_bytes()
+                    rc, _out, err = _cli(["trace", "--bug", filed["id"], "--confirm", "US0002",
+                                          "--root", str(root)])
+                    self.assertEqual(2, rc, err)
+                    self.assertIn(f"US0002 is not a unit release {stored} shipped", err)
+                    self.assertEqual(before, path.read_bytes(), "a refused confirm wrote")
+                    rc, _out, err = _cli(["trace", "--bug", filed["id"], "--confirm", "US0001",
+                                          "--root", str(root)])
+                    self.assertEqual(0, rc, err)
+                    lines = path.read_text(encoding="utf-8").splitlines()
+                    self.assertIn("> **Escaped-via:** US0001", lines)
+                    self.assertIn(f"> **Shipped-in:** {stored}", lines)
             # The resolver itself: either spelling finds the tag, and nothing else does.
             self.assertEqual("v6.4.0", escape.release_tag(root, "6.4.0"))
             self.assertEqual("v6.4.0", escape.release_tag(root, "v6.4.0"))
