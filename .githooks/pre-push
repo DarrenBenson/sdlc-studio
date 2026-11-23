@@ -252,6 +252,26 @@ PY
   esac
 }
 judge_ci push acknowledged "Lint"
+# The read above asks for the latest COMPLETED run, so a push-triggered run still in progress over
+# main's newest commit is passed over, and a red there would be read only pushes later. So the
+# newest push-triggered run is read as well, whatever its status, and when it has not completed it
+# is named with the commit it judges. It never refuses: an unfinished run is not a red. An answer
+# that cannot be read makes the reader raise, its error into /dev/null, and one that names no run
+# id or no status adds nothing; the read above already reported whether the forge could be read.
+note_unfinished() {
+  local json
+  json="$(gh run list --workflow Lint --branch main --event push --limit 1 --json databaseId,status,headSha 2>/dev/null)"
+  python3 - "$json" 1>&2 2>/dev/null <<'PY'
+import json, sys
+run = json.loads(sys.argv[1])[0]
+run_id, status, sha = (str(run.get(k) or "") for k in ("databaseId", "status", "headSha"))
+if run_id and status and status != "completed":
+    print(f"pre-push: push-triggered Lint run {run_id} on main is {status.replace('_', ' ')} over "
+          f"commit {sha or '(not named by the forge)'}; its result is not yet read, so this push "
+          f"is not judged against it")
+PY
+}
+note_unfinished
 judge_ci schedule acknowledged_scheduled "scheduled Lint"
 
 # --- announce the cost, then pay it -------------------------------------------------------

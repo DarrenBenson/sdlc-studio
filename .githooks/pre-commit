@@ -225,9 +225,9 @@ run "style" \
   -- bash tools/lint-style.sh
 
 run "links" \
-  "every markdown anchor link (#heading) resolves to a real heading" \
-  "correct the #anchor, or add/rename the target heading it points at" \
-  -- python3 tools/check_links.py
+  "the links check_links.py reads resolve in the tree this commit records (the index), not the working tree" \
+  "correct the link or its #anchor, add or rename the heading it names, or stage the untracked file it names" \
+  -- python3 tools/check_links.py --staged
 
 run "skill-spec" \
   "SKILL.md frontmatter conforms to the Agent Skills spec subset" \

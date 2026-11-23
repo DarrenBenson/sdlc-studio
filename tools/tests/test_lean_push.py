@@ -309,12 +309,15 @@ class PushBoundaryTests(unittest.TestCase):
             # a stale red, then the true green: the push proceeds and nothing is acknowledged
             r = fx.push(gh_mode="stale-green", ack="30118629592")
             self.assertEqual(0, r.returncode, "a stale red refused the push:\n" + r.stderr)
-            # two push-triggered reads, then the scheduled run's one (BG1518), which answers green
-            self.assertEqual(3, len(fx.gh_calls()), f"the red answer was not re-read once: {fx.gh_calls()}")
+            # two completed push-triggered reads, the newest push-triggered run's one whatever its
+            # status (BG1272), then the scheduled run's one (BG1518), which answers green
+            self.assertEqual(4, len(fx.gh_calls()), f"the red answer was not re-read once: {fx.gh_calls()}")
             for call in fx.gh_calls()[:2]:
                 for flag in ("--workflow Lint", "--branch main", "--event push", "--status completed"):
                     self.assertIn(flag, call, "the re-read is not the same query")
-            self.assertIn("--event schedule", fx.gh_calls()[2], fx.gh_calls())
+            self.assertIn("--event push --limit 1", fx.gh_calls()[2], fx.gh_calls())
+            self.assertNotIn("--status", fx.gh_calls()[2], fx.gh_calls())
+            self.assertIn("--event schedule", fx.gh_calls()[3], fx.gh_calls())
             self.assertEqual(["--boundary push"], fx.gate_calls(), "the gate did not run after the re-read")
             self.assertFalse(fx.ack_file().exists(), "a stale red id was banked as acknowledged")
             self.assertEqual(1, fx.remote_count())
@@ -338,9 +341,10 @@ class PushBoundaryTests(unittest.TestCase):
             log.unlink()
             green = fx.push(gh_mode="green")
             self.assertEqual(0, green.returncode, green.stderr)
-            pushes = [c for c in fx.gh_calls() if "--event push" in c]
+            pushes = [c for c in fx.gh_calls() if "--event push --status completed" in c]
             self.assertEqual(1, len(pushes), f"a green answer was read twice: {fx.gh_calls()}")
-            self.assertEqual(2, len(fx.gh_calls()), f"the push read and the scheduled read, once each: {fx.gh_calls()}")
+            self.assertEqual(3, len(fx.gh_calls()), "the completed push read, the newest push run's "
+                             f"read and the scheduled read, once each: {fx.gh_calls()}")
         finally:
             fx.cleanup()
 

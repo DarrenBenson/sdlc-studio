@@ -19,6 +19,14 @@ directory). Four passes:
    cross-reference inside an artefact - a test spec's Stories Covered table, a
    Traceability row, a bug's Affects link - must name a real file too.
 
+`--staged` runs every pass over the tree the commit will record: the index, written
+out to a temporary directory, rather than the working tree. A link or loading-guide
+cell naming a file only the working tree holds is reported as untracked (a
+CHANGELOG.md the commit lacks is still reported missing by the anchor check), and a
+tracked file deleted only in the working tree still resolves, because the commit
+carries it. The pre-commit hook
+passes it; CI checks out the commit, so there the working tree is the commit.
+
 Why pass 4 is scoped to the workspace and NOT to the skill tree: the skill tree
 is PAYLOAD. Its templates and best-practice guides deliberately ship links that
 resolve in a CONSUMING project rather than here (`../epics/EP{{epic_id}}-...md`,
@@ -30,7 +38,7 @@ reader actually clicks on GitHub, so every one of them must resolve.
 Usage:
     python3 tools/check_links.py [--root DIR] [--repo-root DIR]
                                  [--workspace DIR] [--allow TARGET ...]
-                                 [--allow-body "SRC -> TARGET" ...]
+                                 [--allow-body "SRC -> TARGET" ...] [--staged]
 
 Exits non-zero when any real broken reference is found.
 """
@@ -39,7 +47,10 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import subprocess
 import sys
+import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 DEFAULT_ROOT = ".claude/skills/sdlc-studio"
@@ -100,6 +111,34 @@ ROOT_DOCS = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md",
              "SECURITY.md", "SUPPORT.md", "INSTALL.md", "CHANGELOG.md")
 
 
+FILE_MISSING = "[file missing]"
+UNTRACKED = "[untracked: the commit does not carry it - stage it, or drop the link]"
+
+#: How a pass tags a target the checked tree lacks, given the paths the link might mean.
+Tagger = Callable[..., str]
+
+
+def _file_missing(*_targets: Path) -> str:
+    """The tag for a target the checked tree lacks, when that tree is the working tree."""
+    return FILE_MISSING
+
+
+def untracked_tagger(export: Path, worktree: Path) -> Tagger:
+    """The tag for a target the exported index lacks: untracked when the working tree holds
+    the same path, so the reader is told to stage it, and missing otherwise. A target that
+    climbs out of the export is outside the repository, so it is missing."""
+    def tag(*targets: Path) -> str:
+        for target in targets:
+            try:
+                rel = Path(os.path.normpath(target)).relative_to(export)
+            except ValueError:
+                continue
+            if (worktree / rel).exists():
+                return UNTRACKED
+        return FILE_MISSING
+    return tag
+
+
 def slug(text: str) -> str:
     """GitHub-style heading slug (after stripping any explicit {#id})."""
     text = _ID_RE.sub("", text).strip().lower()
@@ -141,7 +180,7 @@ def _candidates(src: str, tgt: str) -> list[str]:
     return out
 
 
-def check(root: Path, allow: set[str]) -> list[str]:
+def check(root: Path, allow: set[str], *, tag: Tagger = _file_missing) -> list[str]:
     """Return a list of human-readable broken-reference messages."""
     anchors, files = index_anchors(root)
     broken: list[str] = []
@@ -161,13 +200,14 @@ def check(root: Path, allow: set[str]) -> list[str]:
                     continue  # resolves outside the skill root; out of scope
                 existing = [c for c in cands if c in files]
                 if not existing:
-                    broken.append(f"{src}:{i} -> {tgt}#{anc} [file missing]")
+                    broken.append(f"{src}:{i} -> {tgt}#{anc} "
+                                  f"{tag(*(root / c for c in cands))}")
                 elif not any(anc in anchors[c] for c in existing):
                     broken.append(f"{src}:{i} -> {tgt}#{anc} [anchor missing]")
     return sorted(broken)
 
 
-def check_index_links(workspace: Path) -> list[str]:
+def check_index_links(workspace: Path, *, tag: Tagger = _file_missing) -> list[str]:
     """File-existence for the workspace indexes' row links (`sdlc-studio/**/_index.md`
     plus the `archive/` sub-indexes).
 
@@ -198,7 +238,7 @@ def check_index_links(workspace: Path) -> list[str]:
                 if (path.parent / tgt).exists():
                     continue
                 rel = path.relative_to(workspace.parent).as_posix()
-                broken.append(f"{rel}:{i} -> {tgt} [file missing]")
+                broken.append(f"{rel}:{i} -> {tgt} {tag(path.parent / tgt)}")
     return sorted(broken)
 
 
@@ -207,7 +247,8 @@ def check_index_links(workspace: Path) -> list[str]:
 _without_code = link_refs.without_code
 
 
-def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
+def check_body_links(workspace: Path, allow: set[str], *,
+                     tag: Tagger = _file_missing) -> list[str]:
     """File-existence for the relative `.md` links inside workspace artefact BODIES.
 
     The gap this closes: pass 3 reads index ROWS. An artefact's own cross-references - the
@@ -238,7 +279,7 @@ def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
                 if (path.parent / tgt).exists():
                     continue
                 rel = path.relative_to(workspace.parent).as_posix()
-                broken.append(f"{rel}:{i} -> {tgt} [file missing]")
+                broken.append(f"{rel}:{i} -> {tgt} {tag(path.parent / tgt)}")
     return sorted(broken)
 
 
@@ -247,7 +288,7 @@ inbound_references = link_refs.inbound_references
 rewrite_inbound_links = link_refs.rewrite_inbound_links
 
 
-def check_root_docs(repo_root: Path) -> list[str]:
+def check_root_docs(repo_root: Path, *, tag: Tagger = _file_missing) -> list[str]:
     """File-existence for the repo-root docs' markdown links (README, AGENTS, CLAUDE, ...).
     These sit outside the skill tree, so the skill scan never saw them; a link is checked
     against the linking file's own directory (root-relative), anchors ignored (root docs
@@ -267,7 +308,7 @@ def check_root_docs(repo_root: Path) -> list[str]:
         for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
             for tgt in _LINK_RE.findall(line):
                 if not (path.parent / tgt).exists():
-                    broken.append(f"{name}:{i} -> {tgt} [file missing]")
+                    broken.append(f"{name}:{i} -> {tgt} {tag(path.parent / tgt)}")
     return sorted(broken)
 
 
@@ -410,7 +451,7 @@ def loading_guide_cells(skill_root: Path) -> list[dict]:
     return out
 
 
-def check_loading_guide(skill_root: Path) -> list[str]:
+def check_loading_guide(skill_root: Path, *, tag: Tagger = _file_missing) -> list[str]:
     """Every guide cell naming a path that is not on disk.
 
     NOT APPLICABLE when the root has no `SKILL.md` or no guide section - a consuming project need
@@ -431,9 +472,61 @@ def check_loading_guide(skill_root: Path) -> list[str]:
         if not c["path"]:
             continue
         if not (skill / c["path"]).exists():
+            if tag(skill / c["path"]) == UNTRACKED:
+                errors.append(f"SKILL.md loading guide: {c['cell']} names {c['path']!r}, which "
+                              f"is untracked: the commit does not carry it - stage it, or "
+                              f"correct the cell")
+                continue
             errors.append(f"SKILL.md loading guide: {c['cell']} names {c['path']!r}, which is not "
                           f"on disk - a reader told to load it gets nothing")
     return errors
+
+
+def _run_passes(root: Path, repo_root: Path, workspace: Path, allow: set[str],
+                body_allow: set[str], tag: Tagger = _file_missing) -> list[str]:
+    """Every pass over one tree, a missing target named by `tag`."""
+    return (check(root, allow, tag=tag) + check_loading_guide(root, tag=tag)
+            + check_root_docs(repo_root, tag=tag) + check_changelog_anchors(repo_root)
+            + check_index_links(workspace, tag=tag)
+            + check_body_links(workspace, body_allow, tag=tag))
+
+
+class StagedError(Exception):
+    """The index cannot be read, or a path to check lies outside the repository."""
+
+
+def check_staged(root: Path, repo_root: Path, workspace: Path, allow: set[str],
+                 body_allow: set[str]) -> list[str]:
+    """Every pass over the tree the commit will record rather than the working tree.
+
+    The index is written out to a temporary directory (`git checkout-index`, which reads the
+    index git names in GIT_INDEX_FILE, so a hook judging `git commit -a` or a pathspec commit
+    reads that commit's own index) and each path is checked at its place there. A target the
+    index lacks but the working tree holds is tagged untracked. Raises StagedError when the
+    current directory is not in a repository, a path lies outside it, or the export fails."""
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                         text=True)
+    if top.returncode != 0:
+        raise StagedError("--staged reads the index of a git repository, and the current "
+                          "directory is not in one")
+    worktree = Path(top.stdout.strip()).resolve()
+    with tempfile.TemporaryDirectory(prefix="check-links-staged-") as d:
+        export = Path(d).resolve()
+        mapped: list[Path] = []
+        for path in (root, repo_root, workspace):
+            try:
+                mapped.append(export / path.resolve().relative_to(worktree))
+            except ValueError:
+                raise StagedError(f"--staged checks the tree the commit records; "
+                                  f"{path.resolve()} is outside the repository at "
+                                  f"{worktree}") from None
+        out = subprocess.run(["git", "checkout-index", "--all", f"--prefix={export}/"],
+                             capture_output=True, text=True)
+        if out.returncode != 0:
+            raise StagedError("the index could not be written out to check: "
+                              + (out.stderr.strip() or f"git exited {out.returncode}"))
+        return _run_passes(mapped[0], mapped[1], mapped[2], allow, body_allow,
+                           untracked_tagger(export, worktree))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -453,6 +546,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--allow-body", dest="allow_body", action="append", default=[],
                    help="Allowlist a deliberately unresolvable body link, given as "
                         "\"<path-in-workspace> -> <target>\" (repeatable)")
+    p.add_argument("--staged", action="store_true",
+                   help="Check the tree the commit will record (the index), not the working "
+                        "tree, naming a link to a file only the working tree holds as untracked "
+                        "(the pre-commit hook passes it)")
     args = p.parse_args(argv)
 
     root = Path(args.root)
@@ -470,9 +567,14 @@ def main(argv: list[str] | None = None) -> int:
     workspace = Path(args.workspace) if args.workspace else repo_root / "sdlc-studio"
     allow = set(DEFAULT_ALLOW) | set(args.allow)
     body_allow = set(DEFAULT_BODY_ALLOW) | set(args.allow_body)
-    broken = (check(root, allow) + check_loading_guide(root) + check_root_docs(repo_root)
-              + check_changelog_anchors(repo_root)
-              + check_index_links(workspace) + check_body_links(workspace, body_allow))
+    if args.staged:
+        try:
+            broken = check_staged(root, repo_root, workspace, allow, body_allow)
+        except StagedError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+    else:
+        broken = _run_passes(root, repo_root, workspace, allow, body_allow)
     if broken:
         print(f"Broken markdown links ({len(broken)}):")
         for b in broken:

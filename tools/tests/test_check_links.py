@@ -752,7 +752,7 @@ class LoadingGuideTests(unittest.TestCase):
     def test_the_check_is_wired_into_the_command(self) -> None:
         """A helper `main` never calls is not a lane."""
         src = TOOLS.read_text(encoding="utf-8")
-        self.assertIn("check_loading_guide(root)", src,
+        self.assertIn("check_loading_guide(root, tag=tag)", src,
                       "the guide check is not called from main(), so the binary the gate runs "
                       "does not perform it")
 
