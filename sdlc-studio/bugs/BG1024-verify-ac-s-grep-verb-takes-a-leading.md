@@ -29,6 +29,7 @@ Read a known set of leading grep flags (-E, -F, -i, -w, -q, and -e PATTERN) befo
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_grep_flags.py::GrepFlagTests::test_e_pattern_is_the_pattern
 - [ ] **AC3** Given a Verify line `grep -Ran <file>` whose leading token is not a known flag, when verify_ac builds the command, then it still searches for `-Ran` literally
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_grep_flags.py::GrepFlagTests::test_an_unknown_dash_token_stays_the_pattern
+- [ ] **AC4** Given a Verify line `grep -q A f && grep -q B g` where A matches `f` and B does not match `g`, when `verify_ac.py run` checks it, then the criterion fails, or the line is refused for carrying a shell operator the grep verb cannot run. Fails on: a pass, because the verb hands `&&`, `grep` and the rest to `rg` as paths and `rg -q` exits 0 on the first match despite the missing paths (found in run twenty-three on BG1551 AC4).
 
 ## Impact
 
@@ -45,3 +46,4 @@ The most natural grep Verify lines can never pass, so a criterion that is met re
 | --- | --- | --- |
 | 2026-10-11 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: reproduced; the heading defect split out as BG1026; criteria on a new test module (BG0980); changelog fragment named for the unit |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4 added: the grep verb passes a `&&` chain on its first match alone; folded here rather than filed, as the same verb's argument handling |

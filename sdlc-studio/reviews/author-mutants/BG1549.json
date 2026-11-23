@@ -1,257 +1,599 @@
 {
   "unit": "BG1549",
-  "digest": "12fde1afd032abf6 at 412120be2d60",
-  "report": "sdlc-studio/.local/lane/landed/agent-a10a687703f99f617/BG1549-mutation-edits.json",
+  "digest": "dacaecbba1829fc5 at 8f9a322a6982",
+  "report": "sdlc-studio/.local/lane/landed/agent-a68cc089d48337cdf/BG1549-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "page: the old sentence restored",
-      "file": "docs/why-sdlc-studio.md",
-      "old": "Done only when its executable criteria have passed; a bug is refused Fixed when nothing speaks\nfor the fix - no criterion ticked and none carrying a `Verify:` line - or when a recorded run of\nits criteria is red)",
-      "new": "Done, and a bug Fixed, only when its criteria pass)",
+      "mutant": "fix reverted: the condition shape takes only only-when and only-if",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "only (?:when|if|once|after)|until|unless)",
+      "new": "only (?:when|if))",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page: the red-run refusal dropped",
-      "file": "docs/why-sdlc-studio.md",
-      "old": " - or when a recorded run of\nits criteria is red)",
-      "new": ")",
+      "mutant": "condition: only once dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "only (?:when|if|once|after)",
+      "new": "only (?:when|if|after)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "BG1039: AC1 Verify back to the file that never existed",
-      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
-      "old": "pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_ci_suite_step_installs_from_requirements_dev",
-      "new": "pytest tools/tests/test_prereq_list_is_ci_list_strict.py::StrictOneListTests::test_the_suite_step_installs_with_r",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "BG1039: AC2 recorded run dropped",
-      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
-      "old": "test_the_readers_and_rules_refuse_what_they_must\n  - **Verified:** yes (2026-11-23)",
-      "new": "test_the_readers_and_rules_refuse_what_they_must",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "BG1039: reopened with no Revision History row",
-      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
-      "old": "> **Status:** Fixed",
-      "new": "> **Status:** Open",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "over-claim: story exclusion dropped",
+      "mutant": "condition: only after dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "(?:(?!\\bstor(?:y|ies)\\b)[^.;])*?",
-      "new": "[^.;]*?",
+      "old": "only (?:when|if|once|after)",
+      "new": "only (?:when|if|once)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "over-claim: first gap crosses a semicolon",
+      "mutant": "condition: until dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "(?!\\bstor(?:y|ies)\\b)[^.;])*?",
-      "new": "(?!\\bstor(?:y|ies)\\b)[^.])*?",
+      "old": "|until|unless)",
+      "new": "|unless)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "over-claim: only if not read",
+      "mutant": "condition: unless dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "only (?:when|if)",
-      "new": "only when",
+      "old": "|until|unless)",
+      "new": "|until)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "over-claim: passed not read as pass",
+      "mutant": "condition: only no longer required",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "[^.;]*?\\bpass\")",
-      "new": "[^.;]*?\\bpass\\b\")",
+      "old": "\\b(?:only (?:when|if|once|after)",
+      "new": "\\b(?:(?:when|if|once|after)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "gate claims counted in any paragraph",
+      "mutant": "story guard: story dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "gate = [p for p in paragraphs if re.search(r\"\\bFixed\\b\", p)]",
-      "new": "gate = paragraphs",
+      "old": "(?!\\bstor(?:y|ies)\\b)",
+      "new": "(?!\\bstories\\b)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page read as one paragraph",
+      "mutant": "story guard: stories dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "for p in re.split(r\"\\n\\s*\\n\", text)]",
-      "new": "for p in [text]]",
+      "old": "(?!\\bstor(?:y|ies)\\b)",
+      "new": "(?!\\bstory\\b)",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "paragraphs not normalised",
+      "mutant": "checks: criterion dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "paragraphs = [_norm(p) for p",
-      "new": "paragraphs = [p for p",
+      "old": "criteri(?:a|on)",
+      "new": "criteria",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "Verified not a fix-claiming status",
+      "mutant": "checks: Verify lines dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "{\"Fixed\", \"Verified\", \"Closed\"}",
-      "new": "{\"Fixed\", \"Closed\"}",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "old": "|Verify\\b[:`]*\\s+lines?|",
+      "new": "|",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "Closed not a fix-claiming status",
+      "mutant": "checks: colon and backtick after Verify not skipped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "{\"Fixed\", \"Verified\", \"Closed\"}",
-      "new": "{\"Fixed\", \"Verified\"}",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "old": "Verify\\b[:`]*\\s+",
+      "new": "Verify\\b\\s+",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "reopen row read case-sensitively",
+      "mutant": "checks: a single Verify line dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "(?im)^\\|.*\\breopen",
-      "new": "(?m)^\\|.*\\breopen",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "old": "\\s+lines?|tests?)",
+      "new": "\\s+lines|tests?)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "reopen row not accepted",
+      "mutant": "checks: tests dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "            return []\n        return [f\"stands at",
-      "new": "            pass\n        return [f\"stands at",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "old": "|tests?)\\b\"",
+      "new": ")\\b\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no-criteria guard removed",
+      "mutant": "checks: a single test dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "    if not blocks:\n        return [\"claims its fix with no acceptance criteria\"]\n",
+      "old": "|tests?)\\b\"",
+      "new": "|tests)\\b\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pass: green dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "pass\\w*|green",
+      "new": "pass\\w*",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pass: passes and passed dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "pass\\w*|green",
+      "new": "pass|green",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "must: must dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:must|ha(?:s|ve) to|needs? to)",
+      "new": "(?:ha(?:s|ve) to|needs? to)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "must: has to dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "ha(?:s|ve) to",
+      "new": "have to",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "must: have to dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "ha(?:s|ve) to",
+      "new": "has to",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "must: need to dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "needs? to",
+      "new": "needs to",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "must: needs to dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "needs? to",
+      "new": "need to",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "condition shape: story guard dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "rf\"\\bFixed\\b{_NOT_STORY}\\b(?:only",
+      "new": "rf\"\\bFixed\\b.*?\\b(?:only",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "after shape: story guard dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "rf\"\\bFixed\\b{_NOT_STORY}{_CHECKS}.*?{_MUST}",
+      "new": "rf\"\\bFixed\\b.*?{_CHECKS}.*?{_MUST}",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "after shape: requirement dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "rf\"\\bFixed\\b{_NOT_STORY}{_CHECKS}.*?{_MUST}.*?{_PASS}\"",
+      "new": "rf\"\\bFixed\\b{_NOT_STORY}{_CHECKS}.*?{_PASS}\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "before shape: requirement dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "rf\"{_CHECKS}.*?{_MUST}.*?{_PASS}[^,]*?\\bFixed\\b\"",
+      "new": "rf\"{_CHECKS}.*?{_PASS}[^,]*?\\bFixed\\b\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "before shape: comma bound dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{_PASS}[^,]*?\\bFixed\\b\"",
+      "new": "{_PASS}.*?\\bFixed\\b\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: not-negation dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?<!not )",
       "new": "",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "text before the first criterion read as a block",
+      "mutant": "refusal: never-negation dropped",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "m.group(1) if m else \"\")[1:]",
-      "new": "m.group(1) if m else \"\")",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a ticked criterion not read",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "^- \\[[ xX]\\] ",
-      "new": "^- \\[[ ]\\] ",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "criterion id keeps its bold markers",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "block.split()[0].strip(\"*\")",
-      "new": "block.split()[0]",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no-Verify guard removed",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "        if not selectors:\n            problems.append(f\"{ac} carries no pytest Verify line\")\n",
+      "old": "(?<!never )",
       "new": "",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: n't-negation dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?<!n't )",
+      "new": "",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: will refuse dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "refus\\w*|cannot",
+      "new": "refus(?:ed|es)|cannot",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: cannot dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "|cannot|can't)",
+      "new": "|can't)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: can't dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "|cannot|can't)",
+      "new": "|cannot)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: never dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:never|not(?: yet)?)",
+      "new": "(?:not(?: yet)?)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: not dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:never|not(?: yet)?)",
+      "new": "(?:never)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: not yet dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:never|not(?: yet)?)",
+      "new": "(?:never|not)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: been dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?: been)? (?:run|ran)",
+      "new": " (?:run|ran)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: ran dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:run|ran)|unrun)",
+      "new": "run|unrun)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never run: unrun dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:run|ran)|unrun)",
+      "new": "(?:run|ran))",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal shape: comma bound before Fixed dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{_REFUSES}[^,]*?\\bFixed\\b|",
+      "new": "{_REFUSES}.*?\\bFixed\\b|",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal shape: story guard between Fixed and the refusal dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "|\\bFixed\\b{_NOT_STORY}{_REFUSES})",
+      "new": "|\\bFixed\\b.*?{_REFUSES})",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal shape: story guard dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{_REFUSES}){_NOT_STORY}{_NEVER_RUN}",
+      "new": "{_REFUSES}).*?{_NEVER_RUN}",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal shape: refusal after Fixed dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:{_REFUSES}[^,]*?\\bFixed\\b|\\bFixed\\b{_NOT_STORY}{_REFUSES})",
+      "new": "(?:{_REFUSES}[^,]*?\\bFixed\\b)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal shape: Fixed no longer required",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:{_REFUSES}[^,]*?\\bFixed\\b|\\bFixed\\b{_NOT_STORY}{_REFUSES})",
+      "new": "(?:{_REFUSES})",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report: every matching shape reported, not the first",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "            name = next((n for n, shape in _OVER_CLAIMS.items() if shape.search(clause)), None)\n            if name:\n                problems.append(f\"claims {name}: {clause[:70]}\")",
+      "new": "            problems += [f\"claims {n}: {clause[:70]}\" for n, shape in _OVER_CLAIMS.items()\n                         if shape.search(clause)]",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clauses: semicolon no longer splits",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "re.split(r\"[.;]\\s\"",
+      "new": "re.split(r\"[.]\\s\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clauses: full stop no longer splits",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "re.split(r\"[.;]\\s\"",
+      "new": "re.split(r\"[;]\\s\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clauses: a full stop with no space after it splits",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "re.split(r\"[.;]\\s\"",
+      "new": "re.split(r\"[.;]\"",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pass: run dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "|green|run|ran)",
+      "new": "|green|ran)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pass: ran dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "|green|run|ran)",
+      "new": "|green|run)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record: a bare name counts as defined",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "rf\"^\\s*(?:class|def) {re.escape(name)}\\b\"",
+      "new": "rf\"\\b{re.escape(name)}\\b\"",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "missing file check skipped",
+      "mutant": "record: a def in a comment counts as defined",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "if not (repo / path).is_file():",
-      "new": "if False:",
+      "old": "rf\"^\\s*(?:class|def) {re.escape(name)}\\b\"",
+      "new": "rf\"(?:class|def) {re.escape(name)}\\b\"",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "missing file read anyway",
+      "mutant": "record: a class no longer counts",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "which does not exist\")\n                continue\n",
-      "new": "which does not exist\")\n",
+      "old": "rf\"^\\s*(?:class|def) {re.escape(name)}\\b\"",
+      "new": "rf\"^\\s*(?:def) {re.escape(name)}\\b\"",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a class not read as a definition",
+      "mutant": "record: a def no longer counts",
       "file": "tools/tests/test_doc_claims.py",
-      "old": "(?:class|def) {re",
-      "new": "def {re",
+      "old": "rf\"^\\s*(?:class|def) {re.escape(name)}\\b\"",
+      "new": "rf\"^\\s*(?:class) {re.escape(name)}\\b\"",
       "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a name prefix accepted as the definition",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "{re.escape(name)}\\b\", source",
-      "new": "{re.escape(name)}\", source",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "mutant": "page: a never-run refusal added to the account's own list",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "its criteria is red),",
+      "new": "its criteria is red, or when any criterion has never run),",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "any Verified marker taken as a passing run",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "\\*\\*Verified:\\*\\* yes\\b\", block",
-      "new": "\\*\\*Verified:\\*\\*\", block",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "mutant": "page: A bug reaches Fixed only once its criteria pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug reaches Fixed only once its criteria pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "criteria section runs to the end of the file",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "(.*?)(?=^## |\\Z)\", text",
-      "new": "(.*?)\\Z\", text",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "mutant": "page: A bug reaches Fixed only after its criteria pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug reaches Fixed only after its criteria pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a record with no status named blank",
-      "file": "tools/tests/test_doc_claims.py",
-      "old": "{status or 'no status'}",
-      "new": "{status}",
-      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "mutant": "page: No bug reaches Fixed until its criteria pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. No bug reaches Fixed until its criteria pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: A bug's criteria must pass before it is Fixed.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug's criteria must pass before it is Fixed.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: A bug cannot be Fixed unless every criterion passes.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug cannot be Fixed unless every criterion passes.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: To reach Fixed, a bug's criteria must pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. To reach Fixed, a bug's criteria must pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: For Fixed, its tests need to pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. For Fixed, its tests need to pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: A bug reaches Fixed only when its `Verify:` lines pass.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug reaches Fixed only when its `Verify:` lines pass.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: A bug reaches Fixed only when its criteria are green.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug reaches Fixed only when its criteria are green.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: A bug can't reach Fixed while a criterion has not yet run.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. A bug can't reach Fixed while a criterion has not yet run.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: Fixed is refused when a `Verify:` line has not been run.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. Fixed is refused when a `Verify:` line has not been run.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: The gate will refuse Fixed when a criterion has never run.",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "the files - recomputed from them, not asserted.",
+      "new": "the files - recomputed from them, not asserted. The gate will refuse Fixed when a criterion has never run.",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
       "result": "killed",
       "answer": ""
     }

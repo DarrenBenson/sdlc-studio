@@ -1,0 +1,97 @@
+{
+  "unit": "BG0968",
+  "digest": "d6d0be3ed42029bc at f85e0417412a",
+  "report": "sdlc-studio/.local/lane/landed/agent-a73e738b402c31ae8/BG0968-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the two suites chained again",
+      "file": ".github/workflows/lint.yml",
+      "old": "bash tools/skill-tests.sh || skill_suite=$?",
+      "new": "bash tools/skill-tests.sh",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_tools_tests_run_when_the_skill_suite_fails_and_both_results_are_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the skill suite's failure swallowed",
+      "file": ".github/workflows/lint.yml",
+      "old": "bash tools/skill-tests.sh || skill_suite=$?",
+      "new": "bash tools/skill-tests.sh || skill_suite=0",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the step always green",
+      "file": ".github/workflows/lint.yml",
+      "old": "exit \"$skill_suite\"",
+      "new": "exit 0",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the step always red",
+      "file": ".github/workflows/lint.yml",
+      "old": "exit \"$skill_suite\"",
+      "new": "exit 1",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the held status never initialised",
+      "file": ".github/workflows/lint.yml",
+      "old": "          skill_suite=0\n",
+      "new": "",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the tools/tests failure swallowed",
+      "file": ".github/workflows/lint.yml",
+      "old": "--run-tests tools/tests/test_*.py\n",
+      "new": "--run-tests tools/tests/test_*.py || true\n",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the tools/tests run dropped",
+      "file": ".github/workflows/lint.yml",
+      "old": "          SDLC_STUDIO_BOUNDARY_SUITE=1 python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary push --run-tests tools/tests/test_*.py\n",
+      "new": "",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_tools_tests_run_when_the_skill_suite_fails_and_both_results_are_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the step's result held to the skill suite alone",
+      "file": "tools/tests/test_ci_suites_unchained.py",
+      "old": "self.assertEqual(bool(skill_exit or tools_exit), r.returncode != 0,",
+      "new": "self.assertEqual(bool(skill_exit), r.returncode != 0,",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_the_suites_are_not_chained_whichever_one_fails",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the skill failure asserted unreported",
+      "file": "tools/tests/test_ci_suites_unchained.py",
+      "old": "        self.assertNotEqual(0, r.returncode, \"the skill suite",
+      "new": "        self.assertEqual(0, r.returncode, \"the skill suite",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_tools_tests_run_when_the_skill_suite_fails_and_both_results_are_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the skill stub always green",
+      "file": "tools/tests/test_ci_suites_unchained.py",
+      "old": "f\"echo SKILL-SUITE-RAN\\nexit {skill_exit}\\n\"",
+      "new": "f\"echo SKILL-SUITE-RAN\\nexit 0\\n\"",
+      "test": "tools/tests/test_ci_suites_unchained.py::SuitesUnchainedTests::test_tools_tests_run_when_the_skill_suite_fails_and_both_results_are_reported",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

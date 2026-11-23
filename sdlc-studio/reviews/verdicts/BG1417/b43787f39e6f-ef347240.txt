@@ -1,0 +1,6 @@
+UNIT: BG1417
+BRIEF: b43787f39e6f-ef347240
+VERDICT: APPROVE
+ISSUES: [pre-existing] EP0290's epic criterion (sdlc-studio/epics/EP0290-the-trd-and-tsd-describe-the-gate-as.md:24), carried from CR0644:26, still asks the TRD and TSD to name "Node 20", which CI no longer sets up after this unit. EP0290 is Done and CR0644 Complete, and no open bug covers it. The TRD and TSD themselves name no Node version, so no shipped page is made false.
+BLOCKING: none
+RULINGS: Light tier. AC1 holds: verify dry-run 1/1 pass, and test_ci_node_version.py passes with the other two lint.yml modules (10 passed). The changelog's claims are TRUE against package-lock.json by the test's own reader: markdownlint and markdownlint-cli declare `>=22`, commander `>=22.12.0`, and ini admits only 22.22.2 up, 24.15.0 up or 26 and later, so 26.0.0 meets all 24 ranges and 22.11.0 does not. Reviewer mutant: the third setup-node step (lint.yml:203) put back on Node 22 KILLED. Local Node v26.12.0 runs markdownlint-cli 0.50.0 clean over the four fragments. The suite-step edit in the same file is judged under BG0968.

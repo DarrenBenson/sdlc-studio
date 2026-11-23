@@ -1,0 +1,6 @@
+UNIT: BG0968
+BRIEF: f9e9ed84daa6-fdc2842d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory, each TRUE by execution: the lint.yml comment (lines 96-98) and the changelog's "holds the skill suite's exit status, runs tools/tests whatever it was, and fails on either suite's failure", run as the step script itself under `bash -e` with stub suites for every pair (0,0), (1,0), (0,1), (1,1) and (3,0). The test docstring's `bash -e` for a step naming no shell matches GitHub's documented default for a Linux runner, read from the documentation and not runnable here. Verify dry-run 2/2 pass, and the new module with test_lint_workflow_coverage.py passes. Reviewer mutants in a detached worktree: the held status squashed to `$(( skill_suite > 1 ))` KILLED, `set +e` with only the held status exited KILLED, and the test's shell without `-e` KILLED (it then reads a red tools/tests as green). A step-level `if:` or `continue-on-error: true` on the suite step SURVIVED both new tests and test_lint_workflow_coverage.py, but neither chains one suite to the other, so it is outside AC1 and AC2 and is a remark, not a finding. The Node 26 lines in the same file are judged under BG1417. test_lint_workflow_coverage.py, in Affects, is unchanged and green.

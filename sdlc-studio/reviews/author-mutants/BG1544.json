@@ -1,0 +1,61 @@
+{
+  "unit": "BG1544",
+  "digest": "dcf2e2e9f6e5102d at 9b81a961fd1f",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae5d4c3a5db089be9/BG1544-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "compose-before-the-checks",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    before = clog.read_text(encoding=\"utf-8\")",
+      "new": "    changelog.compose(root, apply=True)\n    before = clog.read_text(encoding=\"utf-8\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_refused_second_cut_leaves_the_changelog_and_fragments_untouched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-own-unreleased-check",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if \"## [Unreleased]\" not in before:\n        raise ValueError",
+      "new": "    if False:\n        raise ValueError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_cut_with_no_unreleased_section_consumes_no_fragment",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "duplicate-section-check-off",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if re.search(rf\"(?m)^{re.escape(header)}\", before):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_refused_second_cut_leaves_the_changelog_and_fragments_untouched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "duplicate-section-on-the-first-line-only",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if re.search(rf\"(?m)^{re.escape(header)}\", before):",
+      "new": "    if re.search(rf\"^{re.escape(header)}\", before):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_refused_second_cut_leaves_the_changelog_and_fragments_untouched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cut-reads-the-uncomposed-text",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    changelog.compose(root, apply=True)          # the release-time fold + consume of the fragments\n    text = clog.read_text(encoding=\"utf-8\")",
+      "new": "    changelog.compose(root, apply=True)          # the release-time fold + consume of the fragments\n    text = before",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_new_version_still_folds_the_pending_fragment",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the control cuts the version already cut",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
+      "old": "            code, err = self._cut(Path(d), \"1.1.0\")\n            self.assertEqual(0, code, err)",
+      "new": "            code, err = self._cut(Path(d), \"1.0.0\")\n            self.assertEqual(0, code, err)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_new_version_still_folds_the_pending_fragment",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "unit": "BG1417",
+  "digest": "c8c367296bc81b7f at f85e0417412a",
+  "report": "sdlc-studio/.local/lane/landed/agent-a73e738b402c31ae8/BG1417-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "ci job back on Node 20",
+      "file": ".github/workflows/lint.yml",
+      "old": "          node-version: '26'\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Set up Python 3.10",
+      "new": "          node-version: '20'\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Set up Python 3.10",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_every_ci_node_version_meets_every_engines_range",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "corpus job on Node 24, below ^24.15.0",
+      "file": ".github/workflows/lint.yml",
+      "old": "          node-version: '26'\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Markdown corpus",
+      "new": "          node-version: '24'\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Markdown corpus",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_every_ci_node_version_meets_every_engines_range",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "corpus-verify job on Node 22, below >=22.12.0",
+      "file": ".github/workflows/lint.yml",
+      "old": "          node-version: '26'\n          cache: npm\n",
+      "new": "          node-version: '22'\n          cache: npm\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_every_ci_node_version_meets_every_engines_range",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: only the highest version a spec admits is checked",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "for end in sorted({_low(parts), _high(parts)}):",
+      "new": "for end in sorted({_high(parts)}):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_node_20_against_a_node_22_engine_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: only the lowest version a spec admits is checked",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "for end in sorted({_low(parts), _high(parts)}):",
+      "new": "for end in sorted({_low(parts)}):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_node_20_against_a_node_22_engine_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: a caret range loses its upper bound",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "out += [(\">=\", _low(parts)), (\"<\", _bump(parts, min(first, filled - 1)))]",
+      "new": "out += [(\">=\", _low(parts))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: a caret on 0.x bumps the major",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "first = next((i for i, p in enumerate(parts) if p), filled - 1)",
+      "new": "first = 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: a tilde range loses its upper bound",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "out += [(\">=\", _low(parts)), (\"<\", _bump(parts, min(1, filled - 1)))]",
+      "new": "out += [(\">=\", _low(parts))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: alternatives ANDed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "return any(all(ops[op](version, bound)",
+      "new": "return all(all(ops[op](version, bound)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: a wildcard read as a version",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "if ver in (\"*\", \"x\", \"X\", \"\"):\n            continue",
+      "new": "if False:\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: <= read against the low end",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "_high(parts) if op in (\">\", \"<=\") else _low(parts)",
+      "new": "_high(parts) if op in (\">\",) else _low(parts)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: > read against the low end",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "_high(parts) if op in (\">\", \"<=\") else _low(parts)",
+      "new": "_high(parts) if op in (\"<=\",) else _low(parts)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: a partial version read as exact",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "out += [(\">=\", _low(parts)), (\"<=\", _high(parts))]",
+      "new": "out += [(\">=\", _low(parts)), (\"<=\", _low(parts))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the bump keeps a fourth part",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "[0] * (2 - at)",
+      "new": "[0] * (3 - at)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_the_range_reader_follows_npm",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: setup-python read as setup-node",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "startswith(\"actions/setup-node@\")",
+      "new": "startswith(\"actions/setup-python@\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_every_ci_node_version_meets_every_engines_range",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the root package's engines skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py",
+      "old": "if isinstance(pkg.get(\"engines\"), dict) and pkg[\"engines\"].get(\"node\")}",
+      "new": "if name and isinstance(pkg.get(\"engines\"), dict) and pkg[\"engines\"].get(\"node\")}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests::test_node_20_against_a_node_22_engine_is_refused",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

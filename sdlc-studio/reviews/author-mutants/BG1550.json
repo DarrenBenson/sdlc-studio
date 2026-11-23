@@ -1,184 +1,391 @@
 {
   "unit": "BG1550",
-  "digest": "230165db3bb75e2f at 412120be2d60",
-  "report": "sdlc-studio/.local/lane/landed/agent-a10a687703f99f617/BG1550-mutation-edits.json",
+  "digest": "d335b1dc3fe88212 at 8f9a322a6982",
+  "report": "sdlc-studio/.local/lane/landed/agent-a68cc089d48337cdf/BG1550-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "page: the absolute refusal restored",
-      "file": "docs/engineering-leaders.md",
-      "old": "The pack refuses a report nobody has signed, and a signer it can see is not a person: a blank\nprincipal, one that reads as an agent by name (the word agent or subagent in it), and one the\ncommitted review ledgers record as an author of the report's own units, unless the ledger records\nthat author as a person. It cannot tell a person from an agent session signing under another\nname, so the person it names is the operator's responsibility. It reads",
-      "new": "The pack refuses a report nobody has signed, and it refuses to name an agent as the accountable\nperson. It reads",
+      "mutant": "fix reverted: only the stem refus refuses",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "if _REFUSAL.search(c) and",
+      "new": "if re.search(r\"\\brefus\", c, re.I) and",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page: the limit dropped",
-      "file": "docs/engineering-leaders.md",
-      "old": " It cannot tell a person from an agent session signing under another\nname, so the person it names is the operator's responsibility.",
-      "new": "",
+      "mutant": "refusal: reject dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "\\b(?:refus|reject|bar",
+      "new": "\\b(?:refus|bar",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page: the limit dropped, read by the agreement test",
-      "file": "docs/engineering-leaders.md",
-      "old": " It cannot tell a person from an agent session signing under another\nname, so the person it names is the operator's responsibility.",
-      "new": "",
+      "mutant": "refusal: bar dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|bar(?:s|red)?\\b|block",
+      "new": "|block",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: barred dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "bar(?:s|red)?\\b",
+      "new": "bars?\\b",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: bars dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "bar(?:s|red)?\\b",
+      "new": "bar(?:red)?\\b",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: word bound after bar dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "bar(?:s|red)?\\b|",
+      "new": "bar(?:s|red)?|",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: block dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|block|exclud)",
+      "new": "|exclud)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal: exclude dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|block|exclud)",
+      "new": "|block)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: not dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "(?:\\bnot|\\bnever|",
+      "new": "(?:\\bnever|",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: never dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "\\bnot|\\bnever|\\bcannot|",
+      "new": "\\bnot|\\bcannot|",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: cannot dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|\\bcannot|n't)",
+      "new": "|n't)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: n't dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|\\bcannot|n't)",
+      "new": "|\\bcannot)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: no word allowed between",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "\\s+(?:\\w+\\s+)?\"",
+      "new": "\\s+\"",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negation: two words allowed between",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "\\s+(?:\\w+\\s+)?\"",
+      "new": "\\s+(?:\\w+\\s+){0,2}\"",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: accept dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "(?:accept|admit|",
+      "new": "(?:admit|",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: admit dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "accept|admit|allow",
+      "new": "accept|allow",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: allow dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "admit|allow|let",
+      "new": "admit|let",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: let dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "allow|let|name",
+      "new": "allow|name",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: name dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "let|name|sign)",
+      "new": "let|sign)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: sign dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "|name|sign)\\w*",
+      "new": "|name)\\w*",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: be dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "sign)\\w*|be)\\b\"",
+      "new": "sign)\\w*)\\b\"",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb: inflections dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "sign)\\w*|be)",
+      "new": "sign)|be)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "by name: a widening or no longer undoes it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "\\bby name\\b(?!,?\\s+or\\b)",
+      "new": "\\bby name\\b",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "by name: a comma before or no longer skipped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "(?!,?\\s+or\\b)",
+      "new": "(?!\\s+or\\b)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "by name: and also undoes it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "(?!,?\\s+or\\b)",
+      "new": "(?!,?\\s+(?:or|and)\\b)",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "agent: plural dropped",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "if _REFUSAL.search(c) and re.search(r\"\\bagents?\\b\"",
+      "new": "if _REFUSAL.search(c) and re.search(r\"\\bagent\\b\"",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "entry end: level three only",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "r\"^#{1,6} \", rest",
+      "new": "r\"^### \", rest",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "page: the human-author exception dropped",
-      "file": "docs/engineering-leaders.md",
-      "old": ", unless the ledger records\nthat author as a person.",
-      "new": ".",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "page: a refusal dropped, read by the agreement test",
-      "file": "docs/engineering-leaders.md",
-      "old": "a signer it can see is not a person: a blank\nprincipal, one that",
-      "new": "a signer it can see is not a person: one that",
+      "mutant": "entry end: level one no longer ends it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "r\"^#{1,6} \", rest",
+      "new": "r\"^#{2,6} \", rest",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "reference: the absolute refusal restored",
+      "mutant": "entry end: level six no longer ends it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "r\"^#{1,6} \", rest",
+      "new": "r\"^#{1,5} \", rest",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "entry end: seven hashes end it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "r\"^#{1,6} \", rest",
+      "new": "r\"^#{1,7} \", rest",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "entry end: a hash inside a line ends it",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "r\"^#{1,6} \", rest",
+      "new": "r\"#{1,6} \", rest",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It rejects an agent as the accountable person.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It rejects an agent as the accountable person.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: The pack never names an agent as the accountable person.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. The pack never names an agent as the accountable person.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It will not accept an agent as the accountable person.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It will not accept an agent as the accountable person.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It refuses every agent, by name or by any other sign.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It refuses every agent, by name or by any other sign.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It bars agents from signing.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It bars agents from signing.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It blocks an agent named as accountable.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It blocks an agent named as accountable.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It excludes an agent from the accountable role.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It excludes an agent from the accountable role.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It won't admit an agent as accountable.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It won't admit an agent as accountable.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: It does not allow an agent to sign.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. It does not allow an agent to sign.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: An agent can never be the accountable person.",
+      "file": "docs/engineering-leaders.md",
+      "old": "name, so the person it names is the operator's responsibility.",
+      "new": "name, so the person it names is the operator's responsibility. An agent can never be the accountable person.",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference: It never names an agent as accountable.",
       "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
-      "old": "the committed copies, so an uncommitted edit never changes the pack. It refuses an unsigned\nreport, and a signer it can see is not a person (`principal_refusal`): a blank principal, one that\nreads as an agent by name (the word agent or subagent in it), and one the committed review ledgers\nrecord as an author of the report's own units, unless the ledger records that author as a person\n(typed `human`). It cannot tell a person from an agent session signing under another name, so the\nperson it names is the operator's responsibility.",
-      "new": "the committed copies, so an uncommitted edit never changes the pack, and it refuses an unsigned\nreport or an agent named as accountable.",
+      "old": "person it names is the operator's responsibility.",
+      "new": "person it names is the operator's responsibility. It never names an agent as accountable.",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "reference: the blank-principal refusal dropped",
+      "mutant": "reference: It rejects an agent as the accountable person.",
       "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
-      "old": "a blank principal, one that\nreads as an agent",
-      "new": "one that\nreads as an agent",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reference: the limit dropped",
-      "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
-      "old": " It cannot tell a person from an agent session signing under another name, so the\nperson it names is the operator's responsibility.",
-      "new": "",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absolute: by-name exemption dropped",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "\n                and not re.search(r\"\\bby name\\b\", c, re.I)]",
-      "new": "]",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absolute: refusal not required",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "if re.search(r\"\\brefus\", c, re.I) and re.search(r\"\\bagents?\\b\", c, re.I)",
-      "new": "if re.search(r\"\\bagents?\\b\", c, re.I)",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absolute: agent not required",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "if re.search(r\"\\brefus\", c, re.I) and re.search(r\"\\bagents?\\b\", c, re.I)",
-      "new": "if re.search(r\"\\brefus\", c, re.I)",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "absolute: plural agents not read",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "re.search(r\"\\bagents?\\b\", c, re.I)",
-      "new": "re.search(r\"\\bagent\\b\", c, re.I)",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusals counted outside a refusing claim",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "named = [c for c in claims(body) if re.search(r\"\\brefus\", c, re.I)]",
-      "new": "named = claims(body)",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "limit read across sentences",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "under another name\\b[^.]*\\bthe operator's",
-      "new": "under another name\\b.*\\bthe operator's",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "human-author exception not asked",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "    if not any(_HUMAN_AUTHOR.search(c) for c in claims(body)):\n        problems.append(\"does not say an author the ledger records as a person is not refused\")\n",
-      "new": "",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "limit not asked",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "    if not signer_limit_stated(body):\n",
-      "new": "    if False:\n",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "author refusal wording narrowed to recorded",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "\\brecord(?:ed|s)? as an author",
-      "new": "\\brecorded as an author",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "entry at the end of the page not read",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "return rest[:end.start()] if end else rest",
-      "new": "return rest[:end.start()] if end else \"\"",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "entry runs past the next script heading",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "re.search(r\"^#{1,6} \", rest, re.M)",
-      "new": "re.search(r\"^#{4,6} \", rest, re.M)",
-      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "entry read from the top when the heading is absent",
-      "file": "tools/tests/test_engineering_leaders_page.py",
-      "old": "rest = text.partition(f\"\\n{heading}\\n\")[2]",
-      "new": "rest = text.partition(f\"\\n{heading}\\n\")[2] or text",
+      "old": "person it names is the operator's responsibility.",
+      "new": "person it names is the operator's responsibility. It rejects an agent as the accountable person.",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit",
       "result": "killed",
       "answer": ""

@@ -1,0 +1,160 @@
+{
+  "unit": "BG1542",
+  "digest": "07bc5d459c839c5d at 9b81a961fd1f",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae5d4c3a5db089be9/BG1542-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "stamp-holds-the-typed-name",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    p.write_text(json.dumps({\"commit\": sha}) + \"\\n\", encoding=\"utf-8\")",
+      "new": "    p.write_text(json.dumps({\"commit\": (commit or \"\").strip()}) + \"\\n\", encoding=\"utf-8\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_both_sides_are_compared_as_full_shas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-green-stamps-the-unresolvable",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    sha = _resolve_commit(root, commit)\n    if sha is None:",
+      "new": "    sha = _resolve_commit(root, commit)\n    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_an_unresolvable_commit_is_refused_and_stamps_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag-check-compares-the-typed-argument",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    commit = _resolve_commit(root, named)",
+      "new": "    commit = named or None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_both_sides_are_compared_as_full_shas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag-check-symbolic-ref-not-resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    commit = _resolve_commit(root, named)",
+      "new": "    commit = named or None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_symbolic_ref_recorded_at_one_commit_is_refused_at_another",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag-check-passes-the-unresolvable",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if commit is None:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_an_unresolvable_commit_is_refused_and_stamps_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "old-stamp-name-resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    return _resolve_commit(root, green) if _SHA_RE.match(green) else None",
+      "new": "    return _resolve_commit(root, green)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_stamp_written_before_the_fix_is_read_safely",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "old-stamp-lowercase-name-resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "_SHA_RE = re.compile(r\"^[0-9a-f]{4,64}$\")",
+      "new": "_SHA_RE = re.compile(r\"^[0-9a-z]{4,64}$\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_stamp_written_before_the_fix_is_read_safely",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-green-echoes-the-argument",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    print(f\"recorded release gate green on {green_commit(args.root)}\")",
+      "new": "    print(f\"recorded release gate green on {args.commit}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_symbolic_ref_recorded_at_one_commit_is_refused_at_another",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-green-refusal-exits-0",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        print(f\"record-green refused: {exc}\", file=sys.stderr)\n        return 2",
+      "new": "        print(f\"record-green refused: {exc}\", file=sys.stderr)\n        return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_an_unresolvable_commit_is_refused_and_stamps_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolve-ignores-the-exit-code",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    return out if proc.returncode == 0 and out else None",
+      "new": "    return out or None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_git_that_cannot_answer_refuses_rather_than_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolve-strips-nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    commit = (commit or \"\").strip()\n    try:\n        # `--end-of-options`",
+      "new": "    commit = commit or \"\"\n    try:\n        # `--end-of-options`",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_both_sides_are_compared_as_full_shas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolve-lets-a-missing-git-through",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    except (OSError, subprocess.SubprocessError):\n        return None",
+      "new": "    except KeyError:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_a_git_that_cannot_answer_refuses_rather_than_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "full-sha-drops-the-unresolvable",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    return _resolve_commit(root, commit) or commit",
+      "new": "    return _resolve_commit(root, commit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ForgeCiTests::test_a_flag_shaped_ref_is_not_resolved_as_a_flag",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-stamp-not-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if stamped is None:\n        return False, (f\"the release gate stamp holds",
+      "new": "    if False:\n        return False, (f\"the release gate stamp holds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_stamp_written_before_the_fix_is_read_safely",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp-mismatch-passes",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if stamped != commit:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_symbolic_ref_recorded_at_one_commit_is_refused_at_another",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: tag the commit the gate ran on",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py",
+      "old": "        second = _commit(root, \"after the gate\")\n        r = _cli(SCRIPT, root, \"tag-check\", \"--commit\", \"HEAD\")",
+      "new": "        second = first\n        r = _cli(SCRIPT, root, \"tag-check\", \"--commit\", \"HEAD\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_symbolic_ref_recorded_at_one_commit_is_refused_at_another",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the lean tag test records on the tagged commit",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py",
+      "old": "        r = _run(\"release_cut.py\", \"record-green\", \"--commit\", other, root=root, env=env)",
+      "new": "        r = _run(\"release_cut.py\", \"record-green\", \"--commit\", sha, root=root, env=env)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py::TagNoCloseOwedTests::test_a_green_on_another_commit_still_refuses",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

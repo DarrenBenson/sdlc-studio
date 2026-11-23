@@ -1,6 +1,6 @@
 # BG1417: CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .github/workflows/lint.yml, .claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py, changelog.d/BG1417.md
@@ -26,6 +26,7 @@ Move CI to Node 22.
 
 - [ ] **AC1** Given lint.yml and package-lock.json, when compared, then the Node version meets every engines requirement. Fails on: Node 20 against a node >=22 engine.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_node_version.py::CiNodeVersionTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

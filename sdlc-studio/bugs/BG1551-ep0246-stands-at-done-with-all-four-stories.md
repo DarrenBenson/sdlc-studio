@@ -37,7 +37,7 @@ Extend the epic status drift lane in reconcile.py so a terminal epic is also com
 - [ ] **AC3** Given the first fixture, when `reconcile.py` applies its fixes, then the epic's Status line is left as written and the item stays reported. Fails on: a terminal status that may record a ruling rewritten unasked.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_apply_reports_a_terminal_epic_and_does_not_rewrite_it
 - [ ] **AC4** Given the corpus after the fix, when EP0246 and CR0561 are read, then EP0246 reads Superseded naming US0908, or names the decision that keeps it Done, and CR0561's Revision History carries a row recording its completion and what delivered it. Fails on: a request reading as delivered by an epic none of whose stories was built, with no row saying how.
-  - **Verify:** grep -q '^> \*\*Status:\*\* Superseded' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Superseded by US0908' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Complete, delivered by US0908' sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md
+  - **Verify:** shell grep -q '^> \*\*Status:\*\* Superseded' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Superseded by US0908' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Complete, delivered by US0908' sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md
 
 ## Revision History
 
@@ -45,3 +45,4 @@ Extend the epic status drift lane in reconcile.py so a terminal epic is also com
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4 gains the Verify line the REF builder ran: EP0246 reads Superseded by US0908 and CR0561 records its delivery |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4's Verify line runs through the shell verb: the grep verb reads `&&` and the rest as paths, which made it check only the first grep (BG1024 AC added) |

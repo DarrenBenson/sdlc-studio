@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 289 |
 | In Progress | 0 |
-| Fixed | 1089 |
+| Fixed | 1091 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1719** |
+| **Total** | **1721** |
 
 ## All Bugs
 
@@ -43,7 +43,7 @@
 | [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0966](BG0966-review-prep-persona-usage-calls-a-persona-unused.md) | review_prep persona_usage calls a persona unused unless its file's H1 appears verbatim in prd.md - stories, CRs and consult logs are never read | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0967](BG0967-the-finding-filer-backtick-wraps-identifiers-inside-steps.md) | The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on | Open | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0968](BG0968-ci-runs-tools-tests-in-the-same-step.md) | CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0968](BG0968-ci-runs-tools-tests-in-the-same-step.md) | CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0969](BG0969-sprint-close-file-and-close-silently-drops-a.md) | sprint close --file-and-close silently drops a supplied --goal-verdict, then refuses because the goal is unjudged - a hard blocker it cannot file | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0970](BG0970-critic-py-brief-says-nothing-when-the-unit.md) | `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0971](BG0971-sprint-close-dry-run-reports-later-chain-steps.md) | sprint close --dry-run reports later chain steps in the past tense ('lessons lifted', 'summary regenerated', 'anchor refreshed') although nothing was written | Open | Low | 2026-10-07 | 2026-10-07 |
@@ -492,7 +492,7 @@
 | [BG1414](BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md) | The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1415](BG1415-no-test-pins-the-line-number-verify-ac.md) | No test pins the line number verify_ac's lint prints | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1416](BG1416-help-verify-md-s-exit-3-row-in.md) | help/verify.md's exit-3 row in the revert-check table leaves out git failing to read the base blob | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1417](BG1417-ci-s-lint-yml-sets-up-node-20.md) | CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1417](BG1417-ci-s-lint-yml-sets-up-node-20.md) | CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1418](BG1418-a-nested-run-verifier-caller-s-own-verifier.md) | A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1419](BG1419-two-more-group-kill-helpers-duplicate-verify-ac.md) | Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1420](BG1420-run-eleven-s-lanes-turn-the-full-suite.md) | Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected | Fixed | High | 2026-11-13 | 2026-11-13 |
@@ -795,6 +795,8 @@
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Open | Low | 2026-11-23 | 2026-11-23 |
 | [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

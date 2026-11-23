@@ -1,6 +1,6 @@
 # BG0968: CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .github/workflows/lint.yml, tools/tests/test_lint_workflow_coverage.py, tools/tests/test_ci_suites_unchained.py, changelog.d/BG0968.md
@@ -26,8 +26,10 @@ Run tools/tests as its own step with `if: success() || failure()`, or run both c
 
 - [ ] **AC1** A failing skill suite no longer prevents tools/tests from running in the same workflow run, and both results are reported
   - **Verify:** pytest tools/tests/test_ci_suites_unchained.py -k tools_tests_run_when_the_skill_suite_fails
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** A test fails if the workflow again runs the two suites so that one's failure stops the other
   - **Verify:** pytest tools/tests/test_ci_suites_unchained.py -k suites_are_not_chained
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 
