@@ -1,6 +1,6 @@
 # BG1229: critic.py's self-check and verdict records refuse shapes authors and reviewers write naturally, and record has no dry run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_shapes.py, changelog.d/BG1229.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

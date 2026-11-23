@@ -34,8 +34,12 @@ Fix each finding above, then deliver BG1532 again in a later run.
 - [ ] **AC5** BG1532 AC4 still passes: Given rule 5 of the script contract and the scripts row of the component table in `sdlc-studio/trd.md`, when they are read, then a shared file is defined as any tracked workspace file a script rewrites whole, and every writer left outside the guarantee is listed with its reason. Fails on: the guarantee stated with no definition of a shared file, or the ledgers still called the one exception while others exist.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed
 
+- [ ] **AC6** The round 3 REJECT finding no longer holds: the comment on `_OPEN_MODULES` (`test_confinement.py:791`) says those are the modules whose `open` takes `(file, mode)`, but `gzip`, `bz2`, `lzma` and `tarfile` take it too and are not caught. The comment states the sweep's reach exactly, as the TRD already does for `gzip` (verdict 790b61cc4104-369447a8, D0588).
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-22 | Claude Opus 5.5 (run twenty-two orchestrator) | BG1532's ruled round three (D0588) closed AC1's finding and rejected for one comment over-claim; AC6 carries it to the next run |

@@ -1,6 +1,6 @@
 # BG1492: Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .githooks/pre-commit, tools/tests/test_precommit_unrecorded_verdict.py, changelog.d/BG1492.md

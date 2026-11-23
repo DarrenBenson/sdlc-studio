@@ -1,7 +1,7 @@
 {
   "unit": "BG1625",
-  "digest": "cadd1fe2c31495b4 at 286a57c63f99",
-  "report": "sdlc-studio/.local/lane/landed/agent-a1c18d144a8ed31f2/BG1625-mutation-edits.json",
+  "digest": "ec55ac74baa5905e at c590907d07dc",
+  "report": "sdlc-studio/.local/lane/landed/agent-a973bebf75cf6fe98/BG1625-mutation-edits.json",
   "mutants": [
     {
       "mutant": "a cluster ending in k skipped as a plain option",
@@ -81,6 +81,213 @@
       "old": "return path.relative_to(Path(repo_root).resolve()).as_posix()",
       "new": "return path.relative_to(Path(repo_root)).as_posix()",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests::test_a_root_given_as_dot_still_names_the_report_relative_to_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Verify line split on whitespace",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        words = shlex.split(verifier or \"\")",
+      "new": "        words = (verifier or \"\").split()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unknown unit's selectors read as nothing at all",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return [], []\n    import verify_ac  # noqa: PLC0415 - sibling; its AC parser",
+      "new": "        return None\n    import verify_ac  # noqa: PLC0415 - sibling; its AC parser",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mutants not objects read when one is",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not isinstance(mutants, list) or not all(",
+      "new": "    if not isinstance(mutants, list) or not any(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unbalanced quote kept on its word",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        words = [w.strip(\"'\\\"\") for w in (verifier or \"\").split()]",
+      "new": "        words = (verifier or \"\").split()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the expression never named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if expressions:\n        named +=",
+      "new": "    if False:\n        named +=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a failed list write swallowed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        raise ValueError(f\"the kept mutant list {kept} was not {done}: {exc}\") from None",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the written and removed cases swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "done = \"written\" if report is not None else \"removed (it was kept for an earlier row)\"",
+      "new": "done = \"written\" if report is None else \"removed (it was kept for an earlier row)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the old list left after a failed append",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            sdlc_md.atomic_write(kept, before.decode(\"utf-8\"))\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a new list left after a failed append",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if before is None:\n            kept.unlink(missing_ok=True)\n",
+      "new": "        if before is None:\n            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the report's path kept as given",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"report\": _kept_report_path(repo_root, report),",
+      "new": "\"report\": str(report),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a report outside the root kept whole",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return path.name",
+      "new": "        return str(path)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a missing list refused",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except FileNotFoundError:\n        return None\n    except (OSError, ValueError) as exc:",
+      "new": "    except IsADirectoryError:\n        return None\n    except (OSError, ValueError) as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a list not JSON read as none",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        raise ValueError(f\"the kept mutant list {path} is malformed: {exc}\") from None",
+      "new": "        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a list not an object read as none",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        raise ValueError(f\"the kept mutant list {path} is malformed: not a JSON object\")",
+      "new": "        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a field not text read",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "all(isinstance(m.get(k, \"\"), str) for k in _KEPT_MUTANT_KEYS)",
+      "new": "True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the = after the value letter kept",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every leading = dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached.lstrip(\"=\") if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "-k= taking the next word",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached[1:] or next(rest, \"\") if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the = dropped only after a lone option letter, not in a cluster",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached[1:] if attached[:1] == \"=\" and at == 2 else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "two characters dropped after the letter",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached[2:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the attached value ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty expression named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "in _PYTEST_EXPRESSION_OPTIONS and value:",
+      "new": "in _PYTEST_EXPRESSION_OPTIONS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a long --opt=value taking the next word as well",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if word in _PYTEST_VALUE_OPTIONS:",
+      "new": "            if word.split(\"=\", 1)[0] in _PYTEST_VALUE_OPTIONS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
       "result": "killed",
       "answer": ""
     }

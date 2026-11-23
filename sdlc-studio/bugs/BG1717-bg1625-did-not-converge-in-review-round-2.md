@@ -32,8 +32,14 @@ Fix each finding above, then deliver BG1625 again in a later run.
 - [ ] **AC4** BG1625 AC3 still passes: Given a kept list written for a unit, when its file is read, then it holds a path relative to the repository root, and a report of the wrong kind or version is refused. Fails on: an absolute local path in a committed file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests
 
+- [ ] **AC5** The round 3 REJECT finding no longer holds: an attached value holding an `=` that is not directly after the option letter is read whole, pinned by a case such as `-m'device(serial=1)'` and its cluster `-qm'device(serial=1)'` in `test_a_cluster_of_short_flags_is_read_as_pytest_reads_it`; the mutant that splits at the first `=` (`attached.partition("=")[2]`) fails it (critic.py:3072, 3095-3096; verdict aa5575a8c536-f9c40d5c, D0591).
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+- [ ] **AC6** The round 3 REJECT finding no longer holds: `changelog.d/BG1625.md` states exactly how a value joined to its option by `=` is read, including the Python 3.10 difference for a cluster such as `-qk=add`, which argparse on 3.10 keeps as `=add`.
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-two orchestrator) | BG1625's ruled round three (D0591) closed AC1's finding and rejected for an unpinned `=` case and a fragment false on Python 3.10; two criteria carry them to the next run |
