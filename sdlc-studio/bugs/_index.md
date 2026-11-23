@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 290 |
+| Open | 291 |
 | In Progress | 0 |
 | Fixed | 1087 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1718** |
+| **Total** | **1719** |
 
 ## All Bugs
 
@@ -794,6 +794,7 @@
 | [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Open | Low | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 
