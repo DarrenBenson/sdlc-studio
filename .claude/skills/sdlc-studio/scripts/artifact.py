@@ -100,9 +100,10 @@ def _create_status(type_: str, root: Path) -> str:
 def _text(f: dict, key: str, placeholder: str) -> str:
     """Caller-supplied content for one section, else the scaffold placeholder the agent fills.
     Free text is prose-safed (markdown-safe plus the metadata-line guard), so a creator never
-    mints a lint-red artefact nor a body line a reader takes for provenance."""
+    mints a lint-red artefact nor a body line a reader takes for provenance; the commands in a
+    Steps to Reproduce value are kept runnable (`file_finding._field_safe`)."""
     val = f.get(key)
-    return file_finding._prose_safe(val) if isinstance(val, str) and val.strip() else placeholder
+    return file_finding._field_safe(key, val) if isinstance(val, str) and val.strip() else placeholder
 
 
 def _list(f: dict, key: str) -> list[str]:
@@ -785,12 +786,13 @@ _REV_SECTION_RE = re.compile(r"^##\s+Revision History\b.*$", re.M | re.I)
 
 def _rendered(key: str, f: dict) -> str:
     """One field's content as the markdown its section takes: a bullet list for the list
-    fields, markdown-safed prose otherwise. Empty when the caller supplied nothing."""
+    fields, markdown-safed prose otherwise (`file_finding._field_safe`, which keeps the commands
+    in a Steps to Reproduce value runnable). Empty when the caller supplied nothing."""
     if key in ("options", "acs"):
         items = _list(f, key)
         return "".join(f"- **{o}**\n" for o in items) if items else ""
     val = f.get(key)
-    return f"{file_finding._prose_safe(val)}\n" if isinstance(val, str) and val.strip() else ""
+    return f"{file_finding._field_safe(key, val)}\n" if isinstance(val, str) and val.strip() else ""
 
 
 def _put_section(body: str, names: tuple[str, ...], content: str) -> str:
@@ -1418,7 +1420,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
             body = _land_supplied(render(type_, p["disp"], it["title"], today, f), type_, f)
-            sdlc_md.atomic_write(p["path"], body)
+            # labelled as `new` labels it: a bare fence (a command in the steps) is MD040
+            sdlc_md.atomic_write(p["path"], sdlc_md.normalise_fence_languages(body))
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
             if header:

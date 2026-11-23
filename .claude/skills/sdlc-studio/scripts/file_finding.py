@@ -1727,6 +1727,111 @@ def _prose_safe(text) -> str:
     return _META_DECL_RE.sub(r"\1\\*\\*\2\\*\\*", _md_safe(text))
 
 
+#: A list item: its marker (a bullet or a number, and the space after it), then its body, less
+#: any trailing whitespace (a code span ending in a space is MD038).
+_LIST_ITEM_RE = re.compile(r"^(\s*(?:[-*+]|\d{1,9}[.)])\s+)(\S.*?)\s*$")
+
+
+#: A shell prompt opening a command line. It is not part of the command: a pasted prompt does
+#: not run, and markdownlint's MD014 refuses a block whose every command shows one.
+_PROMPT_RE = re.compile(r"^(\s*)\$\s+")
+
+
+def _unprompted(line: str) -> str:
+    """The line without a `$ ` prompt before its command, its indentation kept."""
+    return _PROMPT_RE.sub(r"\1", line)
+
+
+def _command_line(line: str) -> bool:
+    """True when one Steps to Reproduce line is a shell command to copy and run, rather than
+    prose about one: `command_shaped` over the line's text outside its code spans, after an
+    optional `$ ` prompt. A sentence that quotes a command in a code span is prose."""
+    text = _unprompted(line.strip())
+    return command_shaped("".join(text.split("`")[0::2]))
+
+
+def _fence(lines: list[str]) -> str:
+    """Command lines as one fenced block, as given. The fence is longer than any backtick
+    run inside the commands, so none of them can close it early. It is left unlabelled: the
+    creators label it when they write the file (`sdlc_md.normalise_fence_languages`, MD040),
+    and a label here would sit inside the author's text, where the drop guard (`_probe`, which
+    keeps only letters and numbers) would no longer find a step with a command in its middle."""
+    longest = max((len(run) for run in re.findall(r"`+", "\n".join(lines))), default=0)
+    mark = "`" * max(3, longest + 1)
+    return "\n".join([mark, *lines, mark])
+
+
+def _steps_safe(text) -> str:
+    """Markdown-safe a Steps to Reproduce value without breaking the commands in it.
+
+    `_prose_safe` back-ticks every underscored token, and inside a shell command a backtick is
+    command substitution, so a repro copied from the filed bug no longer ran. The value is read
+    line by line instead:
+
+    - a fenced block the author wrote is kept as written up to its closing fence, read by the
+      fence reader the other markdown tools share (`sdlc_md.fence_step`), and is closed at the
+      end if the author left it open, so it cannot swallow the next section; a line opening on
+      a backtick run with another backtick after it is inline code (CommonMark), not a fence;
+    - a line that is a command (`_command_line`) is kept byte for byte inside a fenced block
+      (`_fence`), consecutive command lines sharing one, with a blank line on each side (MD031);
+    - a list item whose body is a command keeps its place, the body in a code span, since a
+      fence cannot open on the marker's line; a body holding a backtick, which a one-backtick
+      span cannot hold, is left to the prose pass;
+    - a `$ ` prompt before a command is dropped from its fence or span (`_PROMPT_RE`);
+    - every other run of lines is prose and takes `_prose_safe` whole, so a value with no
+      command in it is written exactly as before.
+
+    A command must open its line to be recognised: one written mid-sentence is prose."""
+    segs: list[tuple[str, list[str]]] = []
+    fence = None  # the (marker, run length) of the author's open fenced block
+    for line in str(text).split("\n"):
+        stripped = line.strip()
+        if fence is not None:
+            segs[-1][1].append(line)
+            fence = sdlc_md.fence_step(stripped, fence)[0]
+            continue
+        # a backtick run with another backtick after it is inline code, not an opener
+        if not (stripped.startswith("```") and "`" in stripped.lstrip("`")):
+            fence = sdlc_md.fence_step(stripped, None)[0]
+            if fence is not None:
+                segs.append(("fence", [line]))
+                continue
+        item = _LIST_ITEM_RE.match(line)
+        if item:
+            kind = "item" if "`" not in item.group(2) and _command_line(item.group(2)) else "prose"
+        else:
+            kind = "command" if _command_line(line) else "prose"
+        if segs and segs[-1][0] == kind:
+            segs[-1][1].append(line)
+        else:
+            segs.append((kind, [line]))
+    if fence:
+        segs[-1][1].append(fence[0] * fence[1])
+    out, prev = "", None
+    for kind, lines in segs:
+        if kind == "prose":
+            block = _prose_safe("\n".join(lines))
+        elif kind == "command":
+            block = _fence([_unprompted(ln) for ln in lines])
+        elif kind == "item":
+            block = "\n".join(m.group(1) + f"`{_unprompted(m.group(2))}`"
+                              for m in map(_LIST_ITEM_RE.match, lines))
+        else:
+            block = "\n".join(lines)
+        if prev is not None:
+            code = {prev, kind} & {"command", "fence"}
+            apart = code and out.rsplit("\n", 1)[-1].strip() and block.split("\n", 1)[0].strip()
+            out += "\n\n" if apart else "\n"
+        out, prev = out + block, kind
+    return out
+
+
+def _field_safe(key: str, text) -> str:
+    """The markdown-safing one prose field takes: `_steps_safe` for the Steps to Reproduce,
+    whose commands must stay runnable, and `_prose_safe` for every other field."""
+    return _steps_safe(text) if key == "steps" else _prose_safe(text)
+
+
 def _affects_line(f: dict) -> str:
     """The `Affects` metadata line: the files this unit will touch, as the planner reads them
     (`sdlc_md.affects_files` parses this exact field). Written only when declared - an absent
@@ -1743,8 +1848,9 @@ def _evidence_line(f: dict) -> str:
     reads, so a filer who wrote the evidence location into it declared a footprint that is not
     where any code will change: the collision analysis then groups the unit by the wrong surface.
     Losing the trace instead would be no better, so it is recorded here, where nothing reads it as
-    a file the fix will touch. A bare URL in it is code-spanned (`_code_urls`), as in the prose."""
-    val = _code_urls(str(f.get("evidence") or "").strip())
+    a file the fix will touch. It is markdown-safed as the prose is (`_md_safe`): a bare URL or
+    an underscored identifier in it is code-spanned, and the rest is kept as written."""
+    val = _md_safe(str(f.get("evidence") or "").strip())
     return f"> **Evidence:** {val}\n" if val else ""
 
 
@@ -2073,7 +2179,7 @@ def _land_unhomed(body: str, f: dict) -> str:
     # a metadata-shaped line (`> **Points:** 99`) had it read back by `extract_field` as a real
     # declaration - the injection `_prose_safe` exists to stop, through the one path that
     # skipped it.
-    extra = "".join(f"## {heading}\n\n{_prose_safe(str(f[key]))}\n\n"
+    extra = "".join(f"## {heading}\n\n{_field_safe(key, str(f[key]))}\n\n"
                     for key, heading in missing)
     marker = "## Revision History"
     return body.replace(marker, extra + marker, 1) if marker in body else body + "\n" + extra
@@ -2118,8 +2224,13 @@ NO_CR_CRITERIA = "_None yet: add them here, or on the stories `refine` decompose
 
 def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
                      status: str | None = None) -> str:
-    """The per-type layout. `_render` is the only caller; it lands anything this misses."""
-    f = {**f, **{k: _prose_safe(f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
+    """The per-type layout. `_render` is the only caller; it lands anything this misses.
+
+    The title is markdown-safed (`_md_safe`) for the H1, so an underscored identifier in it is not
+    read as emphasis (MD037). The index row takes its title from this H1: the filer's append runs
+    `reconcile.apply_type`, whose field projection writes the file's title into the row."""
+    title = _md_safe(title)
+    f = {**f, **{k: _field_safe(k, f[k]) for k in ("summary", "steps", "fix", "recommendation", "impact")
                  if isinstance(f.get(k), str)}}
     if isinstance(f.get("acs"), list):
         f = {**f, "acs": [_md_safe(a) for a in f["acs"]]}
