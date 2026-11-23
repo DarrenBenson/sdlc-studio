@@ -40,12 +40,13 @@ failure - a weak model shipping a multi-file change with NO planning.
 Escape valves, each auditable, none a silent judgement:
   * `engagement_floor.adopt_after` (`.config.yaml`) exempts ids at or below a cutoff - the
     `conformance.adopt_after` precedent - so turning the floor on does not redden the backlog of
-    units closed before it existed. A schema v3 cutoff (`BG-01KX95QP`) is compared as conformance
-    compares it (`sdlc_md.cutoff_exempts`): an id minted in an earlier timestamp bucket, and the
-    cutoff id itself, are exempt. A cutoff ABOVE the highest existing id, or a v3 cutoff in a
-    bucket the clock has not reached, is not grandfathering but a silent forward disarm, and is
-    refused (use judgement mode to opt out visibly). Exempt units that WOULD violate stay counted
-    in the report, so a cutoff cannot hide them.
+    units closed before it existed. On a schema v3 project a v3 cutoff (`BG-01KX95QP`) is compared
+    as conformance compares it (`sdlc_md.cutoff_exempts`): an id minted in an earlier timestamp
+    bucket, and the cutoff id itself, are exempt. A cutoff ABOVE the highest existing id, a v3
+    cutoff in a bucket the clock has not reached, or a v3 cutoff on a project before schema v3
+    (which still mints the sequential ids it would exempt) is not grandfathering but a silent
+    forward disarm, and is refused (use judgement mode to opt out visibly). Exempt units that
+    WOULD violate stay counted in the report, so a cutoff cannot hide them.
   * `engagement_floor: judgement` (`.config.yaml`) is the project-global opt-out the doctrine and
     agent-instructions already document: the floor still reports, but its gate lane is advisory.
   * a recorded waiver (`decisions.py waive`) - `rule:engagement-floor` waives the whole floor for
@@ -136,13 +137,21 @@ def _mode_and_cutoff(root: Path) -> tuple[str, int | str | None]:
     colliding on one YAML key:
       * a scalar string -> the mode (`floor` default, or `judgement`); no cutoff.
       * a mapping -> `mode` (default `floor`) and/or `adopt_after` (the grandfather cutoff).
-    The cutoff is `parse_cutoff`'s: a number for a bare or prefixed sequential id, or a v3 id's
-    upper-cased suffix (`01KX95QP`), compared only through `sdlc_md.cutoff_exempts`. An
-    unparseable cutoff raises loud (parse_cutoff), never silently disabling the floor."""
+    The cutoff is `parse_cutoff`'s: a number for a bare or prefixed sequential id, or, on a
+    schema v3 project only, a v3 id's upper-cased suffix (`01KX95QP`), compared only through
+    `sdlc_md.cutoff_exempts`. An unparseable cutoff raises loud (parse_cutoff), never silently
+    disabling the floor. So does a v3 id before schema v3, where sequential ids are still minted
+    and a v3 cutoff would exempt every one of them, those not minted yet included."""
     raw = sdlc_md.project_override(root, "engagement_floor")
     if isinstance(raw, dict):
         mode = str(raw.get("mode", "floor")).strip().lower() or "floor"
-        cutoff = sdlc_md.parse_cutoff(raw.get("adopt_after"), allow_ulid=True)
+        value, v3 = raw.get("adopt_after"), sdlc_md.is_schema_v3(root)
+        if not v3 and sdlc_md.is_v3_id(str(value).strip()):
+            raise ValueError(f"adopt_after cutoff {value!r} is a schema v3 id, and this project "
+                             f"is not on schema v3: such a cutoff would exempt every sequential "
+                             f"id, those not minted yet included - use a bare integer (103) or a "
+                             f"prefixed id")
+        cutoff = sdlc_md.parse_cutoff(value, allow_ulid=v3)
     elif raw is None:
         mode, cutoff = "floor", None
     else:
@@ -515,8 +524,9 @@ def _unit_waiver(root: Path, rid: str) -> str | None:
     The subject's id is matched by the normalised key (`sdlc_md.norm_id`), so a waiver recorded
     under any spelling of the id (`BG-01JQK3F8`, `BG01JQK3F8`, `US-0100`, `US0100`) waives that
     one unit, and the decisions log is not rewritten (its subject keeps the dash). A subject
-    with a further `:` segment names no unit. Accepted and anchored as `decisions.waiver_for` reads a
-    waiver: a superseded row, or one that only mentions the subject, waives nothing."""
+    with a further `:` segment names no unit. Accepted and anchored as `decisions.waiver_for`
+    reads a waiver: a superseded or revisited row, or one that only mentions the subject, waives
+    nothing."""
     want = sdlc_md.norm_id(rid)
     prefix = f"{decisions.WAIVER_PREFIX} {WAIVER_RULE}:"
     for rec in decisions.list_decisions(root):
@@ -644,7 +654,8 @@ REMEDY_CUTOFF = ("set `engagement_floor.adopt_after` in sdlc-studio/.config.yaml
                  "pre-adoption ids forward-only (a bare id `238`, a prefixed `CR0238`, or on "
                  "schema v3 an id such as `BG-01KX95QP`; ids <= it are exempt, and under a v3 "
                  "cutoff ids minted in an earlier timestamp bucket and the cutoff itself; a cutoff "
-                 "above the highest existing id, or a v3 cutoff ahead of the clock, is refused)")
+                 "above the highest existing id, or a v3 cutoff ahead of the clock or on a "
+                 "project before schema v3, is refused)")
 REMEDY_WAIVER = ("record a waiver (`decisions.py waive --subject rule:engagement-floor:<id> "
                  "--rationale ...` for one unit, or `--subject rule:engagement-floor` for the "
                  "whole project), or set `engagement_floor: judgement` to opt out everywhere")
