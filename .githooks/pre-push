@@ -22,6 +22,7 @@ skill=".claude/skills/sdlc-studio/scripts"
 zero="0000000000000000000000000000000000000000"
 boundary=""                                        # the widest boundary in this push: it names the cost announced below
 tag_shas=""
+tag_names=""                                       # each pushed tag as <commit>:<name>, its name held to its tree
 commits=""                                         # each distinct pushed commit, judged once (BG0837)
 release_commits=""                                 # the pushed commits a tag points at, judged at release (BG0870)
 while read -r _local_ref local_sha remote_ref _remote_sha; do
@@ -29,7 +30,8 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
   [ "$local_sha" = "$zero" ] && continue           # a deletion pushes nothing to gate
   commit="$(git rev-parse --verify -q "$local_sha^{commit}" || echo "$local_sha")"   # an annotated tag peels to its commit
   case "$remote_ref" in
-    refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha"; release_commits="$release_commits $commit" ;;
+    refs/tags/*) boundary="release"; tag_shas="$tag_shas $local_sha"; release_commits="$release_commits $commit"
+                 tag_names="$tag_names $commit:${remote_ref#refs/tags/}" ;;
     *) [ "$boundary" = "release" ] || boundary="push" ;;
   esac
   case " $commits " in *" $commit "*) ;; *) commits="$commits $commit" ;; esac
@@ -265,6 +267,40 @@ if [ -z "$cost" ]; then
   [ -n "$cost" ] || cost="$suite: no run is recorded on this clone"
 fi
 echo "pre-push: $cost. Bypass once with: git push --no-verify" >&2
+
+# A tag's NAME is a claim about the tree it points at: the release workflow publishes the
+# archive under the name, while install.sh compares by the version inside the payload.
+# So each pushed tag, its leading `v` stripped, must be the exact version every home at its
+# commit declares, and the disclosure page there must be cut for that version's series. Read
+# here, before either gate path runs, local or on the gate host. A ref name holds no `:`, so
+# the pair splits cleanly.
+for tag_pair in $tag_names; do
+  tag_commit="${tag_pair%%:*}"
+  tag_name="${tag_pair#*:}"
+  tag_version="${tag_name#v}"
+  if [ -f tools/check_versions.py ]; then
+    python3 tools/check_versions.py --expect "$tag_version" --at "$tag_commit" 1>&2
+    cv_rc=$?
+    if [ "$cv_rc" -eq 1 ]; then
+      echo "pre-push: tag $tag_name names $tag_version, and the version check above did not find $tag_version declared by every home at its commit - tag the version the tree declares, or bump every home to $tag_version, commit, and tag that commit" >&2
+      exit 1
+    elif [ "$cv_rc" -ne 0 ]; then
+      echo "pre-push: the version check could not run on tag $tag_name (exit $cv_rc, see above) - the tag is refused until it can" >&2
+      exit 1
+    fi
+  else
+    echo "pre-push: the version check is not present in this clone (tools/check_versions.py) - tag $tag_name was not compared with the version its tree declares" >&2
+  fi
+  python3 tools/known_issues.py check --at "$tag_commit" --release "$tag_version" 1>&2
+  series_rc=$?
+  if [ "$series_rc" -eq 1 ]; then
+    echo "pre-push: docs/known-issues.md at tag $tag_name is not the page for $tag_version (named above) - cut it with: python3 tools/known_issues.py write --release $tag_version, commit, and tag that commit" >&2
+    exit 1
+  elif [ "$series_rc" -ne 0 ]; then
+    echo "pre-push: the known-issues check could not run on tag $tag_name (exit $series_rc, see above) - the tag is refused until it can" >&2
+    exit 1
+  fi
+done
 
 # --- judge each pushed commit on the gate host (US1075) --------------------------------------
 # remote-gate.sh sends exactly the commit, with this clone's remote-tracking refs and tags, and

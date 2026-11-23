@@ -10,6 +10,7 @@ cut shipped, and filing or closing a finding moves neither.
 
     python3 tools/known_issues.py write --release 5.2.0   # the cut: the page and the notes' count
     python3 tools/known_issues.py check [--at REV]        # 1 when page and corpus disagree
+    python3 tools/known_issues.py check --at REV --release 5.2.0   # ...or a page cut for another series
     python3 tools/known_issues.py bar [--at REV]          # 1 while a barred finding is open
 
 Repo-only tooling: not shipped with the skill. Pure stdlib.
@@ -411,6 +412,9 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--at", metavar="REV",
                        help="judge the page and the corpus as committed at REV (the pushed tag), "
                             "not as they stand in the working tree")
+    check.add_argument("--release", metavar="VERSION",
+                       help="the version being tagged: exit 1 too when the page is cut for "
+                            "another series than this version's")
     bar = sub.add_parser("bar", help="exit 1 when any finding at a barred severity is still "
                                      "open or a finding cannot be parsed, 2 when the corpus "
                                      "cannot be read at REV. A RELEASE-boundary "
@@ -428,7 +432,8 @@ def main(argv: list[str] | None = None) -> int:
         _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
         _warn_unclassifiable(root)  # ...and the severities neither reader recognises
         return _cut(root, args.release.removeprefix("v"))
-    judge = _bar if args.mode == "bar" else _check
+    def judge(at: Path) -> int:
+        return _bar(at) if args.mode == "bar" else _check(at, args.release)
     if args.at is None:
         return judge(root)
     # A tag ships its COMMIT: the corpus (and the page) are read as committed at REV (BG1521).
@@ -493,13 +498,28 @@ def _unreadable(rev: str, why: str) -> bool:
     return False
 
 
-def _check(root: Path) -> int:
-    """0 when the page is what the corpus implies for the release the page names, 1 when not."""
+def _check(root: Path, release: str | None = None) -> int:
+    """0 when the page is what the corpus implies for the release the page names, 1 when not.
+
+    Given `release`, the version being tagged, a page cut for another series is 1 as well: it
+    can agree with the corpus for the release it names and still be another release's
+    disclosure page."""
     _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
     _warn_unclassifiable(root)  # ...and the severities neither reader recognises
     page = root / PAGE_REL
     text = page.read_text(encoding="utf-8") if page.is_file() else ""
     named = _BAR_HEADING.search(text)
+    if release is not None:
+        try:
+            major, minor = _series(release)
+        except ValueError as exc:
+            print(f"{PAGE_REL} cannot be held to {release}: {exc}", file=sys.stderr)
+            return 1
+        if named and (int(named[1]), int(named[2])) != (major, minor):
+            print(f"{PAGE_REL} is cut for v{named[1]}.{named[2]}, not v{major}.{minor}, the "
+                  f"series {release} belongs to - cut it with "
+                  f"`python3 tools/known_issues.py write --release {release}`", file=sys.stderr)
+            return 1
     if named and text == render(root, f"{named[1]}.{named[2]}"):
         print(f"{PAGE_REL} agrees with the corpus ({len(corpus(root))} disclosed finding(s))")
         return 0

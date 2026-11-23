@@ -104,8 +104,11 @@ class TagNoCloseOwedTests(unittest.TestCase):
 
     def test_a_green_on_another_commit_still_refuses(self) -> None:
         """AC2. MUTANT: delete the whole guard rather than its close-owed half - it allows."""
-        root, sha, env = self._tagged_repo()
-        other = "0" * 40
+        root, other, env = self._tagged_repo()
+        # The gate ran on the fixture's commit; the tag names a later one it never ran on.
+        # `record-green` stamps only a commit the repository holds, so both are real commits.
+        _git(root, "commit", "-q", "--allow-empty", "-m", "after the gate")
+        sha = _git(root, "rev-parse", "HEAD")
         r = _run("release_cut.py", "record-green", "--commit", other, root=root, env=env)
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         r = _run("release_cut.py", "tag-check", "--commit", sha, root=root, env=env)

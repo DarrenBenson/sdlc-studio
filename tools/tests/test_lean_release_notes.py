@@ -194,13 +194,13 @@ class FrozenNotesTests(unittest.TestCase):
             self.assertNotIn("known_issues.py", branch.stderr)
             self.assertEqual(["--boundary push"], fx.gate_calls())
 
-            _pp._git(fx.clone, "tag", "v0.0.1")
-            tag = fx.push("v0.0.1")
+            _pp._git(fx.clone, "tag", "v6.0.1")
+            tag = fx.push("v6.0.1")
             self.assertNotEqual(0, tag.returncode, "a tag whose page disagrees was pushed")
             self.assertTrue(any("known_issues.py write --release" in ln and "disagrees" in ln
                                 for ln in _hook_lines(tag.stderr)),
                             "the hook's own refusal does not name the cut:\n" + tag.stderr)
-            self.assertNotIn("v0.0.1", _pp._git(fx.remote, "tag", "-l").stdout)
+            self.assertNotIn("v6.0.1", _pp._git(fx.remote, "tag", "-l").stdout)
             self.assertEqual(["--boundary push"], fx.gate_calls(),
                              "the gate ran after the cheap page check had already refused")
 
@@ -208,16 +208,16 @@ class FrozenNotesTests(unittest.TestCase):
             # pushed again. The working tree agrees; the tag does not, and the tag is what ships.
             (fx.clone / ki.PAGE_REL).write_text(ki.render(fx.clone, "6.0.0"), encoding="utf-8")
             self.assertEqual(0, _cli(fx.clone, "check").returncode, "the working tree disagrees")
-            uncommitted = fx.push("v0.0.1")
+            uncommitted = fx.push("v6.0.1")
             self.assertNotEqual(0, uncommitted.returncode,
                                 "a tag carrying a stale page shipped because the working tree agreed")
-            self.assertNotIn("v0.0.1", _pp._git(fx.remote, "tag", "-l").stdout)
+            self.assertNotIn("v6.0.1", _pp._git(fx.remote, "tag", "-l").stdout)
 
             # The positive control: the page committed and a tag on that commit goes through.
             _pp._git(fx.clone, "add", "-A")
             _pp._git(fx.clone, "commit", "-q", "-m", "cut the page")
-            _pp._git(fx.clone, "tag", "v0.0.2")
-            ok = fx.push("v0.0.2")
+            _pp._git(fx.clone, "tag", "v6.0.2")
+            ok = fx.push("v6.0.2")
             self.assertEqual(0, ok.returncode, ok.stderr)
             self.assertEqual("--boundary release", fx.gate_calls()[-1])
         finally:
@@ -232,10 +232,12 @@ class FrozenNotesTests(unittest.TestCase):
             text = script.read_text(encoding="utf-8")
             anchor = 'if __name__ == "__main__":'
             self.assertEqual(1, text.count(anchor))
-            script.write_text(text.replace(anchor, 'def _check(root):\n    raise RuntimeError('
-                                           '"simulated crash")\n\n\n' + anchor), encoding="utf-8")
-            _pp._git(fx.clone, "tag", "v0.0.1")
-            r = fx.push("v0.0.1")
+            # The stand-in keeps the real check's signature, so it is the crash that is reached.
+            script.write_text(text.replace(anchor, 'def _check(root, release=None):\n'
+                                           '    raise RuntimeError("simulated crash")\n\n\n'
+                                           + anchor), encoding="utf-8")
+            _pp._git(fx.clone, "tag", "v6.0.1")
+            r = fx.push("v6.0.1")
             self.assertNotEqual(0, r.returncode, "a check that crashed let the tag through")
             self.assertIn("simulated crash", r.stderr, "the crash itself was not shown")
             lines = _hook_lines(r.stderr)

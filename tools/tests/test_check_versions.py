@@ -8,10 +8,12 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 # tools/ lives at the repo root, six parents up from this test file.
@@ -424,6 +426,145 @@ class DocstringMatchesTheCodeTests(unittest.TestCase):
                 self.assertEqual("1.2.3", cv.from_readme(root),
                                  f"a bolded declaration was not read: {declared!r}")
 
+
+
+def _git_env() -> dict:
+    """The fixture's git: no repository-locating variable of the caller, no host config."""
+    import os  # noqa: PLC0415
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null",
+               GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t",
+               GIT_COMMITTER_EMAIL="t@t")
+    return env
+
+
+def _git(root: Path, *args: str) -> str:
+    return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True,
+                          env=_git_env()).stdout.strip()
+
+
+def _commit_all(root: Path, message: str) -> str:
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", message)
+    return _git(root, "rev-parse", "HEAD")
+
+
+#: Every home the fixture writes, so a test can move one or all of them.
+_HOMES = ("package.json", ".claude/skills/sdlc-studio/templates/version.yaml",
+          ".claude/skills/sdlc-studio/SKILL.md", "README.md", "CHANGELOG.md", "docs/design.md")
+
+
+def _set(root: Path, old: str, new: str, homes=_HOMES) -> None:
+    for rel in homes:
+        path = root / rel
+        path.write_text(path.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+
+
+class ExpectedVersionTests(unittest.TestCase):
+    """BG1545 AC3. The tag push asks one script whether the tagged commit declares the tag's
+    version: `--expect` names the version, `--at` the commit, and every home is held to it
+    exactly, a discovered spec home and the CHANGELOG's topmost release included."""
+
+    def _run(self, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = check_versions.main(list(argv))
+        return rc, err.getvalue(), out.getvalue()
+
+    def test_an_expected_version_is_compared_with_every_home_at_the_named_commit(self) -> None:
+        """MUTANT: read the working tree under `--at`, or skip a home that declares another
+        version."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root, "6.4.0", "6.4.0", "6.4.0", "6.4.0", "6.4.0")
+            # A spec home found only by discovery (not one of the seeded spec files), so only
+            # the commit's own listing can reach it.
+            (root / "docs").mkdir()
+            (root / "docs" / "design.md").write_text("# Design\n\n> **Version:** 6.4.0\n",
+                                                     encoding="utf-8")
+            (root / ".gitignore").write_text("scratch/\n", encoding="utf-8")
+            _git(root, "init", "-q")
+            declared = _commit_all(root, "6.4.0")
+            # The export lands inside the repository, where `git ls-files` there lists nothing
+            # it extracted: the commit's own listing must be what spec discovery walks.
+            (root / "scratch").mkdir()
+            scratch = mock.patch.object(tempfile, "tempdir", str(root / "scratch"))
+            scratch.start()
+            self.addCleanup(scratch.stop)
+            # The working tree moves on, uncommitted: `--at` must read the commit, not this.
+            _set(root, "6.4.0", "6.5.0")
+            self.assertEqual(0, self._run("--root", d, "--expect", "6.5.0")[0],
+                             "--expect alone reads the working tree")
+            # Without --expect the report is unchanged: strict says nothing more, and the
+            # default notes the CHANGELOG as advisory.
+            rc, _, out = self._run("--root", d, "--strict")
+            self.assertEqual((0, "Version 6.5.0 consistent across authoritative locations.\n"),
+                             (rc, out))
+            self.assertIn("(CHANGELOG topmost release: 6.5.0, advisory)", self._run("--root", d)[2])
+            # A repository-locating variable a hook exported never steers the read elsewhere.
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(root / "no-such-git-dir")}):
+                rc, err, _ = self._run("--root", d, "--expect", "6.4.0", "--at", declared)
+            self.assertEqual(0, rc, err)
+            rc, err, out = self._run("--root", d, "--expect", "6.4.0", "--at", declared)
+            self.assertEqual(0, rc, err)
+            self.assertIn(f"Version 6.4.0 declared by every authoritative location at {declared}",
+                          out)
+            rc, err, _ = self._run("--root", d, "--expect", "6.5.0", "--at", declared)
+            self.assertEqual(1, rc)
+            for home in ("package.json declares 6.4.0, not 6.5.0",
+                         "templates/version.yaml skill_version declares 6.4.0",
+                         "SKILL.md metadata.version declares 6.4.0", "README.md declares 6.4.0",
+                         "docs/design.md declares 6.4.0",
+                         "CHANGELOG.md topmost release declares 6.4.0, not 6.5.0"):
+                self.assertIn(home, err)
+            # One home behind, one at a pre-release, one declaring nothing: each is named once.
+            _set(root, "6.5.0", "6.4.0")
+            _set(root, "6.4.0", "6.3.0", homes=("package.json",))
+            _set(root, "6.4.0", "6.4.0-rc.1", homes=("README.md",))
+            _set(root, '  version: "6.4.0"\n', "", homes=(".claude/skills/sdlc-studio/SKILL.md",))
+            split = _commit_all(root, "three homes disagree")
+            _set(root, "6.3.0", "6.4.0", homes=("package.json",))
+            rc, err, _ = self._run("--root", d, "--expect", "6.4.0", "--at", split)
+            self.assertEqual(1, rc)
+            self.assertIn("package.json declares 6.3.0, not 6.4.0", err)
+            self.assertIn("README.md declares 6.4.0-rc.1, not 6.4.0", err)
+            self.assertIn("version mismatch", err)
+            self.assertIn("SKILL.md metadata.version: version not found", err)
+            self.assertNotIn("declares None", err)
+            self.assertNotIn("docs/design.md declares", err)
+
+    def test_a_commit_that_cannot_be_read_is_refused_apart_from_a_mismatch(self) -> None:
+        """A name that is no commit, or a tree git cannot list or archive, exits 2, said apart
+        from a mismatch (exit 1), so the hook can tell a refusal from a check that never ran. A
+        commit missing a home is a mismatch, never a check that could not run. MUTANT: exit 1
+        or 0 for an unreadable commit, or ask git for a home the commit does not hold."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "package.json").write_text('{"version": "6.4.0"}', encoding="utf-8")
+            _git(root, "init", "-q")
+            bare = _commit_all(root, "package.json alone")
+            rc, err, _ = self._run("--root", d, "--expect", "6.4.0", "--at", bare)
+            self.assertEqual(1, rc, err)
+            self.assertIn("README.md: version not found", err)
+            for rev in ("no-such-rev", "--output=x"):
+                with self.subTest(rev):
+                    rc, err, _ = self._run("--root", d, "--expect", "6.4.0", f"--at={rev}")
+                    self.assertEqual(2, rc, err)
+                    self.assertIn(f"{rev!r} does not resolve to a commit", err)
+            real = check_versions._git
+            for verb, said in (("ls-tree", "cannot be listed"), ("archive", "cannot be read")):
+                def failing(at, *args, _verb=verb, **kw):
+                    if args[0] == _verb:
+                        return subprocess.CompletedProcess(args, 128, "" if kw.get("text", True)
+                                                           else b"", "fatal: bad object"
+                                                           if kw.get("text", True)
+                                                           else b"fatal: bad object")
+                    return real(at, *args, **kw)
+                with self.subTest(verb), mock.patch.object(check_versions, "_git", failing):
+                    rc, err, _ = self._run("--root", d, "--expect", "6.4.0", "--at", bare)
+                    self.assertEqual(2, rc, err)
+                    self.assertIn(said, err)
+                    self.assertIn("fatal: bad object", err)
 
 if __name__ == "__main__":
     unittest.main()

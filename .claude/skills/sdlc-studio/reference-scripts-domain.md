@@ -81,9 +81,14 @@ for non-adopters.
 The release cut and tag guard. `changelog-cut --version X.Y.Z` composes the pending fragments
 (`compose --apply`) then moves that body under a new `## [X.Y.Z] - <date>` header, emptying
 `[Unreleased]` - the notes come from the per-unit fragments, never a hand-written section.
-`record-green --commit <sha>` stamps the commit the pre-tag gate passed on; `tag-check --commit
-<sha>` refuses unless that stamp names the same commit, so a tag can never assert a green that
-was measured on a different tree.
+`record-green --commit <sha>` stamps the full sha the name resolves to, writing nothing for a
+name that resolves to no commit. `tag-check --commit <sha>` refuses a name that resolves to no
+commit, a missing stamp, a stamp holding anything but the sha of a commit here (an older `HEAD`
+stamp included) or naming another commit, a generated evidence page that differs from what the
+committed signed reports render, the last cut version's evidence pack missing or not what its
+named reports rebuild to (once a signed report is committed), a record it cannot read, and CI
+not passed on the forge unless the clone has no remote or one `gh` cannot query. So a tag never
+asserts a green measured on a different tree, or ships records older than the reports beside it.
 
 ### `evidence_pack.py`
 

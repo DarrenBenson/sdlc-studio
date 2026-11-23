@@ -27,18 +27,31 @@ pre-release suffix is ignored. --strict (the release gate) compares the
 full version: a cut left with one home at 6.0.0-rc.1 beside 6.0.0 is a
 skill that offers its own release to itself.
 
+--expect X.Y.Z holds every home, and the CHANGELOG topmost release, to
+that exact version, as --strict compares, naming each home that declares
+another. --at REV reads the homes as committed at REV rather than the
+working tree. The pre-push hook passes both for each pushed tag: the
+tag's name without its leading v, and the commit it points at.
+
 Usage:
     python3 tools/check_versions.py [--root DIR] [--strict]
+    python3 tools/check_versions.py [--root DIR] --expect X.Y.Z [--at REV]
 
-Exits non-zero on any mismatch or unparseable location.
+Exits 1 on any mismatch or unparseable location, and 2 when --at names
+no commit the repository can read.
 """
 from __future__ import annotations
 
 import argparse
 import contextlib
+import io
 import json
+import os
 import re
+import subprocess
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
 
 SKILL_DIR = ".claude/skills/sdlc-studio"
@@ -159,16 +172,17 @@ def tracked_markdown(root: Path) -> list[str]:
     return found
 
 
-def discover_spec_homes(root: Path) -> list[str]:
+def discover_spec_homes(root: Path, listing: list[str] | None = None) -> list[str]:
     """Tracked markdown files that DECLARE a version, so coverage follows the repo.
 
     A hand-maintained list is a list somebody must remember to extend, and the one this
     replaced had not been extended in two files' worth of drift. Artefact directories are
     excluded: a bug REPORTING a version mismatch quotes a version, and holding it to the
-    current one would make the report unfileable.
+    current one would make the report unfileable. `listing` is the tracked markdown when the
+    caller already holds it, as `--at` does for a tree exported from a commit.
     """
     homes = []
-    for rel in tracked_markdown(root):
+    for rel in tracked_markdown(root) if listing is None else listing:
         if any(seg in f"/{rel}" for seg in _NOT_A_HOME):
             continue
         if from_spec(root, rel) is None:
@@ -262,15 +276,71 @@ def from_changelog(root: Path) -> str | None:
     return m.group(1) if m else None
 
 
+def _git(root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:
+    """git at `root`, never steered elsewhere by a locating variable a hook exported."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=text,
+                          timeout=120, check=False, env=env)
+
+
+#: The homes `--at` extracts besides every tracked markdown file.
+_FILE_HOMES = ("package.json", f"{SKILL_DIR}/templates/version.yaml")
+
+
+def export_at(root: Path, rev: str, dest: Path) -> list[str]:
+    """Extract the version homes as committed at `rev` into `dest`, and return the markdown the
+    commit tracks, the listing spec discovery walks. A tag ships its COMMIT, so a home bumped in
+    the working tree and left uncommitted is not the version the tag carries. Raises ValueError
+    when `rev` names no commit, or its tree cannot be read."""
+    sha = _git(root, "rev-parse", "--verify", "--quiet", "--end-of-options",
+               f"{rev}^{{commit}}").stdout.strip()
+    if not sha:
+        raise ValueError(f"{rev!r} does not resolve to a commit in {root}")
+    listed = _git(root, "ls-tree", "-r", "-z", "--name-only", sha)
+    if listed.returncode != 0:
+        raise ValueError(f"the tree at {rev} cannot be listed: {listed.stderr.strip()}")
+    tracked = [path for path in listed.stdout.split("\0") if path]
+    markdown = [path for path in tracked if path.endswith(".md")]
+    # Pathspecs rather than every path, which would outgrow an argument list; `git archive`
+    # refuses one that matches nothing, so each is passed only when the commit holds a match.
+    specs = [home for home in _FILE_HOMES if home in tracked] + (["*.md"] if markdown else [])
+    if specs:
+        tar = _git(root, "archive", "--format=tar", sha, "--", *specs, text=False)
+        if tar.returncode != 0:
+            raise ValueError(f"the homes at {rev} cannot be read: "
+                             f"{tar.stderr.decode(errors='replace').strip()}")
+        with tarfile.open(fileobj=io.BytesIO(tar.stdout)) as archive:
+            archive.extractall(dest, filter="data")
+    return markdown
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
     parser.add_argument("--strict", action="store_true",
                         help="compare full versions, pre-release suffix included, and the "
                              "CHANGELOG topmost release must match too (release gate)")
+    parser.add_argument("--expect", metavar="X.Y.Z",
+                        help="the version every home and the CHANGELOG topmost release must "
+                             "declare exactly, as --strict compares (the tag push passes the "
+                             "tag's version)")
+    parser.add_argument("--at", metavar="REV",
+                        help="read the homes as committed at REV, not the working tree")
     args = parser.parse_args(argv)
-    root = Path(args.root)
+    if args.at is None:
+        return _judge(Path(args.root), args)
+    with tempfile.TemporaryDirectory(prefix="check_versions_at_") as tmp:
+        try:
+            listing = export_at(Path(args.root), args.at, Path(tmp))
+        except ValueError as exc:
+            print(f"VERSIONS: {exc}", file=sys.stderr)
+            return 2
+        return _judge(Path(tmp), args, listing)
 
+
+def _judge(root: Path, args: argparse.Namespace, listing: list[str] | None = None) -> int:
+    """Compare the homes under `root` as `args` asks; 0 when they agree, 1 when not."""
+    strict = args.strict or args.expect is not None
     versions = {
         "package.json": from_package_json(root),
         "templates/version.yaml skill_version": from_version_yaml(root),
@@ -281,7 +351,7 @@ def main(argv: list[str] | None = None) -> int:
     # different is drift, and it is the drift nothing was looking for. DISCOVERED, so a new
     # home is covered without editing this guard.
     try:
-        homes = discover_spec_homes(root)
+        homes = discover_spec_homes(root, listing)
     except DiscoveryFailed as exc:
         # Never a clean pass over nothing: a scan that could not list its own scope has not
         # checked anything, and reporting success is the loudest possible lie here.
@@ -294,21 +364,31 @@ def main(argv: list[str] | None = None) -> int:
     changelog = from_changelog(root)
 
     errors = [f"{name}: version not found" for name, v in versions.items() if v is None]
-    key = (lambda v: v) if args.strict else _core
+    key = (lambda v: v) if strict else _core
     found = {key(v) for v in versions.values() if v is not None}
     if len(found) > 1:
         detail = ", ".join(f"{name}={v}" for name, v in versions.items())
         errors.append(f"version mismatch: {detail}")
+    if args.expect is not None:
+        errors += [f"{name} declares {v}, not {args.expect}"
+                   for name, v in versions.items() if v is not None and v != args.expect]
 
-    if args.strict:
+    if strict:
         if changelog is None:
             errors.append("CHANGELOG.md: no released [x.y.z] heading found")
+        elif args.expect is not None:
+            if changelog != args.expect:
+                errors.append(f"CHANGELOG.md topmost release declares {changelog}, "
+                              f"not {args.expect}")
         elif found and changelog not in found:
             errors.append(f"CHANGELOG.md topmost release {changelog} != {sorted(found)[0]}")
 
     for err in errors:
         print(f"VERSIONS: {err}", file=sys.stderr)
-    if not errors:
+    if not errors and args.expect is not None:
+        where = f" at {args.at}" if args.at else ""
+        print(f"Version {args.expect} declared by every authoritative location{where}.")
+    elif not errors:
         v = sorted(found)[0] if found else "unknown"
         note = "" if args.strict else f" (CHANGELOG topmost release: {changelog or 'none'}, advisory)"
         print(f"Version {v} consistent across authoritative locations.{note}")

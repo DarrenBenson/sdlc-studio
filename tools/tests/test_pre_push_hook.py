@@ -11,6 +11,8 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import os
 import shlex
 import shutil
@@ -265,39 +267,39 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
         try:
             self.assertEqual(0, fx.push().returncode)
             fx.argv.unlink(missing_ok=True)
-            _git(fx.clone, "tag", "v0.0.1")
-            self.assertEqual(0, fx.push("v0.0.1").returncode)
+            _git(fx.clone, "tag", "v6.0.1")
+            self.assertEqual(0, fx.push("v6.0.1").returncode)
             self.assertEqual(["--boundary release"], fx.gate_calls(), "a tag push did not run the release boundary once")
             fx.argv.unlink(missing_ok=True)
             fx.commit_more()
-            _git(fx.clone, "tag", "v0.0.2")
-            self.assertEqual(0, fx.push("main", "v0.0.2").returncode)
+            _git(fx.clone, "tag", "v6.0.2")
+            self.assertEqual(0, fx.push("main", "v6.0.2").returncode)
             self.assertEqual(["--boundary release"], fx.gate_calls(),
                              "a branch-plus-tag push must run the gate exactly once, at release")
             fx.argv.unlink(missing_ok=True)
-            self.assertEqual(0, fx.push(":refs/tags/v0.0.1").returncode)
+            self.assertEqual(0, fx.push(":refs/tags/v6.0.1").returncode)
             self.assertEqual([], fx.gate_calls(), "a deletion ran the gate")
             # the REMOTE ref column decides: a branch pushed to a tag ref is a release (qa seat, X1)
             fx.argv.unlink(missing_ok=True)
-            self.assertEqual(0, fx.push("main:refs/tags/v0.0.3").returncode)
+            self.assertEqual(0, fx.push("main:refs/tags/v6.0.3").returncode)
             self.assertEqual(["--boundary release"], fx.gate_calls(),
                              "a branch pushed to a tag ref must be judged by the remote ref, not the local one")
             # a tag row FOLLOWED by a branch row still runs once, at release (engineering seat, H2)
             fx.argv.unlink(missing_ok=True)
             sha = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
-            rows = f"refs/tags/v0.0.2 {sha} refs/tags/v0.0.2 {'0' * 40}\nrefs/heads/main {sha} refs/heads/main {'0' * 40}\n"
+            rows = f"refs/tags/v6.0.2 {sha} refs/tags/v6.0.2 {'0' * 40}\nrefs/heads/main {sha} refs/heads/main {'0' * 40}\n"
             self.assertEqual(0, fx.hook_direct(rows).returncode)
             self.assertEqual(["--boundary release"], fx.gate_calls(),
                              "a later branch row must not demote a release to a push")
             # the release half refuses too: a red gate on a tag push (engineering r2, X1 and S1)
             fx.argv.unlink(missing_ok=True)
             fx.commit_more()
-            _git(fx.clone, "tag", "v0.0.4")
-            r = fx.push("v0.0.4", rc=1)
+            _git(fx.clone, "tag", "v6.0.4")
+            r = fx.push("v6.0.4", rc=1)
             self.assertNotEqual(0, r.returncode, "a red gate did not refuse the tag push:\n" + r.stderr)
             self.assertIn("release-rehearsal STUBBED", r.stderr, "the lane is not on the refusal's stream for a tag push:\n" + r.stderr)
             self.assertIn("gate.py --boundary release", r.stderr, "the refusal does not name the release re-run:\n" + r.stderr)
-            self.assertNotIn("v0.0.4", _git(fx.remote, "tag", "-l").stdout, "the remote gained the tag despite the refusal")
+            self.assertNotIn("v6.0.4", _git(fx.remote, "tag", "-l").stdout, "the remote gained the tag despite the refusal")
         finally:
             fx.cleanup()
 
@@ -335,8 +337,8 @@ class ThePushBoundaryHasAHookTests(unittest.TestCase):
                             "the line did not precede the gate's own output:\n" + out)
             self.assertIn("git push --no-verify", out.split("release-rehearsal STUBBED")[0],
                           "the bypass was not named before the gate ran")
-            _git(bare.clone, "tag", "v0.0.1")
-            tag = bare.push("v0.0.1", rc=1).stderr
+            _git(bare.clone, "tag", "v6.0.1")
+            tag = bare.push("v6.0.1", rc=1).stderr
             self.assertIn("boundary-release: no run is recorded on this clone", tag,
                           "with no history the tag line was not printed:\n" + tag)
             self.assertIn("release-rehearsal and module-alone", tag,
@@ -367,11 +369,11 @@ class ARedMainIsReadBeforeTheNextPushTests(unittest.TestCase):
             self.assertEqual(0, fx.remote_count())
             # the read is of MAIN whatever ref is pushed: a tag pushed from a TOPIC checkout still reads main
             _git(fx.clone, "checkout", "-q", "-b", "topic")
-            _git(fx.clone, "tag", "v9.9.9")
-            tag = fx.push("v9.9.9", gh_mode="red", rc=0)
+            _git(fx.clone, "tag", "v6.0.9")
+            tag = fx.push("v6.0.9", gh_mode="red", rc=0)
             self.assertNotEqual(0, tag.returncode, "a tag push over a red main was not refused:\n" + tag.stderr)
             self.assertIn("--branch main", fx.gh_calls()[-1], "a tag push did not read main:\n" + str(fx.gh_calls()))
-            self.assertNotIn("v9.9.9", _git(fx.remote, "tag", "-l").stdout)
+            self.assertNotIn("v6.0.9", _git(fx.remote, "tag", "-l").stdout)
         finally:
             fx.cleanup()
 
@@ -641,13 +643,13 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
             self.assertEqual(0, fx.push().returncode)
             fx.argv.unlink(missing_ok=True)
             # the positive control first: a tag on a commit with no barred finding open
-            _git(fx.clone, "tag", "v0.0.1")
-            clean = fx.push("v0.0.1")
+            _git(fx.clone, "tag", "v6.0.1")
+            clean = fx.push("v6.0.1")
             self.assertEqual(0, clean.returncode, clean.stderr)
             self.assertNotIn("release bar", clean.stderr.replace("release bar met", ""), clean.stderr)
             self.assertEqual(["--boundary release"], fx.gate_calls())
             fx.argv.unlink(missing_ok=True)
-            sha = self._tag_over_an_open_high(fx, "v0.0.2")
+            sha = self._tag_over_an_open_high(fx, "v6.0.2")
             check = subprocess.run([sys.executable, "tools/known_issues.py", "check", "--at", sha],
                                    cwd=fx.clone, capture_output=True, text=True, timeout=60)
             self.assertEqual(0, check.returncode, "the premise: the page agrees with its corpus\n"
@@ -655,13 +657,13 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
             # the working tree no longer holds the finding, so only a read AT the commit refuses
             (fx.clone / known_issues.BUGS_REL / "BG0001-a-blocker.md").write_text(
                 "# BG0001: a blocker\n\n> **Status:** Fixed\n> **Severity:** High\n", encoding="utf-8")
-            r = fx.push("v0.0.2")
+            r = fx.push("v6.0.2")
             self.assertNotEqual(0, r.returncode, "a tag over an open High finding was let through:\n" + r.stderr)
             refusal = next((ln for ln in r.stderr.splitlines() if ln.startswith("pre-push:") and sha in ln), "")
             self.assertIn("release bar is not met", refusal, r.stderr)
             self.assertIn("BG0001 (High)", r.stderr, "the open finding is not named:\n" + r.stderr)
             self.assertEqual([], fx.gate_calls(), "the gate ran past a refused tag")
-            self.assertNotIn("v0.0.2", _git(fx.remote, "tag", "-l").stdout, "the remote gained the tag")
+            self.assertNotIn("v6.0.2", _git(fx.remote, "tag", "-l").stdout, "the remote gained the tag")
         finally:
             fx.cleanup()
 
@@ -670,7 +672,7 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
         through; the could-not-run line naming no commit."""
         fx = _Clone()
         try:
-            sha = self._tag_over_an_open_high(fx, "v0.0.3")
+            sha = self._tag_over_an_open_high(fx, "v6.0.3")
             real = fx.clone / "tools" / "known_issues_real.py"
             (fx.clone / "tools" / "known_issues.py").rename(real)
             # `check` is the real one; `bar` cannot run, as a crash or an unreadable corpus exits 2
@@ -679,7 +681,7 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
                 "if sys.argv[1:2] == ['bar']:\n"
                 "    sys.stderr.write('Traceback: the corpus reader crashed\\n'); raise SystemExit(2)\n"
                 f"runpy.run_path({str(real)!r}, run_name='__main__')\n", encoding="utf-8")
-            r = fx.push("v0.0.3")
+            r = fx.push("v6.0.3")
             self.assertNotEqual(0, r.returncode, "a bar that could not run let the tag through:\n" + r.stderr)
             self.assertIn(f"the release bar could not run on tagged commit {sha}", r.stderr, r.stderr)
             self.assertNotIn("release bar is not met", r.stderr, "a could-not-run was reported as an open finding")
@@ -929,10 +931,10 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             marked.write_text(MARKED_RED.format(sentinel=MARKED_SENTINEL), encoding="utf-8")
             _git(fx.clone, "add", "-A")         # the hook judges the pushed commit, so commit it (BG0837)
             _git(fx.clone, "commit", "-q", "-m", "the shim and a red marked test")
-            _git(fx.clone, "tag", "v0.0.1")
+            _git(fx.clone, "tag", "v6.0.1")
 
             log = fx.clone / "sdlc-studio" / ".local" / "boundary-suite-last.log"
-            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v0.0.1", "release", "module-alone")):
+            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v6.0.1", "release", "module-alone")):
                 with self.subTest(boundary=boundary):
                     r = fx.push(refspec, gh_mode="empty")
                     self.assertNotEqual(0, r.returncode,
@@ -959,8 +961,8 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
             marked.write_text(MARKED_GREEN.format(ran=str(ran)), encoding="utf-8")
             _git(fx.clone, "add", "-A")
             _git(fx.clone, "commit", "-q", "-m", "the marked test green")
-            _git(fx.clone, "tag", "-f", "v0.0.1")      # the refused tag never reached the remote
-            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v0.0.1", "release", "module-alone")):
+            _git(fx.clone, "tag", "-f", "v6.0.1")      # the refused tag never reached the remote
+            for refspec, boundary, lane in (("main", "push", "full-suite"), ("v6.0.1", "release", "module-alone")):
                 with self.subTest(control=boundary):
                     ran.unlink(missing_ok=True)
                     r = fx.push(refspec, gh_mode="empty")
@@ -968,7 +970,7 @@ class BoundaryMarkerReachesThePushTests(unittest.TestCase):
                     self.assertIn(f"[PASS] {lane}", r.stderr, r.stderr)
                     self.assertTrue(ran.exists(), f"the marked test was skipped at {boundary}, not executed")
             self.assertEqual(3, fx.remote_count(), "the green control's branch push did not land")
-            self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the green control's tag did not land")
+            self.assertIn("v6.0.1", _git(fx.remote, "tag", "-l").stdout, "the green control's tag did not land")
         finally:
             fx.cleanup()
 
@@ -1018,14 +1020,14 @@ class PrePushWorktreeTests(unittest.TestCase):
         commits, and the gate runs twice."""
         fx = _Clone()
         try:
-            _git(fx.clone, "tag", "-a", "v0.0.1", "-m", "release")
-            self.assertEqual("tag", _git(fx.clone, "cat-file", "-t", "v0.0.1").stdout.strip(),
+            _git(fx.clone, "tag", "-a", "v6.0.1", "-m", "release")
+            self.assertEqual("tag", _git(fx.clone, "cat-file", "-t", "v6.0.1").stdout.strip(),
                              "the fixture tag is not annotated")
-            r = fx.push("main", "v0.0.1")
+            r = fx.push("main", "v6.0.1")
             self.assertEqual(0, r.returncode, r.stderr)
             self.assertEqual(["--boundary release"], fx.gate_calls(),
                              "main and an annotated tag on one commit must run the gate once, at release")
-            self.assertIn("v0.0.1", _git(fx.remote, "tag", "-l").stdout, "the tag did not land")
+            self.assertIn("v6.0.1", _git(fx.remote, "tag", "-l").stdout, "the tag did not land")
         finally:
             fx.cleanup()
 
@@ -1039,11 +1041,11 @@ class PrePushWorktreeTests(unittest.TestCase):
             _git(fx.clone, "add", "-A")
             _git(fx.clone, "commit", "-q", "-m", "a recording gate")
             tagged = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
-            _git(fx.clone, "tag", "-a", "v0.0.1", "-m", "release")
+            _git(fx.clone, "tag", "-a", "v6.0.1", "-m", "release")
             fx.commit_more()
             tip = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
             self.assertNotEqual(tagged, tip)
-            r = fx.push("main", "v0.0.1")
+            r = fx.push("main", "v6.0.1")
             self.assertEqual(0, r.returncode, r.stderr)
             self.assertEqual(sorted([f"--boundary push @ {tip}", f"--boundary release @ {tagged}"]),
                              sorted(fx.gate_calls()),
@@ -1051,6 +1053,138 @@ class PrePushWorktreeTests(unittest.TestCase):
         finally:
             fx.cleanup()
 
+
+
+class TagNameMatchesTheTreeTests(unittest.TestCase):
+    """BG1545. The tag's name was read only to choose the release boundary, so a tag named for
+    one version over a tree declaring another passed the whole tag gate and was published under
+    the wrong number. Each pushed tag is now held to the version its commit declares, through
+    `tools/check_versions.py --expect --at`, and to the disclosure page's series, through
+    `tools/known_issues.py check --release`, before either gate path runs."""
+
+    def _clone(self, page_release: str = "6.4.0") -> _Clone:
+        """A clone whose version homes declare 6.4.0, with the real version check beside the
+        known-issues one and a disclosure page cut for `page_release`."""
+        fx = _Clone()
+        self.addCleanup(fx.cleanup)
+        shutil.copy(REPO / "tools" / "check_versions.py", fx.clone / "tools" / "check_versions.py")
+        skill = fx.clone / ".claude" / "skills" / "sdlc-studio"
+        (skill / "templates").mkdir()
+        (skill / "templates" / "version.yaml").write_text('skill_version: "6.4.0"\n',
+                                                         encoding="utf-8")
+        (skill / "SKILL.md").write_text("---\nname: x\nmetadata:\n  version: \"6.4.0\"\n---\n",
+                                        encoding="utf-8")
+        (fx.clone / "package.json").write_text('{"version": "6.4.0"}\n', encoding="utf-8")
+        (fx.clone / "README.md").write_text("# Fixture\n\n**Version:** 6.4.0\n", encoding="utf-8")
+        (fx.clone / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [Unreleased]\n\n## [6.4.0] - 2026-11-16\n", encoding="utf-8")
+        (fx.clone / known_issues.PAGE_REL).write_text(
+            known_issues.render(fx.clone, page_release), encoding="utf-8")
+        _git(fx.clone, "add", "-A")
+        _git(fx.clone, "commit", "-q", "-m", "declare 6.4.0")
+        return fx
+
+    @staticmethod
+    def _feed(fx: _Clone, ref: str) -> subprocess.CompletedProcess:
+        """The hook fed one ref line for HEAD, the gate lanes stubbed green."""
+        sha = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        if ref.startswith("refs/tags/"):
+            _git(fx.clone, "tag", "-f", ref.removeprefix("refs/tags/"))
+        return fx.hook_direct(f"{ref} {sha} {ref} {'0' * 40}\n")
+
+    def test_a_tag_naming_another_version_is_refused(self) -> None:
+        """AC1. MUTANT: drop the version check from the tag loop - the hook exits 0."""
+        fx = self._clone()
+        r = self._feed(fx, "refs/tags/v6.5.0")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("tag v6.5.0 names 6.5.0", r.stderr)
+        self.assertIn("package.json declares 6.4.0, not 6.5.0", r.stderr)
+        self.assertEqual([], fx.gate_calls(), "the gate ran on a tag its tree does not declare")
+
+    def test_a_matching_tag_and_a_branch_push_pass(self) -> None:
+        """AC2. The positive controls: a tag naming the declared version reaches the release
+        gate, and a branch push is never put to the name check. MUTANT: compare the tag with
+        its leading `v` kept, or run the check on every pushed ref."""
+        fx = self._clone()
+        r = self._feed(fx, "refs/tags/v6.4.0")
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertIn("Version 6.4.0 declared by every authoritative location", r.stderr)
+        self.assertEqual(["--boundary release"], fx.gate_calls())
+        r = self._feed(fx, "refs/heads/main")
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertNotIn("declared by every authoritative location", r.stderr)
+        self.assertEqual(["--boundary release", "--boundary push"], fx.gate_calls())
+
+    def test_a_known_issues_page_for_another_series_is_refused(self) -> None:
+        """AC4. A page cut for 6.3 agrees with its own corpus, so the corpus check alone passes
+        it; held to the tag's series it is refused naming both. MUTANT: drop `--release` from
+        the hook's known-issues call."""
+        fx = self._clone(page_release="6.3.0")
+        r = self._feed(fx, "refs/tags/v6.4.0")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("docs/known-issues.md is cut for v6.3, not v6.4", r.stderr)
+        self.assertIn("not the page for 6.4.0", r.stderr)
+        self.assertEqual([], fx.gate_calls(), "the gate ran on a tag over another release's page")
+
+    def test_a_clone_without_the_version_check_is_told_and_the_page_is_still_read(self) -> None:
+        """A clone whose tools/ lacks check_versions.py says the name was not compared, as the
+        prerequisite check does, and its page series is still held to the tag. MUTANT: skip the
+        known-issues series check along with the version check."""
+        fx = _Clone()
+        self.addCleanup(fx.cleanup)
+        sha = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        ok = fx.hook_direct(f"refs/tags/v6.0.1 {sha} refs/tags/v6.0.1 {'0' * 40}\n")
+        self.assertEqual(0, ok.returncode, ok.stderr)
+        self.assertIn("the version check is not present in this clone", ok.stderr)
+        r = fx.hook_direct(f"refs/tags/v6.1.0 {sha} refs/tags/v6.1.0 {'0' * 40}\n")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("docs/known-issues.md is cut for v6.0, not v6.1", r.stderr)
+        # A tag naming a series older than every recorded bar has no page it could be held to.
+        r = fx.hook_direct(f"refs/tags/v0.0.9 {sha} refs/tags/v0.0.9 {'0' * 40}\n")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("docs/known-issues.md cannot be held to 0.0.9: no bar is recorded", r.stderr)
+        self.assertEqual(["--boundary release"], fx.gate_calls(), "a refused tag reached the gate")
+
+    def test_a_page_with_no_bar_heading_is_not_the_page_for_any_release(self) -> None:
+        """The series check reads the page's bar heading; a page with none is the page for no
+        release, refused as a disagreement rather than read as a match or a crash. Reached
+        directly, since at a tag the corpus check refuses such a page first. MUTANT: compare a
+        missing heading's series, which raises."""
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "docs").mkdir()
+            (Path(d) / known_issues.PAGE_REL).write_text("# Known issues\n", encoding="utf-8")
+            with contextlib.redirect_stderr(io.StringIO()) as err, \
+                    contextlib.redirect_stdout(io.StringIO()):
+                rc = known_issues.main(["check", "--root", d, "--release", "6.4.0"])
+        self.assertEqual(1, rc, err.getvalue())
+        self.assertIn("disagrees with the bug corpus", err.getvalue())
+
+    def test_a_check_that_could_not_run_is_not_reported_as_a_mismatch(self) -> None:
+        """Exit 2 from the version check is a check that never ran, said apart from a tree
+        that declares another version, and the tag is still refused. MUTANT: treat any non-zero
+        exit as a mismatch, or let a check that could not run pass."""
+        fx = self._clone()
+        (fx.clone / "tools" / "check_versions.py").write_text("raise SystemExit(2)\n",
+                                                             encoding="utf-8")
+        r = self._feed(fx, "refs/tags/v6.4.0")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("the version check could not run on tag v6.4.0 (exit 2", r.stderr)
+        self.assertNotIn("names 6.4.0", r.stderr)
+        self.assertEqual([], fx.gate_calls())
+        # The same for the page's series: a known-issues check that crashes only when held to
+        # the tag's release is a check that never ran, not a page for another release.
+        _git(fx.clone, "checkout", "--", "tools/check_versions.py")
+        real = fx.clone / "tools" / "known_issues.py"
+        real.rename(fx.clone / "tools" / "known_issues_real.py")
+        real.write_text("import runpy, sys\n"
+                        "if '--release' in sys.argv:\n    raise SystemExit(2)\n"
+                        "runpy.run_path(sys.argv[0].replace('known_issues.py', "
+                        "'known_issues_real.py'), run_name='__main__')\n", encoding="utf-8")
+        r = self._feed(fx, "refs/tags/v6.4.0")
+        self.assertNotEqual(0, r.returncode, r.stderr)
+        self.assertIn("the known-issues check could not run on tag v6.4.0 (exit 2", r.stderr)
+        self.assertNotIn("is not the page for", r.stderr)
+        self.assertEqual([], fx.gate_calls())
 
 if __name__ == "__main__":
     unittest.main()

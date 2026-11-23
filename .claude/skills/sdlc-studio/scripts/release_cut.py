@@ -7,13 +7,18 @@ Its verbs:
 - `changelog-cut --version X.Y.Z` composes the pending `changelog.d/` fragments into `[Unreleased]`
   (the release-time `compose --apply`), then moves that body under a new `## [X.Y.Z] - <date>`
   header, leaving `[Unreleased]` empty. This is the deterministic cut US0348 requires - the notes
-  come from the per-unit fragments, never a hand-written section. It then prints one `persona
+  come from the per-unit fragments, never a hand-written section. A version that already has a
+  section, or a changelog with no `[Unreleased]`, is refused before anything is composed, so a
+  refused cut leaves CHANGELOG.md and every fragment as they were. It then prints one `persona
   review owed:` line per persona or seat card `persona_review.owed` names, on stdout and never
   in CHANGELOG.md: an owed review is reported, never a refusal.
 
-- `record-green --commit <sha>` stamps the commit the pre-tag gate passed on; `tag-check --commit
-  <sha>` refuses unless that stamp names the same commit. A tag asserting a green measured on a
-  different tree is the false claim this exists to prevent (US0348 AC3).
+- `record-green --commit <sha>` stamps the full sha the named commit resolves to, and refuses a
+  name git cannot resolve to a commit; `tag-check --commit <sha>` resolves its argument the same
+  way and refuses unless the stamp names the same commit. A tag asserting a green measured on a
+  different tree is the false claim this exists to prevent (US0348 AC3). It also refuses a
+  generated evidence page or evidence pack the tagged commit holds out of date with the records
+  beside it (see `stale_release_records`).
 
 - `evidence-pack --version X.Y.Z --reports RPT0001,RPT0002` writes the release's evidence pack
   under `sdlc-studio/reports/` from the named signed reports, read as committed. The logic lives
@@ -22,11 +27,13 @@ Its verbs:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -47,16 +54,20 @@ def cut_changelog(root: Path | str, version: str) -> str:
     `## [version] - <date>` header, leaving `[Unreleased]` empty. Returns the new header line.
 
     Refuses when the version already has a section (the cut is not idempotent-by-accident: a second
-    cut of the same version would silently duplicate it) or when there is no `[Unreleased]`."""
+    cut of the same version would silently duplicate it) or when there is no `[Unreleased]`. Both
+    are asked of CHANGELOG.md BEFORE the fragments are composed, because composing rewrites
+    `[Unreleased]` and deletes every fragment: a refusal that says nothing was cut must leave
+    nothing changed."""
     root = Path(root)
-    changelog.compose(root, apply=True)          # the release-time fold + consume of the fragments
     clog = root / "CHANGELOG.md"
-    text = clog.read_text(encoding="utf-8")
     header = f"## [{version}]"
-    if re.search(rf"(?m)^{re.escape(header)}", text):
+    before = clog.read_text(encoding="utf-8")
+    if re.search(rf"(?m)^{re.escape(header)}", before):
         raise ValueError(f"CHANGELOG.md already carries a {header} section - nothing cut")
-    if "## [Unreleased]" not in text:
+    if "## [Unreleased]" not in before:
         raise ValueError("CHANGELOG.md has no '## [Unreleased]' section to cut from")
+    changelog.compose(root, apply=True)          # the release-time fold + consume of the fragments
+    text = clog.read_text(encoding="utf-8")
     head, rest = text.split("## [Unreleased]", 1)
     nxt = re.search(r"\n## \[", rest)
     body, tail = (rest[:nxt.start()], rest[nxt.start():]) if nxt else (rest, "")
@@ -69,10 +80,18 @@ def cut_changelog(root: Path | str, version: str) -> str:
 
 
 def record_green(root: Path | str, commit: str) -> Path:
-    """Stamp the commit the pre-tag gate passed on."""
+    """Stamp the commit the pre-tag gate passed on, as the full sha `commit` resolves to.
+
+    A name such as HEAD or a branch moves with every commit, so a stamp holding it would match
+    whatever commit it names when the tag is checked, a tree the gate never ran on. Raises
+    ValueError, writing nothing, when git cannot resolve `commit` to a commit."""
+    sha = _resolve_commit(root, commit)
+    if sha is None:
+        raise ValueError(f"`{(commit or '').strip()}` does not resolve to a commit in this "
+                         f"repository - no stamp was written")
     p = _green_path(Path(root))
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps({"commit": (commit or "").strip()}) + "\n", encoding="utf-8")
+    p.write_text(json.dumps({"commit": sha}) + "\n", encoding="utf-8")
     return p
 
 
@@ -168,12 +187,10 @@ def _forge_remote(root: Path | str) -> tuple[str, str]:
     return "has", ""
 
 
-def _full_sha(root: Path | str, commit: str) -> str:
-    """`gh run list --commit` matches on the FULL sha and silently returns nothing for an
-    abbreviated one - which this guard would read as "the forge has never run this commit" and
-    refuse. A false refusal on a green tree trains the bypass just as surely as a false pass
-    trains the tag, so resolve first and only then ask. An unresolvable ref is passed through
-    unchanged: that is the forge's question to answer, not this helper's."""
+def _resolve_commit(root: Path | str, commit: str) -> str | None:
+    """The full sha `commit` names, peeled to a commit, or None when git cannot resolve it to
+    one: an unknown name, a sha no object here has, a tree or blob, or git not answering."""
+    commit = (commit or "").strip()
     try:
         # `--end-of-options` stops a flag-shaped ref being read as a flag, and `--verify`
         # requires exactly one revision. Without them `git rev-parse` echoes an argument-shaped
@@ -184,9 +201,174 @@ def _full_sha(root: Path | str, commit: str) -> str:
             ["git", "rev-parse", "--verify", "--end-of-options", f"{commit}^{{commit}}"],
                               capture_output=True, text=True, cwd=str(root), timeout=30)
     except (OSError, subprocess.SubprocessError):
-        return commit
+        return None
     out = (proc.stdout or "").strip()
-    return out if proc.returncode == 0 and out else commit
+    return out if proc.returncode == 0 and out else None
+
+
+def _full_sha(root: Path | str, commit: str) -> str:
+    """`gh run list --commit` matches on the FULL sha and silently returns nothing for an
+    abbreviated one - which this guard would read as "the forge has never run this commit" and
+    refuse. A false refusal on a green tree trains the bypass just as surely as a false pass
+    trains the tag, so resolve first and only then ask. An unresolvable ref is passed through
+    unchanged: that is the forge's question to answer, not this helper's."""
+    return _resolve_commit(root, commit) or commit
+
+
+#: A sha as a stamp may hold it: the full sha `record-green` writes, or an abbreviated one an
+#: older `record-green` stored as typed. Either names one object for good, unlike HEAD or a
+#: branch, so it is safe to resolve when the stamp is read.
+_SHA_RE = re.compile(r"^[0-9a-f]{4,64}$")
+
+
+def _stamped_commit(root: Path | str, green: str) -> str | None:
+    """The full sha of the commit a stored stamp names, or None when it is not the sha of a
+    commit this repository holds.
+
+    Any other name was typed into an older stamp and is never resolved: HEAD resolves to
+    wherever HEAD is NOW, which is the false match the full-sha stamp exists to prevent."""
+    return _resolve_commit(root, green) if _SHA_RE.match(green) else None
+
+
+# ------------------------------------------------------------------ generated release records
+#: The page `sprint_report.py evidence --out` generates, judged at the tag only when the tagged
+#: commit holds it with its generation markers: a page with none was written by hand.
+EVIDENCE_PAGE = "docs/evidence.md"
+#: The topmost released section of CHANGELOG.md: the version `changelog-cut` last cut.
+_CUT_VERSION_RE = re.compile(r"^## \[(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\]", re.M)
+#: The pack header's report list and build commit, as `evidence_pack.build_pack` writes them.
+_PACK_REPORTS_RE = re.compile(r"over the signed reports (RPT\d+(?:, RPT\d+)*)\.")
+_PACK_BUILT_AT_RE = re.compile(r"(records committed at `)[0-9a-f]+(`)")
+
+
+class UnreadableRecord(Exception):
+    """A record at the tagged commit that git could not read, or that is not UTF-8 or JSON."""
+
+
+def _git_bytes(root: Path, args: list[str], what: str) -> bytes:
+    """A read-only git command's output; raises UnreadableRecord naming `what` when git fails."""
+    try:
+        proc = subprocess.run(["git", *args], capture_output=True, cwd=str(root), timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise UnreadableRecord(f"git could not read {what} ({exc!r})") from exc
+    if proc.returncode != 0:
+        why = proc.stderr.decode("utf-8", "replace").strip() or f"exit {proc.returncode}"
+        raise UnreadableRecord(f"git could not read {what}: {why}")
+    return proc.stdout
+
+
+def _committed(root: Path, sha: str, rel: str) -> str | None:
+    """`rel` (relative to `root`) as committed at `sha`, or None when the commit holds no such
+    file. A file that is not UTF-8 raises UnreadableRecord, never a traceback."""
+    what = f"{rel} at {sha[:12]}"
+    if not _git_bytes(root, ["ls-tree", "--name-only", sha, "--", rel], what).strip():
+        return None
+    data = _git_bytes(root, ["show", f"{sha}:./{rel}"], what)
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise UnreadableRecord(f"{what} is not UTF-8 text ({exc.reason} at byte {exc.start})") \
+            from exc
+
+
+def _signed_reports_at(root: Path, sha: str) -> list[dict]:
+    """The signed reports of record as committed at `sha`, read by `sprint_report`'s own reader
+    (the one the evidence page is rendered from), oldest signature first."""
+    import sprint_report  # noqa: PLC0415 - lazy: only a tag with release records reads reports
+    reports_rel = sprint_report.REPORTS_REL
+    listing = _git_bytes(root, ["ls-tree", "--name-only", sha, "--", f"{reports_rel}/"],
+                         f"{reports_rel} at {sha[:12]}").decode("utf-8", "replace")
+    with tempfile.TemporaryDirectory(prefix="tag_check_reports_") as tmp:
+        scratch = sprint_report.report_dir(tmp)
+        for listed in listing.splitlines():
+            name = Path(listed).name
+            if fnmatch.fnmatch(name, "RPT*.json"):
+                sdlc_md.atomic_write(scratch / name,
+                                     _committed(root, sha, f"{reports_rel}/{name}") or "")
+        try:
+            return sprint_report._signed_reports(tmp)
+        except sprint_report.ReportError as exc:
+            raise UnreadableRecord(str(exc)) from exc
+
+
+def _row_reports(region: str) -> set[str]:
+    """The report ids an evidence table names, one per row."""
+    import sprint_report  # noqa: PLC0415 - the page's own row parser
+    return {line.split("|")[2].strip() for line in sprint_report._page_rows(region).values()}
+
+
+def _evidence_page_refusal(page: str, reports: list[dict]) -> str | None:
+    """Why the committed evidence page is not what `reports` render, or None when it is."""
+    import docgen  # noqa: PLC0415 - the one marker parser
+    import sprint_report  # noqa: PLC0415 - the one renderer of the page
+    regenerate = f"`sprint_report.py evidence --out {EVIDENCE_PAGE}`"
+    if docgen.BEGIN not in page and docgen.END not in page:
+        return None
+    try:
+        start, end = docgen.find_region(page, EVIDENCE_PAGE)
+    except docgen.MarkerError as exc:
+        return f"{exc}; repair the markers and regenerate it with {regenerate}"
+    region, want = page[start:end], sprint_report.render_evidence(reports)
+    if want.strip() == region.strip():
+        return None
+    missing = sorted(_row_reports(want) - _row_reports(region))
+    if missing:
+        return (f"{EVIDENCE_PAGE} does not carry {', '.join(missing)}, signed into the records "
+                f"the tagged commit holds - regenerate it with {regenerate}, commit it, and tag "
+                f"that commit")
+    return (f"{EVIDENCE_PAGE} differs from what the signed reports at the tagged commit render "
+            f"- regenerate it with {regenerate}, commit it, and tag that commit")
+
+
+def _pack_refusal(root: Path, sha: str, version: str) -> str | None:
+    """Why the committed evidence pack for `version` is missing or stale, or None when it is the
+    pack its own named reports rebuild to from the records at `sha`."""
+    import evidence_pack  # noqa: PLC0415 - lazy: only a cut release with signed reports reads it
+    rel = evidence_pack.pack_rel(version)
+    write = (f"`release_cut.py evidence-pack --version {version} --reports <the signed reports "
+             f"{version} ships>`")
+    pack = _committed(root, sha, rel)
+    if pack is None:
+        return (f"release {version} has no evidence pack at {rel} - write it with {write}, "
+                f"commit it, and tag that commit")
+    named = _PACK_REPORTS_RE.search(pack)
+    if not named:
+        return (f"{rel} names no signed reports in its header, so it cannot be rebuilt to "
+                f"compare - write it again with {write}")
+    reports = evidence_pack.parse_reports(named[1])
+    write = f"`release_cut.py evidence-pack --version {version} --reports {','.join(reports)}`"
+    try:
+        rebuilt = evidence_pack.build_pack(root, version, reports, sha)
+    except evidence_pack.PackError as exc:
+        return (f"{rel} cannot be rebuilt from the records committed at {sha[:12]} ({exc}) - "
+                f"write it again with {write} once they allow it")
+    # The header names the commit the pack was READ at, which is never the commit that carries
+    # it (a commit cannot hold its own sha), so that one name is set aside before comparing.
+    if _PACK_BUILT_AT_RE.sub(r"\1\2", rebuilt) != _PACK_BUILT_AT_RE.sub(r"\1\2", pack):
+        return (f"{rel} was built before the records it summarises last changed: rebuilt from "
+                f"the records committed at {sha[:12]} it reads differently - write it again with "
+                f"{write}, commit it, and tag that commit")
+    return None
+
+
+def stale_release_records(root: Path | str, sha: str) -> list[str]:
+    """One refusal per generated release record the commit `sha` holds out of date.
+
+    The evidence page and the evidence pack are written at the cut, but the release run's own
+    report is signed after it and records keep changing, so each is compared with the records
+    as committed at `sha`, never the working tree. The page is judged when the commit holds it
+    between generation markers; the pack is owed for the version CHANGELOG.md last cut, once
+    the commit holds a signed report for it to summarise. A project that adopted neither tags
+    as before. Raises UnreadableRecord when a record cannot be read."""
+    root = Path(root)
+    page = _committed(root, sha, EVIDENCE_PAGE)
+    cut = _CUT_VERSION_RE.search(_committed(root, sha, "CHANGELOG.md") or "")
+    if page is None and cut is None:
+        return []
+    reports = _signed_reports_at(root, sha)
+    found = [_evidence_page_refusal(page, reports) if page is not None else None,
+             _pack_refusal(root, sha, cut[1]) if cut and reports else None]
+    return [refusal for refusal in found if refusal]
 
 
 def forge_ci_state(root: Path | str, commit: str) -> tuple[str, str]:
@@ -283,19 +465,43 @@ def tag_check(root: Path | str, commit: str) -> tuple[bool, str]:
     the same commit - so a tag can never assert a green measured on a different tree - and the
     forge reports CI green on it.
 
-    Those are the two things a release needs. Whether every delivery unit was named in a retro
+    Both sides are compared as full shas: the argument is resolved here and the stamp holds the
+    sha `record_green` resolved, so HEAD after another commit is not the commit the gate ran on.
+    The generated evidence page and evidence pack the commit holds must be current with its
+    records too (`stale_release_records`).
+
+    Those are what a release needs. Whether every delivery unit was named in a retro
     is not asked here: `sprint sign` seals each run, and the close-owed detector could not read
     a carry bug or a ruled closure, so it refused tags over work that was closed (US0942). Its
     answer stays on the `status`/`hint` advisory."""
-    commit = (commit or "").strip()
+    named = (commit or "").strip()
+    commit = _resolve_commit(root, named)
+    if commit is None:
+        return False, (f"`{named}` does not resolve to a commit in this repository, so there is "
+                       f"no tree to judge - name the commit being tagged")
     green = green_commit(root)
     if not green:
         return False, ("no release gate has been recorded green - run the pre-tag gate and "
                        "`release_cut.py record-green --commit <sha>` on the same commit first")
-    if green != commit:
-        return False, (f"the gate was recorded green on {green}, not the commit being tagged "
+    stamped = _stamped_commit(root, green)
+    if stamped is None:
+        return False, (f"the release gate stamp holds `{green}`, which is not the sha of a "
+                       f"commit this repository holds - a stamp names the commit the gate ran on "
+                       f"by its sha, never by a name such as HEAD that moves with every commit; "
+                       f"re-run the gate and `release_cut.py record-green --commit {commit}`")
+    if stamped != commit:
+        return False, (f"the gate was recorded green on {stamped}, not the commit being tagged "
                        f"({commit}) - a tag asserting a green measured on a different tree is "
                        f"refused; re-run the gate on {commit}")
+    # The generated release pages are claims about the records at this commit, so they are
+    # judged before the forge is asked: a stale page fails the same way on every forge.
+    try:
+        stale = stale_release_records(root, commit)
+    except UnreadableRecord as exc:
+        stale = [f"a release record could not be read, so whether it is current is UNKNOWN: "
+                 f"{exc}"]
+    if stale:
+        return False, "refusing the tag: " + "; ".join(stale)
     # Everything above this line is a claim about the LOCAL tree, answered from a local file. That
     # was the whole guard until BG0576, and it is why v5.0.0 and v5.0.1 were both tagged over a CI
     # that had been red for two days: the gate ran green on a developer machine, the runner
@@ -327,8 +533,12 @@ def _cmd_cut(args: argparse.Namespace) -> int:
 
 
 def _cmd_record_green(args: argparse.Namespace) -> int:
-    record_green(args.root, args.commit)
-    print(f"recorded release gate green on {args.commit}")
+    try:
+        record_green(args.root, args.commit)
+    except ValueError as exc:
+        print(f"record-green refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"recorded release gate green on {green_commit(args.root)}")
     return 0
 
 

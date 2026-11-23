@@ -19,6 +19,22 @@ Related: reference-reconcile.md (drift check), reference-verify.md (AC verificat
 
 ## 0. The one command
 
+- [ ] **Regenerate the generated release pages after the last signature and filing.** The
+      release run's own report is signed after the cut and findings keep being filed, so the
+      pages the cut wrote lag them. Once nothing more will be signed or filed for this release,
+      regenerate each from the committed records and commit the result: the evidence page with
+      `python3 "$CLAUDE_SKILL_DIR/scripts/sprint_report.py" evidence --out docs/evidence.md`,
+      the known-issues page where the project derives one from its bugs (skill repo only:
+      `python3 tools/known_issues.py write --release <version>`, which the pre-push hook's
+      `known_issues.py check` holds to the corpus at the tag), and the evidence pack with
+      `python3 "$CLAUDE_SKILL_DIR/scripts/release_cut.py" evidence-pack --version <version>
+      --reports <the signed reports the release ships>`. Run the one command below on that
+      commit, stamp it with `release_cut.py record-green --commit <sha>`, and tag it only when
+      `python3 "$CLAUDE_SKILL_DIR/scripts/release_cut.py" tag-check --commit <sha>` passes. It
+      refuses a generated evidence page that differs from what the committed signed reports
+      render, such as one that does not carry the latest signature, and, once the cut version
+      has a signed report to summarise, an evidence pack that is missing or was built before
+      the records it summarises last changed, naming the command that regenerates each.
 - [ ] `python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --root . --release` – **exit 0**.
       This is the mechanical half of the whole checklist in a single command with a single
       exit code: every standard gate check (conformance, drift, validate, integrity,
@@ -156,6 +172,7 @@ Each section above addresses a class of incident that has been observed in real 
 | Section | Incident class it closes |
 | --- | --- |
 | 0. The one command | A pre-tag ritual split across two commands: the gate passes, the separate verify run's exit code is dropped or never run, and a release ships over a rotted `Verify:` layer that has read green for weeks |
+| 0. Regenerate the release pages | Pages naming an earlier last report and an older defect count, or no evidence pack at all, because the release run's own report is signed after the cut |
 | 1. Build/test | CI failures discovered *after* tag, when the operator trusted their IDE / incremental runner |
 | 1. Version-literal landmine | Tests with hardcoded `'X.Y.Z'` version assertions break CI on every release-prep commit; shape assertions are stable across bumps |
 | 2. Adversarial review | Line-level nits (stale counts, hardcoded literals, regex gaps, flag-guard edge cases) that design-focused reviews routinely miss |

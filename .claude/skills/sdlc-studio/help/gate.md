@@ -241,9 +241,12 @@ with no retro's `Batch` naming it is an **owed close**. It is reported, never re
 and `hint` print an `advisory:` line naming the owed units, so a skipped close is seen where
 operators look rather than discovered sprints later.
 
-`--require-close` is retired. `sprint sign` seals each run, and the release tag asks only whether
-the gate was green on the tagged commit and CI passed on the forge (`release_cut.py tag-check`).
-The detector could not read a unit delivered through a carry bug or closed by a ruling, so as a
+`--require-close` is retired. `sprint sign` seals each run, and the release tag
+(`release_cut.py tag-check`) asks three things of the tagged commit, never whether a close is
+owed: that the gate was recorded green on it, that the generated evidence page and the evidence
+pack for the version CHANGELOG.md last cut are current with the signed reports it holds, and that
+CI passed on it on the forge, unless the clone has no remote or one `gh` cannot query. The
+detector could not read a unit delivered through a carry bug or closed by a ruling, so as a
 gate it refused work that had been closed. Passing the flag exits 2 and names its retirement.
 
 `release_cut.py evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy` writes the release's
