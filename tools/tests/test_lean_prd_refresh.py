@@ -1671,48 +1671,49 @@ class PrdRulesTests(unittest.TestCase):
         self.assertIn(sha[:8], dropped[0])
 
     def test_the_engagement_floor_tracks_bg0959(self):
-        """AC3. Mutants: the floor's row or its block reading Complete while BG0959 is open;
-        its held criterion ticked; a verified criterion left unticked; BG0959 read as Fixed
-        while the PRD still says it holds the floor. BG0959's status is read from its file."""
+        """AC3. Mutants: the floor's row or its block reading Partial with every criterion
+        ticked; the escapes criterion unticked with no open bug holding it; the criterion
+        claiming BG0959 still holds it once BG0959 is Fixed. BG0959's status is read from its
+        file. (Rewritten from the Partial state when BG0959 was fixed in run twenty-three.)"""
         status = bug_status(FLOOR_BUG)
         found = sdlc_md.find_by_id(REPO, FLOOR_BUG)
         self.assertIn(f"> **Status:** {status}", Path(found[0]).read_text(encoding="utf-8"))
+        self.assertTrue(sdlc_md.is_terminal_status("bug", status), status)
         self.assertEqual([], tick_problems(self.prd))
         blocks = detail_blocks(self.prd)
         floor = blocks["Engagement floor"]
         rows = {r["Feature"]: r for r in feature_rows(self.prd)}
-        if not sdlc_md.is_terminal_status("bug", status):
-            self.assertEqual("Partial", floor["status"])
-            self.assertEqual("Partial", rows["Engagement floor"]["Status"])
-            self.assertTrue(any(FLOOR_BUG in text and not ticked
-                                for ticked, text in floor["criteria"]), floor)
+        self.assertEqual("Complete", floor["status"])
+        self.assertEqual("Complete", rows["Engagement floor"]["Status"])
+        self.assertTrue(all(ticked for ticked, _ in floor["criteria"]), floor)
+        self.assertFalse(any(f"Held by {FLOOR_BUG}" in text for _, text in floor["criteria"]))
         self.assertGreaterEqual(sum(ticked for b in blocks.values()
-                                    for ticked, _ in b["criteria"]), 14, blocks)
+                                    for ticked, _ in b["criteria"]), 15, blocks)
 
         row = rows["Engagement floor"]["line"]
-        complete_row = self.mutate(row, row.replace("| Partial |", "| Complete |", 1))
-        self.assertEqual(["the Engagement floor row reads 'Complete'; its block reads 'Partial'"],
-                         tick_problems(complete_row))
-        block_status = "reference-doctrine.md rule 16\n**Status:** Partial"
-        complete_block = self.mutate(block_status, block_status.replace("Partial", "Complete"))
-        self.assertEqual(sorted(["Engagement floor reads 'Complete'; its criteria make it Partial",
-                                 ("the Engagement floor row reads 'Partial'; its block reads "
-                                  "'Complete'")]),
-                         sorted(tick_problems(complete_block)))
-        held = next(text for ticked, text in floor["criteria"] if FLOOR_BUG in text)
-        self.assertIn(f"Held by {FLOOR_BUG}", held)
-        ticked = tick_problems(self.mutate(f"- [ ] {held}", f"- [x] {held}"))
-        self.assertIn(f"Engagement floor criterion 4 is ticked and names ['{FLOOR_BUG}'] as "
-                      "holding it", ticked)
-        self.assertIn("Engagement floor reads 'Partial'; its criteria make it Complete", ticked)
+        partial_row = self.mutate(row, row.replace("| Complete |", "| Partial |", 1))
+        self.assertEqual(["the Engagement floor row reads 'Partial'; its block reads 'Complete'"],
+                         tick_problems(partial_row))
+        block_status = "reference-doctrine.md rule 16\n**Status:** Complete"
+        partial_block = self.mutate(block_status, block_status.replace("Complete", "Partial"))
+        self.assertEqual(sorted(["Engagement floor reads 'Partial'; its criteria make it Complete",
+                                 ("the Engagement floor row reads 'Complete'; its block reads "
+                                  "'Partial'")]),
+                         sorted(tick_problems(partial_block)))
+        escapes = next(text for _, text in floor["criteria"]
+                       if text.startswith("The only escapes are recorded"))
+        unticked = tick_problems(self.mutate(f"- [x] {escapes}", f"- [ ] {escapes}"))
+        self.assertIn("Engagement floor criterion 4 is unticked and no open bug holds it",
+                      unticked)
+        held = tick_problems(self.mutate(f"- [x] {escapes}",
+                                         f"- [ ] {escapes} Held by {FLOOR_BUG}: the cutoff."),
+                             lambda b: "Fixed" if b == FLOOR_BUG else bug_status(b))
+        self.assertIn(f"Engagement floor criterion 4 is held by {FLOOR_BUG}, which is Fixed",
+                      held)
         first = blocks["Reconcile"]["criteria"][0][1]
         self.assertEqual(["Reconcile criterion 1 is unticked and no open bug holds it",
                           "Reconcile reads 'Complete'; its criteria make it Partial"],
                          tick_problems(self.mutate(f"- [x] {first}", f"- [ ] {first}")))
-        fixed = tick_problems(self.prd, lambda b: "Fixed" if b == FLOOR_BUG else bug_status(b))
-        self.assertIn(f"Engagement floor criterion 4 is held by {FLOOR_BUG}, which is Fixed",
-                      fixed)
-        self.assertIn("Engagement floor criterion 4 is unticked and no open bug holds it", fixed)
 
     def test_the_breakdown_rule_names_the_split_ceiling_for_any_pointed_unit(self):
         """BG1162 AC2. The code refuses any pointed unit above the ceiling (`sprint.py`'s
@@ -1730,9 +1731,10 @@ class PrdRulesTests(unittest.TestCase):
         self.assertEqual([], grooming_problems(self.prd))
 
     def test_a_held_criterion_names_the_bug_its_words_describe(self):
-        """BG1162 AC3. Mutants: the Verify AC criterion Held by BG1063 reassigned to BG0959, and
-        the floor's criterion reassigned to BG1063; each must be named, the tree as it is not.
-        (The first mutant moved from BG1023's criterion when BG1023 was fixed in run twenty-one.)"""
+        """BG1162 AC3. Mutant: the Verify AC criterion Held by BG1063 reassigned to BG0959; it
+        must be named, the tree as it is not. (It moved from BG1023's criterion when BG1023 was
+        fixed in run twenty-one. The floor's mutant was dropped when BG0959 was fixed in run
+        twenty-three, since the floor no longer names a holder.)"""
         self.assertEqual([], holder_problems(self.prd))
         verify = "Held by BG1063: no code reads the key"
         self.assertIn(verify, self.prd)
@@ -1740,9 +1742,6 @@ class PrdRulesTests(unittest.TestCase):
         self.assertEqual(1, len(moved), moved)
         self.assertIn("criterion 3 names BG0959 as its holder", moved[0])
         self.assertIn("match BG1063 better", moved[0])
-        floor = holder_problems(self.mutate(f"Held by {FLOOR_BUG}", "Held by BG1063"))
-        self.assertEqual(1, len(floor), floor)
-        self.assertIn("names BG1063 as its holder", floor[0])
 
     def test_the_override_is_said_to_beat_the_measured_rate(self):
         """BG1162 AC3. Mutant: the sentence reversed, the override named first and the measured

@@ -1,0 +1,88 @@
+{
+  "unit": "BG1567",
+  "digest": "3e95e2afb5decb63 at c7dfd991bd81",
+  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/BG1567-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the lens lookup excludes the reference profiles again",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    packs = readiness.profile_names(skill_dir)\n",
+      "new": "    packs = sorted(set(readiness.profile_names(skill_dir)) - set(readiness.REFERENCE_PROFILES))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_project_profile_lens_is_accepted_and_stamped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every project lens refused by the reverted lookup",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    packs = readiness.profile_names(skill_dir)\n",
+      "new": "    packs = sorted(set(readiness.profile_names(skill_dir)) - set(readiness.REFERENCE_PROFILES))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_every_lens_the_project_profile_lists_is_accepted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unknown-lens refusal lists the packs alone",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "f\"lens that resolves to nothing. Profiles that exist: {', '.join(packs)}{detail}\")",
+      "new": "f\"lens that resolves to nothing. Profiles that exist: {', '.join(p for p in packs if p not in readiness.REFERENCE_PROFILES)}{detail}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_an_unknown_lens_is_still_refused_and_an_ambiguous_one_is_not_guessed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a supplied project profile is refused as unknown",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    if profile and profile not in packs:\n",
+      "new": "    if profile and profile not in set(packs) - set(readiness.REFERENCE_PROFILES):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_project_profile_lens_is_accepted_and_stamped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a missing reference crashes the filing",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        except (readiness.UnknownProfile, OSError, UnicodeDecodeError):\n",
+      "new": "        except (readiness.UnknownProfile, UnicodeDecodeError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_skill_directory_without_the_reference_still_resolves_the_packs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an ambiguous lens resolves to its first owner",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    if len(owners) > 1:\n",
+      "new": "    if len(owners) > 2:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_an_unknown_lens_is_still_refused_and_an_ambiguous_one_is_not_guessed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the ambiguity refusal names no owner",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "f\"({', '.join(owners)}), so the profile cannot be derived",
+      "new": "f\"(several), so the profile cannot be derived",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_an_unknown_lens_is_still_refused_and_an_ambiguous_one_is_not_guessed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable profile is not named",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "            unreadable.append(p)\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_skill_directory_without_the_reference_still_resolves_the_packs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a reference that is not UTF-8 crashes the filing",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        except (readiness.UnknownProfile, OSError, UnicodeDecodeError):\n",
+      "new": "        except (readiness.UnknownProfile, OSError):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_skill_directory_without_the_reference_still_resolves_the_packs",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1550: Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** docs/engineering-leaders.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, tools/tests/test_engineering_leaders_page.py, changelog.d/BG1550.md

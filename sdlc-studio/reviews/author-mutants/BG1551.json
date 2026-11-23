@@ -1,0 +1,124 @@
+{
+  "unit": "BG1551",
+  "digest": "add5c93b3b6f6eee at e7afcc97bbf0",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3e89498b69b8ab82/BG1551-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "lane judges every terminal epic",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if _epic_status(text) != delivered:\n            continue\n        if transition._rfc",
+      "new": "        if transition._rfc",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_terminal_epic_the_lane_cannot_judge_is_not_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "recorded ruling ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if transition._rfc_override_reason(text):\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_recorded_ruling_keeps_a_done_epic",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty ruling line counts as a ruling",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if transition._rfc_override_reason(text):",
+      "new": "        if \"**Decision-Override:**\" in text:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_an_empty_ruling_is_not_a_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unfinished breakdown judged",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if children is None:\n            continue\n        derived = epic_derived_status(children)\n        if derived == delivered:",
+      "new": "        derived = epic_derived_status(children or [])\n        if derived == delivered:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_terminal_epic_the_lane_cannot_judge_is_not_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delivered child reported",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if derived == delivered:\n            continue\n        eid",
+      "new": "        eid",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_done_epic_over_a_delivered_child_is_not_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item counted by the gate",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "\"blocked_by\": f\"a `{delivered}` epic may record a ruling, so its owner \"\n                                    f\"decides\",\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_the_commit_gate_reports_it_without_refusing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item carries target, so settle acts",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "\"children\": len(children), \"derived\": derived,",
+      "new": "\"children\": len(children), \"target\": derived,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_apply_reports_a_terminal_epic_and_does_not_rewrite_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lane not in the sweep",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        all_drift.extend(epic_terminal_undelivered_drift(repo_root))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_done_epic_over_all_superseded_children_is_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "finished: no breakdown is finished",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    declared = declared_breakdown_ids(text)\n    if not declared:\n        return None",
+      "new": "    declared = declared_breakdown_ids(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_an_epic_declaring_no_breakdown_asserts_no_rollup",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "finished: unresolved ids ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    if len(units) != len(declared):\n        return None\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_an_unresolvable_child_is_unknown_not_finished",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "finished: Deferred counts as finished",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    if any(u_canon == \"Deferred\" or not",
+      "new": "    if any(not",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_deferred_child_is_neither_finished_nor_live",
+      "result": "survived",
+      "answer": "Equivalent today: sdlc_md.is_terminal_status(t, 'Deferred') is False for every type whose vocabulary carries Deferred (probe: {'story': False, 'cr': False}), so `not is_terminal_status` already returns None for a Deferred child. The explicit test is moved verbatim from HEAD's epic_status_stale_drift and guards a vocabulary where Deferred is terminal."
+    },
+    {
+      "mutant": "status: no None for a missing line",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    if not raw:\n        return None\n    return _canonical_status(raw, sdlc_md.STATUS_VOCAB",
+      "new": "    return _canonical_status(raw, sdlc_md.STATUS_VOCAB",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_live_epic_over_a_finished_breakdown_is_drift",
+      "result": "survived",
+      "answer": "Equivalent: with no Status line `raw` is '', `_canonical_status('', vocab) or raw` is '', and every caller treats '' as it treats None (`not canon` in the live lane, `!= delivered` in the terminal lane, `not in not_started` in the partial lane)."
+    },
+    {
+      "mutant": "test: expect Done derived",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "old": "self.assertEqual((\"epic-status-stale\", \"Done\", \"Superseded\", 2),",
+      "new": "self.assertEqual((\"epic-status-stale\", \"Done\", \"Done\", 2),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_done_epic_over_all_superseded_children_is_drift",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

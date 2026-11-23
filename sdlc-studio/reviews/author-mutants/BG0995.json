@@ -1,0 +1,115 @@
+{
+  "unit": "BG0995",
+  "digest": "242ea253baf4c7d0 at e7afcc97bbf0",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3e89498b69b8ab82/BG0995-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "bold alternative dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "r\"^(?:\\*+\\s*AC\\s*\\d+\\s*[:.)\\]-]?\\s*\\*+\\s*[:.)\\]-]?\"",
+      "new": "r\"^(?:(?!)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "separator inside the bold required",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\\s*\\d+\\s*[:.)\\]-]?\\s*\\*+",
+      "new": "\\s*\\d+\\s*[:.)\\]-]\\s*\\*+",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "separator after the bold required",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\\*+\\s*[:.)\\]-]?\"",
+      "new": "\\*+\\s*[:.)\\]-]\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closing bold optional",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "[:.)\\]-]?\\s*\\*+\\s*[:.)\\]-]?\"",
+      "new": "[:.)\\]-]?\\s*\\**\\s*[:.)\\]-]?\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_and_a_non_label_bold_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "opening bold optional",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "r\"^(?:\\*+\\s*AC",
+      "new": "r\"^(?:\\**\\s*AC",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_and_a_non_label_bold_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailing whitespace optional",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\\**\\s*[:.)\\]-])\\s+\", re.I)",
+      "new": "\\**\\s*[:.)\\]-])\\s*\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_and_a_non_label_bold_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "case-sensitive label",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\\**\\s*[:.)\\]-])\\s+\", re.I)",
+      "new": "\\**\\s*[:.)\\]-])\\s+\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plain separator optional",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "|\\**\\s*AC\\s*\\d+\\**\\s*[:.)\\]-])",
+      "new": "|\\**\\s*AC\\s*\\d+\\**\\s*[:.)\\]-]?)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_and_a_non_label_bold_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plain alternative dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "r\"|\\**\\s*AC\\s*\\d+\\**\\s*[:.)\\]-])\\s+\"",
+      "new": "r\"|(?!))\\s+\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: expect the doubled label",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py",
+      "old": "(\"**AC1** the bare bold label\", \"### AC1: the bare bold label\"),",
+      "new": "(\"**AC1** the bare bold label\", \"### AC1: **AC1** the bare bold label\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_to_one_label",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: expect the filer block doubled",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py",
+      "old": "self.assertEqual(_seed(block), [\"### AC1: the gate refuses an unsigned run\",",
+      "new": "self.assertEqual(_seed(block), [\"### AC1: **AC1** the gate refuses an unsigned run\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py::BoldAcLabelTests::test_every_filer_form_strips_from_the_finding_filers_own_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: BG0291 seam form expected unstripped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py",
+      "old": "\"### AC2: the second criterion\"])",
+      "new": "\"### AC2: - the second criterion\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::SeededAcShapeTests::test_the_label_is_not_doubled",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

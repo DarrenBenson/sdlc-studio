@@ -1,0 +1,133 @@
+{
+  "unit": "BG1541",
+  "digest": "23b280a376ca1d4a at c7dfd991bd81",
+  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/BG1541-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "release_tag tries no other spelling",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    other = name[1:] if name[0] in \"vV\" else f\"v{name}\"\n",
+      "new": "    other = name\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_tag drops only a lower-case v",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "name[0] in \"vV\"",
+      "new": "name[0] in \"v\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_tag prefers the other spelling to the exact one",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    for candidate in (name, other):\n",
+      "new": "    for candidate in (other, name):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_tag accepts a tag naming no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "f\"refs/tags/{candidate}^{{commit}}\"",
+      "new": "f\"refs/tags/{candidate}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_a_changelog_heading_with_no_tag_behind_it_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_tag has no empty-name guard",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if not name:\n        return None\n    other",
+      "new": "    other",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_tag does not strip the name",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    name = (name or \"\").strip()\n",
+      "new": "    name = name or \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release_units reads the stored spelling, not its tag",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    tag = release_tag(root, release)\n    if tag is None:",
+      "new": "    tag = release if release_tag(root, release) else None\n    if tag is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "filing stores the spelling given, not the tag",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "\"shipped_in\": tag, \"escaped_via\": via}",
+      "new": "\"shipped_in\": shipped, \"escaped_via\": via}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "filing accepts a changelog heading with no tag",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    tag = escape.release_tag(root, shipped)\n",
+      "new": "    tag = escape.release_tag(root, shipped) or (shipped if changelog_names_release(root, shipped) else None)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_a_changelog_heading_with_no_tag_behind_it_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every untagged name is worded as a changelog release",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if changelog_names_release(root, shipped):\n            raise EscapeRefused(",
+      "new": "        if True:\n            raise EscapeRefused(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_a_changelog_heading_with_no_tag_behind_it_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no untagged name is worded as a changelog release",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if changelog_names_release(root, shipped):\n            raise EscapeRefused(",
+      "new": "        if False:\n            raise EscapeRefused(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_a_changelog_heading_with_no_tag_behind_it_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no note for a unit outside the release",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if sdlc_md.norm_id(via) not in shipped_units:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::EscapedViaOutsideTheReleaseTests::test_a_unit_the_release_did_not_ship_is_not_accepted_silently",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a note for every named unit",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if sdlc_md.norm_id(via) not in shipped_units:",
+      "new": "        if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::EscapedViaOutsideTheReleaseTests::test_a_unit_the_release_did_not_ship_is_not_accepted_silently",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the note names the spelling given, not the tag",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "is not a unit release {tag} shipped",
+      "new": "is not a unit release {shipped} shipped",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::EscapedViaOutsideTheReleaseTests::test_a_unit_the_release_did_not_ship_is_not_accepted_silently",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

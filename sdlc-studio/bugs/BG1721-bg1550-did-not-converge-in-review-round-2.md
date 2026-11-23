@@ -1,6 +1,6 @@
 # BG1721: BG1550 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** docs/engineering-leaders.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, tools/tests/test_engineering_leaders_page.py, changelog.d/BG1550.md
@@ -29,8 +29,10 @@ Fix each finding above, then deliver BG1550 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG1550 AC1 still passes: Given docs/engineering-leaders.md, when its account of the evidence pack's signer check is read, then it states the three refusals that are enforced (a blank principal, one that reads as an agent by name, one recorded as an author of the report's own units) and that the pack cannot tell a person from an agent session signing under another name, so the named person is the operator's responsibility. Fails on: the page stating without qualification that the pack refuses to name an agent as accountable.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** BG1550 AC2 still passes: Given `reference-scripts-domain.md`, when its evidence-pack entry is read, then it states the same three refusals and the same limit as the public page. Fails on: the reference still claiming an absolute refusal, or the two pages disagreeing on what is enforced.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

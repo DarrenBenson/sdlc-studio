@@ -1,6 +1,6 @@
 # BG0959: The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, sdlc-studio/prd.md, changelog.d/BG0959.md
@@ -26,10 +26,13 @@ Parse the floor's cutoff with allow_ulid and exempt with cutoff_exempts, the sam
 
 - [ ] **AC1** A ULID `adopt_after` exempts an earlier-bucket unit and still judges a later one, and does not raise
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_id_at_or_below_cutoff_is_exempt_for_a_v3_ulid
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** `engagement_floor.py check` on a schema-v3 fixture whose `adopt_after` is a ULID exits without a traceback, grandfathers the earlier-bucket shipped units and still reports a later one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_check_honours_a_ulid_cutoff_through_the_cli
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** A numeric `adopt_after` judges exactly as today, and the remedy text names a v3 id as a legal cutoff beside the integer and the prefixed sequential id
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id
+  - **Verified:** yes (2026-11-23)
 
 ## Triage
 

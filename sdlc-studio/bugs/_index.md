@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 289 |
+| Open | 286 |
 | In Progress | 0 |
-| Fixed | 1091 |
+| Fixed | 1098 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1721** |
+| **Total** | **1725** |
 
 ## All Bugs
 
@@ -34,7 +34,7 @@
 | [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Fixed | Medium | 2026-10-06 | 2026-10-06 |
-| [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Fixed | High | 2026-10-07 | 2026-10-07 |
@@ -617,15 +617,15 @@
 | [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Fixed | Low | 2026-11-17 | 2026-11-17 |
@@ -795,8 +795,12 @@
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Open | Low | 2026-11-23 | 2026-11-23 |
 | [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Open | Low | 2026-11-23 | 2026-11-23 |
-| [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
-| [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1722](BG1722-conformance-adopt-after-takes-a-schema-v3-cutoff.md) | `conformance.adopt_after` takes a schema v3 cutoff on a schema v2 project, so the conformance lane exempts every sequential unit | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

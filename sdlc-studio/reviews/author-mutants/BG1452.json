@@ -1,0 +1,385 @@
+{
+  "unit": "BG1452",
+  "digest": "dbf9f2440189f2ad at e7afcc97bbf0",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3e89498b69b8ab82/BG1452-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "reader: none not a clear",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if not raw or raw.lower() == _UNREFINED_CLEAR:",
+      "new": "if not raw:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_reader_reads_labels_none_and_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: clear is case-sensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if not raw or raw.lower() == _UNREFINED_CLEAR:",
+      "new": "if not raw or raw == _UNREFINED_CLEAR:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_reader_reads_labels_none_and_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: unreadable record reads as cleared",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "_AC_TOKEN_RE.findall(raw)] or [raw]",
+      "new": "_AC_TOKEN_RE.findall(raw)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_record_reconcile_cannot_read_still_blocks_derivation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: label not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "[f\"AC{int(n)}\" for n in _AC_TOKEN_RE",
+      "new": "[f\"AC{n}\" for n in _AC_TOKEN_RE",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_reader_reads_labels_none_and_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: no space allowed in a label",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "_AC_TOKEN_RE = re.compile(r\"\\bAC\\s*(\\d+)\\b\", re.I)",
+      "new": "_AC_TOKEN_RE = re.compile(r\"\\bAC(\\d+)\\b\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_reader_reads_labels_none_and_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: absent flag records none",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if spec is None:\n        return None",
+      "new": "    if spec is None:\n        return []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_same_request_refined_whole_is_derived_complete",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: apply accepts none",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if allow_clear and [t.lower() for t in tokens] == [_UNREFINED_CLEAR]:",
+      "new": "if [t.lower() for t in tokens] == [_UNREFINED_CLEAR]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_bad_label_is_refused_before_anything_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: a non-label token skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "        if not m:\n            raise ValueError(f\"--unrefined takes",
+      "new": "        if not m:\n            continue\n            raise ValueError(f\"--unrefined takes",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_bad_label_is_refused_before_anything_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: AC0 accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if not 1 <= n <= count:",
+      "new": "if not 0 <= n <= count:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_bad_label_is_refused_before_anything_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: the last criterion refused",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if not 1 <= n <= count:",
+      "new": "if not 1 <= n < count:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: duplicates kept",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "        if f\"AC{n}\" not in labels:\n            labels.append(f\"AC{n}\")",
+      "new": "        labels.append(f\"AC{n}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_dry_run_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: an empty list accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if not labels:\n        raise ValueError(\"--unrefined names no criterion",
+      "new": "    if False:\n        raise ValueError(\"--unrefined names no criterion",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_bad_label_is_refused_before_anything_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse: split on commas only",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "re.split(r\"[,\\s]+\", spec)",
+      "new": "re.split(r\",\", spec)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "write: a clear writes an empty value",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "line = f\"> **{UNREFINED_FIELD}:** {', '.join(labels) or _UNREFINED_CLEAR}\"",
+      "new": "line = f\"> **{UNREFINED_FIELD}:** {', '.join(labels)}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "write: never in place",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if _UNREFINED_LINE_RE.search(text):\n        sdlc_md.atomic_write",
+      "new": "    if False:\n        sdlc_md.atomic_write",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: one criterion too many allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "left = parse_unrefined(unrefined, len(criteria))",
+      "new": "left = parse_unrefined(unrefined, len(criteria) + 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_bad_label_is_refused_before_anything_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: left criteria still seeded",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "if f\"AC{n}\" not in (left or [])]",
+      "new": "]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_single_story_seeds_only_the_criteria_it_refines",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: seed numbering from zero",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "[c for n, c in enumerate(criteria, 1) if",
+      "new": "[c for n, c in enumerate(criteria) if",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_single_story_seeds_only_the_criteria_it_refines",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: write guarded on a non-empty list",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if left is not None:\n        _write_unrefined(rpath, left)\n    # 4. close the loop",
+      "new": "    if left:\n        _write_unrefined(rpath, left)\n    # 4. close the loop",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "survived",
+      "answer": "Equivalent: on the apply path parse_unrefined is called without allow_clear, so it returns None or a non-empty list and never []; `if left:` and `if left is not None:` agree on every value it can return (the empty-list refusal is pinned by 'parse: an empty list accepted')."
+    },
+    {
+      "mutant": "add: write guarded on a non-empty list",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if left is not None:\n        _write_unrefined(rpath, left)\n    return {\"request\": rid, \"epic\": epic_id, \"epic_size\": _tshirt_for(total),\n            \"stories\": story_ids, \"points\": total, \"existing_epics\": existing,",
+      "new": "    if left:\n        _write_unrefined(rpath, left)\n    return {\"request\": rid, \"epic\": epic_id, \"epic_size\": _tshirt_for(total),\n            \"stories\": story_ids, \"points\": total, \"existing_epics\": existing,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: dry run drops the labels",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\"risk_classes\": classes, \"risk_notes\": risk_notes,\n                \"unrefined\": left}",
+      "new": "\"risk_classes\": classes, \"risk_notes\": risk_notes}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_dry_run_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply: result drops the labels",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "\"dry_run\": False, \"seeded_notes\": seeded_notes,\n            \"risk_classes\": classes, \"risk_notes\": risk_notes, \"unrefined\": left}",
+      "new": "\"dry_run\": False, \"seeded_notes\": seeded_notes,\n            \"risk_classes\": classes, \"risk_notes\": risk_notes}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "add: none refused",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "                           allow_clear=True)",
+      "new": "                           allow_clear=False)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cli: apply drops the flag",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "seed_acs=getattr(args, \"seed_acs\", True),\n                        into_epic=into_epic, unrefined=getattr(args, \"unrefined\", None))",
+      "new": "seed_acs=getattr(args, \"seed_acs\", True),\n                        into_epic=into_epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cli: add drops the flag",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "dry_run=args.dry_run,\n                            into_epic=into_epic, unrefined=getattr(args, \"unrefined\", None))",
+      "new": "dry_run=args.dry_run,\n                            into_epic=into_epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cli: line printed with no flag",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if left is None:\n        return\n    print(f\"  {result['request']} left unrefined",
+      "new": "    print(f\"  {result['request']} left unrefined",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_the_same_request_refined_whole_is_derived_complete",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cli: blocking note printed for none",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "+ (\" - reconcile does not derive it terminal while any is left\" if left else \"\"))",
+      "new": "+ \" - reconcile does not derive it terminal while any is left\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_refine_add_replaces_the_record_and_none_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile: record ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "                if left:\n                    named",
+      "new": "                if False:\n                    named",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile: quiet path emits it",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "if explain and transition._request_children_gate(",
+      "new": "if transition._request_children_gate(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile: named while children are open",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "if explain and transition._request_children_gate(\n                    root, type_, rid, target) is None else [])",
+      "new": "if explain else [])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile: falls through to derivable",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "--field Unrefined --value none`\"})\n                continue",
+      "new": "--field Unrefined --value none`\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile: reader returns nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    return refine.unrefined_criteria(text)",
+      "new": "    return []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: record not read",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    if not left:\n        return None\n    return (f\"{artifact_id} cannot",
+      "new": "    if True:\n        return None\n    return (f\"{artifact_id} cannot",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_hand_close_of_a_request_refined_in_part_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: a cleared record refused",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    if not left:\n        return None\n    return (f\"{artifact_id} cannot",
+      "new": "    if left is None:\n        return None\n    return (f\"{artifact_id} cannot",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_cleared_or_absent_record_closes_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: children not asked first",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    block = _request_children_gate(root, type_, artifact_id, target_canon)\n",
+      "new": "    block = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_unfinished_children_are_named_first_and_other_closes_are_not_gated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: children block dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    if block is not None or not sdlc_md.is_discovery(type_) \\\n",
+      "new": "    if not sdlc_md.is_discovery(type_) \\\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_unfinished_children_are_named_first_and_other_closes_are_not_gated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: every terminal gated",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "            or target_canon != sdlc_md.default_terminal_status(type_):\n        return block\n",
+      "new": ":\n        return block\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_unfinished_children_are_named_first_and_other_closes_are_not_gated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: a story gated",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    if block is not None or not sdlc_md.is_discovery(type_) \\\n",
+      "new": "    if block is not None \\\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_story_is_never_asked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: refusal names no label",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "record names {', '.join(left)}, which",
+      "new": "record names some criteria, which",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_hand_close_of_a_request_refined_in_part_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate: refusal names no remedy",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "Refine them \"\n            f\"with `refine.py add --request {artifact_id}",
+      "new": "Refine them \"\n            f\"with `refine.py add",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_hand_close_of_a_request_refined_in_part_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: expect a hand close to go through",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "            with self.assertRaises(ValueError) as cm:\n                tr.transition(root, \"CR0001\", \"Complete\")\n            self.assertIn(\"refined in part\", str(cm.exception))",
+      "new": "            tr.transition(root, \"CR0001\", \"Complete\")\n            self.assertEqual(\"Complete\", self._status(root))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::UnrefinedRecordGateTests::test_a_hand_close_of_a_request_refined_in_part_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: expect the request derived",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py",
+      "old": "self.assertEqual(self._cr_status(), before)",
+      "new": "self.assertEqual(self._cr_status(), \"Complete\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests::test_a_request_refined_in_part_is_not_derived_and_names_what_is_left",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1544: changelog-cut reports nothing cut after it has already folded and deleted every pending fragment
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, changelog.d/BG1544.md
@@ -31,10 +31,13 @@ Move both refusal checks ahead of the compose call in `cut_changelog`: read CHAN
 
 - [ ] **AC1** Given a CHANGELOG.md with an Unreleased section and a [1.0.0] section, and one pending fragment under changelog.d, when `release_cut.py changelog-cut --version 1.0.0` runs, then it refuses with exit 2 and CHANGELOG.md and the fragment file are byte for byte as they were. Fails on: a refused cut that folded the fragment into Unreleased and deleted it while reporting nothing cut.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_refused_second_cut_leaves_the_changelog_and_fragments_untouched
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given a CHANGELOG.md with no Unreleased section and one pending fragment, when `changelog-cut` runs, then it refuses and both the changelog and the fragment are unchanged. Fails on: the fragment consumed before the missing section is noticed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_cut_with_no_unreleased_section_consumes_no_fragment
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given the first fixture, when the cut is made as version 1.1.0, then the fragment is folded, its file is removed and the new section carries its entry. Fails on: the reordered checks stopping a cut that should go ahead.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_new_version_still_folds_the_pending_fragment
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

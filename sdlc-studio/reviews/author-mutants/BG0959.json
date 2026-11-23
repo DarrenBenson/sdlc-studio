@@ -1,64 +1,118 @@
 {
   "unit": "BG0959",
-  "digest": "0efbaeafb1195108 at f85e0417412a",
-  "report": "sdlc-studio/.local/lane/landed/agent-a73e738b402c31ae8/BG0959-mutation-edits.json",
+  "digest": "f90043b74af41398 at a88149b895b9",
+  "report": "sdlc-studio/.local/lane/landed/agent-a265c9313d3ea62d1/BG0959-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "cutoff parsed without allow_ulid",
+      "mutant": "v2 refusal removed: a v3 cutoff before schema v3 is parsed as before the repair",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "sdlc_md.parse_cutoff(raw.get(\"adopt_after\"), allow_ulid=True)",
-      "new": "sdlc_md.parse_cutoff(raw.get(\"adopt_after\"))",
+      "old": "if not v3 and sdlc_md.is_v3_id(str(value).strip()):",
+      "new": "if False and sdlc_md.is_v3_id(str(value).strip()):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "schema read as v3 always (the round-one code)",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "value, v3 = raw.get(\"adopt_after\"), sdlc_md.is_schema_v3(root)",
+      "new": "value, v3 = raw.get(\"adopt_after\"), True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v2 guard inverted: a v3 project refuses its v3 cutoff",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "if not v3 and sdlc_md.is_v3_id(str(value).strip()):",
+      "new": "if v3 and sdlc_md.is_v3_id(str(value).strip()):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_id_at_or_below_cutoff_is_exempt_for_a_v3_ulid",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "cutoff parsed without allow_ulid, through the CLI",
+      "mutant": "v2 guard ignores the schema: every v3 cutoff refused",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "sdlc_md.parse_cutoff(raw.get(\"adopt_after\"), allow_ulid=True)",
-      "new": "sdlc_md.parse_cutoff(raw.get(\"adopt_after\"))",
+      "old": "if not v3 and sdlc_md.is_v3_id(str(value).strip()):",
+      "new": "if sdlc_md.is_v3_id(str(value).strip()):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_check_honours_a_ulid_cutoff_through_the_cli",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "an unparseable cutoff read as no cutoff",
+      "mutant": "padding not stripped before the v3-id test",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "        cutoff = sdlc_md.parse_cutoff(raw.get(\"adopt_after\"), allow_ulid=True)\n",
-      "new": "        try:\n            cutoff = sdlc_md.parse_cutoff(raw.get(\"adopt_after\"), allow_ulid=True)\n        except ValueError:\n            cutoff = None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_cutoff_that_is_no_id_still_refuses_loud",
+      "old": "if not v3 and sdlc_md.is_v3_id(str(value).strip()):",
+      "new": "if not v3 and sdlc_md.is_v3_id(str(value)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "numeric comparator put back",
+      "mutant": "parse_cutoff always admits a v3 id (the v2 no-id refusal names a v3 form)",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "exempt = sdlc_md.cutoff_exempts(rid, cutoff)",
-      "new": "exempt = (cutoff is not None and sdlc_md.id_number(rid) is not None\n                      and sdlc_md.id_number(rid) <= cutoff)",
+      "old": "cutoff = sdlc_md.parse_cutoff(value, allow_ulid=v3)",
+      "new": "cutoff = sdlc_md.parse_cutoff(value, allow_ulid=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parse_cutoff never admits a v3 id",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "cutoff = sdlc_md.parse_cutoff(value, allow_ulid=v3)",
+      "new": "cutoff = sdlc_md.parse_cutoff(value, allow_ulid=False)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_id_at_or_below_cutoff_is_exempt_for_a_v3_ulid",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "v3 forward branch dropped (mixed project)",
+      "mutant": "v2 refusal drops why it refuses",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    if isinstance(cutoff, str):\n        k = sdlc_md.ULID_BUCKET_CHARS\n",
-      "new": "    if False:\n        k = sdlc_md.ULID_BUCKET_CHARS\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_exempts_the_sequential_ids_a_migrated_project_holds",
+      "old": "f\"is not on schema v3: such a cutoff would exempt every sequential \"",
+      "new": "f\"is not on schema v3: \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "v3 forward branch dropped (v3-only project)",
+      "mutant": "v2 refusal names the v3 form among those accepted",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    if isinstance(cutoff, str):\n        k = sdlc_md.ULID_BUCKET_CHARS\n",
-      "new": "    if False:\n        k = sdlc_md.ULID_BUCKET_CHARS\n",
+      "old": "f\"id, those not minted yet included - use a bare integer (103) or a \"\n                             f\"prefixed id\")",
+      "new": "f\"id, those not minted yet included - use a bare integer (103), a \"\n                             f\"prefixed id or a schema v3 id\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "remedy drops the before-schema-v3 refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "\"above the highest existing id, or a v3 cutoff ahead of the clock or on a \"\n                 \"project before schema v3, is refused)\")",
+      "new": "\"above the highest existing id, or a v3 cutoff ahead of the clock, is refused)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer: v3 forward detail tells you to lower it to <= max_id",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "grandfathering. Set it to an existing id, or set",
+      "new": "grandfathering. Lower it to <= {s['max_id']}, or set",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_ahead_of_the_clock_is_flagged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "bucket compare widened to >=",
+      "mutant": "v3 forward detail drops the judgement opt-out",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "f\"grandfathering. Set it to an existing id, or set `engagement_floor: judgement` \"\n                f\"to opt out visibly\")",
+      "new": "f\"grandfathering. Set it to an existing id\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_ahead_of_the_clock_is_flagged",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v3 forward compares the bucket with >=",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
       "old": "return cutoff[:k] > sdlc_md.new_ulid()[:k]",
       "new": "return cutoff[:k] >= sdlc_md.new_ulid()[:k]",
@@ -67,218 +121,47 @@
       "answer": ""
     },
     {
-      "mutant": "v3 cutoff never forward",
+      "mutant": "v3 cutoff judged against max_id like a number",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "return cutoff[:k] > sdlc_md.new_ulid()[:k]",
-      "new": "return False",
+      "old": "    if isinstance(cutoff, str):\n        k = sdlc_md.ULID_BUCKET_CHARS",
+      "new": "    if isinstance(cutoff, str) and max_id < 0:\n        k = sdlc_md.ULID_BUCKET_CHARS",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_ahead_of_the_clock_is_flagged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "v3 cutoff compared whole, not by bucket",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "return cutoff[:k] > sdlc_md.new_ulid()[:k]",
-      "new": "return cutoff > sdlc_md.new_ulid()[:k]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_is_forward_only_from_the_next_bucket_on",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "bucket compare widened to >=, against the live clock",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "return cutoff[:k] > sdlc_md.new_ulid()[:k]",
-      "new": "return cutoff[:k] >= sdlc_md.new_ulid()[:k]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_in_the_current_bucket_is_honoured",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "bucket narrowed to five characters",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "        k = sdlc_md.ULID_BUCKET_CHARS\n",
-      "new": "        k = 5\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_is_forward_only_from_the_next_bucket_on",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "bucket widened to seven characters",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "        k = sdlc_md.ULID_BUCKET_CHARS\n",
-      "new": "        k = 7\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_is_forward_only_from_the_next_bucket_on",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "numeric forward bound raised to 1",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "return max_id > 0 and cutoff > max_id",
-      "new": "return max_id > 1 and cutoff > max_id",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_numeric_cutoff_on_a_project_holding_no_sequential_id_is_not_forward",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "detect never flags a forward cutoff",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    cutoff_forward = _cutoff_forward(cutoff, max_id)\n",
-      "new": "    cutoff_forward = False\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_ahead_of_the_clock_is_flagged",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "numeric forward guard on an empty project dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "return max_id > 0 and cutoff > max_id",
-      "new": "return cutoff > max_id",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_numeric_cutoff_on_a_project_holding_no_sequential_id_is_not_forward",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "None cutoff guard dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    if cutoff is None:\n        return False\n    if isinstance(cutoff, str):",
-      "new": "    if isinstance(cutoff, str):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::FiresTests::test_multifile_shipped_no_planning_is_a_violation",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "v3 forward detail falls back to the numeric one",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    if isinstance(s[\"cutoff\"], str):\n        return (f\"adopt_after",
-      "new": "    if False:\n        return (f\"adopt_after",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::ForwardCutoffTests::test_a_v3_cutoff_ahead_of_the_clock_is_flagged",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "remedy's v3 example is one the floor does not honour as printed",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "schema v3 an id such as `BG-01KX95QP`; ids",
-      "new": "schema v3 an id such as `BG-01KW95QP`; ids",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "remedy drops the v3 example",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "a prefixed `CR0238`, or on \"\n                 \"schema v3 an id such as `BG-01KX95QP`; ids",
-      "new": "a prefixed `CR0238`; ids",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal names a v3 id only without allow_ulid",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "                if allow_ulid else \"a bare integer (103) or a prefixed id\")",
-      "new": "                if not allow_ulid else \"a bare integer (103) or a prefixed id\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_the_refusal_names_a_v3_id_only_where_one_is_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal under allow_ulid loses the v3 form",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "accepted = (\"a bare integer (103), a prefixed id (US0103) or a schema v3 id (BG-01KX95QP)\"",
-      "new": "accepted = (\"a bare integer (103) or a prefixed id\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_the_refusal_names_a_v3_id_only_where_one_is_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal under allow_ulid names a v3 id that does not parse",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "or a schema v3 id (BG-01KX95QP)\"",
-      "new": "or a schema v3 id (BG-01KX95Q)\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_the_refusal_names_a_v3_id_only_where_one_is_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal without allow_ulid names a v3 id too",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "                if allow_ulid else \"a bare integer (103) or a prefixed id\")",
-      "new": "                if allow_ulid else \"a bare integer (103), a prefixed id or a v3 id\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_the_refusal_names_a_v3_id_only_where_one_is_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "migrate says no cutoff can reach a v3 id again",
+      "mutant": "migrate: v3 cutoff sentence unscoped (the round-one text)",
       "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
-      "old": "which a \"\n                   f\"numeric cutoff cannot reach.",
-      "new": "which no \"\n                   f\"cutoff can reach.",
+      "old": "f\"numeric cutoff cannot reach. On a schema v3 project a v3 cutoff can, but it \"",
+      "new": "f\"numeric cutoff cannot reach. A v3 cutoff can, but it \"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_a_ulid_unit_is_named_without_a_line_it_could_not_parse",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "migrate drops what a v3 cutoff would do",
+      "mutant": "migrate: drops the before-schema-v3 refusal",
       "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
-      "old": "A v3 cutoff can, but it also exempts every \"\n                   f\"sequential id, and within its own timestamp bucket only itself. Otherwise, \"",
-      "new": "Otherwise, \"",
+      "old": "f\"itself; before schema v3 the floor refuses one. Otherwise, \"",
+      "new": "f\"itself. Otherwise, \"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_a_ulid_unit_is_named_without_a_line_it_could_not_parse",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "migrate drops the word introducing the remedies",
-      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
-      "old": "only itself. Otherwise, \"",
-      "new": "only itself. \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_a_ulid_unit_is_named_without_a_line_it_could_not_parse",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "TEST: the CLI's refusal asserted silent on v3",
+      "mutant": "test fixture: _config_v3 stamps no schema (the round-one fixture)",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
-      "old": "            self.assertIn(\"or a schema v3 id (BG-01KX95QP)\", r.stderr)",
-      "new": "            self.assertNotIn(\"or a schema v3 id (BG-01KX95QP)\", r.stderr)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_the_refusal_names_a_v3_id_only_where_one_is_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "TEST: migrate's old sentence asserted present",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py",
-      "old": "        self.assertNotIn(\"no cutoff can reach\", items[0][\"detail\"])",
-      "new": "        self.assertIn(\"no cutoff can reach\", items[0][\"detail\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::EngagementFloorCutoffTests::test_a_ulid_unit_is_named_without_a_line_it_could_not_parse",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "TEST: the cutoff's bucket mate asserted exempt",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
-      "old": "            for rid in (self.V3_EARLIER, self.V3_CUTOFF):\n",
-      "new": "            for rid in (self.V3_EARLIER, self.V3_SAME_BUCKET):\n",
+      "old": "_config(root, \"schema_version: 3\\n\" + text)",
+      "new": "_config(root, text)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_id_at_or_below_cutoff_is_exempt_for_a_v3_ulid",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "TEST: the CLI's exit asserted green",
+      "mutant": "test fixture: the refusal test's v2 project stamped schema 3",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
-      "old": "            self.assertEqual(1, r.returncode, r.stdout)\n            self.assertIn(\"2 violation",
-      "new": "            self.assertEqual(0, r.returncode, r.stdout)\n            self.assertIn(\"2 violation",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_check_honours_a_ulid_cutoff_through_the_cli",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "TEST: the v3 example asserted not honoured",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py",
-      "old": "            self.assertTrue(_units(root)[\"BG-01KX0000\"][\"exempt\"])",
-      "new": "            self.assertFalse(_units(root)[\"BG-01KX0000\"][\"exempt\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_numeric_cutoff_is_unchanged_and_the_remedy_names_a_v3_id",
+      "old": "for head in (\"\", \"schema_version: 2\\n\"):",
+      "new": "for head in (\"schema_version: 3\\n\",):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CutoffTests::test_a_v3_cutoff_before_schema_v3_is_refused_through_check",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 # BG1549: The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** docs/why-sdlc-studio.md, tools/tests/test_doc_claims.py, sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md, docs/whitepaper.md, changelog.d/BG1549.md

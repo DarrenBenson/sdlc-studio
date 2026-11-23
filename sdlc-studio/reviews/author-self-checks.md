@@ -648,3 +648,15 @@
 | BG1545 | Dani Okafor (engineering) | 2026-11-23 | TRUE 13, FALSE 0, UNVERIFIABLE 1 | killed 29, survived 0 | c0153b4237388777 at 9b81a961fd1f |
 | BG0967 | Dani Okafor (engineering) | 2026-11-23 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 37, survived 1 | e48e7b17f9a77cbf at 268b2933ef75 |
 | BG0974 | Dani Okafor (engineering) | 2026-11-23 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | 4d40017ff5030445 at 268b2933ef75 |
+| BG0995 | Dani Okafor (engineering) | 2026-11-23 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 12, survived 0 | 242ea253baf4c7d0 at e7afcc97bbf0 |
+| BG1452 | Dani Okafor (engineering) | 2026-11-23 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 41, survived 1 | dbf9f2440189f2ad at e7afcc97bbf0 |
+| BG1551 | Dani Okafor (engineering) | 2026-11-23 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 2 | add5c93b3b6f6eee at e7afcc97bbf0 |
+| BG1552 | Dani Okafor (engineering) | 2026-11-23 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 25, survived 0 | 8d022671d2966064 at e7afcc97bbf0 |
+| BG1549 | Dani Okafor (engineering) | 2026-11-23 | TRUE 14, FALSE 0, UNVERIFIABLE 0 | killed 56, survived 4 | b222e292d78811d4 at fa95b8a01e1c |
+| BG1550 | Dani Okafor (engineering) | 2026-11-23 | TRUE 14, FALSE 0, UNVERIFIABLE 0 | killed 49, survived 9 | 00b62a9940733357 at fa95b8a01e1c |
+| BG0959 | Dani Okafor (engineering) | 2026-11-23 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | f90043b74af41398 at a88149b895b9 |
+| BG0997 | Dani Okafor (engineering) | 2026-11-23 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 1 | 1b31363ca861ab8f at a88149b895b9 |
+| BG1541 | Dani Okafor (engineering) | 2026-11-23 | TRUE 16, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 0 | 23b280a376ca1d4a at c7dfd991bd81 |
+| BG1567 | Dani Okafor (engineering) | 2026-11-23 | TRUE 9, FALSE 0, UNVERIFIABLE 1 | killed 9, survived 0 | 3e95e2afb5decb63 at c7dfd991bd81 |
+| US1324 | Dani Okafor (engineering) | 2026-11-23 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 21, survived 0 | ef1c49c72283539b at c7dfd991bd81 |
+| BG1718 | Dani Okafor (engineering) | 2026-11-23 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 5, survived 1 | 4408920f5f644b9e at c7dfd991bd81 |

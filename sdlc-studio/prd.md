@@ -280,7 +280,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Feature | Description | Status | Priority | Location | Epic |
 | --- | --- | --- | --- | --- | --- |
 | Sprint loop (Goal-Driven) | A prioritised batch driven along `triage -> plan -> design -> done`; WSJF order, dependency waves, agentic execution. A Sprint Goal of 20 words or fewer traced to a PRD outcome or persona, one plan approval, one reviewer per unit for at most two rounds, and a one-pass close that files the one-page sprint report `sprint sign` seals | Complete | High | reference-sprint.md, scripts/sprint.py | EP0031, EP0032 |
-| Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver. Its `adopt_after` escape refuses a ULID cutoff while BG0959 is open | Partial | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
+| Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver. Its `adopt_after` escape refuses a ULID cutoff while BG0959 is open | Complete | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
 | Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size, a story or bug must carry acceptance criteria with at least one `Verify:` line or `manual` marker, and no unit may be pointed above the split ceiling). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
 | Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | CR0259 |
 | Run appetite / breaker | `--appetite-minutes` / `--appetite-units` bound an unattended run; the breaker stops it cleanly at a unit boundary with its own exit code | Complete | High | reference-sprint.md#appetite, scripts/loop_guard.py | EP0032 |
@@ -382,10 +382,10 @@ skipped exactly on the changes that need it.
 - [x] A shipped unit that touches more than one source file and carries no acceptance criterion, no `Verify:` line and no linked plan FAILS the gate.
 - [x] "Multi-file" is judged from the unit's declared `Affects:` and cross-checked against the source files its own commit touched, so pure omission cannot dodge the floor.
 - [x] A `Refs: <id>` commit trailer attributes a shared commit's files per id; attribution is strictly additive, so a "see also" trailer can never lower a unit's file count and disarm its own check.
-- [ ] The only escapes are recorded: `engagement_floor: judgement` in config (the lane reports, never blocks), an `adopt_after:` id cutoff that is refused if set beyond the current work, or a `decisions waive` entry. Held by BG0959: the floor refuses a ULID `adopt_after` cutoff, so a schema-v3 project cannot grandfather its ULID ids that way.
+- [x] The only escapes are recorded: `engagement_floor: judgement` in config (the lane reports, never blocks), an `adopt_after:` id cutoff that is refused if set beyond the current work, or a `decisions waive` entry. A schema-v3 project may set a ULID cutoff; one set before schema v3 is refused, since it would exempt every sequential id.
 
 **Dependencies:** scripts/engagement_floor.py, scripts/gate.py, reference-doctrine.md rule 16
-**Status:** Partial · **Confidence:** [HIGH]
+**Status:** Complete · **Confidence:** [HIGH]
 
 #### Breakdown gate (`sprint plan` refuses an ungroomed batch)
 
@@ -859,6 +859,7 @@ none.
 | 2026-11-21 | 6.4.0 | Verify AC (BG1023): the vitest and jest verbs select a test by file and name, so the parse criterion is ticked and the row no longer names BG1023 as holding it; the feature stays Partial, held by BG1063 |
 | 2026-11-22 | 6.4.0 | Environment variables (BG1578): the table gains `SDLC_VERIFY_RED_DETAIL`, the file `verify_ac.py run` appends each red criterion's own verifier output to, which the scheduled corpus lane sets |
 | 2026-11-22 | 6.4.0 | Environment variables (BG1578): `SDLC_VERIFY_TIMEOUT` names both its readers and their defaults, 300 s at the release gate and 120 s for `verify_ac.py run`, which now reads it when `--timeout` is not given, and `SDLC_VERIFY_RED_DETAIL` names the release gate's verify lane, which the corpus lane runs, beside `verify_ac.py run` as writing the file |
+| 2026-11-23 | 6.4.0 | Engagement floor (BG0959): the floor takes a ULID `adopt_after` cutoff on a schema-v3 project and refuses one set before schema v3, so the escapes criterion is ticked and the feature is Complete |
 
 ---
 

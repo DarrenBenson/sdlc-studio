@@ -1,0 +1,61 @@
+{
+  "unit": "BG1718",
+  "digest": "4408920f5f644b9e at c7dfd991bd81",
+  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/BG1718-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "ids are not blanked before the split",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "    words = re.findall(r\"[a-z0-9_]+\", _blank_ids(\" \".join(parts)).lower())\n",
+      "new": "    words = re.findall(r\"[a-z0-9_]+\", \" \".join(parts).lower())\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_v3_id_suffix_is_not_a_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the blank keeps the id",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "    return sdlc_md.ID_SEARCH_RE.sub(\" \", text)\n",
+      "new": "    return text\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_v3_id_suffix_is_not_a_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the blank joins the words either side",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "    return sdlc_md.ID_SEARCH_RE.sub(\" \", text)\n",
+      "new": "    return sdlc_md.ID_SEARCH_RE.sub(\"\", text)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
+      "result": "survived",
+      "answer": "equivalent where the id stands between non-word characters, which is every H1 prefix; it differs only for an id glued to word characters on both sides"
+    },
+    {
+      "mutant": "only the v3 shape is blanked",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "    return sdlc_md.ID_SEARCH_RE.sub(\" \", text)\n",
+      "new": "    return sdlc_md.ID_SEARCH_RE.sub(lambda m: \" \" if sdlc_md.is_v3_id(m.group(0)) else m.group(0), text)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every eight-character word is dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "            if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w)}\n",
+      "new": "            if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w) and len(w) != 8}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lower-case v2 rule is dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "            if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w)}\n",
+      "new": "            if w not in _STOP and len(w) > 2}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

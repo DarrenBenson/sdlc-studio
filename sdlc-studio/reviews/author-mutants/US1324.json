@@ -1,0 +1,196 @@
+{
+  "unit": "US1324",
+  "digest": "ef1c49c72283539b at c7dfd991bd81",
+  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/US1324-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the CLI does not ask for the refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                              refuse_duplicates=True)\n",
+      "new": "                              refuse_duplicates=False)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_full_affects_duplicate_is_refused_before_an_id_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the library refuses by default",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                 refuse_duplicates: bool = False) -> dict:\n",
+      "new": "                 refuse_duplicates: bool = True) -> dict:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_library_filer_still_files_and_warns",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal runs after the mint",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    declared_candidates = (refuse_duplicate(root, type_, title, fields)\n                           if refuse_duplicates else None)\n",
+      "new": "    declared_candidates = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_full_affects_duplicate_is_refused_before_an_id_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty declared Affects shares every path",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                  if declared and declared <= set(c[\"shared\"])\n",
+      "new": "                  if declared <= set(c[\"shared\"])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_partial_or_absent_affects_overlap_still_only_warns",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any shared path refuses",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                  if declared and declared <= set(c[\"shared\"])\n",
+      "new": "                  if declared and set(c[\"shared\"])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_partial_or_absent_affects_overlap_still_only_warns",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a ruling answers nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                  and sdlc_md.norm_id(c[\"id\"]) not in ruled]\n",
+      "new": "                  ]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any ruling answers every duplicate",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                  and sdlc_md.norm_id(c[\"id\"]) not in ruled]\n",
+      "new": "                  and not ruled]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_naming_another_or_no_artefact_still_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the completed Affects is judged",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    declared_candidates = (refuse_duplicate(root, type_, title, fields)\n",
+      "new": "    declared_candidates = (refuse_duplicate(root, type_, title, {**fields, \"affects\": complete_affects(root, fields.get(\"affects\"), type_)[0]})\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_refusal_reads_declared_paths_and_the_lens_bar_at_or_above",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unresolvable ruling is skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if not found:\n            raise ValueError(f\"--distinct-from {tok} names no artefact",
+      "new": "        if not found:\n            continue\n            raise ValueError(f\"--distinct-from {tok} names no artefact",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_naming_another_or_no_artefact_still_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a ruling is recorded as typed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        cid = sdlc_md.extract_record_id(found[0].stem) or tok\n",
+      "new": "        cid = tok\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a ruling naming an id twice records it twice",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if cid not in ids:\n            ids.append(cid)\n",
+      "new": "        ids.append(cid)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ids split on commas only",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    return [tok for tok in re.split(r\"[,\\s]+\", value or \"\") if tok]\n",
+      "new": "    return [tok for tok in re.split(r\",\", value or \"\") if tok]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the flag is dropped by the CLI's flag dict",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "             \"distinct_from\": getattr(args, \"distinct_from\", None)}\n",
+      "new": "             }\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the document key is refused as unknown",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                                     \"lens\", \"profile\", \"audit_run\", \"detector_for_lens\",\n                                     \"distinct_from\")\n",
+      "new": "                                     \"lens\", \"profile\", \"audit_run\", \"detector_for_lens\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line is never written",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    return f\"> **Distinct-from:** {val}\\n\" if val else \"\"\n",
+      "new": "    return \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal hard-codes the bar it names",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "at or above its bar of {artifact.DUP_SHARED_AFFECTS_SIM}\"",
+      "new": "at or above its bar of 0.4\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_refusal_reads_declared_paths_and_the_lens_bar_at_or_above",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal does not name the way to file anyway",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "f\"finding, file it with --distinct-from {ids} to record that ruling on it\")",
+      "new": "f\"finding, say so\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_full_affects_duplicate_is_refused_before_an_id_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the warning always reuses the declared scan",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    warnings = (declared_candidates if declared_candidates is not None and not added\n",
+      "new": "    warnings = (declared_candidates if declared_candidates is not None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_warning_reads_the_completed_affects_and_the_corpus_is_scanned_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the warning always scans again",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    warnings = (declared_candidates if declared_candidates is not None and not added\n",
+      "new": "    warnings = (declared_candidates if False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_warning_reads_the_completed_affects_and_the_corpus_is_scanned_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal reads another field as the declared Affects",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                            for x in declared_affects(fields.get(\"affects\"))) if k}\n",
+      "new": "                            for x in declared_affects(fields.get(\"title\"))) if k}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_full_affects_duplicate_is_refused_before_an_id_is_minted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Distinct-from line reads the wrong key",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    val = prose_value(f, \"distinct_from\")\n",
+      "new": "    val = prose_value(f, \"distinct\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
