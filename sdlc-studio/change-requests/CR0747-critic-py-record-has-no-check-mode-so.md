@@ -1,6 +1,6 @@
 # CR-0747: critic.py record has no check mode, so a reviewer cannot confirm its verdict file will record before handing back
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** Low
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/CR0747.md
@@ -27,3 +27,4 @@ Add `critic.py record --check` that runs every refusal record would apply and wr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Rejected (D0597) |

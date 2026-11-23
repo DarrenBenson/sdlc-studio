@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 9 |
+| Proposed | 0 |
 | Approved | 0 |
-| In Progress | 79 |
+| In Progress | 83 |
 | Complete | 562 |
-| Rejected | 34 |
-| Deferred | 0 |
+| Rejected | 36 |
+| Deferred | 3 |
 | Superseded | 66 |
 | Blocked | 0 |
 | **Total** | **750** |
@@ -151,17 +151,17 @@
 | [CR-0737](CR0737-generate-mode-reads-schema-dumps-stored-procedure-source.md) | Generate mode reads schema dumps, stored-procedure source and trace exports from a declared folder | In Progress | Low | Feature | 2026-11-17 | EP0374 |
 | [CR-0738](CR0738-a-criterion-can-name-a-project-supplied-app.md) | A criterion can name a project-supplied app command, and the review records the evidence it produced | In Progress | Low | Feature | 2026-11-17 | EP0375 |
 | [CR-0739](CR0739-this-repository-declares-a-component-map-so-its.md) | This repository declares a component map so its gate scripts are classed high risk | Complete | High | Improvement | 2026-11-17 | EP0376 |
-| [CR-0740](CR0740-prevent-or-retire-lesson-lc-021-lane-paperwork.md) | Prevent or retire lesson LC-021 (lane paperwork the landing refuses) | Proposed | Medium | Improvement | 2026-11-18 | -- |
-| [CR-0741](CR0741-the-sprint-report-gives-no-one-line-actual.md) | The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost | Proposed | Medium | Enhancement | 2026-11-18 | -- |
+| [CR-0740](CR0740-prevent-or-retire-lesson-lc-021-lane-paperwork.md) | Prevent or retire lesson LC-021 (lane paperwork the landing refuses) | Deferred | Medium | Improvement | 2026-11-18 | -- |
+| [CR-0741](CR0741-the-sprint-report-gives-no-one-line-actual.md) | The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost | In Progress | Medium | Enhancement | 2026-11-18 | EP0378 |
 | [CR-0742](CR0742-harness-agnostic-and-enterprise-ready-documentation.md) | Harness-agnostic and enterprise-ready documentation | Complete | High | Improvement | 2026-11-18 | EP0377 |
-| [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Proposed | Medium | Improvement | 2026-11-18 | -- |
+| [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Deferred | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0744](CR0744-amend-a-batch-unit-s-affects-in-flight.md) | Amend a batch unit's Affects in flight with a recorded reason | Rejected | Medium | Improvement | 2026-11-18 | -- |
-| [CR-0745](CR0745-file-finding-asks-the-filer-to-rule-on.md) | file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after | Proposed | Medium | Improvement | 2026-11-19 | -- |
-| [CR-0746](CR0746-the-session-meter-finds-a-claude-code-session.md) | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS | Proposed | Medium | Feature | 2026-11-19 | -- |
-| [CR-0747](CR0747-critic-py-record-has-no-check-mode-so.md) | critic.py record has no check mode, so a reviewer cannot confirm its verdict file will record before handing back | Proposed | Low | Feature | 2026-11-19 | -- |
-| [CR-0748](CR0748-every-subagent-brief-the-skill-ships-carries-a.md) | Every subagent brief the skill ships carries a persona seat, not only the builder and reviewer briefs | Proposed | Medium | Feature | 2026-11-19 | -- |
-| [CR-0749](CR0749-sprint-plan-names-existing-tests-outside-a-unit.md) | sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build | Proposed | Medium | Improvement | 2026-11-20 | -- |
-| [CR-0750](CR0750-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Proposed | Medium | Improvement | 2026-11-23 | -- |
+| [CR-0745](CR0745-file-finding-asks-the-filer-to-rule-on.md) | file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after | In Progress | Medium | Improvement | 2026-11-19 | EP0378 |
+| [CR-0746](CR0746-the-session-meter-finds-a-claude-code-session.md) | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS | Deferred | Medium | Feature | 2026-11-19 | -- |
+| [CR-0747](CR0747-critic-py-record-has-no-check-mode-so.md) | critic.py record has no check mode, so a reviewer cannot confirm its verdict file will record before handing back | Rejected | Low | Feature | 2026-11-19 | -- |
+| [CR-0748](CR0748-every-subagent-brief-the-skill-ships-carries-a.md) | Every subagent brief the skill ships carries a persona seat, not only the builder and reviewer briefs | In Progress | Medium | Feature | 2026-11-19 | EP0378 |
+| [CR-0749](CR0749-sprint-plan-names-existing-tests-outside-a-unit.md) | sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build | In Progress | Medium | Improvement | 2026-11-20 | EP0378 |
+| [CR-0750](CR0750-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Rejected | Medium | Improvement | 2026-11-23 | -- |
 
 ## Archived Releases
 

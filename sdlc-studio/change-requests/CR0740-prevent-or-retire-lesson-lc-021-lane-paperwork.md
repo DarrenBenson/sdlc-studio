@@ -1,6 +1,6 @@
 # CR-0740: Prevent or retire lesson LC-021 (lane paperwork the landing refuses)
 
-> **Status:** Proposed
+> **Status:** Deferred
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -38,3 +38,4 @@ Every lane and review the class reaches: each repeat of LC-021 has cost a review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Deferred (D0592) |

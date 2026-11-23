@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-23
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 68 |
+| Draft | 69 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 276 |
 | Superseded | 33 |
-| **Total** | **377** |
+| **Total** | **378** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -128,6 +128,7 @@
 | [EP0375](EP0375-a-review-can-see-the-running-application.md) | A review can see the running application | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0376](EP0376-review-in-this-repository-treats-a-change-to.md) | Review in this repository treats a change to a gate as high risk | Done | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0377](EP0377-harness-agnostic-enterprise-ready-public-surfaces.md) | Harness-agnostic, enterprise-ready public surfaces | Done | 7 | -- | 2026-11-18 | 2026-11-18 |
+| [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | Draft | 4 | -- | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

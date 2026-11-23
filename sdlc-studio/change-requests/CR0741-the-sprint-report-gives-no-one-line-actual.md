@@ -1,6 +1,7 @@
 # CR-0741: The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0378
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -31,3 +32,4 @@ Put a Cost line under the verdict that states the actual priced tokens, dollars 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Approved (D0593) |

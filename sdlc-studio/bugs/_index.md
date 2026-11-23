@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 294 |
+| Open | 293 |
 | In Progress | 0 |
-| Fixed | 1082 |
+| Fixed | 1083 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -757,7 +757,7 @@
 | [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1681](BG1681-bg1023-did-not-converge-in-review-round-2.md) | BG1023 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1682](BG1682-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1682](BG1682-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1683](BG1683-bg0954-did-not-converge-in-review-round-2.md) | BG0954 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1684](BG1684-bg0956-did-not-converge-in-review-round-2.md) | BG0956 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1685](BG1685-bg1107-did-not-converge-in-review-round-2.md) | BG1107 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |

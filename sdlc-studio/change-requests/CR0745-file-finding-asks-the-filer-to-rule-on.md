@@ -1,6 +1,7 @@
 # CR-0745: file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0378
 > **Priority:** Medium
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/CR0745.md
@@ -27,3 +28,4 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Approved (D0595) |

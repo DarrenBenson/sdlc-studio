@@ -1,6 +1,7 @@
 # CR-0749: sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0378
 > **Priority:** Medium
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -30,3 +31,4 @@ At plan, for each script in a unit's Affects, list the test modules outside its 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Approved (D0599) |

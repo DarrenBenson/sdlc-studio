@@ -1,6 +1,7 @@
 # CR-0748: Every subagent brief the skill ships carries a persona seat, not only the builder and reviewer briefs
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0378
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/templates/automation/audit-finder.md, .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py
@@ -23,3 +24,4 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Approved (D0598) |

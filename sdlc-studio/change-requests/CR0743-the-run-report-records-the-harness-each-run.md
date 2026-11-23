@@ -1,6 +1,6 @@
 # CR-0743: The run report records the harness each run ran in, beside the models it priced
 
-> **Status:** Proposed
+> **Status:** Deferred
 > **Priority:** Medium
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py, docs/evidence.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -31,3 +31,4 @@ Record the harness the run meter read (and every harness when a run spans severa
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Deferred (D0594) |

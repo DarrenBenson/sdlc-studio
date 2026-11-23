@@ -1,6 +1,6 @@
 # CR-0750: Prevent or retire lesson LC-004 (premise not executed)
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -39,3 +39,4 @@ Every lane and review the class reaches: each repeat of LC-004 has cost a review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-23 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Rejected (D0600) |

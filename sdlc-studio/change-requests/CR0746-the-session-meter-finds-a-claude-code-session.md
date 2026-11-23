@@ -1,6 +1,6 @@
 # CR-0746: The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS
 
-> **Status:** Proposed
+> **Status:** Deferred
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/CR0746.md
@@ -31,3 +31,4 @@ When no store is named and the repository's own store holds no transcript, look 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Raised |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Triaged by the product seat during run twenty-three planning: Deferred (D0596) |
