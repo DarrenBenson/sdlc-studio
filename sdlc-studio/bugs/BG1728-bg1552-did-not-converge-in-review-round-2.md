@@ -1,6 +1,6 @@
 # BG1728: BG1552 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py, sdlc-studio/epics/_index.md, sdlc-studio/epics/archive/v6.1/epic.md, sdlc-studio/epics/EP0284-review-seats-chosen-by-what-a-change-touches.md, sdlc-studio/epics/EP0285-persona-goals-become-checks-the-stories-seats-and.md, sdlc-studio/epics/EP0326-a-sprint-drives-each-unit-s-lane-to.md, sdlc-studio/epics/EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md, .claude/skills/sdlc-studio/reference-scripts.md, changelog.d/BG1552.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -29,12 +29,16 @@ Fix each finding above, then deliver BG1552 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG1552 AC1 still passes: Given a fixture workspace holding an epic at Draft whose breakdown declares one Done story and one Draft story, when `reconcile.py detect` runs, then it reports one drift item naming the epic, its recorded status and the derived status In Progress, and exits non-zero. Fails on: a partly delivered epic passing detect with zero drift items.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_draft_epic_with_a_done_child_is_reported_as_in_progress
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** BG1552 AC2 still passes: Given the same fixture with an epic at Ready whose only moved child is In Progress, an epic whose every child is Draft, and an epic already at In Progress with a Done child, when `reconcile.py detect` runs, then the Ready epic is reported and the other two are not. Fails on: an untouched epic or an epic already In Progress being reported, or a Ready epic with an In Progress child being missed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC5** BG1552 AC3 still passes: Given the Draft epic with a Done child, when `reconcile.py apply` runs and detect runs again, then the epic's Status line reads In Progress, its index row agrees, the second detect reports nothing for it, and an epic whose every child is terminal is still left to the existing lane unchanged. Fails on: apply leaving the epic at Draft, or apply closing an all-terminal epic the existing lane only reports.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_writes_in_progress_and_a_second_detect_is_clean
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC6** BG1552 AC4 still passes: Given the fix has landed, when reconcile is applied in this repository, then EP0287 and EP0312 read In Progress in their own files and in the epic index, and reference-epic.md states the derived rule for Done children beside its In Progress line. Fails on: either epic still reading Draft, or the reference page stating a rule the script does not hold.
   - **Verify:** shell grep -q '^> \*\*Status:\*\* In Progress' sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md && grep -q '^> \*\*Status:\*\* In Progress' sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md && grep -Eq '^\| \[EP0287\].*\| In Progress \|' sdlc-studio/epics/_index.md && grep -Eq '^\| \[EP0312\].*\| In Progress \|' sdlc-studio/epics/_index.md && python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_reference_epic_states_the_rule_the_script_holds
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

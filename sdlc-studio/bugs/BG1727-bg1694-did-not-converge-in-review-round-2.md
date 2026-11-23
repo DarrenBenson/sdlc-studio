@@ -1,6 +1,6 @@
 # BG1727: BG1694 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, tools/tests/test_test_census.py, changelog.d/BG1694.md
@@ -29,12 +29,16 @@ Fix each finding above, then deliver BG1694 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG1694 AC1 still passes: Given the machine under load, when `test_kill_grace_interrupt.py` runs, then `KillGraceInterruptTests._child` waits under a bound (`_wait_for`) until child.pid holds an integer before reading it. Fails on: `ValueError: invalid literal for int() with base 10: ''` at `_child`, which refused run twenty-three's push of e2a109be on the gate host.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** BG1694 AC2 still passes: Given the deaf child in `test_kill_grace_interrupt.py`, when it records its pid, then it writes a temporary name and moves it into place with `os.replace`, so a reader never sees an empty child.pid. Fails on: `open(path, 'w').write(pid)`, which creates the file empty before writing.
   - **Verify:** shell grep -q 'os.replace' .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py && python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC5** BG1694 AC3 still passes: Given the machine under load, when `test_lane_land_commit_timeout_group.py` runs, then `LandCommitTimeoutKillsHooksTests._pid` waits under a bound until the hook's pid file holds an integer before reading it, and the hook writes it atomically. Fails on: `ValueError: invalid literal for int() with base 10: ''` from `_pid`, as a run twenty-three commit hit at load 13.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC6** BG1694 AC4 still passes: Given the wall-clock census, when `tools/tests/test_test_census.py` runs, then neither new bound test (`test_child_gives_up_at_its_bound`, `test_pid_gives_up_at_its_bound`) is named as a commit-run test bounding a duration its own process measures: each is marked `serial_only` (or `boundary_only`) or bounds nothing by wall clock. Fails on: the two `assertLess(time.monotonic() - started, 10, ...)` lines landed in e14e7052, which refused REF2's commit.
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

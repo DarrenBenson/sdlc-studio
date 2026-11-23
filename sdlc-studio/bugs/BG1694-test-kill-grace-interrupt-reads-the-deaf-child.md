@@ -1,6 +1,6 @@
 # BG1694: test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, tools/tests/test_test_census.py, changelog.d/BG1694.md
@@ -35,6 +35,7 @@ In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an intege
   - **Verified:** yes (2026-11-23)
 - [ ] **AC4** Given the wall-clock census, when `tools/tests/test_test_census.py` runs, then neither new bound test (`test_child_gives_up_at_its_bound`, `test_pid_gives_up_at_its_bound`) is named as a commit-run test bounding a duration its own process measures: each is marked `serial_only` (or `boundary_only`) or bounds nothing by wall clock. Fails on: the two `assertLess(time.monotonic() - started, 10, ...)` lines landed in e14e7052, which refused REF2's commit.
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

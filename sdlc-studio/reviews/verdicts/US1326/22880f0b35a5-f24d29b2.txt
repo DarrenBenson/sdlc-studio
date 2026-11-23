@@ -1,0 +1,6 @@
+UNIT: US1326
+BRIEF: 22880f0b35a5-f24d29b2
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two's "a comment holding a comma inside a parenthesised import list is unpinned" is CLOSED. 514fba18 changes only test_sprint.py, adding one uniquely named test, and sprint.py is byte-unchanged. Cutting `_REACH_COMMENT` to `#[^\n,]*` now fails the new test and only it (1 failed, 18 passed). So does the same cut in `_REACH_IMPORT`'s list-comment group (`#[^\n,]*\n`), so the builder's second mutant claim holds. With that mutant live, taking the commas out of both new fixtures lets it survive again, so the commas carry the kill and the test is not passing by construction. Run through `sprint.py plan --stories Ready --no-fetch --skip-personas` in a fresh fixture, the shipped code prints `US0001: scripts/lib/surface.py -> tests/test_r_noqa.py` with exit 0 and leaves out the `# see a, surface` module. The choice of `from lib` over `from tool` is sound, because a from-import already lists a module for its package name alone (AC1's `from tool import run` fixture). The class passes 19 of 19, test_sprint.py passes in full (875), and the verify_ac dry run reads 6 of 6.

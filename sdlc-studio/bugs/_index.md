@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 275 |
+| Open | 272 |
 | In Progress | 0 |
-| Fixed | 1112 |
+| Fixed | 1116 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1728** |
+| **Total** | **1729** |
 
 ## All Bugs
 
@@ -627,7 +627,7 @@
 | [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1555](BG1555-the-prd-gives-three-different-accounts-of-what.md) | The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain | Fixed | Low | 2026-11-17 | 2026-11-17 |
@@ -769,7 +769,7 @@
 | [BG1691](BG1691-bg1609-did-not-converge-in-review-round-2.md) | BG1609 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
@@ -802,8 +802,9 @@
 | [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1726](BG1726-readiness-detector-owed-reports-a-project-lens-as.md) | readiness detector-owed reports a project lens as PRD (None) and would declare a bare pack directory as the owed unit's Affects | Open | Low | 2026-11-23 | 2026-11-23 |
-| [BG1727](BG1727-bg1694-did-not-converge-in-review-round-2.md) | BG1694 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
-| [BG1728](BG1728-bg1552-did-not-converge-in-review-round-2.md) | BG1552 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1727](BG1727-bg1694-did-not-converge-in-review-round-2.md) | BG1694 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1728](BG1728-bg1552-did-not-converge-in-review-round-2.md) | BG1552 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1729](BG1729-us1326-did-not-converge-in-review-round-2.md) | US1326 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 
