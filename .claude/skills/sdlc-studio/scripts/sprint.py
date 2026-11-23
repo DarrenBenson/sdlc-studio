@@ -1134,54 +1134,72 @@ _REACH_FILE = re.compile(r"yp\.(?<!\wyp\.)[\w-]+(?![\w.-])")
 _REACH_COMMENT = re.compile(r"#[^\n]*")
 
 
+def _test_module_index(root: Path) -> list[tuple[str, set, set]]:
+    """`[(path, module names, file names)]` for each `test_*.py` file `git ls-files` lists under
+    `root`, sorted by path: the module names its `import` and `from` lines give and the `.py` file
+    names its text holds. A path the index holds at several merge stages is read once, and a path
+    holding a byte that is not UTF-8 is read from disk as it is but given with its bad bytes
+    replaced by U+FFFD, so a plan can print it (two names differing only in such bytes are
+    given alike, each still its own entry)."""
+    try:                                     # outside a checkout git prints no paths
+        ls = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--",
+                             ":(glob)**/test_*.py"], capture_output=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        ls = b""                             # no git to run, or it hung
+    index = []
+    # A set: mid-merge the index lists a conflicted path once per stage, read here once.
+    for rel, raw in sorted({(r.decode("utf-8", "replace"), r) for r in ls.split(b"\0") if r}):
+        try:
+            src = (root / os.fsdecode(raw)).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue                         # tracked but gone from the working tree
+        names: set = set()
+        for frm, what, plain in _REACH_IMPORT.findall("\n" + src):
+            if frm:
+                pkg = frm.rsplit(".", 1)[-1]
+                listed = _REACH_COMMENT.sub("", what).strip("()").split(",")
+                names |= {pkg} | {f"{pkg}.{n.split()[0]}" for n in listed if n.strip()}
+            else:
+                names |= {n.split()[0].rsplit(".", 1)[-1] for n in plain.split(",")
+                          if n.strip()}
+        index.append((rel, names, {f[::-1] for f in _REACH_FILE.findall(src[::-1])}))
+    return index
+
+
 def reaching_test_advisories(repo_root: Path | str, text: str,
                              cache: dict | None = None) -> list[dict]:
     """`[{script, tests}]`: per `.py` file a unit's `Affects` declares, the test modules outside
-    that `Affects` which import it or name its file, as a command running it does. A directory
-    the `Affects` declares covers every module beneath it.
+    that `Affects` that name it, by module name in an import or by file name, as a command running
+    it does. A directory the `Affects` declares covers every module beneath it.
 
     A test module is a `test_*.py` file `git ls-files` lists under the project root, so an
-    untracked module and the copies a worktree under the project holds are never read; a path
-    the index holds at several merge stages is read once. A module imports `pkg/tool.py` by
-    `import tool`, `import x.tool`, `from tool import ...`, `from x.tool import ...` or
-    `from pkg import tool` (a comment inside a parenthesised list hiding no name after it), and
-    runs it when `tool.py` stands in its text as a whole file name (not `mytool.py`, `a.tool.py`
-    or `tool.pyi`). Read by pattern rather than parsed, and matched by name, so two scripts
-    sharing a file name share their list. The scan is made once per `cache`, which the plan
-    shares across its units.
+    untracked module and the copies a worktree under the project holds are never read. A module
+    names `pkg/tool.py` by `import tool`, `import x.tool`, `from tool import ...`,
+    `from x.tool import ...` or `from pkg import tool` (a comment inside a parenthesised list
+    hiding no name after it), or when `tool.py` stands in its text as a whole file name (not
+    `mytool.py`, `a.tool.py` or `tool.pyi`). Read by pattern rather than parsed, and matched by
+    name alone, so the list may hold a module that neither imports nor runs the script: one
+    naming `tool.py` only in a comment or docstring, an import-shaped line inside a docstring,
+    or an import of another module of the same name, such as `importlib.util` for a declared
+    `util.py`; and two scripts sharing a file name share their list.
+
+    The scan is made only when the unit declares a `.py` file, and once per `cache`, which the
+    plan shares across its units.
 
     ADVISORY BY CONSTRUCTION, like `registry_advisories`: it returns findings and decides
     nothing, and a project outside a git checkout has none."""
     root = Path(repo_root)
     cache = {} if cache is None else cache
     declared = {_affect_key(root, p) for p in _affects_files(text)}
+    scripts = sorted(k for k in declared if k.endswith(".py"))
+    if not scripts:
+        return []                            # nothing to reach, so no scan to pay for
     key = ("reaching tests", str(root))
     if key not in cache:
-        cache[key] = index = []
-        try:                                 # outside a checkout git prints no paths
-            ls = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--",
-                                 ":(glob)**/test_*.py"], capture_output=True, timeout=30).stdout
-        except (OSError, subprocess.SubprocessError):
-            ls = b""                         # no git to run, or it hung
-        # A set: mid-merge the index lists a conflicted path once per stage, read here once.
-        for rel in sorted({os.fsdecode(r) for r in ls.split(b"\0") if r}):
-            try:
-                src = (root / rel).read_text(encoding="utf-8", errors="replace")
-            except OSError:
-                continue                     # tracked but gone from the working tree
-            names: set = set()
-            for frm, what, plain in _REACH_IMPORT.findall("\n" + src):
-                if frm:
-                    pkg = frm.rsplit(".", 1)[-1]
-                    listed = _REACH_COMMENT.sub("", what).strip("()").split(",")
-                    names |= {pkg} | {f"{pkg}.{n.split()[0]}" for n in listed if n.strip()}
-                else:
-                    names |= {n.split()[0].rsplit(".", 1)[-1] for n in plain.split(",")
-                              if n.strip()}
-            index.append((rel, names, {f[::-1] for f in _REACH_FILE.findall(src[::-1])}))
+        cache[key] = _test_module_index(root)
     dirs = tuple(k + "/" for k in declared)  # a declared directory covers its tree
     out: list[dict] = []
-    for script in sorted(k for k in declared if k.endswith(".py")):
+    for script in scripts:
         p = Path(script)
         tests = [rel for rel, names, files in cache[key]
                  if rel not in declared and not rel.startswith(dirs)
@@ -2450,7 +2468,8 @@ def _ids_cited_by_stories(root: Path) -> set:
     return cited
 
 
-def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = False) -> dict:
+def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = False,
+              test_reach: bool = False) -> dict:
     """Is this batch GROOMED enough to plan? The census the gate refuses on.
 
     A unit is plannable when it declares the files it will touch (`Affects`) and carries the
@@ -2466,7 +2485,12 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     different fixes: one unit was never sized, the other was sized honestly and is too big.
     Everything else the lane surfaces - shared-file clusters, CRs big enough to warrant stories -
     falls out of the same fields at no extra cost to the operator. Read-only: it reports, and
-    `cmd_plan` decides what to do about it."""
+    `cmd_plan` decides what to do about it.
+
+    `test_reach` adds `test_advisories`, the test modules naming each unit's declared scripts.
+    Only `sprint plan`, which prints them, asks: the scan reads every tracked test module, and
+    no other caller (filing, refine, `batch add-epic`, `sprint breakdown`, the boundary's
+    regenerated plan, the seat brief) reads the list."""
     root = Path(repo_root)
     cited = _ids_cited_by_stories(root)
     ceiling = points_split_above(root)
@@ -2528,7 +2552,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         reg = registry_advisories(root, text, parsers)
         if reg:
             registry_advice.append({"id": it["id"], "items": reg})
-        reach = reaching_test_advisories(root, text, parsers)
+        reach = reaching_test_advisories(root, text, parsers) if test_reach else []
         if reach:
             test_advice.append({"id": it["id"], "items": reach})
         # The size demanded depends on WHAT the unit is. A story/bug is groomed by `Points`; a
@@ -2630,7 +2654,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "clusters": _shared_file_clusters(files_by_unit, sources_by_unit),
             "affects_advisories": affects_advisories,
             "registry_advisories": registry_advice,
-            "test_advisories": test_advice,
+            **({"test_advisories": test_advice} if test_reach else {}),
             "decompose": decompose,
             "triage": _batch_triage(root, [it["id"] for it in batch]),
             "probable_duplicates": probable_duplicates(root, batch),
@@ -4040,14 +4064,16 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
                order: str = "priority", skip_personas: bool = False,
                epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
                worklist: str | None = None, appetite_minutes: float | None = None,
-               appetite_units: int | None = None, goal: str = "done") -> dict:
+               appetite_units: int | None = None, goal: str = "done",
+               test_reach: bool = False) -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
     WAVES - the parallelisable levels operators otherwise hand-derive. The batch source is
     a single kind+status, composed `queries`, or a `worklist` file (ids one per line).
 
     The plan also sizes the batch against the sprint CAPACITY and resolves the run appetite
     from it, so the ceiling the operator is shown at plan time is the ceiling the run breaker
-    later stops on."""
+    later stops on. `test_reach` is `breakdown`'s, set by `sprint plan` alone, which prints the
+    list: the boundary's regenerated plan and the seat brief never read it."""
     root = Path(repo_root)
     if worklist is not None:
         batch, deps = _worklist_units(root, worklist)
@@ -4086,7 +4112,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # Is the batch GROOMED enough to plan at all? `cmd_plan` REFUSES on this (unless the
         # project has recorded the `judgement` opt-out) - and it also carries the shared-file
         # clusters the declared dependency graph cannot see.
-        "breakdown": breakdown(root, batch, skip_personas) if batch else None,
+        "breakdown": (breakdown(root, batch, skip_personas, test_reach=test_reach)
+                      if batch else None),
         # SEQUENTIAL or PARALLEL: whether the batch decomposes into file-disjoint groups a
         # parallel worktree build could take. Offered only when it genuinely does; the plan
         # states the mode and why the alternative was or was not available.
@@ -4798,13 +4825,16 @@ def _render_registry_advisories(data: dict) -> None:
 
 
 def _render_test_advisories(data: dict) -> None:
-    """Test modules outside a unit's `Affects` that import or run a script it declares, the ones
-    a change to that script can turn red. ADVISORY: it changes no exit code, batch or verdict."""
+    """Test modules outside a unit's `Affects` that name a script it declares, by module name in
+    an import or by file name. Matched by name alone, so a listed module may neither import nor
+    run the script (its file name in a comment or docstring, or an import of a same-named
+    module), and the header says so.
+    ADVISORY: it changes no exit code, batch or verdict."""
     items = (data.get("breakdown") or {}).get("test_advisories") or []
     if not items:
         return
-    print("  Test modules outside the units' Affects that import or run a script they declare "
-          "(advisory - nothing is refused):")
+    print("  Test modules outside the units' Affects that name a script they declare, matched "
+          "by name alone, so some may never import or run it (advisory - nothing is refused):")
     for unit in items:
         for it in unit["items"]:
             shown = it["tests"][:REACHING_TEST_CAP]
@@ -12632,7 +12662,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
                           skip_personas=getattr(args, "skip_personas", False), epics=epics,
                           queries=queries or None, worklist=worklist,
                           appetite_minutes=getattr(args, "appetite_minutes", None),
-                          appetite_units=getattr(args, "appetite_units", None))
+                          appetite_units=getattr(args, "appetite_units", None),
+                          test_reach=True)
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
         return 2

@@ -2331,12 +2331,14 @@ def _reach_project(root: Path, affects: str | None = "scripts/tool.py",
 _REACH_LINE = ("    US0001: scripts/tool.py -> tests/test_tool_cli.py, tests/test_tool_from.py, "
                "tests/test_tool_import.py")
 _REACH_HEADER = "Test modules outside"
+_REACH_SCAN = ":(glob)**/test_*.py"
 
 
 class PlanTestModuleAdvisoryTests(unittest.TestCase):
-    """The plan names, per unit, the tracked test modules outside its `Affects` that import or run
-    a `.py` file it declares: advice beside the registry advice, never a refusal, read from the
-    project's own `git ls-files` and never from a walk of a tree holding worktree copies."""
+    """The plan names, per unit, the tracked test modules outside its `Affects` that name a `.py`
+    file it declares, by module or file name: advice beside the registry advice, never a refusal,
+    read from the project's own `git ls-files` and never from a walk of a tree holding worktree
+    copies, and only by the plan, for a unit declaring a script."""
 
     def _plan(self, root: Path, *extra: str) -> tuple[int, str]:
         out = io.StringIO()
@@ -2674,6 +2676,116 @@ class PlanTestModuleAdvisoryTests(unittest.TestCase):
             self.assertEqual(out.count(_REACH_HEADER), 1, out)
             self.assertEqual(self._block(out)[1:], [
                 _REACH_LINE, "    US0002: scripts/other.py -> tests/test_other.py"])
+
+    def _scans(self, call):
+        """`(scans, result)`: how many `git ls-files` listings of the test modules `call()` made,
+        seen by a logging wrapper round `subprocess.run`, and what it returned."""
+        real, seen = subprocess.run, []
+
+        def spy(cmd, *args, **kwargs):
+            if isinstance(cmd, (list, tuple)) and _REACH_SCAN in cmd:
+                seen.append(cmd)
+            return real(cmd, *args, **kwargs)
+        with unittest.mock.patch.object(subprocess, "run", spy):
+            result = call()
+        return len(seen), result
+
+    def test_a_two_unit_plan_scans_the_test_modules_once(self) -> None:
+        """Two units declaring different scripts share one scan: the cache is the plan's, never
+        one per unit's text."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, extra={"scripts/other.py": "X = 1\n",
+                                        "tests/test_other.py": "import other\n"}, git=False)
+            _verified_story(root, 2, "scripts/other.py", ["shell true"])
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            scans, (rc, out) = self._scans(lambda: self._plan(root))
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                _REACH_LINE, "    US0002: scripts/other.py -> tests/test_other.py"])
+            self.assertEqual(scans, 1)
+
+    def test_no_scan_runs_where_nothing_reads_it_or_no_script_is_declared(self) -> None:
+        """The plan scans only when a unit declares a `.py` file, and `breakdown` and
+        `build_plan` alone, which filing, refine, `batch add-epic`, the boundary and the brief
+        call and which never print the list, do not scan at all."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "docs/guide.md, tests/", {"docs/guide.md": "# guide\n"})
+            scans, (rc, out) = self._scans(lambda: self._plan(root))
+            self.assertEqual(rc, 0, out)
+            self.assertEqual((scans, self._block(out)), (0, []))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            scans, (rc, out) = self._scans(lambda: self._plan(root))
+            self.assertEqual((rc, scans, self._block(out)[1:]), (0, 1, [_REACH_LINE]), out)
+            sp = _load()
+            unit = {"id": "US0001", "type": "story",
+                    "path": str(root / "sdlc-studio/stories/US0001-x.md")}
+            with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
+                scans, bd = self._scans(lambda: sp.breakdown(root, [unit], skip_personas=True))
+                self.assertEqual(scans, 0)
+                self.assertNotIn("test_advisories", bd)
+                scans, plan = self._scans(lambda: sp.build_plan(root, "story", "Ready",
+                                                                skip_personas=True))
+                self.assertEqual(scans, 0)
+                self.assertNotIn("test_advisories", plan["breakdown"])
+
+    def test_a_test_module_name_that_is_not_utf8_leaves_the_plan_exiting_0(self) -> None:
+        """A tracked name holding a byte that is not UTF-8 is listed with U+FFFD in its place, so
+        the human plan prints it and exits 0, as it did before the list existed; two names that
+        differ only in that byte are two modules, each listed."""
+        bad = "tests/test_caf\ufffd.py"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, git=False)
+            try:
+                for byte in (b"\xe9", b"\xe8"):
+                    (Path(os.fsdecode(bytes(root) + b"/tests/test_caf" + byte + b".py"))
+                     .write_text("import tool\n", encoding="utf-8"))
+            except (OSError, UnicodeError):
+                self.skipTest("this file system refuses a file name that is not UTF-8")
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            run = [sys.executable, str(SCRIPT), "plan", "--stories", "Ready", "--root", str(root),
+                   "--no-fetch", "--skip-personas"]
+            env = gitutil.git_env(PYTHONIOENCODING="utf-8")
+            proc = subprocess.run(run, capture_output=True, text=True, encoding="utf-8",
+                                  env=env, timeout=120, check=False)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn(f"    US0001: scripts/tool.py -> {bad}, {bad}, "
+                          + _REACH_LINE.split(" -> ")[1], proc.stdout.splitlines())
+            proc = subprocess.run([*run, "--format", "json"], capture_output=True, text=True,
+                                  encoding="utf-8", env=env, timeout=120, check=False)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(json.loads(proc.stdout)["breakdown"]["test_advisories"][0]["items"]
+                             [0]["tests"][:3], [bad, bad, "tests/test_tool_cli.py"])
+
+    def test_the_header_says_the_list_is_a_name_match_that_may_over_list(self) -> None:
+        """A module that only names the script's file in a docstring and a comment, and one that
+        imports a standard-library module of the script's name, are listed, and the header says
+        the list is matched by name alone rather than that each listed module imports or runs
+        the script."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, scripts/util.py, app/handlers.py", {
+                "scripts/util.py": "X = 1\n", "app/handlers.py": "X = 1\n",
+                "tests/test_m_mention.py": ('"""Checks tool.py stays out of this."""\n'
+                                            "# tool.py is not run here\n"),
+                "tests/test_m_stdlib.py": "import importlib.util\n",
+                "tests/test_m_logging.py": "from logging.handlers import RotatingFileHandler\n"})
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out), [
+                "  Test modules outside the units' Affects that name a script they declare, "
+                "matched by name alone, so some may never import or run it "
+                "(advisory - nothing is refused):",
+                "    US0001: app/handlers.py -> tests/test_m_logging.py",
+                "    US0001: scripts/tool.py -> tests/test_m_mention.py, "
+                + _REACH_LINE.split(" -> ")[1],
+                "    US0001: scripts/util.py -> tests/test_m_stdlib.py"])
 
 
 class DerivedClusterFileTests(unittest.TestCase):
