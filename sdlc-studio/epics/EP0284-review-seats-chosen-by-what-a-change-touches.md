@@ -1,6 +1,6 @@
 # EP0284: Review seats chosen by what a change touches, and each seat briefed through its own lens
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Parent:** CR0627
 > **Parent:** CR0622
 > **Derived Point Total:** 31

@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 69 |
+| Draft | 63 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 0 |
-| Done | 276 |
-| Superseded | 33 |
+| In Progress | 6 |
+| Done | 275 |
+| Superseded | 34 |
 | **Total** | **378** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
@@ -34,10 +34,10 @@
 | [EP0281](EP0281-a-unit-s-criteria-are-shown-by-the.md) | A unit's criteria are shown by the tool to fail without its change before it closes | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0282](EP0282-an-artefact-commit-runs-the-cheap-tests-that.md) | An artefact commit runs the cheap tests that read this repository's artefacts before it lands | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0283](EP0283-grooming-done-before-minting-survives-onto-the-stories.md) | Grooming done before minting survives onto the stories refine mints | Draft | 4 | -- | 2026-10-09 | 2026-10-09 |
-| [EP0284](EP0284-review-seats-chosen-by-what-a-change-touches.md) | Review seats chosen by what a change touches, and each seat briefed through its own lens | Draft | 10 | -- | 2026-10-09 | 2026-10-09 |
-| [EP0285](EP0285-persona-goals-become-checks-the-stories-seats-and.md) | Persona goals become checks the stories, seats and goal review carry | Draft | 8 | -- | 2026-10-09 | 2026-10-09 |
+| [EP0284](EP0284-review-seats-chosen-by-what-a-change-touches.md) | Review seats chosen by what a change touches, and each seat briefed through its own lens | In Progress | 10 | -- | 2026-10-09 | 2026-10-09 |
+| [EP0285](EP0285-persona-goals-become-checks-the-stories-seats-and.md) | Persona goals become checks the stories, seats and goal review carry | In Progress | 8 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0286](EP0286-a-small-change-takes-a-documented-tooled-path.md) | A small change takes a documented, tooled path: an executable criterion, an independent review and the terminal transition, without a run | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
-| [EP0287](EP0287-personas-become-accountable-team-members-a-review-standard.md) | Personas become accountable team members: a review standard that blocks a failing card, a committed memory, a learning loop from the verdict ledger, and End goals checked at the close | Draft | 24 | -- | 2026-10-12 | 2026-10-12 |
+| [EP0287](EP0287-personas-become-accountable-team-members-a-review-standard.md) | Personas become accountable team members: a review standard that blocks a failing card, a committed memory, a learning loop from the verdict ledger, and End goals checked at the close | In Progress | 24 | -- | 2026-10-12 | 2026-10-12 |
 | [EP0288](EP0288-the-push-gate-and-the-full-suite-run.md) | The push gate and the full suite run on a configured gate host | Done | 4 | -- | 2026-10-12 | 2026-10-12 |
 | [EP0289](EP0289-the-persona-registry-matches-the-work-it-serves.md) | The persona registry matches the work it serves: a maintainer Primary for the repository tooling, and cards that state current goals | Done | 5 | -- | 2026-10-19 | 2026-10-19 |
 | [EP0290](EP0290-the-trd-and-tsd-describe-the-gate-as.md) | The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host | Done | 3 | -- | 2026-10-19 | 2026-10-19 |
@@ -62,7 +62,7 @@
 | [EP0309](EP0309-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review | Done | 3 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0310](EP0310-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: three routes in, an honest SUPPORT.md, a generated evidence page and a page for engineering leaders | Done | 5 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0311](EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report | Done | 2 | -- | 2026-11-15 | 2026-11-15 |
-| [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | In Progress | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Done | 1 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0314](EP0314-v6-4-0-ships-with-paperwork-that-matches.md) | v6.4.0 ships with paperwork that matches the code | Done | 4 | -- | 2026-11-16 | 2026-11-16 |
 | [EP0315](EP0315-the-superseded-review-seat-charter-pointer-no-longer.md) | The superseded review seat charter pointer no longer ships with the skill | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
@@ -76,8 +76,8 @@
 | [EP0323](EP0323-a-planned-unit-s-affects-or-criterion-is.md) | A planned unit's Affects or criterion is amended in flight by a command that records why | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0324](EP0324-a-lesson-s-revalidated-citations-are-checked-against.md) | A lesson's Revalidated citations are checked against the tree and re-anchored when code moves | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0325](EP0325-a-commit-s-selected-test-suites-run-on.md) | A commit's selected test suites run on the gate host when one is named, as the push gate does | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0326](EP0326-a-sprint-drives-each-unit-s-lane-to.md) | A sprint drives each unit's lane to its paperwork and wakes the model only for judgement | Draft | 7 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0327](EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md) | Authors and reviewers run one shipped mutation runner and the self-check records its report | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0326](EP0326-a-sprint-drives-each-unit-s-lane-to.md) | A sprint drives each unit's lane to its paperwork and wakes the model only for judgement | In Progress | 7 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0327](EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md) | Authors and reviewers run one shipped mutation runner and the self-check records its report | In Progress | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0328](EP0328-every-change-to-the-verifier-core-runs-a.md) | Every change to the verifier core runs a kit of the hostile runtimes consuming projects have | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0329](EP0329-one-command-writes-a-unit-s-changelog-fragment.md) | One command writes a unit's changelog fragment from its title and acceptance criteria | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0330](EP0330-agents-find-a-symbol-s-line-range-from.md) | Agents find a symbol's line range from the repo map and from their brief, without searching | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |

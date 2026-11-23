@@ -1,6 +1,6 @@
 # EP0285: Persona goals become checks the stories, seats and goal review carry
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Parent:** CR0625
 > **Parent:** CR0623
 > **Derived Point Total:** 24

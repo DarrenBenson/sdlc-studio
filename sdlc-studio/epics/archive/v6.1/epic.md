@@ -38,7 +38,7 @@ Terminal rows archived from the live index. Artifact files are unchanged; these 
 | [EP0243](../../EP0243-the-derived-depth-lane-re-derives-rather-than.md) | The derived-depth lane re-derives, rather than trusting each span's own seal | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0244](../../EP0244-one-concept-one-name-across-every-verb-and.md) | One concept, one name, across every verb and every document key | Done | 5 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0245](../../EP0245-filing-a-finding-leaves-the-disclosure-true.md) | Filing a finding leaves the disclosure true | Superseded | 3 | -- | 2026-08-27 | 2026-08-27 |
-| [EP0246](../../EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Done | 4 | -- | 2026-08-27 | 2026-08-27 |
+| [EP0246](../../EP0246-the-declared-python-floor-is-a-gate-not.md) | The declared Python floor is a gate, not a sentence in six documents | Superseded | 4 | -- | 2026-08-27 | 2026-08-27 |
 | [EP0248](../../EP0248-a-change-to-a-gate-lane-or-a.md) | A change to a gate lane or a hook is run where the hook runs it before it can reach Fixed | Superseded | 4 | -- | 2026-09-07 | 2026-09-07 |
 | [EP0253](../../EP0253-the-push-boundary-runs-the-modules-the-push.md) | The push boundary runs the modules the push changed, and says which | Superseded | 5 | -- | 2026-09-16 | 2026-09-16 |
 | [EP0254](../../EP0254-the-corpus-lane-runs-in-shards-and-judges.md) | The corpus lane runs in shards and judges one union | Superseded | 4 | -- | 2026-09-16 | 2026-09-16 |

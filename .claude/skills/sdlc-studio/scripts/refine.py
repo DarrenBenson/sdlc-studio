@@ -69,9 +69,12 @@ def _ac_heading(criterion: str, limit: int = 100) -> str:
 
 #: A criterion that already opens with its own `AC1:` label (the shape a request written to the
 #: story template carries). The seed prepends `### ACn: `, so an unstripped label landed twice in
-#: one heading. Matches the bold and plain spellings and the usual separators; nothing else is
-#: touched, so a criterion that merely mentions AC2 mid-sentence keeps its text.
-_AC_LABEL_RE = re.compile(r"^\**\s*AC\s*\d+\**\s*[:.)\]-]\s+", re.I)
+#: one heading. Two spellings: a label closed in bold, with a separator inside the bold, after
+#: it or none (`**AC1** text` and `**AC1:** text` are the rows the skill's own filers write),
+#: and a label with no closing bold, which needs a separator. Nothing else is touched, so a
+#: criterion that merely mentions AC2 mid-sentence, or opens on a bold phrase, keeps its text.
+_AC_LABEL_RE = re.compile(r"^(?:\*+\s*AC\s*\d+\s*[:.)\]-]?\s*\*+\s*[:.)\]-]?"
+                          r"|\**\s*AC\s*\d+\**\s*[:.)\]-])\s+", re.I)
 
 
 def _strip_ac_label(criterion: str) -> str:
@@ -85,6 +88,63 @@ def _strip_ac_label(criterion: str) -> str:
 def _request_criteria(text: str) -> list[str]:
     """The request's own `- [ ]` acceptance criteria, in order."""
     return _CRITERION_RE.findall(_section(text, "Acceptance Criteria"))
+
+
+#: The request field naming the criteria a refine left undecomposed, each as `ACn`, the request's
+#: nth criterion. `reconcile` will not derive the request terminal while it names any, so a request
+#: refined in part cannot read as delivered once the part that was refined is done.
+UNREFINED_FIELD = "Unrefined"
+_UNREFINED_CLEAR = "none"
+_UNREFINED_LINE_RE = re.compile(rf"^>\s*\*\*{UNREFINED_FIELD}:\*\*.*$", re.M)
+_AC_TOKEN_RE = re.compile(r"\bAC\s*(\d+)\b", re.I)
+_AC_SPEC_RE = re.compile(r"^AC(\d+)$", re.I)
+
+
+def unrefined_criteria(text: str) -> list[str]:
+    """The `ACn` labels a request's `Unrefined:` field names, or `[]` when the field is absent,
+    empty or reads `none`. A value naming no label is returned whole as the one entry, so a record
+    written by hand that this cannot read still blocks derivation rather than reading as cleared."""
+    raw = (sdlc_md.extract_field(text, UNREFINED_FIELD) or "").strip()
+    if not raw or raw.lower() == _UNREFINED_CLEAR:
+        return []
+    return [f"AC{int(n)}" for n in _AC_TOKEN_RE.findall(raw)] or [raw]
+
+
+def parse_unrefined(spec: str | None, count: int, allow_clear: bool = False) -> list[str] | None:
+    """The `--unrefined` labels checked against a request carrying `count` criteria: None when
+    the flag was not given, `[]` for `none` where `allow_clear` (the `add` path), else each
+    `ACn` once, in the order given. A token that is not `ACn`, or names no criterion the request
+    carries, is refused."""
+    if spec is None:
+        return None
+    tokens = [t for t in re.split(r"[,\s]+", spec) if t]
+    if allow_clear and [t.lower() for t in tokens] == [_UNREFINED_CLEAR]:
+        return []
+    labels: list[str] = []
+    for token in tokens:
+        m = _AC_SPEC_RE.match(token)
+        if not m:
+            raise ValueError(f"--unrefined takes the request's criterion labels, e.g. AC3,AC4 "
+                             f"(`none` clears the record on `add`); {token!r} is not one")
+        n = int(m.group(1))
+        if not 1 <= n <= count:
+            raise ValueError(f"--unrefined names {token}, but the request has {count} criteria")
+        if f"AC{n}" not in labels:
+            labels.append(f"AC{n}")
+    if not labels:
+        raise ValueError("--unrefined names no criterion: give the labels left, e.g. AC3,AC4")
+    return labels
+
+
+def _write_unrefined(rpath: Path, labels: list[str]) -> None:
+    """Set the request's `Unrefined:` field to `labels`, or to `none` for an empty list, in place
+    when the line exists, else after its Status line."""
+    line = f"> **{UNREFINED_FIELD}:** {', '.join(labels) or _UNREFINED_CLEAR}"
+    text = rpath.read_text(encoding="utf-8")
+    if _UNREFINED_LINE_RE.search(text):
+        sdlc_md.atomic_write(rpath, _UNREFINED_LINE_RE.sub(lambda m: line, text, count=1))
+    else:
+        _insert_after_status(rpath, line)
 
 
 #: The epic's one carried-criteria heading, and the note that closes the section. A SHARED batch
@@ -748,9 +808,13 @@ def _validate_into_target(root: Path, into_epic: str) -> None:
 def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
            stories: list[tuple[str, int, str | None]], questions: list[str] | None = None,
            dry_run: bool = False, skip_personas: bool = False,
-           seed_acs: bool = True, into_epic: str | None = None) -> dict:
+           seed_acs: bool = True, into_epic: str | None = None,
+           unrefined: str | None = None) -> dict:
     """Decompose `request_id` into an epic titled `epic_title` holding `stories`
     (title, points, affects?). Writes the bidirectional links and rolls the epic's point total.
+
+    `unrefined` (`AC3,AC4`) names the request's criteria this refine leaves undecomposed: they are
+    recorded on the request's `Unrefined:` field and are not seeded onto the story or the epic.
 
     Validates ALL INPUT before minting anything - the request must resolve, be a request type and
     not already decomposed; every story's points must be on the scale (parsed already); every title
@@ -795,6 +859,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         raise ValueError(f"{request_id} has no `> **Status:**` line - cannot wire its "
                          f"`Decomposed-into:` link; fix the request first.")
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
+    criteria = _request_criteria(rpath.read_text(encoding="utf-8"))
+    left = parse_unrefined(unrefined, len(criteria))
     total = sum(p for _, p, _ in stories)
     open_questions = [q for q in (questions or []) if q.strip()]
     # Resolve the Three-Amigos panel UP FRONT (read-only), engineering-led: a refine is where the
@@ -810,9 +876,11 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
                 "open_questions": open_questions, "consult": amigo_consult, "dry_run": True,
-                "seeded_notes": seeded_notes, "risk_classes": classes, "risk_notes": risk_notes}
+                "seeded_notes": seeded_notes, "risk_classes": classes, "risk_notes": risk_notes,
+                "unrefined": left}
 
-    seed_criteria = (_request_criteria(rpath.read_text(encoding="utf-8"))
+    # A criterion left unrefined is not this decomposition's to carry, on the story or the epic.
+    seed_criteria = ([c for n, c in enumerate(criteria, 1) if f"AC{n}" not in (left or [])]
                      if seed_acs else None)
     if into_epic:
         epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
@@ -822,6 +890,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
                                         existing_children=[], seed_criteria=seed_criteria,
                                         classes=classes)
+    if left is not None:
+        _write_unrefined(rpath, left)
     # 4. close the loop on the request's status: it is now being DELIVERED via its children, so it
     # moves to its working state (it reaches terminal only by derivation, G2). Best-effort - if a
     # gate we do not force past declines the move, the decomposition still stands.
@@ -848,12 +918,12 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
             "stories": story_ids, "points": total, "status": moved_to,
             "open_questions": open_questions, "consult": amigo_consult,
             "dry_run": False, "seeded_notes": seeded_notes,
-            "risk_classes": classes, "risk_notes": risk_notes}
+            "risk_classes": classes, "risk_notes": risk_notes, "unrefined": left}
 
 
 def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
                stories: list[tuple[str, int, str | None]], dry_run: bool = False,
-               into_epic: str | None = None) -> dict:
+               into_epic: str | None = None, unrefined: str | None = None) -> dict:
     """Append a FURTHER epic + stories to an ALREADY-decomposed request, or, with `into_epic`,
     add the stories to an existing open epic (usually one the request is already decomposed into).
 
@@ -862,7 +932,10 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
     decomposed already and APPENDS (never clobbers) the epic to its existing children, de-duped,
     so adding into an epic it already names lists it once. Shares apply's up-front validation and
     atomic mint (`_decompose` / `_decompose_into`), so a bad breakdown, a bad `--into` target or a
-    mid-create failure mints nothing. Does NOT re-move the request status - it is already working."""
+    mid-create failure mints nothing. Does NOT re-move the request status - it is already working.
+
+    `unrefined` REPLACES the request's `Unrefined:` record with the criteria still left after
+    this slice (`none` clears it); not given, the record is left as it stands."""
     root = Path(repo_root)
     hit = sdlc_md.find_by_id(root, request_id)
     if not hit:
@@ -899,24 +972,28 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
         if affects:
             file_finding.check_affects_resolvable(root, affects, "story", label=f"story {title!r}")
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
+    left = parse_unrefined(unrefined, len(_request_criteria(rpath.read_text(encoding="utf-8"))),
+                           allow_clear=True)
     total = sum(p for _, p, _ in stories)
     classes, risk_notes = _risk_classes(root, stories)   # same stamp as `apply`
     if dry_run:
         return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
                 "existing_epics": existing, "dry_run": True, "seeded_notes": seeded_notes,
-                "risk_classes": classes, "risk_notes": risk_notes}
+                "risk_classes": classes, "risk_notes": risk_notes, "unrefined": left}
     if into_epic:
         epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
                                              existing_children=existing, classes=classes)
     else:
         epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
                                         existing_children=existing, classes=classes)
+    if left is not None:
+        _write_unrefined(rpath, left)
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "existing_epics": existing,
             "all_epics": sdlc_md.decomposed_ids(rpath.read_text(encoding="utf-8")),
-            "dry_run": False,
-            "seeded_notes": seeded_notes, "risk_classes": classes, "risk_notes": risk_notes}
+            "dry_run": False, "seeded_notes": seeded_notes, "risk_classes": classes,
+            "risk_notes": risk_notes, "unrefined": left}
 
 
 def _section(text: str, heading: str) -> str:
@@ -1158,6 +1235,15 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_unrefined(result: dict) -> None:
+    """The line naming the criteria a refine left on the request, when `--unrefined` was given."""
+    left = result.get("unrefined")
+    if left is None:
+        return
+    print(f"  {result['request']} left unrefined: {', '.join(left) or _UNREFINED_CLEAR}"
+          + (" - reconcile does not derive it terminal while any is left" if left else ""))
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     try:
         stories, epic_title, into_epic = breakdown_inputs(args)
@@ -1165,7 +1251,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
                         questions=args.question, dry_run=args.dry_run,
                         skip_personas=getattr(args, "skip_personas", False),
                         seed_acs=getattr(args, "seed_acs", True),
-                        into_epic=into_epic)
+                        into_epic=into_epic, unrefined=getattr(args, "unrefined", None))
     except (ValueError, FileNotFoundError, persona_resolve.RenderError) as exc:
         print(f"refine refused: {exc}", file=sys.stderr)
         return 2
@@ -1180,6 +1266,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     print(f"{verb} {result['request']} -> {result['epic']} ({result['epic_size']}, "
           f"{result['points']} pts) with {len(result['stories'])} story(ies): "
           f"{', '.join(result['stories'])}")
+    _print_unrefined(result)
     # The grooming this mint just created, priced where it is incurred. The points size the
     # DELIVERY each story describes and never the authoring of its criteria, so a refined batch
     # reads as ready while owing a body of work nobody budgeted - twenty stories in one run, and
@@ -1211,7 +1298,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     try:
         stories, epic_title, into_epic = breakdown_inputs(args)
         result = refine_add(args.root, args.request, epic_title, stories, dry_run=args.dry_run,
-                            into_epic=into_epic)
+                            into_epic=into_epic, unrefined=getattr(args, "unrefined", None))
     except (ValueError, FileNotFoundError) as exc:
         print(f"refine add refused: {exc}", file=sys.stderr)
         return 2
@@ -1226,6 +1313,7 @@ def cmd_add(args: argparse.Namespace) -> int:
     print(f"{verb} {result['epic']} ({result['epic_size']}, {result['points']} pts, "
           f"{len(result['stories'])} story(ies): {', '.join(result['stories'])}) to "
           f"{result['request']}")
+    _print_unrefined(result)
     if not result["dry_run"]:
         print(f"  {result['request']} now decomposed into {', '.join(result['all_epics'])}")
     return 0
@@ -1261,6 +1349,12 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--no-seed-acs", action="store_false", dest="seed_acs", default=True,
                    help="label every story's ACs an ungroomed grooming placeholder instead of "
                         "seeding them from the request's acceptance criteria")
+    a.add_argument("--unrefined", metavar="AC3,AC4",
+                   help="the request's criteria this refine leaves undecomposed, by label (ACn is "
+                        "its nth criterion): recorded on the request's `Unrefined:` field and not "
+                        "seeded, and neither reconcile nor `transition.py set` takes the request "
+                        "to its successful terminal while any is left. An unknown label is "
+                        "refused with nothing minted")
     a.add_argument("--skip-personas", action="store_true",
                    help="force the generic path: resolve no amigo seats, no framing (byte-equivalent)")
     a.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
@@ -1288,6 +1382,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="read the whole breakdown from a JSON or YAML file instead of repeated "
                          "--story flags (same shape as `apply`); validated "
                          "whole before anything is minted. Not combinable with --story")
+    ad.add_argument("--unrefined", metavar="AC4|none",
+                    help="REPLACE the request's `Unrefined:` record with the criteria still left "
+                         "after this slice, or `none` to clear it; not given, the record stands")
     ad.add_argument("--dry-run", action="store_true", help="validate and report; mint nothing")
     ad.add_argument("--root", default=".")
     sdlc_md.add_format_arg(ad)

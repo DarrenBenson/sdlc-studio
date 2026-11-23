@@ -1975,11 +1975,301 @@ class EpicStatusStaleTests(unittest.TestCase):
                              epath.read_text(encoding="utf-8").count("Status:"))
             self.assertEqual(1, len(reconcile.epic_status_stale_drift(root)))  # still reported
 
+    # BG1551: a Done epic none of whose children was delivered. The live lane skips every
+    # terminal epic, so such an epic and the request it decomposes read as delivered.
+
+    def _ruled_out(self, root: Path, epic_status: str = "Done") -> Path:
+        """An epic in `epic_status` whose two declared children were both ruled out."""
+        self._unit(root, "stories", "US0001-z.md", "Superseded")
+        self._unit(root, "stories", "US0002-w.md", "Won't Implement")
+        self._epic(root, f"# EP0001: A\n\n> **Status:** {epic_status}\n\n## Story Breakdown\n\n"
+                         "- [x] [US0001](../stories/US0001-z.md)\n"
+                         "- [x] [US0002](../stories/US0002-w.md)\n")
+        return self._indexed(root, epic_status)
+
+    @staticmethod
+    def _naming(drift: list[dict], eid: str = "EP0001") -> list[dict]:
+        return [x for x in drift if x.get("id") == eid]
+
+    @staticmethod
+    def _indexed(root: Path, status: str) -> Path:
+        """EP0001's index row, so the sweep's row lanes have nothing to say about it."""
+        (root / "sdlc-studio" / "epics" / "_index.md").write_text(
+            "# Epics\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [EP0001](EP0001-a.md) | A | {status} |\n", encoding="utf-8")
+        return root
+
+    def test_a_done_epic_over_all_superseded_children_is_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d))
+            _per_type, all_drift = reconcile.detect_all(root, None)
+            items = self._naming(all_drift)
+            self.assertEqual(1, len(items), items)
+            item = items[0]
+            self.assertEqual(("epic-status-stale", "Done", "Superseded", 2),
+                             (item["kind"], item["file_status"], item["derived"],
+                              item["children"]))
+            self.assertIn("transition.py set --id EP0001 --status Superseded", item["fix"])
+            self.assertIn("`Done`", item["fix"])
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(1, reconcile.main(["detect", "--root", str(root)]))
+            self.assertRegex(out.getvalue(), r"epic-status-stale EP0001: EP0001 is `Done`")
+            # The epics scope runs the lane too, and the live lane (settle's input) never sees it.
+            self.assertEqual(1, len(self._naming(reconcile.detect_all(root, "epics")[1])))
+            self.assertEqual([], reconcile.epic_status_stale_drift(root))
+
+    def test_the_draft_control_is_still_the_live_lane(self) -> None:
+        # The bug's positive control: the same children under a Draft epic are the live lane's.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d), epic_status="Draft")
+            self.assertEqual("Superseded", reconcile.epic_status_stale_drift(root)[0]["target"])
+            self.assertEqual([], reconcile.epic_terminal_undelivered_drift(root))
+
+    def test_a_done_epic_over_a_delivered_child_is_not_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root, "stories", "US0001-z.md", "Done")
+            self._unit(root, "stories", "US0002-w.md", "Superseded")
+            self._epic(root, "# EP0001: A\n\n> **Status:** Done\n\n## Story Breakdown\n\n"
+                             "- [x] [US0001](../stories/US0001-z.md)\n"
+                             "- [x] [US0002](../stories/US0002-w.md)\n")
+            self.assertEqual([], self._naming(reconcile.detect_all(self._indexed(root, "Done"),
+                                                                   None)[1]))
+
+    def test_a_terminal_epic_the_lane_cannot_judge_is_not_drift(self) -> None:
+        # Each is silent for its own reason: a Superseded epic is a ruling on its face; a live,
+        # Deferred or unresolvable child is not a finished breakdown; no breakdown, no roll-up.
+        cases = {
+            "superseded epic": ("Superseded", "Done", "Superseded", ""),
+            "superseded epic, nothing delivered": ("Superseded", "Superseded", "Won't Implement",
+                                                   ""),
+            "live child": ("Done", "Superseded", "Draft", ""),
+            "deferred child": ("Done", "Superseded", "Deferred", ""),
+            "unresolvable child": ("Done", "Superseded", "Superseded",
+                                   "- [x] US9999 - placeholder stub\n"),
+        }
+        for name, (epic, first, second, extra) in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._unit(root, "stories", "US0001-z.md", first)
+                self._unit(root, "stories", "US0002-w.md", second)
+                self._epic(root, f"# EP0001: A\n\n> **Status:** {epic}\n\n## Story Breakdown\n\n"
+                                 "- [x] [US0001](../stories/US0001-z.md)\n"
+                                 f"- [x] [US0002](../stories/US0002-w.md)\n{extra}")
+                self.assertEqual([], reconcile.epic_terminal_undelivered_drift(root))
+        with tempfile.TemporaryDirectory() as d:
+            root = self._epic(Path(d), "# EP0001: A\n\n> **Status:** Done\n\nNo breakdown.\n")
+            self.assertEqual([], reconcile.epic_terminal_undelivered_drift(root))
+
+    def test_apply_reports_a_terminal_epic_and_does_not_rewrite_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d))
+            epath = root / "sdlc-studio" / "epics" / "EP0001-a.md"
+            before = epath.read_text(encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                reconcile.main(["apply", "--root", str(root)])
+                reconcile.main(["apply", "--root", str(root), "--format", "json"])
+            self.assertEqual(before, epath.read_text(encoding="utf-8"))
+            drift = reconcile.detect_all(root, None)[1]
+            self.assertEqual(1, len(self._naming(drift)))   # still reported
+            # ... and counted: no commit-time settle claims it, since none would write it.
+            self.assertEqual([], self._naming(reconcile.settled_items(root, drift)))
+            self.assertNotIn("target", self._naming(drift)[0])
+
+    def test_the_commit_gate_reports_it_without_refusing(self) -> None:
+        # The owner's call: carried as `blocked_by`, which the gate's tally reports, not counts.
+        spec = importlib.util.spec_from_file_location("gate_for_bg1551",
+                                                      SCRIPT_PATH.parent / "gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d))
+            item = reconcile.epic_terminal_undelivered_drift(root)[0]
+            self.assertIn("owner decides", item["blocked_by"])
+            self.assertEqual(1, gate.reconcile_drift_tally(str(root))["blocked"])
+
+    def test_a_recorded_ruling_keeps_a_done_epic(self) -> None:
+        # The ruling the fix names, recorded with the command it names, is honoured.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d))
+            fix = reconcile.epic_terminal_undelivered_drift(root)[0]["fix"]
+            self.assertIn("transition.py annotate --id EP0001 --field Decision-Override", fix)
+            proc = subprocess.run(
+                [sys.executable, str(SCRIPT_PATH.parent / "transition.py"), "annotate", "--id",
+                 "EP0001", "--field", "Decision-Override", "--value", "met by US0002's successor",
+                 "--root", str(root)], capture_output=True, text=True, timeout=120, check=False)
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            self.assertEqual([], reconcile.epic_terminal_undelivered_drift(root))
+            self.assertEqual([], self._naming(reconcile.detect_all(root, None)[1]))
+
+    def test_an_empty_ruling_is_not_a_ruling(self) -> None:
+        # A Decision-Override line with nothing after it records no ruling, so the epic is
+        # still reported; the field reader returns such a line as whitespace, not empty.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled_out(Path(d))
+            epath = root / "sdlc-studio" / "epics" / "EP0001-a.md"
+            epath.write_text(epath.read_text(encoding="utf-8").replace(
+                "> **Status:** Done\n", "> **Status:** Done\n> **Decision-Override:**   \n", 1),
+                encoding="utf-8")
+            self.assertEqual(1, len(reconcile.epic_terminal_undelivered_drift(root)))
+
     def test_the_kind_is_registered_and_carries_a_remediation_hint(self) -> None:
         self.assertIn("epic-status-stale", reconcile.DRIFT_KINDS)
         hint = sdlc_md.REMEDIATION["reconcile"]["epic-status-stale"]
         self.assertIn("transition.py set", hint)
         self.assertIn("apply", hint)
+        # Each shape the lane reports is named with the command that clears it: the terminal
+        # epic with nothing delivered, and the not-yet-started epic with a moved child.
+        self.assertIn("--field Decision-Override", hint)
+        self.assertIn("never rewritten", hint)
+        self.assertRegex(hint, r"Draft, Ready or Approved epic .* In Progress, and `reconcile "
+                               r"apply` moves it")
+
+
+class EpicPartialDeliveryTests(unittest.TestCase):
+    """BG1552: an epic not yet started with a child delivered or under way derives In Progress.
+
+    The live lane derives an epic only once every child is terminal, so a partly delivered epic
+    kept its minted status over a `detect` reporting nothing. Driven through `reconcile.main`.
+    """
+
+    def setUp(self) -> None:
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        self.root = Path(d.name)
+        self.rows: list[tuple[str, str]] = []
+
+    def _story(self, sid: str, status: str) -> None:
+        d = self.root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{sid}-s.md").write_text(f"# {sid}: s\n\n> **Status:** {status}\n",
+                                       encoding="utf-8")
+
+    def _epic(self, eid: str, status: str, children: dict[str, str], extra: str = "") -> Path:
+        for sid, st in children.items():
+            self._story(sid, st)
+        d = self.root / "sdlc-studio" / "epics"
+        d.mkdir(parents=True, exist_ok=True)
+        lines = "".join(f"- [ ] [{sid}](../stories/{sid}-s.md)\n" for sid in children)
+        path = d / f"{eid}-e.md"
+        path.write_text(f"# {eid}: e\n\n> **Status:** {status}\n\n## Story Breakdown\n\n"
+                        f"{lines}{extra}", encoding="utf-8")
+        self.rows.append((eid, status))
+        (d / "_index.md").write_text(
+            "# Epics\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            + "".join(f"| [{e}]({e}-e.md) | e | {s} |\n" for e, s in self.rows),
+            encoding="utf-8")
+        return path
+
+    def _naming(self, eid: str, scope: str | None = None) -> list[dict]:
+        return [x for x in reconcile.detect_all(self.root, scope)[1] if x.get("id") == eid]
+
+    def _main(self, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = reconcile.main([*argv, "--root", str(self.root)])
+        return code, out.getvalue(), err.getvalue()
+
+    def _status(self, path: Path) -> str:
+        return sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Status")
+
+    def _index_status(self, eid: str) -> str:
+        text = (self.root / "sdlc-studio" / "epics" / "_index.md").read_text(encoding="utf-8")
+        row = next(ln for ln in text.splitlines() if ln.startswith(f"| [{eid}]"))
+        return row.strip("|").split("|")[2].strip()
+
+    def test_a_draft_epic_with_a_done_child_is_reported_as_in_progress(self) -> None:
+        self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        items = self._naming("EP0001")
+        self.assertEqual(1, len(items), items)
+        self.assertEqual(("epic-status-stale", "Draft", "In Progress", ["US0001"]),
+                         (items[0]["kind"], items[0]["file_status"], items[0]["derived"],
+                          items[0]["moved"]))
+        self.assertNotIn("target", items[0])     # settle acts on `target`; apply writes this one
+        code, out, _err = self._main("detect")
+        self.assertEqual(1, code)
+        self.assertRegex(out, r"epic-status-stale EP0001: EP0001 is `Draft` but .*\(US0001\).*"
+                              r"derives `In Progress`")
+        self.assertEqual(1, len(self._naming("EP0001", "epics")))
+
+    def test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported(self) -> None:
+        self._epic("EP0002", "Ready", {"US0003": "In Progress", "US0004": "Draft"})
+        self._epic("EP0003", "Draft", {"US0005": "Draft", "US0006": "Draft"})
+        self._epic("EP0004", "In Progress", {"US0007": "Done", "US0008": "Draft"})
+        self.assertEqual(["US0003"], [x["moved"] for x in self._naming("EP0002")][0])
+        self.assertEqual([], self._naming("EP0003"))
+        self.assertEqual([], self._naming("EP0004"))
+
+    def test_apply_writes_in_progress_and_a_second_detect_is_clean(self) -> None:
+        partly = self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        finished = self._epic("EP0005", "Draft", {"US0009": "Done", "US0010": "Done"})
+        code, out, _err = self._main("apply")
+        self.assertIn("moved EP0001 to In Progress", out)
+        self.assertEqual("In Progress", self._status(partly))
+        self.assertEqual("In Progress", self._index_status("EP0001"))
+        self.assertEqual([], self._naming("EP0001"))
+        # The finished epic is the live lane's: left at Draft, still reported there alone.
+        self.assertEqual("Draft", self._status(finished))
+        self.assertEqual(["Done"], [x.get("target") for x in self._naming("EP0005")])
+
+    def test_apply_dry_run_and_json_report_without_writing(self) -> None:
+        partly = self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        code, out, _err = self._main("apply", "--dry-run")
+        self.assertIn("WOULD move EP0001 to In Progress", out)
+        self.assertEqual("Draft", self._status(partly))
+        code, out, _err = self._main("apply", "--dry-run", "--format", "json")
+        self.assertEqual(["EP0001"], json.loads(out)["by_type"]["epic_progress"]["synced"])
+        self.assertEqual("Draft", self._status(partly))
+        code, out, _err = self._main("apply", "--format", "json")
+        self.assertEqual("In Progress", self._status(partly))
+
+    def test_a_refused_move_is_counted_and_named(self) -> None:
+        self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        import transition  # noqa: PLC0415 - the module reconcile's lazy import resolves
+        with unittest.mock.patch.object(transition, "transition", side_effect=ValueError("")):
+            code, _out, err = self._main("apply")
+            res = reconcile.apply_epic_partial_delivery(self.root)
+        self.assertEqual(1, code)
+        self.assertIn("could NOT move EP0001 -> In Progress: ValueError", err)
+        self.assertEqual({"synced": [], "unapplied": [
+            {"id": "EP0001", "target": "In Progress", "reason": "ValueError"}]}, res)
+
+    def test_which_epics_and_children_count(self) -> None:
+        # Approved is not started; Review is under way; Planned, ruled-out and Deferred children
+        # are not; a Done child beside a Deferred or unresolvable one still moves the epic.
+        cases = [
+            ("EP0011", "Approved", {"US0021": "Done", "US0022": "Draft"}, "", True),
+            ("EP0012", "Draft", {"US0023": "Review", "US0024": "Draft"}, "", True),
+            ("EP0013", "Draft", {"US0025": "Planned", "US0026": "Draft"}, "", False),
+            ("EP0014", "Draft", {"US0027": "Superseded", "US0028": "Draft"}, "", False),
+            ("EP0015", "Draft", {"US0029": "Done", "US0030": "Deferred"}, "", True),
+            ("EP0016", "Draft", {"US0031": "Done"}, "- [ ] US9999 - placeholder stub\n", True),
+            ("EP0017", "Done", {"US0032": "Done", "US0033": "Draft"}, "", False),
+        ]
+        for eid, status, children, extra, want in cases:
+            self._epic(eid, status, children, extra)
+        got = {x["id"] for x in reconcile.epic_partial_delivery_drift(self.root)}
+        self.assertEqual({eid for eid, *_rest, want in cases if want}, got)
+
+    def test_reference_epic_states_the_rule_the_script_holds(self) -> None:
+        # The page's In Progress line names Done children and every status the lane moves.
+        page = (SCRIPT_PATH.parent.parent / "reference-epic.md").read_text(encoding="utf-8")
+        line = next(ln for ln in page.splitlines() if "→ Epic In Progress" in ln)
+        self.assertIn("Done while others remain open", line)
+        vocab = sdlc_md.STATUS_VOCAB["epic"]
+        for status in vocab[:vocab.index("In Progress")]:
+            with self.subTest(status=status):
+                self.assertIn(status, line)
+        self.assertIn("`apply` moves it", line)
+
+    def test_a_vocabulary_without_in_progress_has_no_partial_lane(self) -> None:
+        self._epic("EP0001", "Draft", {"US0001": "Done", "US0002": "Draft"})
+        with unittest.mock.patch.dict(sdlc_md.STATUS_VOCAB,
+                                      {"epic": ["Draft", "Ready", "Done", "Superseded"]}):
+            self.assertEqual([], reconcile.epic_partial_delivery_drift(self.root))
+        self.assertEqual(1, len(reconcile.epic_partial_delivery_drift(self.root)))
 
 
 class EraDivergenceTests(unittest.TestCase):

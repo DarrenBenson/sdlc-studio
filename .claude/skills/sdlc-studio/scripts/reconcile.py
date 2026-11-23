@@ -1042,7 +1042,7 @@ def epic_status_stale_drift(repo_root: Path | str) -> list[dict]:
     reading the delivery backlog to decide what is left - `status backlog`, `backlog_triage`, an
     appetite - reads a number overstated by exactly those epics, and by the requests they deliver.
 
-    No `apply` writer is registered for this kind, because closing an epic is a status transition
+    No `apply` writer closes an epic this lane names, because closing an epic is a status transition
     and `transition.py set` is where an epic's own gates live. An `apply` that wrote `Done` into the
     file would route around them, which is how the roll-up would come to claim a completion no gate
     had agreed to. The `fix` names the command, and `settle` runs that same transition.
@@ -1065,28 +1065,18 @@ def epic_status_stale_drift(repo_root: Path | str) -> list[dict]:
     for epath in sdlc_md.artifact_files("epic", root):
         text = sdlc_md.read_text_safe(epath)
         eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
-        raw = (sdlc_md.extract_field(text, "Status") or "").strip()
-        if not raw:
+        canon = _epic_status(text)
+        if not canon or sdlc_md.is_terminal_status("epic", canon):
             continue
-        canon = _canonical_status(raw, sdlc_md.STATUS_VOCAB.get("epic", [])) or raw
-        if sdlc_md.is_terminal_status("epic", canon):
+        children = _finished_breakdown(root, text)
+        if children is None:
             continue
-        declared = declared_breakdown_ids(text)
-        if not declared:
-            continue
-        units = list(_breakdown_units(root, text))
-        # Every DECLARED id must have resolved, or the epic's completion rests on a subset.
-        if len(units) != len(declared):
-            continue
-        if any(u_canon == "Deferred" or not sdlc_md.is_terminal_status(utype, u_canon)
-               for _ln, _ticked, _uid, utype, u_canon in units):
-            continue
-        target = epic_derived_status([(utype, u_canon) for _ln, _t, _u, utype, u_canon in units])
+        target = epic_derived_status(children)
         drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
                       "file_status": canon, "index_status": None,
-                      "children": len(units), "target": target,
-                      "fix": f"{eid} is `{canon}` and all {len(units)} of its breakdown units are "
-                             f"terminal - close it with `transition.py set --id {eid} --status "
+                      "children": len(children), "target": target,
+                      "fix": f"{eid} is `{canon}` and all {len(children)} of its breakdown units "
+                             f"are terminal - close it with `transition.py set --id {eid} --status "
                              f"{target}`, which runs the epic's own gates (`reconcile settle` does "
                              f"this at commit; `reconcile apply` deliberately does not, so a "
                              f"completion is never written round them)"})
@@ -1105,6 +1095,148 @@ def epic_derived_status(children: "list[tuple[str, str]]") -> str:
         return sdlc_md.default_terminal_status("epic")
     return next(s for s in sdlc_md.STATUS_VOCAB["epic"]
                 if sdlc_md.is_terminal_status("epic", s) and sdlc_md.is_decision_terminal(s))
+
+
+def _epic_status(text: str) -> str | None:
+    """An epic's Status in the epic vocabulary (an unknown spelling kept as written), or None
+    when the file carries no Status line and so asserts nothing to compare."""
+    raw = (sdlc_md.extract_field(text, "Status") or "").strip()
+    if not raw:
+        return None
+    return _canonical_status(raw, sdlc_md.STATUS_VOCAB.get("epic", [])) or raw
+
+
+def _finished_breakdown(root: Path, text: str) -> "list[tuple[str, str]] | None":
+    """The `(type, status)` of every child in a FINISHED breakdown, or None when it is not one.
+
+    Finished means every child terminal, with none of the three silences `epic_status_stale_drift`
+    documents: a breakdown is declared, every declared id resolved, and no child is `Deferred`.
+    One answer for the lanes that judge a finished breakdown and the lane that must leave it to
+    them."""
+    declared = declared_breakdown_ids(text)
+    if not declared:
+        return None
+    units = list(_breakdown_units(root, text))
+    # Every DECLARED id must have resolved, or the epic's completion rests on a subset.
+    if len(units) != len(declared):
+        return None
+    if any(u_canon == "Deferred" or not sdlc_md.is_terminal_status(utype, u_canon)
+           for _ln, _ticked, _uid, utype, u_canon in units):
+        return None
+    return [(utype, u_canon) for _ln, _t, _u, utype, u_canon in units]
+
+
+def epic_terminal_undelivered_drift(repo_root: Path | str) -> list[dict]:
+    """A `Done` epic over a finished breakdown none of whose children was delivered.
+
+    `epic_derived_status` derives such an epic `Superseded`, but the live lane above skips every
+    terminal epic, so an epic closed `Done` while each of its stories was ruled out read as a
+    delivery nobody made, and the request it decomposes read as delivered through it.
+
+    Reported under `epic-status-stale` and NEVER written: a terminal status may record a ruling
+    (the request was met another way), so neither `apply` nor `settle` rewrites it. The item
+    carries `derived`, not `target`, which is the key `settled_items` and `settle` act on, and
+    a `blocked_by`, so the commit gate reports it without refusing the commit: the call is the
+    epic's owner's. The owner moves the epic with `transition.py`, or records the ruling that
+    keeps it as a `Decision-Override:` on the epic, the recorded escape the transition gates
+    honour, read off its own line by their reader, and this lane then leaves it. A line with no
+    reason after it records no ruling.
+
+    Only the delivered terminal is judged: a `Superseded` epic with a delivered child is a
+    ruling on its face, and a terminal epic over a breakdown that is not finished is outside
+    this lane, as it is outside the live one.
+    """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
+    root = Path(repo_root)
+    delivered = sdlc_md.default_terminal_status("epic")
+    drift: list[dict] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = sdlc_md.read_text_safe(epath)
+        if _epic_status(text) != delivered:
+            continue
+        if transition._rfc_override_reason(text):
+            continue
+        children = _finished_breakdown(root, text)
+        if children is None:
+            continue
+        derived = epic_derived_status(children)
+        if derived == delivered:
+            continue
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
+                      "file_status": delivered, "index_status": None,
+                      "children": len(children), "derived": derived,
+                      "blocked_by": f"a `{delivered}` epic may record a ruling, so its owner "
+                                    f"decides",
+                      "fix": f"{eid} is `{delivered}` but none of its {len(children)} breakdown "
+                             f"units was delivered, so it derives `{derived}` - move it with "
+                             f"`transition.py set --id {eid} --status {derived}`, or record the "
+                             f"ruling that keeps it `{delivered}` with `transition.py annotate "
+                             f"--id {eid} --field Decision-Override --value <ruling>`; "
+                             f"`reconcile apply` and `settle` never rewrite a terminal epic"})
+    return drift
+
+
+#: The epic status a partly delivered breakdown derives, and the child statuses that count as
+#: work under way beside a delivered terminal.
+_EPIC_WORKING = "In Progress"
+_CHILD_UNDER_WAY = frozenset({"In Progress", "Review"})
+
+
+def epic_partial_delivery_drift(repo_root: Path | str) -> list[dict]:
+    """An epic not yet started (a status before `In Progress`) with a child delivered or under
+    way, which derives `In Progress`.
+
+    The live lane above derives an epic only once EVERY child is terminal, so a partly delivered
+    epic kept the status it was minted with and read as work not started, to `status` and to
+    backlog triage, while its stories shipped. A finished breakdown is left to that lane, so the
+    two never name one epic. `apply_epic_partial_delivery` writes this one, through
+    `transition.py`: starting an epic is not a completion, so no ruling can be lost.
+    """
+    root = Path(repo_root)
+    vocab = sdlc_md.STATUS_VOCAB.get("epic", [])
+    if _EPIC_WORKING not in vocab:
+        return []
+    not_started = vocab[:vocab.index(_EPIC_WORKING)]
+    drift: list[dict] = []
+    for epath in sdlc_md.artifact_files("epic", root):
+        text = sdlc_md.read_text_safe(epath)
+        canon = _epic_status(text)
+        if canon not in not_started or _finished_breakdown(root, text) is not None:
+            continue
+        moved = [uid for _ln, _t, uid, utype, u_canon in _breakdown_units(root, text)
+                 if u_canon in _CHILD_UNDER_WAY or sdlc_md.is_delivered_terminal(utype, u_canon)]
+        if not moved:
+            continue
+        eid = sdlc_md.extract_record_id(epath.stem) or epath.stem
+        drift.append({"type": "epic", "id": eid, "kind": "epic-status-stale",
+                      "file_status": canon, "index_status": None, "moved": moved,
+                      "derived": _EPIC_WORKING,
+                      "fix": f"{eid} is `{canon}` but its breakdown has work delivered or under "
+                             f"way ({', '.join(moved)}), so it derives `{_EPIC_WORKING}` - "
+                             f"`reconcile apply` moves it there through `transition.py`"})
+    return drift
+
+
+def apply_epic_partial_delivery(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Move every epic `epic_partial_delivery_drift` names to `In Progress`.
+
+    Returns {"synced": [id, ...], "unapplied": [{"id", "target", "reason"}, ...]}. Goes through
+    `transition.transition`, as `apply_derivable_requests` does, so the index row follows and
+    the epic's own gates decide; a refusal is returned as data and the rest still run.
+    """
+    import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
+    root = Path(repo_root)
+    done: list[str] = []
+    unapplied: list[dict] = []
+    for d in epic_partial_delivery_drift(root):
+        try:
+            transition.transition(root, d["id"], d["derived"], dry_run=dry_run)
+            done.append(d["id"])
+        except (ValueError, FileNotFoundError) as exc:
+            unapplied.append({"id": d["id"], "target": d["derived"],
+                              "reason": (str(exc).strip() or type(exc).__name__).splitlines()[0]})
+    return {"synced": done, "unapplied": unapplied}
 
 
 def apply_breakdown(repo_root: Path | str, dry_run: bool = False) -> dict:
@@ -1954,7 +2086,26 @@ def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list
                 continue
             rid = sdlc_md.extract_record_id(p.stem) or p.stem
             if transition._request_terminal_gate(root, type_, rid, target) is not None:
-                continue          # the G2 gate would refuse: not derivable
+                # The G2 gate would refuse: not derivable. One refusal is still worth naming: a
+                # request refined in part, whose children are all resolved but deliver only the
+                # criteria that were refined. The quiet path, which apply and a sprint close walk
+                # to transition, never sees it. The children are asked first, so the record's
+                # reader loads only where the gate itself has already read the record.
+                left = (_unrefined_criteria(text) if explain and transition._request_children_gate(
+                    root, type_, rid, target) is None else [])
+                if left:
+                    named = ", ".join(left)
+                    drift.append({
+                        "type": type_, "id": rid, "kind": "request-derivable",
+                        "file_status": status, "index_status": None, "unrefined": left,
+                        "blocked_by": f"it was refined in part, with {named} left unrefined",
+                        "fix": f"{rid} is {status} and every child it produced is resolved, but it "
+                               f"was refined in part, with {named} left unrefined, so it is not "
+                               f"derived {target}. Refine the rest with `refine.py add --request "
+                               f"{rid} --unrefined <labels still left, or none>`, or, if they are "
+                               f"dropped, clear the record with `transition.py annotate --id "
+                               f"{rid} --field Unrefined --value none`"})
+                continue
             # G2 is satisfied, but it is not the only gate on the way to `target`. Ask the WHOLE
             # ladder, via a dry run, so the hint names the command that will actually clear this.
             # A drift item whose advertised fix is guaranteed to refuse is worse than no hint: it
@@ -1983,6 +2134,14 @@ def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list
                           "file_status": status, "index_status": None,
                           "blocked_by": blocked_by, "fix": fix})
     return drift
+
+
+def _unrefined_criteria(text: str) -> list[str]:
+    """The criteria a request's `Unrefined:` record names, read by the writer's own reader in
+    `refine.py`, which the G2 gate reads too. Import is lazy: refine loads the creation stack,
+    which a detect over a tree with no request whose children are all resolved never needs."""
+    import refine  # noqa: PLC0415 - lazy, as above
+    return refine.unrefined_criteria(text)
 
 
 def _terminal_refusal(transition, root: Path, rid: str, target: str) -> str | None:
@@ -2542,6 +2701,8 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
     if scope in (None, "epics"):
         all_drift.extend(epic_breakdown_drift(repo_root))
         all_drift.extend(epic_status_stale_drift(repo_root))
+        all_drift.extend(epic_terminal_undelivered_drift(repo_root))
+        all_drift.extend(epic_partial_delivery_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
         all_drift.extend(epic_index_derivable_drift(repo_root))
     # A story's risk-class stamp belongs to the story files: the default sweep and 'stories'.
@@ -3863,6 +4024,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         if do_breakdown:
             by_type["breakdown"] = apply_breakdown(repo_root, dry_run=args.dry_run)
             by_type["epic_points"] = apply_epic_points(repo_root, dry_run=args.dry_run)
+            by_type["epic_progress"] = apply_epic_partial_delivery(repo_root,
+                                                                   dry_run=args.dry_run)
             by_type["linked_epics"] = apply_linked_epics(repo_root, dry_run=args.dry_run)
             by_type["epic_index"] = apply_epic_index_derivable(
                 repo_root, dry_run=args.dry_run)
@@ -3968,6 +4131,14 @@ def cmd_apply(args: argparse.Namespace) -> int:
             print(f"{'WOULD recompute' if args.dry_run else 'recomputed'} "
                   f"derived point total for {eid}")
             n += 1
+        pd = apply_epic_partial_delivery(repo_root, dry_run=args.dry_run)
+        for eid in pd["synced"]:
+            print(f"{'WOULD move' if args.dry_run else 'moved'} {eid} to {_EPIC_WORKING} "
+                  f"(a child delivered or under way)")
+            n += 1
+        for u in pd["unapplied"]:
+            print(f"could NOT move {u['id']} -> {u['target']}: {u['reason']}", file=sys.stderr)
+            unapplied += 1
         le = apply_linked_epics(repo_root, dry_run=args.dry_run)
         for cid in le["synced"]:
             print(f"{'WOULD sync' if args.dry_run else 'synced'} Linked Epics for {cid}")

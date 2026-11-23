@@ -1,6 +1,6 @@
 # EP0246: The declared Python floor is a gate, not a sentence in six documents
 
-> **Status:** Done
+> **Status:** Superseded
 > **Derived Point Total:** 9
 > **Parent:** CR0561
 > **Created:** 2026-08-27
@@ -34,3 +34,4 @@ Decomposed from CR0561. Delivers the work CR0561 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-08-27 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-23 | Claude Opus 5.5 (BG1551) | Superseded, not Done: none of its four stories was built. US0811 to US0814 were each Superseded by US0908 (under EP0262), which ran the scripts on Python 3.10 in CI in place of this epic's refusing floor lane, so its three epic-level criteria stand unmet |

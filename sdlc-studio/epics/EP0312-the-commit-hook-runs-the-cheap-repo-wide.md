@@ -1,6 +1,6 @@
 # EP0312: The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 5
 > **Parent:** CR0671
 > **Created:** 2026-11-15

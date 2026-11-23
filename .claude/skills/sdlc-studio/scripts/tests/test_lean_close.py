@@ -309,6 +309,8 @@ def _fresh_run(root: Path, *, done: bool) -> tuple[str, str]:
     (root / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n", "utf-8")
     for status in ("Ready", "In Progress"):
         _cli("transition", "set", "--id", uid, "--status", status, "--root", str(root))
+    # The epic moves with its story: a Draft epic over a story under way is drift of its own.
+    _cli("transition", "set", "--id", eid, "--status", "In Progress", "--root", str(root))
     if done:
         _cli("verify_ac", "run", "--id", uid, "--root", str(root))
         _cli("critic", "record", "--unit", uid, "--verdict", "approve", "--reviewer",

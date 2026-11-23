@@ -529,6 +529,29 @@ def _never_ready_gate(root: Path, text: str, from_canon: str | None) -> tuple[st
 
 def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
                            target_canon: str | None) -> str | None:
+    """The G2 gate on a discovery item's successful terminal: `_request_children_gate`, then,
+    once every child is resolved, the request's own `Unrefined:` record. A request refined in
+    part names the criteria its refine left undecomposed there, and its resolved children
+    deliver only the part that was refined, so it is refused until they are refined or the
+    record is cleared. Returns a block reason, or None to allow."""
+    block = _request_children_gate(root, type_, artifact_id, target_canon)
+    if block is not None or not sdlc_md.is_discovery(type_) \
+            or target_canon != sdlc_md.default_terminal_status(type_):
+        return block
+    import refine  # noqa: PLC0415 - deferred sibling: the record's reader, with its writer
+    hit = sdlc_md.find_by_id(root, artifact_id)
+    left = refine.unrefined_criteria(sdlc_md.read_text_safe(hit[0]) if hit else "")
+    if not left:
+        return None
+    return (f"{artifact_id} cannot be {target_canon}: it was refined in part, and its "
+            f"`Unrefined:` record names {', '.join(left)}, which no child delivers. Refine them "
+            f"with `refine.py add --request {artifact_id} --unrefined <labels still left, or "
+            f"none>`, or, if they are dropped, clear the record with `transition.py annotate "
+            f"--id {artifact_id} --field Unrefined --value none`")
+
+
+def _request_children_gate(root: Path, type_: str, artifact_id: str,
+                           target_canon: str | None) -> str | None:
     """A DISCOVERY item (CR/RFC/Issue) may not reach its SUCCESSFUL terminal by assertion (G2). A
     CR is Complete only when every story and epic it produced is resolved (in a terminal state);
     an RFC is Accepted only when every CR it produced is resolved; an Issue is Resolved only when

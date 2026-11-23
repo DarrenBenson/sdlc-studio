@@ -2445,6 +2445,77 @@ class TerminalOracleTests(unittest.TestCase):
                          f"an executable criterion did not satisfy the gate: {blocks}")
 
 
+class UnrefinedRecordGateTests(unittest.TestCase):
+    """BG1452: a request refined in part is refused its successful terminal by hand too.
+
+    reconcile stopped deriving it Complete, but `transition.py set` asks the same gate, so a hand
+    close of a request whose `Unrefined:` record names criteria went through while its resolved
+    children delivered only the part that was refined.
+    """
+
+    def _cr(self, root: Path, unrefined: str | None, child_status: str = "Done") -> None:
+        cd = root / "sdlc-studio" / "change-requests"
+        cd.mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "two_backlog:\n  enforce: true\n", encoding="utf-8")
+        record = f"> **Unrefined:** {unrefined}\n" if unrefined is not None else ""
+        (cd / "CR0001-x.md").write_text(
+            f"# CR-0001: c\n\n> **Status:** In Progress\n{record}> **Decomposed-into:** EP0001\n\n"
+            "## Acceptance Criteria\n\n- [ ] **AC1** one\n- [ ] **AC2** two\n- [ ] **AC3** three\n",
+            encoding="utf-8")
+        ed = root / "sdlc-studio" / "epics"
+        ed.mkdir(parents=True)
+        (ed / "EP0001-c.md").write_text(
+            f"# EP0001: c\n\n> **Status:** {child_status}\n> **Parent:** CR0001\n",
+            encoding="utf-8")
+
+    def _status(self, root: Path) -> str:
+        text = (root / "sdlc-studio" / "change-requests" / "CR0001-x.md").read_text(
+            encoding="utf-8")
+        return tr.sdlc_md.extract_field(text, "Status")
+
+    def test_a_hand_close_of_a_request_refined_in_part_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "AC2, AC3")
+            with self.assertRaises(ValueError) as cm:
+                tr.transition(root, "CR0001", "Complete")
+            self.assertIn("refined in part", str(cm.exception))
+            self.assertIn("AC2, AC3", str(cm.exception))
+            self.assertIn("refine.py add --request CR0001", str(cm.exception))
+            self.assertEqual("In Progress", self._status(root))
+            self.assertIn("refined in part",
+                          tr._request_terminal_gate(root, "cr", "CR0001", "Complete"))
+
+    def test_a_cleared_or_absent_record_closes_as_before(self) -> None:
+        for record in ("none", None):
+            with self.subTest(record=record), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self._cr(root, record)
+                tr.transition(root, "CR0001", "Complete")
+                self.assertEqual("Complete", self._status(root))
+
+    def test_unfinished_children_are_named_first_and_other_closes_are_not_gated(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._cr(root, "AC3", child_status="In Progress")
+            block = tr._request_terminal_gate(root, "cr", "CR0001", "Complete")
+            self.assertIn("EP0001 (In Progress)", block)
+            self.assertNotIn("refined in part", block)
+            self.assertIsNone(tr._request_children_gate(root, "cr", "CR0001", "Rejected"))
+            self.assertIsNone(tr._request_terminal_gate(root, "cr", "CR0001", "Rejected"))
+
+    def test_a_story_is_never_asked(self) -> None:
+        # Scoped to discovery items: a story carrying the field by accident is not gated by it.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            (sd / "US0001-s.md").write_text(
+                "# US0001: s\n\n> **Status:** Review\n> **Unrefined:** AC1\n", encoding="utf-8")
+            self.assertIsNone(tr._request_terminal_gate(root, "story", "US0001", "Done"))
+
+
 class EpicBreakdownGateTests(unittest.TestCase):
     """BG0568: an epic's completion is derived from its breakdown, and something must CHECK it.
 

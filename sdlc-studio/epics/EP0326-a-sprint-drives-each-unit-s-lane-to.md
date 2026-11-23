@@ -1,6 +1,6 @@
 # EP0326: A sprint drives each unit's lane to its paperwork and wakes the model only for judgement
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 26
 > **Parent:** CR0672
 > **Created:** 2026-11-17

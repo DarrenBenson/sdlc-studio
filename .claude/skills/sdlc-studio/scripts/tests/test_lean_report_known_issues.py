@@ -74,6 +74,8 @@ def _delivered_project(root: Path) -> str:
     _ok(root, "critic.py", "record", "--unit", story, "--verdict", "APPROVE",
         "--reviewer", "qa seat", "--author", "engineering seat")
     _ok(root, "transition.py", "set", story, "Review")
+    # The epic moves with its story: a Draft epic over a story under way is drift of its own.
+    _ok(root, "transition.py", "set", epic, "In Progress")
     _commit(root, "delivered")
     return story
 

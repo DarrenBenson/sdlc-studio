@@ -43,6 +43,34 @@ A breakdown document, which is the recommended path - prose never crosses a shel
 before allocating an id, so a bad point value or an unresolvable `Affects` refuses cleanly and
 leaves no half-decomposition behind.
 
+## Refining part of a request
+
+A request can be refined one slice at a time. Name the criteria a refine leaves undecomposed
+with `--unrefined`, by label: `AC3` is the request's third acceptance criterion.
+
+```bash
+# this slice delivers AC1 and AC2; AC3 and AC4 are left for later
+python3 <skill>/scripts/refine.py apply --request CR0001 --breakdown breakdown.json --unrefined AC3,AC4
+
+# the next slice delivers AC3; AC4 is still left
+python3 <skill>/scripts/refine.py add --request CR0001 --breakdown more.json --unrefined AC4
+
+# the last slice: nothing is left
+python3 <skill>/scripts/refine.py add --request CR0001 --breakdown last.json --unrefined none
+```
+
+The labels are written to the request's `> **Unrefined:**` field, and the criteria they name
+are not seeded into the stories or the epic the refine mints. On `add`, `--unrefined` replaces
+the record with what is still left after that slice; an `add` without it leaves the record as
+it stands. A label the request does not carry, or a value that is not a label, is refused
+before an id is minted.
+
+Where the project enforces the two-backlog workflow (`two_backlog.enforce`), a request whose
+record names a criterion is not complete, even when every child it produced is resolved:
+`reconcile` names the criteria left and does not derive the request, and `transition.py set`
+refuses its successful terminal unless forced. If the criteria left are dropped rather than
+built, clear the record with `transition.py annotate --id CR0001 --field Unrefined --value none`.
+
 ## What it refuses, and why
 
 | Refusal | Reason |

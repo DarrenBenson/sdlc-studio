@@ -1,6 +1,6 @@
 # EP0327: Authors and reviewers run one shipped mutation runner and the self-check records its report
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Derived Point Total:** 15
 > **Parent:** CR0673
 > **Created:** 2026-11-17

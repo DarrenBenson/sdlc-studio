@@ -358,7 +358,7 @@ Epic review now **cascades by default** - it reviews the epic and all changed st
 3. **Check Epic-Level Status**
    - Read linked stories
    - Calculate completion percentage
-   - If any In Progress → Epic In Progress
+   - If any In Progress, or Done while others remain open → Epic In Progress (`reconcile` reports a Draft, Ready or Approved epic so, and `apply` moves it)
    - **"Done" rules:**
      - If epic has stories AND all stories Done → suggest "Done" (user confirms)
      - If epic has NO stories → cannot auto-mark "Done"

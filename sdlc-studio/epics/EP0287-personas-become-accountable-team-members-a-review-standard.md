@@ -1,6 +1,6 @@
 # EP0287: Personas become accountable team members: a review standard that blocks a failing card, a committed memory, a learning loop from the verdict ledger, and End goals checked at the close
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Parent:** CR0634
 > **Parent:** CR0629
 > **Parent:** CR0633
