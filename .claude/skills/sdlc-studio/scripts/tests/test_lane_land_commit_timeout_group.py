@@ -85,14 +85,23 @@ def _read_pid(path: Path) -> int | None:
 
 class _Clock:
     """Stands in for the `time` module a wait loop reads. `sleep` moves `now` on without
-    sleeping, so a case reads how long a wait ran on this clock, never on the wall, and a busy
-    machine cannot fail it. A wait that runs past `limit` raises, so a loop that never gives
-    up ends the case instead of hanging it."""
+    sleeping and a read of `monotonic()` leaves it where it is, so a case reads how long a wait
+    ran on this clock, never on the wall, and a busy machine cannot fail it. A `sleep` that
+    carries `now` past `limit` raises, and so does any read after the `max_reads`th: a wait
+    loop that never gives up ends the case instead of hanging it, whether it sleeps between
+    its reads or polls `monotonic()` without sleeping."""
+
+    #: the reads of `monotonic()` a wait may make before the clock ends it
+    max_reads = 10_000
 
     def __init__(self, limit: float = 60) -> None:
-        self.now, self.limit = 0.0, limit
+        self.now, self.limit, self.reads = 0.0, limit, 0
 
     def monotonic(self) -> float:
+        self.reads += 1
+        if self.reads > self.max_reads:
+            raise AssertionError(
+                f"the wait read the test's clock more than {self.max_reads} times")
         return self.now
 
     def sleep(self, seconds: float) -> None:
@@ -263,10 +272,11 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
                 self.assertEqual(proc.pid, self._pid("hook.pid"))
 
     def test_pid_gives_up_at_its_bound(self) -> None:
-        """MUTANT: `_pid` ignores the bound it is handed, gives up before it, or reads without
-        waiting (it returns None, not the timeout): a pid file that never fills fails the case
-        by name once the bound has passed and before one second has, both read on `_Clock`,
-        so the case bounds no duration the wall clock measured."""
+        """MUTANT: `_pid` ignores the bound it is handed, gives up before it, reads without
+        waiting (it returns None, not the timeout), or polls without sleeping between its reads
+        (the clock's ceiling on reads then ends it under another message): a pid file that
+        never fills fails the case by name once the bound has passed and before one second
+        has, both read on `_Clock`, so the case bounds no duration the wall clock measured."""
         (self.dir / "hook.pid").write_text("", encoding="utf-8")
         clock = _Clock()
         with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
@@ -276,15 +286,30 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
         self.assertLess(clock.now, 1, "the wait ignored its bound")
 
     def test_the_clock_ends_a_wait_that_never_gives_up(self) -> None:
-        """MUTANT: `_Clock.sleep` never raises at its limit. A wait whose bound lies past the
-        limit then times out on its own bound, where the clock must end it at the limit: a
-        loop that never gives up would otherwise hang the case rather than fail it."""
+        """MUTANT: `_Clock.sleep` never raises at its limit. A wait that keeps sleeping, its
+        bound past the limit, then times out on its own bound, where the clock must end it at
+        the limit: without that, a sleeping loop that never gives up runs on until the ceiling
+        on reads stops it, or hangs the case if it reads no clock."""
         (self.dir / "hook.pid").write_text("", encoding="utf-8")
         clock = _Clock(limit=1)
         with unittest.mock.patch.object(sys.modules[__name__], "time", clock), \
                 self.assertRaisesRegex(AssertionError, "the wait ran past 1 s on the test's clock"):
             self._pid("hook.pid", 10)
         self.assertLess(clock.now, 2, "the clock ran on past its limit")
+
+    def test_the_clock_ends_a_busy_wait_that_never_sleeps(self) -> None:
+        """MUTANT: `_Clock.monotonic` counts no reads, raises at its ceiling rather than past
+        it, carries a ceiling other than 10,000, or moves `now` on. A wait that polls
+        `monotonic()` without sleeping never moves the clock on, so neither its own bound nor the clock's limit can
+        end it, and only the ceiling on reads does. This one stops itself at 100,000 reads, so
+        a clock that never ends it fails the case rather than hanging it."""
+        clock = _Clock()
+        with self.assertRaisesRegex(AssertionError,
+                                    "the wait read the test's clock more than 10000 times"):
+            for read in range(1, 100_001):  # a busy wait: it reads the clock and never sleeps
+                clock.monotonic()
+        self.assertEqual(read, 10_001, "the clock did not end the wait at its ceiling")
+        self.assertEqual(clock.now, 0, "a read moved the clock on")
 
     def test_the_hook_moves_its_pid_files_into_place(self) -> None:
         """MUTANT: the hook writes a pid file in place, `echo $$ > file` creating it empty
