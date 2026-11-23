@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .githooks/pre-push, tools/check_versions.py, tools/known_issues.py, tools/tests/test_pre_push_hook.py, tools/tests/test_check_versions.py, changelog.d/BG1545.md
+> **Affects:** .githooks/pre-push, tools/check_versions.py, tools/known_issues.py, tools/tests/test_pre_push_hook.py, tools/tests/test_check_versions.py, tools/tests/test_lean_release_notes.py, changelog.d/BG1545.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at .githooks/pre-push lines 27-36 (the ref loop: `remote_ref` is read only by `case "$remote_ref" in refs/tags/*)` to pick the boundary) and lines 76-86 (the known-issues check); gate.py registry lines ~2176-2208 (`versions` strict is bound under `--release`, not under `--boundary release`)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -43,3 +43,4 @@ In the ref loop of .githooks/pre-push keep each pushed tag's name beside its com
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to tools/tests/test_lean_release_notes.py, whose v0.0.x tag fixtures and injected `_check` the tag-name check changes; found by the REL builder |

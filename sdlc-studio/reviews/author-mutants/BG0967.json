@@ -1,0 +1,295 @@
+{
+  "unit": "BG0967",
+  "digest": "9450a626b447bc9b at 2d716316d109",
+  "report": "sdlc-studio/.local/lane/landed/agent-a96dce0b789c43ccc/BG0967-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "field-safe routes another key",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return _steps_safe(text) if key == \"steps\" else _prose_safe(text)",
+      "new": "return _steps_safe(text) if key == \"summary\" else _prose_safe(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_only_the_steps_field_takes_the_command_rule",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "renderer prose-safes steps",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "_field_safe(k, f[k]) for k in",
+      "new": "_prose_safe(f[k]) for k in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_byte_identical_in_a_fence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lander prose-safes steps",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "{_field_safe(key, str(f[key]))}",
+      "new": "{_prose_safe(str(f[key]))}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_on_a_cr_whose_steps_are_landed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "command check reads code spans",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return command_shaped(\"\".join(text.split(\"`\")[0::2]))",
+      "new": "return command_shaped(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_line_that_only_quotes_a_command_in_a_code_span_is_prose",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "command check keeps the prompt",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    text = _unprompted(line.strip())\n",
+      "new": "    text = line.strip()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_prompt_is_dropped_so_the_fence_runs_as_pasted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prompt strip loses indentation",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return _PROMPT_RE.sub(r\"\\1\", line)",
+      "new": "return _PROMPT_RE.sub(\"\", line)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_prompt_is_dropped_so_the_fence_runs_as_pasted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence ties a backtick run",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "mark = \"`\" * max(3, longest + 1)",
+      "new": "mark = \"`\" * max(3, longest)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_fence_outlasts_a_backtick_run_inside_the_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence floor of four",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "mark = \"`\" * max(3, longest + 1)",
+      "new": "mark = \"`\" * max(4, longest + 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_consecutive_command_lines_share_one_fence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence closes on any line",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "fence = sdlc_md.fence_step(stripped, fence)[0]",
+      "new": "fence = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_tilde_fence_closes_only_on_its_own_marker",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "inline triple backticks open a fence",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "if not (stripped.startswith(\"```\") and \"`\" in stripped.lstrip(\"`\")):",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_inline_code_in_triple_backticks_is_prose_not_a_fence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "author fences not recognised",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "            if fence is not None:\n                segs.append((\"fence\", [line]))",
+      "new": "            if False:\n                segs.append((\"fence\", [line]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_fence_line_carrying_an_info_string_does_not_close_the_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unclosed fence left open",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    if fence:\n        segs[-1][1].append(fence[0] * fence[1])",
+      "new": "    if False:\n        segs[-1][1].append(fence[0] * fence[1])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_an_unclosed_fence_is_closed_so_it_cannot_swallow_the_next_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item body with a backtick spanned",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "kind = \"item\" if \"`\" not in item.group(2) and _command_line(item.group(2)) else \"prose\"",
+      "new": "kind = \"item\" if _command_line(item.group(2)) else \"prose\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_list_items_command_holding_a_backtick_is_left_to_the_prose_pass",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "list items not recognised",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if item:\n            kind = \"item\"",
+      "new": "        if False:\n            kind = \"item\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_list_item_is_never_fenced_even_with_a_shell_operator",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "command items read as prose",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "kind = \"item\" if \"`\" not in item.group(2) and _command_line(item.group(2)) else \"prose\"",
+      "new": "kind = \"prose\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_command_that_is_a_list_items_body_is_code_spanned_in_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "commands read as prose",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "kind = \"command\" if _command_line(line) else \"prose\"",
+      "new": "kind = \"prose\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_byte_identical_in_a_fence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "segments never merge",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if segs and segs[-1][0] == kind:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_consecutive_command_lines_share_one_fence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prose safed line by line",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "block = _prose_safe(\"\\n\".join(lines))",
+      "new": "block = \"\\n\".join(_prose_safe(ln) for ln in lines)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_prose_only_value_is_safed_exactly_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence keeps the prompt",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "block = _fence([_unprompted(ln) for ln in lines])",
+      "new": "block = _fence(lines)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_prompt_is_dropped_so_the_fence_runs_as_pasted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item span keeps the prompt",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "m.group(1) + f\"`{_unprompted(m.group(2))}`\"",
+      "new": "m.group(1) + f\"`{m.group(2)}`\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_consecutive_command_items_each_keep_their_marker",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item span keeps trailing space",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "_LIST_ITEM_RE = re.compile(r\"^(\\s*(?:[-*+]|\\d{1,9}[.)])\\s+)(\\S.*?)\\s*$\")",
+      "new": "_LIST_ITEM_RE = re.compile(r\"^(\\s*(?:[-*+]|\\d{1,9}[.)])\\s+)(\\S.*)$\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_consecutive_command_items_each_keep_their_marker",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no blank line beside a fence",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "out += \"\\n\\n\" if apart else \"\\n\"",
+      "new": "out += \"\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_prose_around_a_command_is_still_safed_and_the_fence_stands_apart",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank line only beside a command",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "code = {prev, kind} & {\"command\", \"fence\"}",
+      "new": "code = {prev, kind} & {\"command\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_an_authors_fenced_block_is_left_verbatim",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank line beside prose too",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "code = {prev, kind} & {\"command\", \"fence\"}",
+      "new": "code = True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_command_that_is_a_list_items_body_is_code_spanned_in_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank line doubled before",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "apart = code and out.rsplit(\"\\n\", 1)[-1].strip() and",
+      "new": "apart = code and True and",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_blank_line_already_beside_a_command_is_not_doubled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank line doubled after",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "and block.split(\"\\n\", 1)[0].strip()",
+      "new": "and True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsShapesTests::test_a_blank_line_already_beside_a_command_is_not_doubled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "artifact new prose-safes steps",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "return file_finding._field_safe(key, val) if isinstance(val, str) and val.strip() else placeholder",
+      "new": "return file_finding._prose_safe(val) if isinstance(val, str) and val.strip() else placeholder",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_through_artifact_new",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "artifact full template prose-safes steps",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "return f\"{file_finding._field_safe(key, val)}\\n\"",
+      "new": "return f\"{file_finding._prose_safe(val)}\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_through_artifact_new_full_template",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "artifact batch leaves the fence bare",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "sdlc_md.atomic_write(p[\"path\"], sdlc_md.normalise_fence_languages(body))",
+      "new": "sdlc_md.atomic_write(p[\"path\"], body)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_through_artifact_batch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the copied command runs anywhere",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py",
+      "old": "r = subprocess.run([\"bash\", \"-c\", m.group(1)], cwd=SCRIPTS,",
+      "new": "r = subprocess.run([\"bash\", \"-c\", m.group(1)], cwd=SCRIPTS.parent,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_and_still_runs_when_copied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the copied command prints nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py",
+      "old": "(0, \"lib.sdlc_md\"), r.stderr)",
+      "new": "(0, \"\"), r.stderr)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_and_still_runs_when_copied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: markdownlint config elsewhere",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py",
+      "old": "str(SCRIPTS.parent / \".markdownlint.json\"), str(path)]",
+      "new": "str(SCRIPTS / \"no-such.json\"), str(path)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::CommandSurvivesFilingTests::test_command_survives_filing_beside_prose_and_the_file_passes_markdownlint",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

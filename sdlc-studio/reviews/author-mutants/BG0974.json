@@ -1,0 +1,97 @@
+{
+  "unit": "BG0974",
+  "digest": "9008e33c897881c7 at 2d716316d109",
+  "report": "sdlc-studio/.local/lane/landed/agent-a96dce0b789c43ccc/BG0974-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "H1 title left bare",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleIdentifierTests::test_title_identifier_is_code_spanned_in_the_h1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "RFC H1 title left bare",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleIdentifierTests::test_title_identifier_is_code_spanned_in_an_rfcs_h1_and_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index row projected from a bare H1",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleIdentifierTests::test_title_identifier_is_code_spanned_in_the_index_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "H1 title left bare under markdownlint",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_the_bug_file_passes_markdownlint",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index row bare under markdownlint",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_the_index_passes_markdownlint",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "both lines bare, no linter",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    title = _md_safe(title)\n",
+      "new": "    title = title\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_neither_line_holds_an_underscore_outside_a_code_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Evidence only URL-spanned",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "val = _md_safe(str(f.get(\"evidence\") or \"\").strip())",
+      "new": "val = _code_urls(str(f.get(\"evidence\") or \"\").strip())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::EvidenceIdentifierTests::test_evidence_identifier_is_code_spanned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Evidence left raw",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "val = _md_safe(str(f.get(\"evidence\") or \"\").strip())",
+      "new": "val = str(f.get(\"evidence\") or \"\").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::EvidenceIdentifierTests::test_evidence_identifier_is_code_spanned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: code spans not removed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py",
+      "old": "    return re.sub(r\"`[^`]*`\", \"\", line)",
+      "new": "    return line",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_neither_line_holds_an_underscore_outside_a_code_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: lint config elsewhere",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py",
+      "old": "return subprocess.run([lint, \"-c\", str(CONFIG), str(path)],",
+      "new": "return subprocess.run([lint, \"-c\", str(CONFIG) + \".missing\", str(path)],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_the_index_passes_markdownlint",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
