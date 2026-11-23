@@ -60,15 +60,19 @@ def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
     newest first, under the parent folders of those paths, keeping for each the time of the
     first commit in that walk whose change names it. By `-c` a merge names each path whose
     content differs from every parent's, as a conflict's resolution does, so its time is taken
-    where `git log -1 -- <path>` takes it. The walk names every path from the repository top,
-    a merge's as well as an ordinary commit's (`--relative` does not reach a merge's), so that
-    folder is dropped from each before it is matched against the paths `ls-tree` names from
-    repo_root. A path HEAD does not track is absent from the result, as is every path when
-    git is unavailable or its listing or walk fails; with no path tracked, no history is walked.
+    where `git log -1 -- <path>` takes it. By `--no-relative` the walk names every path from
+    the repository top, a merge's as well as an ordinary commit's, whatever the user's
+    `diff.relative` setting, so each path is matched with that folder before it. By `-z` both
+    git listings print each path as it is, never quoted, ended by a NUL; the walk starts each
+    commit's time with `/`, which no path git prints starts with, and parts an ordinary
+    commit's time from its first path with a newline, which a merge's does not carry, so a
+    path is matched with or without that newline. A path HEAD does not track is absent from
+    the result, as is every path when git is unavailable or its listing or walk fails; with
+    no path tracked, no history is walked.
     """
     def run(*args: str) -> str | None:
         try:
-            r = subprocess.run(["git", "-C", str(repo_root), "-c", "core.quotePath=false", *args],
+            r = subprocess.run(["git", "-C", str(repo_root), *args],
                                capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)
         except (OSError, subprocess.SubprocessError):
             return None
@@ -76,19 +80,22 @@ def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
 
     prefix = (run("rev-parse", "--show-prefix") or "").rstrip("\n")
     folders = sorted({Path(rel).parent.as_posix() for rel in rels})
-    listed = run("ls-tree", "-r", "--name-only", "HEAD", "--", *folders)
-    tracked = set((listed or "").splitlines()) & rels
+    listed = run("ls-tree", "-z", "-r", "--name-only", "HEAD", "--", *folders)
+    tracked = set((listed or "").split("\0")) & rels
     if not tracked:
         return {}
-    walked = run("log", "-c", "--name-only", "--format=%x00%cI", "--", *folders)
+    names: dict[str, str] = {}
+    for rel in tracked:
+        names[prefix + rel] = names["\n" + prefix + rel] = rel
+    walked = run("log", "-z", "--no-relative", "-c", "--name-only", "--format=/%cI",
+                 "--", *folders)
     times: dict[str, str] = {}
     when = ""
-    for line in (walked or "").splitlines():
-        rel = line.removeprefix(prefix)
-        if line.startswith("\0"):
-            when = line[1:].strip()
-        elif rel in tracked and rel not in times:
-            times[rel] = when
+    for token in (walked or "").split("\0"):
+        if token.startswith("/"):
+            when = token[1:]
+        elif token in names and names[token] not in times:
+            times[names[token]] = when
     return times
 
 

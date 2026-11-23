@@ -5,7 +5,9 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import subprocess
@@ -266,6 +268,91 @@ class StalenessTests(unittest.TestCase):
             got, started = self._git_processes(root)
         self.assertEqual("mtime", got["BG0001"]["modified_method"], got["BG0001"])
         self.assertEqual([], [a for a in started if "log" in a], started)
+
+
+class QuotedAndRelativePathTests(unittest.TestCase):
+    """The history walk reads the paths git prints verbatim: a project in a folder whose name
+    git quotes, and the user's `diff.relative` setting, still read each artefact's commit time
+    through `review_prep.py prep`, at the repository top and in a folder below it."""
+
+    _bug = staticmethod(StalenessTests._bug)
+    _commit = staticmethod(StalenessTests._commit)
+    _git_processes = StalenessTests._git_processes
+    _a_conflict_resolved_in_a_merge = StalenessTests._a_conflict_resolved_in_a_merge
+
+    #: Folders whose names git quotes even under `core.quotePath=false`: a double quote, a
+    #: backslash, and tabs, one leading the name, which a strip of the folder's name would lose.
+    QUOTED = ('q"uote/one', "back\\slash/one", "\ttab/o\tne")
+
+    #: The user's git setting that makes `git log` print an ordinary commit's paths relative to
+    #: where it runs, where a merge's are still printed from the repository top.
+    RELATIVE = "[diff]\n\trelative = true\n"
+
+    T1, T2 = "2026-01-01T10:00:00+00:00", "2026-02-01T10:00:00+00:00"
+
+    def _prep(self, root: Path, gitconfig: str = "") -> dict:
+        """The staleness `review_prep.py prep --format json` prints over the project at `root`,
+        with `gitconfig` as the user's git configuration."""
+        with tempfile.TemporaryDirectory() as home:
+            config = Path(home) / "gitconfig"
+            config.write_text(gitconfig, encoding="utf-8")
+            out = io.StringIO()
+            with mock.patch.dict(os.environ, gitutil.git_env(GIT_CONFIG_GLOBAL=str(config)),
+                                 clear=True), contextlib.redirect_stdout(out):
+                self.assertEqual(0, review_prep.main(
+                    ["prep", "--root", str(root), "--format", "json"]))
+        return json.loads(out.getvalue())["staleness"]
+
+    def _two_commits(self, repo: Path, below: str) -> Path:
+        """A project at `below` in `repo` whose two bugs were committed together at T1 (one
+        first in that commit's names, one after it) and whose second bug alone changed at T2;
+        the second's name holds a `"`, a `\\` and a tab, which git quotes, and each file's own
+        time is set far from both."""
+        root = repo / below
+        gitutil.git(["init", "-q", "-b", "main"], repo)
+        one, two = self._bug(root, 1), self._bug(root, 2, slug='q"uo\\b\te')
+        self._commit(repo, self.T1, one, two)
+        self._bug(root, 2, "changed\n", slug='q"uo\\b\te')
+        self._commit(repo, self.T2, two)
+        for path in (one, two):
+            os.utime(path, (1_700_000_000, 1_700_000_000))
+        return root
+
+    def _assert_commit_times(self, got: dict) -> None:
+        """BG0001 reads T1 and BG0002 reads T2, each from git."""
+        for key, when in (("BG0001", self.T1), ("BG0002", self.T2)):
+            with self.subTest(key=key):
+                self.assertEqual("git", got[key]["modified_method"], got[key])
+                self.assertEqual(review_prep._parse_dt(when),
+                                 review_prep._parse_dt(got[key]["last_modified"]), got[key])
+
+    def test_a_project_in_a_folder_git_quotes_reads_its_commit_times(self) -> None:
+        """Each artefact of a project in a folder whose name git quotes reads its own commit
+        time, not its file time."""
+        for below in self.QUOTED:
+            with self.subTest(below=below), tempfile.TemporaryDirectory() as d:
+                self._assert_commit_times(self._prep(self._two_commits(Path(d), below)))
+
+    def test_a_conflict_resolved_in_a_merge_in_a_folder_git_quotes_reads_the_merge_time(
+            self) -> None:
+        """In a folder whose name git quotes, a conflict's resolution in a merge is still the
+        file's last change."""
+        for below in self.QUOTED:
+            with self.subTest(below=below):
+                self._a_conflict_resolved_in_a_merge(below)
+
+    def test_the_users_diff_relative_setting_reads_as_without_it(self) -> None:
+        """With `diff.relative = true` set, each artefact reads the commit time it reads
+        without the setting, with the project at the repository top, below it, and in a
+        top-level folder named as the artefacts' own first folder."""
+        for below in ("", "proj/one", "sdlc-studio"):
+            with self.subTest(below=below), tempfile.TemporaryDirectory() as d:
+                root = self._two_commits(Path(d), below)
+                plain, relative = self._prep(root), self._prep(root, self.RELATIVE)
+                self._assert_commit_times(plain)
+                self._assert_commit_times(relative)
+                self.assertEqual({k: v["last_modified"] for k, v in plain.items()},
+                                 {k: v["last_modified"] for k, v in relative.items()})
 
 
 class PersonaUsageTests(unittest.TestCase):
