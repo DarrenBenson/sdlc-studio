@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG0959.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, sdlc-studio/prd.md, changelog.d/BG0959.md
 > **Evidence:** Field report, 2026-10-07, planning Sprint 0 on a consuming project. engagement_floor.py check printed the adopt_after remedy for 13 Fixed ULID bugs. Reproduced at HEAD: `_mode_and_cutoff` on a config of `adopt_after: BG-01KXB3QF` raises ValueError.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file

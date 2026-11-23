@@ -33,7 +33,7 @@ Fix each finding above, then deliver BG1625 again in a later run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticKeptListPathTests
 
 - [ ] **AC5** The round 3 REJECT finding no longer holds: an attached value holding an `=` that is not directly after the option letter is read whole, pinned by a case such as `-m'device(serial=1)'` and its cluster `-qm'device(serial=1)'` in `test_a_cluster_of_short_flags_is_read_as_pytest_reads_it`; the mutant that splits at the first `=` (`attached.partition("=")[2]`) fails it (critic.py:3072, 3095-3096; verdict aa5575a8c536-f9c40d5c, D0591).
-  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it
 - [ ] **AC6** The round 3 REJECT finding no longer holds: `changelog.d/BG1625.md` states exactly how a value joined to its option by `=` is read, including the Python 3.10 difference for a cluster such as `-qk=add`, which argparse on 3.10 keeps as `=add`.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-22
+**Last Updated:** 2026-11-23
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 293 |
+| Open | 294 |
 | In Progress | 0 |
 | Fixed | 1083 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1717** |
+| **Total** | **1718** |
 
 ## All Bugs
 
@@ -793,6 +793,7 @@
 | [BG1715](BG1715-bg1229-did-not-converge-in-review-round-2.md) | BG1229 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Open | Low | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

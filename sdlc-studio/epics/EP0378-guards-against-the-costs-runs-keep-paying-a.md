@@ -4,7 +4,7 @@
 > **Parent:** CR0749
 > **Parent:** CR0748
 > **Parent:** CR0745
-> **Derived Point Total:** 10
+> **Derived Point Total:** 11
 > **Parent:** CR0741
 > **Created:** 2026-11-23
 > **Created-by:** sdlc-studio new
