@@ -1178,10 +1178,192 @@ class PersonaWellFormedTests(unittest.TestCase):
             self.assertTrue(any("Why we are not" in m for m in msgs))
 
     def test_empty_bodies_still_well_formed(self):
-        # well-formed is structural (headings present); bodies are not content-checked (RFC0017)
+        # well-formed is structural (headings present): a short or empty body is not judged,
+        # though an unfilled `{{...}}` template slot in it is (RFC0017)
         with tempfile.TemporaryDirectory() as d:
             repo = pathlib.Path(d); self._persona(repo, "maya", "Primary", sections=self.STD)
             self.assertEqual(validate.check_personas(repo), [])
+            (repo / "sdlc-studio/personas/maya.md").write_text(
+                "# maya\n\n| **Cast role** | Primary |\n\n"
+                + "".join(f"## {s}\n\n" for s in self.STD), encoding="utf-8")
+            self.assertEqual(validate.check_personas(repo), [])
+
+    TEMPLATE = Path(__file__).resolve().parents[2] / "templates" / "personas" / "persona-template.md"
+    #: Every section of the shipped template that carries a `{{...}}` slot, in card order; ""
+    #: is the title. The Cast-role variants note carries none and must not be named.
+    TEMPLATE_SLOTS = ["", "Quick Reference", "Who They Are", "End Goals", "Experience Goals",
+                      "Behaviours & Context", "Frustrations", "Scenario", "Evidence"]
+
+    def _template_copy(self, repo, name="someone.md"):
+        dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(self.TEMPLATE, dd / name)
+        return dd / name
+
+    def _run_personas(self, repo):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = validate.main(["personas", "--root", str(repo)])
+        return rc, buf.getvalue()
+
+    def test_a_verbatim_template_copy_warns_on_each_unfilled_section(self):
+        """A byte-for-byte copy of the template is not a well-formed persona: one warning per
+        section still holding a slot, naming the card and the section, and never the clean line.
+        Dies if the body is not read, if a multi-line, numbered-list or table-cell slot is
+        missed, or if a slot-free section is named."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            card = self._template_copy(repo)
+            rc, out = self._run_personas(repo)
+            self.assertNotIn("personas look well-formed.", out)
+            self.assertEqual(rc, 0, "the check stays advisory")
+            for name in self.TEMPLATE_SLOTS:
+                where = f'section "{name}"' if name else "the title"
+                self.assertTrue(
+                    any(ln.startswith("WARNING") and str(card) in ln and where in ln
+                        and "placeholder" in ln for ln in out.splitlines()),
+                    f"no warning names {card.name} and {where}:\n{out}")
+            named = [re.search(r'section "([^"]*)"|the title', f["message"])
+                     for f in validate.check_personas(repo)
+                     if "template placeholder" in f["message"]]
+            self.assertEqual([m.group(1) or "" for m in named], self.TEMPLATE_SLOTS)
+
+    def test_the_template_role_list_is_not_a_declared_cast_role(self):
+        """The template's cell listing all six roles declares none: the missing-cast-role warning
+        fires, and the copy is not a second Primary beside a real one. Dies on the earliest-word
+        read, which took the list for Primary."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            card = self._template_copy(repo)
+            self.assertIsNone(validate._persona_cast_role(card.read_text(encoding="utf-8")))
+            found = validate.check_personas(repo)
+            self.assertIn(("persona-cast-role", str(card)),
+                          {(f["rule"], f["file"]) for f in found})
+            self._persona_iface(repo, "maya", "Primary")   # one real Primary, no Interface row
+            rules = {f["rule"] for f in validate.check_personas(repo)}
+            self.assertNotIn("persona-one-primary", rules,
+                             "the unfilled copy was counted as a second Primary")
+        self.assertIsNone(validate._persona_cast_role("| **Cast role** | {{primary}} |\n"))
+        self.assertEqual(validate._persona_cast_role("| **Cast role** | Primary {{note}} |\n"),
+                         "primary", "a filled cell with a stray slot still declares its role")
+
+    FILLED = ("# Maya Okafor\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+              "| **Cast role** | Primary |\n| **Role** | Founder engineer |\n\n"
+              "## Who They Are\n\nMaya runs a two-person studio and ships weekly.\n\n"
+              "## End Goals\n\n1. Ship a release she trusts\n2. Spend less time on paperwork\n\n"
+              "## Experience Goals\n\n- in control\n\n"
+              "## Behaviours & Context\n\n- **Environment:** a laptop, many interruptions\n"
+              "- **Proficiency:** writes `{{name}}` tokens in her own templates daily\n\n"
+              "## Frustrations\n\n- tools that hide what they changed\n\n"
+              "## Scenario\n\nShe opens the board and picks the next unit.\n\n"
+              "```text\n{{a sample slot inside a fence is sample text}}\n```\n")
+
+    def test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory(self):
+        """A filled card draws nothing, including one that discusses `{{name}}` syntax in prose
+        or holds a slot inside a fence; every finding on the copy is a warning and the exit code
+        stays 0. Dies if a filled card is flagged or a placeholder finding turns blocking."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            card = self._template_copy(repo)
+            dd = repo / "sdlc-studio" / "personas"
+            (dd / "maya.md").write_text(self.FILLED, encoding="utf-8")
+            found = validate.check_personas(repo)
+            self.assertEqual([f for f in found if f["file"] == str(dd / "maya.md")], [])
+            on_copy = [f for f in found if f["file"] == str(card)]
+            self.assertTrue(any("template placeholder" in f["message"] for f in on_copy))
+            self.assertEqual({f["severity"] for f in on_copy}, {"warning"})
+            rc, out = self._run_personas(repo)
+            self.assertEqual(rc, 0, out)
+            self.assertNotIn("maya.md", out)
+
+    def test_a_partly_filled_section_still_names_its_leftover_slot(self):
+        """A section is filled when no slot is left in it: a filled first goal beside a leftover
+        `{{...}}` goal still warns, and only that section is named."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            (dd / "maya.md").write_text(
+                self.FILLED.replace("2. Spend less time on paperwork", "2. {{the next}}"),
+                encoding="utf-8")
+            msgs = [f["message"] for f in validate.check_personas(repo)]
+            self.assertEqual(len(msgs), 1, msgs)
+            self.assertIn('section "End Goals"', msgs[0])
+
+    def test_a_heading_left_as_a_slot_is_named(self):
+        """A heading that is still a `{{...}}` slot names its own section, even over a filled
+        body; a `###` subheading opens a section of its own."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            dd = repo / "sdlc-studio" / "personas"; dd.mkdir(parents=True)
+            (dd / "maya.md").write_text(
+                self.FILLED + "\n## {{extra section}}\n\nA real paragraph.\n\n"
+                "### Notes\n\n- {{a note}}\n", encoding="utf-8")
+            named = [f["message"].split(" still holds")[0] for f in validate.check_personas(repo)]
+            self.assertEqual(named, ['section "{{extra section}}"', 'section "Notes"'])
+
+    ROLE_SLOT = "{{primary / secondary / supplemental / negative / customer / served}}"
+
+    def _primary_copy(self, repo, name):
+        """A template copy whose Cast role alone is filled in, as Primary."""
+        card = self._template_copy(repo, name)
+        text = card.read_text(encoding="utf-8")
+        self.assertEqual(text.count(self.ROLE_SLOT), 1, "the template's role cell moved")
+        card.write_text(text.replace(self.ROLE_SLOT, "Primary"), encoding="utf-8")
+        return card
+
+    def test_a_placeholder_interface_is_no_interface(self):
+        """Two Primaries that kept the template's Interface slot declare no Interface, so they
+        draw the one-Primary warning and not the shared-Interface error; the same two cards
+        with a real shared Interface still error. Dies if the slot's text is read as the
+        Interface both declare."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = pathlib.Path(d)
+            cards = [self._primary_copy(repo, n) for n in ("maya.md", "omar.md")]
+            found = [f for f in validate.check_personas(repo) if f["rule"] == "persona-one-primary"]
+            self.assertEqual([f["severity"] for f in found], ["warning"], found)
+            for card in cards:
+                text = card.read_text(encoding="utf-8")
+                filled = re.sub(r"(\| \*\*Interface\*\* \| )\{\{[^}]*\}\}", r"\1operator console",
+                                text)
+                self.assertNotEqual(filled, text, "the template's Interface cell moved")
+                card.write_text(filled, encoding="utf-8")
+            found = [f for f in validate.check_personas(repo) if f["rule"] == "persona-one-primary"]
+            self.assertEqual([f["severity"] for f in found], ["error"], found)
+
+    def _status_line(self, status, root):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            status.main(["pillars", "--root", str(root)])
+        return next(ln for ln in buf.getvalue().splitlines() if ln.startswith("Requirements:"))
+
+    def test_status_personas_template_copy_is_not_a_declared_persona(self):
+        """A copy of the template whose title is still `{{full_name}}` names nobody, so status
+        reads `personas=no`; one filled card beside it reads yes. Dies if every card file under
+        personas/ counts, as it did."""
+        status = loader.load_script("status")
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            self._template_copy(root)
+            self.assertFalse(status.personas_present(root))
+            self.assertIn("personas=no", self._status_line(status, root))
+            (root / "sdlc-studio" / "personas" / "maya.md").write_text(self.FILLED, encoding="utf-8")
+            self.assertTrue(status.personas_present(root))
+            self.assertIn("personas=yes", self._status_line(status, root))
+
+    def test_status_personas_template_copy_reads_its_title_alone(self):
+        """Only the title decides: a copy whose name is filled in declares that persona though
+        every other section is still a slot, and a card with no `# ` title, an empty card or one
+        whose bytes are not UTF-8 still counts, as before."""
+        status = loader.load_script("status")
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            card = self._template_copy(root)
+            card.write_text(card.read_text(encoding="utf-8").replace("# {{full_name}}", "# Maya"),
+                            encoding="utf-8")
+            self.assertTrue(status.personas_present(root))
+            for body in (b"", b"no title here\n", b"# Maya \xff\n"):
+                with self.subTest(body=body):
+                    card.write_bytes(body)
+                    self.assertTrue(status.personas_present(root))
 
     def test_unknown_role_held_to_standard(self):
         with tempfile.TemporaryDirectory() as d:
@@ -2068,6 +2250,89 @@ class PlaceholderBaselineTests(unittest.TestCase):
             p = self._story(Path(d), "US9999")
             validate._baseline_cache.clear()
             validate.validate_file(p, "story")   # no repo_root at all
+
+    V3 = "US-01JQK3F8"
+
+    def _emit(self, repo, *record):
+        validate._baseline_cache.clear()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = validate.main(["check", "--root", str(repo), "--emit-baseline", *record])
+        self.assertEqual(rc, 0, "emitting a baseline is a report, not a verdict")
+        return [ln for ln in buf.getvalue().splitlines() if not ln.startswith("#")], buf.getvalue()
+
+    def test_emit_baseline_emits_the_placeholder_record(self):
+        """The placeholder record is captured from the checker's own output, one record per
+        redirect: `--emit-baseline placeholder` prints only `ID:{{token}}` lines and the bare flag
+        still prints only the criteria record. Dies if placeholder findings carry no key, if the
+        two records share one print, or if the emitted spelling is not the one the reader reads."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            story = self._story(repo, self.V3)
+            self._story(repo, "US9997", status="Draft")   # in flight: nothing to baseline
+            _write(repo, "sdlc-studio/bugs/BG9990-x.md",
+                   "# BG9990: x\n\n> **Status:** Fixed\n\n## Summary\n\nbroke at a.py:12\n")
+            placeholder, raw = self._emit(repo, "placeholder")
+            self.assertEqual(placeholder, ["US01JQK3F8:{{what changes and why}}"], raw)
+            self.assertIn(validate._PLACEHOLDER_BASELINE, raw,
+                          "the header names the file the record is redirected into")
+            criteria, raw_c = self._emit(repo)
+            self.assertEqual(criteria, ["BG9990"], "the bare flag is the criteria record, as before")
+            self.assertEqual(self._emit(repo, "criteria")[0], ["BG9990"])
+            self.assertIn(validate._CRITERIA_BASELINE, raw_c)
+
+            self._baseline(repo, raw)                      # redirected, never hand-written
+            self.assertEqual(self._sev(story, repo), ["warning"],
+                             "the emitted record must quieten the finding it was captured from")
+            self.assertEqual(self._emit(repo, "placeholder")[0], placeholder,
+                             "re-capturing keeps a finding the record already waives")
+
+    def test_emit_baseline_refuses_an_unknown_record(self):
+        with tempfile.TemporaryDirectory() as d, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            with self.assertRaises(SystemExit) as cm:
+                validate.main(["check", "--root", d, "--emit-baseline", "story"])
+            self.assertEqual(cm.exception.code, 2)
+            self.assertIn("placeholder", err.getvalue())
+
+    def test_a_v3_placeholder_in_the_baseline_is_a_warning(self):
+        """A schema 3 id resolves, spelled as its file spells it or as the emitter writes it;
+        another v3 id's line does not waive it. Dies on the four-digit-only id match."""
+        for listed in (f"{self.V3}:{{{{what changes and why}}}}",
+                       "US01JQK3F8:{{what changes and why}}",
+                       "us-01jqk3f8:{{what changes and why}}"):
+            with self.subTest(listed=listed), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                self._baseline(repo, listed)
+                self.assertEqual(self._sev(self._story(repo, self.V3), repo), ["warning"])
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, "US-01JQK3F9:{{what changes and why}}")
+            self.assertEqual(self._sev(self._story(repo, self.V3), repo), ["error"])
+
+    def test_a_new_placeholder_beside_baselined_ones_still_errors(self):
+        """The waiver stays per token for a v3 artefact: the baselined blank warns and the new
+        one beside it errors."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, f"{self.V3}:{{{{what changes and why}}}}", "junk-line-with-no-colon")
+            p = self._story(repo, self.V3, token="{{what changes and why}}\n\n{{a brand new blank}}")
+            validate._baseline_cache.clear()
+            found = {f["message"].split(": ", 1)[1]: f["severity"]
+                     for f in validate.validate_file(p, "story", repo_root=repo)
+                     if f.get("rule") == "placeholder"}
+            self.assertEqual(found, {"{{what changes and why}}": "warning",
+                                     "{{a brand new blank}}": "error"})
+
+    def test_a_five_digit_id_is_not_read_as_its_four_digit_prefix(self):
+        """`US01010` read as `US0101` under the four-digit match, so another record's line
+        waived it."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            self._baseline(repo, "US0101:{{what changes and why}}")
+            self.assertEqual(self._sev(self._story(repo, "US01010"), repo), ["error"])
+            self._baseline(repo, "US01010:{{what changes and why}}")
+            self.assertEqual(self._sev(self._story(repo, "US01010"), repo), ["warning"])
 
 
 class PlaceholderFenceTests(unittest.TestCase):

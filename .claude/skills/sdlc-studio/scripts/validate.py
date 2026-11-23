@@ -540,7 +540,12 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
     # fall. Removing an id is one-way: the check errors on it from then on.
     _body_sev = SEVERITY_ERROR if _terminal else (_ac_sev if type_ == "story" else SEVERITY_WARNING)
     _waived = (lambda tok: _baselined(path, repo_root, tok)) if _terminal else (lambda tok: False)
-    _check_placeholders(text, add, ac_severity=_ac_sev, body_severity=_body_sev, baselined=_waived)
+    # Where the waiver can apply, each body finding carries its placeholder-record line, whether
+    # or not it is waived today, so `check --emit-baseline placeholder` re-captures the record
+    # whole rather than dropping the findings it already lists.
+    _key = (lambda tok: _placeholder_key(path, tok)) if _terminal else None
+    _check_placeholders(text, add, ac_severity=_ac_sev, body_severity=_body_sev, baselined=_waived,
+                        baseline_key=_key)
     return out
 
 
@@ -606,13 +611,17 @@ def _bug_has_evidence(text: str) -> bool:
 
 #: Findings that already existed when the body sweep was widened, as `ID:{{token}}` - the FINDING,
 #: never the artefact. Keying on the artefact blanketed every placeholder in a listed file for ever,
-#: so a NEW blank in an old record inherited the waiver.
+#: so a NEW blank in an old record inherited the waiver. Captured from the checker's own output
+#: (`check --emit-baseline placeholder`), never hand-written.
 _PLACEHOLDER_BASELINE = "sdlc-studio/.placeholder-baseline.txt"
 #: Units already at a terminal status with no acceptance criteria when that rule was introduced,
 #: one artefact id per line. Same contract as the placeholder baseline: captured from the
 #: checker's own output (`check --emit-baseline`), never hand-written, and removing a line is
 #: one-way, so the recorded count can only fall.
 _CRITERIA_BASELINE = "sdlc-studio/.criteria-baseline.txt"
+#: The records `check --emit-baseline <record>` prints, and the file each is redirected into. A
+#: finding names its record in `baseline`; one that names none belongs to the criteria record.
+_BASELINES = {"criteria": _CRITERIA_BASELINE, "placeholder": _PLACEHOLDER_BASELINE}
 #: Keyed by (resolved repo root, baseline file): a bare module global leaked one repo's baseline
 #: into the next, and cached a failed read as an empty set so the retry never happened.
 _baseline_cache: dict[tuple[str, str], set[str]] = {}
@@ -638,15 +647,27 @@ def _read_baseline(repo_root, rel: str) -> set[str]:
     return entries
 
 
+def _placeholder_key(path, token: str) -> str | None:
+    """The placeholder record's line for THIS token in THIS artefact, `ID:{{token}}`, or None
+    when the filename starts with no artefact id. The id is the record id at the start of the
+    stem, read by the shared id pattern, so a schema 3 id (`US-01JQK3F8`) resolves as a v2 one
+    does and a five-digit id is never read as its four-digit prefix; it is keyed through
+    `norm_id`, as the criteria record is."""
+    rec = sdlc_md.extract_record_id(Path(path).stem)
+    return f"{sdlc_md.norm_id(rec)}:{token}" if rec else None
+
+
 def _placeholder_baseline(repo_root) -> set[str]:
-    """The recorded pre-existing body-scaffold findings for this root."""
-    return _read_baseline(repo_root, _PLACEHOLDER_BASELINE)
+    """The recorded pre-existing body-scaffold findings for this root, each line's id keyed
+    through `norm_id`, so `US-01JQK3F8:{{t}}` and `US01JQK3F8:{{t}}` are one finding."""
+    return {f"{sdlc_md.norm_id(rid)}:{tok}" for rid, _, tok in
+            (entry.partition(":") for entry in _read_baseline(repo_root, _PLACEHOLDER_BASELINE))}
 
 
 def _baselined(path, repo_root, token: str) -> bool:
     """Is THIS placeholder token, in THIS artefact, recorded as pre-existing debt?"""
-    m = re.search(r"((?:BG|US|EP|CR|RFC)\d{4})", Path(path).name)
-    return bool(m) and f"{m.group(1)}:{token}" in _placeholder_baseline(repo_root)
+    key = _placeholder_key(path, token)
+    return bool(key) and key in _placeholder_baseline(repo_root)
 
 
 _FIELD_LINE_RE = re.compile(r"^>?[^\S\n]*\*\*([^*:]+):\*\*")
@@ -674,7 +695,8 @@ def _repeated_single_valued(text: str) -> dict:
     return {f: ns for f, ns in seen.items() if len(ns) > 1}
 
 def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
-                        body_severity: str | None = None, baselined=None) -> None:
+                        body_severity: str | None = None, baselined=None,
+                        baseline_key=None) -> None:
     """Flag an unresolved `{{...}}` slot left ANYWHERE outside a code fence - a metadata line, an
     acceptance-criteria structural line (AC heading, ACn / Given / When / Then / checkbox bullet,
     Verify), or any other body line. Flags only a line whose *value* is placeholder-ONLY, so prose
@@ -695,7 +717,11 @@ def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
     that creates it lands, and for the body of any in-flight artefact, since every type is minted
     with its sections scaffolded. The story is still kept out of DELIVERY by conformance's
     specified/verifiable bar (unchanged) and by the AC-verify gate on Done; the transition to Ready
-    is not itself blocked, so do not read this as gating it."""
+    is not itself blocked, so do not read this as gating it.
+
+    `baseline_key`, when given, maps a body finding's first token to its placeholder-record line
+    (or None); a finding given a line carries it as `baseline_key`, with `baseline` naming the
+    placeholder record, for `check --emit-baseline placeholder` to print."""
     body_severity = body_severity or ac_severity
     baselined = baselined or (lambda tok: False)
     in_ac = False
@@ -723,7 +749,9 @@ def _check_placeholders(text: str, add, ac_severity: str = SEVERITY_ERROR,
             sev = body_severity
             if sev == SEVERITY_ERROR and tok and baselined(tok.group(0)):
                 sev = SEVERITY_WARNING
-            add(sev, "placeholder", f"unresolved placeholder in body: {line.strip()}")
+            key = baseline_key(tok.group(0)) if baseline_key else None
+            add(sev, "placeholder", f"unresolved placeholder in body: {line.strip()}",
+                **({"baseline_key": key, "baseline": "placeholder"} if key else {}))
 
 
 def _ac_exempt(rec: str | None, repo_root: Path | None) -> bool:
@@ -891,11 +919,14 @@ def cmd_check(args: argparse.Namespace) -> int:
     if getattr(args, "emit_baseline", False):
         # The baseline is CAPTURED from the checker's own output, never hand-written: a
         # hand-kept list drifts from what the checker actually reports and then quietens
-        # nothing (or the wrong thing). Every finding carrying a `baseline_key` is emitted,
-        # so a rule that later gains one is covered without editing this.
-        keys = sorted({v["baseline_key"] for v in violations if v.get("baseline_key")})
-        print(f"# Captured from `validate.py check --emit-baseline` on "
-              f"{sdlc_md.now_iso8601()} - do not hand-edit.")
+        # nothing (or the wrong thing). Every finding carrying a `baseline_key` for the asked
+        # record is emitted, so a rule that later gains one is covered without editing this. One
+        # record per run, so each is redirected into its own file.
+        record = args.emit_baseline
+        keys = sorted({v["baseline_key"] for v in violations if v.get("baseline_key")
+                       and v.get("baseline", "criteria") == record})
+        print(f"# Captured from `validate.py check --emit-baseline {record}` on "
+              f"{sdlc_md.now_iso8601()} into {_BASELINES[record]} - do not hand-edit.")
         print("# Pre-existing findings recorded as known debt. Removing a line is one-way:")
         print("# the check errors on it from then on, so the count can only fall.")
         for key in keys:
@@ -1252,9 +1283,11 @@ def cmd_instructions(args: argparse.Namespace) -> int:
 
 
 def _persona_cast_role(text: str) -> str | None:
-    """The cast role declared in a persona's Quick Reference, or None."""
+    """The cast role declared in a persona's Quick Reference, or None. A cell that is still an
+    unfilled `{{...}}` slot declares nothing, so the template's list of all six roles is no
+    role rather than a Primary."""
     m = re.search(r"\|\s*\*\*Cast role\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
-    if not m:
+    if not m or _unfilled(m.group(1)):
         return None
     val = m.group(1).strip().lower()
     # the role whose word appears EARLIEST in the cell (not by our tuple order, so
@@ -1264,8 +1297,45 @@ def _persona_cast_role(text: str) -> str | None:
     return min(found)[1] if found else None
 
 
+def persona_card_names_nobody(text: str) -> bool:
+    """True when a persona card's `# ` title is still an unfilled `{{...}}` template slot, as in
+    a copy of the template: such a card names no persona. A card with no `# ` title, or a filled
+    one, is not judged here."""
+    title = sdlc_md.extract_h1_title(text)
+    return title is not None and _unfilled(title)
+
+
 def _headings(text: str) -> list[str]:
     return [h.strip().lower() for h in re.findall(r"^##+\s+(.*)$", text, re.M)]
+
+
+_ORDINAL = re.compile(r"^\s*\d+[.)]\s+")
+
+
+def _persona_unfilled_sections(text: str) -> list[str]:
+    """The sections of a persona card still holding an unfilled template slot, in card order and
+    each once: "" for the title (the text above the first `##` heading), else the heading.
+
+    A slot is a line whose value is a `{{...}}` placeholder and nothing else, the bar
+    `_check_placeholders` sets: the value of a table row is its last cell, and a bullet, a
+    numbered item, a heading marker or a bold label is not part of it, so a heading that is a
+    slot names its own section. A placeholder that wraps over lines is read whole, and a fenced
+    block is sample text, so a slot inside one is not read. Prose that mentions `{{name}}`
+    syntax keeps its words and is never a slot."""
+    found: list[str] = []
+    section, fence = "", None
+    for line in _PLACEHOLDER.sub(lambda m: m.group(0).replace("\n", " "), text).splitlines():
+        fence, is_fence_line = sdlc_md.fence_step(line.strip(), fence)
+        if is_fence_line or fence is not None:
+            continue
+        heading = re.match(r"^##+\s+(.*)$", line)
+        if heading:
+            section = heading.group(1).strip()
+        value = (line.strip().strip("|").split("|")[-1] if line.lstrip().startswith("|")
+                 else _body_value(_ORDINAL.sub("", line)))
+        if _PLACEHOLDER.search(value) and _unfilled(value) and section not in found:
+            found.append(section)
+    return found
 
 
 def _starts(headings: list[str], *prefixes: str) -> bool:
@@ -1316,7 +1386,10 @@ def check_personas(root: Path) -> list[dict]:
     persona (primary/secondary/supplemental) wants Who They Are, End Goals, Experience Goals,
     Behaviours & Context, Frustrations, Scenario; a **Negative** persona swaps Experience Goals
     for a Why-not (and keeps a Scenario/how-to-handle); Customer/Served make Experience + Scenario
-    optional. When the flat glob inspects nothing but
+    optional. The title and each section still holding an unfilled `{{...}}` template slot also
+    warn (`persona-section`), naming the section, so a copy of the template is never a clean
+    pass, and a Cast role cell that is still a slot declares no role. When the flat glob
+    inspects nothing but
     persona-shaped files sit nested in subdirs, emit a `persona-layout` advisory rather than a
     clean pass on an empty inspection (LL0008). The same rationale covers the legacy flat
     layout: a project whose only personas live in `sdlc-studio/personas.md` (the file the
@@ -1365,10 +1438,19 @@ def check_personas(root: Path) -> list[dict]:
             if not ok:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
+        for name in _persona_unfilled_sections(text):
+            where = f'section "{name}"' if name else "the title"
+            out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
+                        "message": f"{where} still holds an unfilled template placeholder "
+                                   "({{...}}) - a persona is well-formed when every section "
+                                   "is filled"})
         out.extend(_persona_goal_findings(p, text))
         if role == "primary":
             im = re.search(r"\|\s*\*\*Interface\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
-            primaries.append((p, im.group(1).strip().casefold() if im else None))
+            # an Interface cell still holding the template's slot declares no Interface, as a
+            # Cast role cell holding one declares no role
+            primaries.append((p, im.group(1).strip().casefold()
+                              if im and not _unfilled(im.group(1)) else None))
 
     # Cooper: exactly one Primary per interface - two Primaries means two interfaces.
     # A multi-Primary cast is a warning (the project may genuinely have two interfaces);
@@ -1946,11 +2028,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "longer selects anything (US0669). OFF by default: resolution costs a "
                         "`pytest --collect-only` per distinct test file, which the per-commit "
                         "gate cannot afford. The scheduled corpus lane passes it")
-    c.add_argument("--emit-baseline", action="store_true", dest="emit_baseline",
-                   help="Print the baseline record for the findings that support one (one id "
-                        "per line, ready to redirect into sdlc-studio/.criteria-baseline.txt) "
-                        "instead of a verdict. The record is captured from the checker's own "
-                        "output, never hand-written")
+    c.add_argument("--emit-baseline", nargs="?", const="criteria", default=None,
+                   choices=sorted(_BASELINES), dest="emit_baseline", metavar="RECORD",
+                   help="Print one baseline record instead of a verdict: `criteria` (the "
+                        "default; one id per line, ready to redirect into "
+                        "sdlc-studio/.criteria-baseline.txt) or `placeholder` (one ID:{{token}} "
+                        "per line, ready to redirect into sdlc-studio/.placeholder-baseline.txt). "
+                        "Each record is captured from the checker's own output, never "
+                        "hand-written")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_check)
 

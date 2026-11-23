@@ -124,14 +124,24 @@ def personas_present(repo_root: Path | str) -> bool:
     (`personas/index.md`) naming at least one, a persona card under `personas/`, or the legacy
     flat `personas.md`. A seeded registry with no entries declares nobody - that is the honest
     "no personas yet". Reading `personas.md` alone sent every project whose registry init's
-    guided flow seeds back to the persona rung for ever."""
+    guided flow seeds back to the persona rung for ever. A card whose `# ` title is still the
+    template's `{{...}}` slot names nobody either, so a copy of the template is not a persona;
+    validate reads the slot (`persona_card_names_nobody`), so the two cannot disagree on it."""
     base = Path(repo_root) / "sdlc-studio"
     if (base / "personas.md").exists():
         return True
     pdir = base / "personas"
-    if pdir.is_dir() and any(p.name not in PERSONA_INDEX_NAMES for p in pdir.glob("*.md")):
+    if pdir.is_dir() and any(p.name not in PERSONA_INDEX_NAMES and _names_a_persona(p)
+                             for p in pdir.glob("*.md")):
         return True
     return bool(sdlc_md.persona_registry(repo_root).entries)
+
+
+def _names_a_persona(card: Path) -> bool:
+    """False only for a card whose title is still an unfilled template slot. An unreadable or
+    non-UTF-8 card reads as empty and so still counts, as every card did before."""
+    import validate  # noqa: PLC0415 - deferred: only a project with cards pays for the import
+    return not validate.persona_card_names_nobody(sdlc_md.read_text_safe(card))
 
 
 BACKLOG_TYPES: tuple[str, ...] = ("cr", "story", "epic", "bug", "rfc", "issue")
