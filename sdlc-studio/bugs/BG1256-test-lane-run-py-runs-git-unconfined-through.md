@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, changelog.d/BG1256.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, changelog.d/BG1256.md, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py
 > **Evidence:** run seven (RUN-01M6RAP7) BG1255 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Pass `gitutil.git_env()` to both calls (the fake script's environment included),
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + test_command_audit.py, test_lane_timeout_index_lock.py, test_sprint_drive.py: the widened sweep finds generated-script git calls there with no confined environment; each gets env= (TA builder BLOCKED) |

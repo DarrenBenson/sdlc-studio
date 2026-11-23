@@ -1,0 +1,43 @@
+{
+  "unit": "BG1581",
+  "digest": "033e952748eb4c7d at a808c4d4343e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aed0d63eaf14d2a10/BG1581-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "refusal lane-log assertion inverted",
+      "file": "tools/tests/test_message_first_gate.py",
+      "old": "self.assertEqual(self._ran(), [],\n                         \"an expensive lane",
+      "new": "self.assertNotEqual(self._ran(), [],\n                         \"an expensive lane",
+      "test": "tools/tests/test_message_first_gate.py::MessageBeforeSuitesTests::test_a_refused_message_never_reaches_the_unit_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "accepted control drops a lane",
+      "file": "tools/tests/test_message_first_gate.py",
+      "old": "sorted(self._ran()), [\"skill-tests\", \"tool-tests\"],\n                         f\"the accepted",
+      "new": "sorted(self._ran()), [\"skill-tests\"],\n                         f\"the accepted",
+      "test": "tools/tests/test_message_first_gate.py::MessageBeforeSuitesTests::test_a_refused_message_never_reaches_the_unit_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spike never slept",
+      "file": "tools/tests/test_message_first_gate.py",
+      "old": "            time.sleep(spike)\n",
+      "new": "            pass\n",
+      "test": "tools/tests/test_message_first_gate.py::SpikedRefusalTests::test_a_refused_message_never_reaches_the_unit_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spike repeats on every commit",
+      "file": "tools/tests/test_message_first_gate.py",
+      "old": "spike, self.SPIKE_SECONDS = self.SPIKE_SECONDS, 0",
+      "new": "spike = self.SPIKE_SECONDS",
+      "test": "tools/tests/test_message_first_gate.py::SpikedRefusalTests::test_a_refused_message_never_reaches_the_unit_suites",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

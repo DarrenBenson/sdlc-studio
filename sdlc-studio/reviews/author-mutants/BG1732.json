@@ -1,0 +1,25 @@
+{
+  "unit": "BG1732",
+  "digest": "f08b57a9b3086738 at a808c4d4343e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aed0d63eaf14d2a10/BG1732-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "stub registry gains an extra Primary",
+      "file": "tools/tests/test_persona_coherence.py",
+      "old": "\"- [Quimby Vantablack](quimby.md) - stub\\n\\n\"",
+      "new": "\"- [Quimby Vantablack](quimby.md) - stub\\n- [Zed Extra](z.md) - stub\\n\\n\"",
+      "test": "tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_expected_names_are_derived_from_the_registry_not_hardcoded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stub moved back into the repository personas folder",
+      "file": "tools/tests/test_persona_coherence.py",
+      "old": "tmp = Path(scratch) / \"stub-registry.md\"",
+      "new": "tmp = REPO / \"sdlc-studio\" / \"personas\" / \".stub-registry.md\"",
+      "test": "tools/tests/test_persona_coherence.py::PrdTargetUsersTests::test_expected_names_are_derived_from_the_registry_not_hardcoded",
+      "result": "survived",
+      "answer": "The pytest node cannot see where the stub lives, since the parser reads either path alike. The criterion pins it with the Verify grep, which fails on this mutant (the in-repo path reappears), and AC2 is the parallel-session proof. Not equivalent, pinned by AC1's grep."
+    }
+  ]
+}

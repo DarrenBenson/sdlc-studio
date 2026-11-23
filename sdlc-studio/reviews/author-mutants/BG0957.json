@@ -1,0 +1,70 @@
+{
+  "unit": "BG0957",
+  "digest": "743821fe2282835e at a808c4d4343e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aed0d63eaf14d2a10/BG0957-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "emptied branch taken always",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "    if live:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "survived",
+      "answer": "Truly equivalent on the fixture: its live index holds no row, so `live` is empty and the else branch runs either way. On a live index with rows the mutant would take the archive path over the union, which includes the live rows, and still reports exactly the one blanked row, so it changes the route and not the verdict."
+    },
+    {
+      "mutant": "live branch taken always",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "    if live:\n",
+      "new": "    if True:\n",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archived row not written blanked",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "lines.insert(sep + 1, blanked(victim))",
+      "new": "lines.insert(sep + 1, victim)",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archived row inserted above the table",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "lines.insert(sep + 1, blanked(victim))",
+      "new": "lines.insert(0, blanked(victim))",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder written to the wrong cell",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "cells[3] = sdlc_md.CELL_NOT_STATED",
+      "new": "cells[4] = sdlc_md.CELL_NOT_STATED",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archive rows not read",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "victim = next(ln for ln in _index_rows(copy, \"epic\") if usable(ln))",
+      "new": "victim = next(ln for ln in _index_rows_live(copy) if usable(ln))",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "usable drops the digit guard",
+      "file": "tools/tests/test_epic_index_derived.py",
+      "old": "reconcile._split_row_cells(line)[3].isdigit()",
+      "new": "True",
+      "test": "tools/tests/test_epic_index_derived.py::EpicIndexNegativeControlTests::test_an_emptied_live_index_still_has_a_target",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
