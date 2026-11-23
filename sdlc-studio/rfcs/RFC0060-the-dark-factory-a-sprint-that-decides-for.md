@@ -1,6 +1,6 @@
 # RFC-0060: the dark factory: a sprint that decides for itself, and a goal that decides whether it worked
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0258, EP0259, CR0593, CR0604
 > **Created:** 2026-09-21
 > **Created-by:** sdlc-studio new

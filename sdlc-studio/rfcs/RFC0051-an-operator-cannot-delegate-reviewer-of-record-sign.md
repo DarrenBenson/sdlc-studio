@@ -1,6 +1,6 @@
 # RFC-0051: An operator cannot delegate reviewer-of-record sign-off to an agent: the trust boundary the guard requires cannot exist inside the authoring session
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0159
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/reference-review.md
 > **Date:** 2026-07-22

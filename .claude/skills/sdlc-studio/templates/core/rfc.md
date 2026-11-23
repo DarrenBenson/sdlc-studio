@@ -1,7 +1,7 @@
 <!--
 Template: Request For Comments (design exploration)
 File: sdlc-studio/rfcs/RFC{NNNN}-{slug}.md
-Status values: See reference-outputs.md (Draft / In Review / Accepted / Superseded / Withdrawn)
+Status values: See reference-outputs.md (Draft / In Review / Accepted / Delivered / Superseded / Withdrawn)
 Related: help/rfc.md, reference-rfc.md
 Use an RFC (not a CR) when the design space is UNSETTLED – multiple viable options,
 open decisions, or cross-cutting/cross-repo impact that must be agreed before any

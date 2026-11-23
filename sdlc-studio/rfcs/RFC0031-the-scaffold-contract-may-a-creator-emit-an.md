@@ -1,6 +1,7 @@
 # RFC-0031: The scaffold contract: may a creator emit an artefact that cannot pass validation?
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Date:** 2026-07-13
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Darren; human; v1

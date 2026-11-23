@@ -1,6 +1,6 @@
 # RFC-0066: What a gate must do when the project config exists but cannot be read because PyYAML is absent
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Forced-override:** 2026-11-17: --force waived 1 gate(s) on Accepted - RFC0066 cannot be Accepted: its status is DERIVED from its children, and 1 is/are not yet resolved: CR0731 (Proposed). Finish or close them first
 > **Decomposed-into:** CR0731
 > **Evidence:** audit AUDIT-2026-11-17, project profile, prd lens, survived 2 of 3 refute votes; observed at sdlc-studio/prd.md Section 1 Tech Stack (lines 141-144) against Mission 'Gates over goodwill' (lines 78-81) and Section 4 Business Logic Rules (lines 481-483)

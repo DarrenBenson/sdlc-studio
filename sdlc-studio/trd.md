@@ -498,7 +498,7 @@ vocabulary token by longest-prefix match.
 | plan | Draft, In Progress, Complete, Superseded |
 | bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded |
 | cr | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded, Blocked |
-| rfc | Draft, In Review, Accepted, Superseded, Withdrawn |
+| rfc | Draft, In Review, Accepted, Delivered, Superseded, Withdrawn |
 | issue | Open, Triaging, Triaged, Resolved, Closed, Won't Fix, Superseded |
 | test-spec | Draft, Ready, In Progress, Complete, Superseded |
 | workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded |

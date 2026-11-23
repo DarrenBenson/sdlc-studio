@@ -53,7 +53,7 @@ Draft a new RFC from `templates/core/rfc.md` into `sdlc-studio/rfcs/RFC{NNNN}-{s
 
 ### list
 
-List RFCs; filter `--status {draft|in-review|accepted|superseded|withdrawn}`, `--priority P1`, `--author`.
+List RFCs; filter `--status {draft|in-review|accepted|delivered|superseded|withdrawn}`, `--priority P1`, `--author`.
 
 ### review
 
@@ -65,7 +65,9 @@ The multi-RFC **decision session**: `scripts/rfc.py decide` digests each Draft/I
 
 ### accept
 
-Promote an RFC whose Open Decisions are resolved: fill the **Decision** section (chosen option + rationale), set status **Accepted**, and **spawn the workstream CRs** (one per WS row) cross-linked back to the RFC. Cross-repo RFCs spawn CRs in each repo – confirm next free numbers against `origin/main` first (see `reference-cr.md`).
+Promote an RFC whose Open Decisions are resolved: fill the **Decision** section (chosen option + rationale), **spawn the workstream CRs** (one per WS row) cross-linked back to the RFC, and set status **Accepted**. Cross-repo RFCs spawn CRs in each repo – confirm next free numbers against `origin/main` first (see `reference-cr.md`).
+
+**Accepted is terminal.** An RFC holds **Accepted** between decision and delivery: decided and settled, no open work of its own, and the living design home its CRs reference. **Delivered** is the successful terminal and follows once every spawned request is resolved: under `two_backlog.enforce`, `transition.py set --status Delivered` is refused while one is still open, and `reconcile apply` derives it once none is. A decision-only RFC stays Accepted with `> **Decomposed-into:** none - <reason>`.
 
 ### close
 
@@ -75,6 +77,7 @@ Set **Superseded** (point to the replacing RFC) or **Withdrawn** (record why). U
 
 ```text
 Draft → In Review → Accepted ──(spawns)──▶ CRs → Epics → Stories → … → ADR (decision recorded)
+            │           └──▶ Delivered    (derived: every spawned request resolved)
             │
             ├──▶ Superseded   (replaced by a later RFC)
             └──▶ Withdrawn    (not pursued)

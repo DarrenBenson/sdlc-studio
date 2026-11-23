@@ -1,6 +1,7 @@
 # RFC-0020: Maximise persona use - persona-shaped delegation across the SDLC lifecycle
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Date:** 2026-06-25
 > **Created-by:** sdlc-studio file
 

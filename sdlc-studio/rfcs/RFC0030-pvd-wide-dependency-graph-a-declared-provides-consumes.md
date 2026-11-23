@@ -1,6 +1,7 @@
 # RFC-0030: PVD-wide dependency graph: a declared provides/consumes contract, not inferred imports
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Date:** 2026-07-13
 > **Created-by:** sdlc-studio file
 

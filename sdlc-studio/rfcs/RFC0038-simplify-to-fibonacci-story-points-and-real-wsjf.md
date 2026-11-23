@@ -1,6 +1,7 @@
 # RFC-0038: Simplify to Fibonacci story points and real WSJF, and test it by blind re-estimation of past sprints
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/route.py, .claude/skills/sdlc-studio/templates/core/bug.md
 > **Date:** 2026-07-14
 > **Created-by:** sdlc-studio file

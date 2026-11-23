@@ -273,18 +273,22 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
             f"an established project status can be declared in sdlc-studio/.config.yaml "
             f"under status_vocab.{type_} - see reference-config.md")
 
-    # An RFC that reached Accepted with a decision still Open. The transition gate refuses
-    # this going forward, but a gate on the change alone leaves every file that predates it
-    # untouched while still reporting the workspace clean - which is how six RFCs came to be
-    # Accepted, decomposed and delivered carrying only the boilerplate Open row. Reuses
-    # transition's reader so the two cannot drift into disagreeing about what Open means.
-    if type_ == "rfc" and status is not None and status.strip().lower().startswith("accepted"):
+    # An RFC at a decided status (Accepted, or Delivered after it) with a decision still Open.
+    # The transition gate refuses this going forward, but a gate on the change alone leaves
+    # every file that predates it untouched while still reporting the workspace clean - which is
+    # how six RFCs came to be Accepted, decomposed and delivered carrying only the boilerplate
+    # Open row. Reuses transition's reader and its decided statuses, so the two cannot drift
+    # into disagreeing about what Open means or which statuses claim a decision.
+    decided = (sdlc_md.canonical_status(status, sdlc_md.status_vocab(type_, repo_root))
+               if type_ == "rfc" and status is not None else None)
+    if decided:
         import transition  # noqa: PLC0415 - local: keep transition off validate's cold paths
-        still_open = transition._rfc_open_decisions(text)
+        still_open = (transition._rfc_open_decisions(text)
+                      if decided in transition._RFC_DECIDED else [])
         if still_open:
             recorded = transition._rfc_override_reason(text)
             add("warning" if recorded else "error", "accepted-open-decision",
-                f"RFC is Accepted but {len(still_open)} decision row(s) are still Open "
+                f"RFC is {decided} but {len(still_open)} decision row(s) are still Open "
                 f"({', '.join(still_open)}) - close each with what actually shipped"
                 + (f"; override recorded: {recorded}" if recorded else ""))
 

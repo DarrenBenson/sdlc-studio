@@ -1,6 +1,6 @@
 # RFC-0003: Promote reconcile's mechanical apply into the script; current Phase-3 apply is prose and the documented idempotency guarantee is false
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** High
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20

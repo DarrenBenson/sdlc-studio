@@ -146,7 +146,7 @@ into the index and any parent epic; a status is never edited into a file by hand
 | plan | Draft, In Progress, Complete, Superseded | Complete, Superseded |
 | bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded | Fixed, Verified, Closed, Won't Fix, Superseded |
 | cr | Proposed, Approved, In Progress, Complete, Rejected, Deferred, Superseded, Blocked | Complete, Rejected, Superseded |
-| rfc | Draft, In Review, Accepted, Superseded, Withdrawn | Accepted, Superseded, Withdrawn |
+| rfc | Draft, In Review, Accepted, Delivered, Superseded, Withdrawn | Accepted, Delivered, Superseded, Withdrawn |
 | issue | Open, Triaging, Triaged, Resolved, Closed, Won't Fix, Superseded | Resolved, Closed, Won't Fix, Superseded |
 | test-spec | Draft, Ready, In Progress, Complete, Superseded | Complete, Superseded |
 | workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded | Done, Superseded |

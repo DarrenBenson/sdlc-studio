@@ -1,6 +1,6 @@
 # RFC-0055: Guided init: one orchestrated onboarding flow (greenfield + brownfield) from zero to first sprint plan - AGENTS.md, PRD, TRD, TSD, personas, best practice baked in
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0163
 > **Created:** 2026-07-26
 > **Created-by:** sdlc-studio new

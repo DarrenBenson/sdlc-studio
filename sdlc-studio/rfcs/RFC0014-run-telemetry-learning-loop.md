@@ -1,6 +1,7 @@
 # RFC-0014: run telemetry + a learning loop
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** Medium
 > **Author:** Darren Benson (from the v2.2 usage retrospective)
 > **Date:** 2026-06-21

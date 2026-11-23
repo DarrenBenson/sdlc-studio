@@ -2075,7 +2075,10 @@ def undecomposed_drift(repo_root: Path | str) -> list[dict]:
 
 
 def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list[dict]:
-    """A discovery item whose children have ALL resolved but which is not itself terminal.
+    """A discovery item whose children have ALL resolved but which has not reached its
+    successful terminal: open, or settled at a status that comes before it (an Accepted RFC,
+    decided, whose Delivered follows from its requests finishing). A Withdrawn, Superseded or
+    Rejected item is closed by a ruling and never derives a delivery.
 
     The two-backlog workflow says a request reaches its successful terminal by DERIVATION, never
     by assertion. `transition._request_terminal_gate` implemented the guard half - it refuses a
@@ -2089,19 +2092,30 @@ def derivable_request_drift(repo_root: Path | str, explain: bool = True) -> list
     construction: what apply then asserts is precisely what the gate would already have allowed.
 
     Import is lazy because `transition` imports this module at load time.
+
+    The sweep reads the corpus once: the gate asks `children_of` for every request it weighs,
+    and with no cache open (as `apply` and a sprint close call this) each ask walks every
+    artefact. The sweep writes nothing, so the cache cannot serve it a stale file.
     """
+    with sdlc_md.corpus_cache():
+        return _derivable_request_drift(Path(repo_root), explain)
+
+
+def _derivable_request_drift(root: Path, explain: bool) -> list[dict]:
+    """`derivable_request_drift`'s sweep, run inside the corpus cache it opens."""
     import transition  # noqa: PLC0415 - lazy: transition imports reconcile at module level
-    root = Path(repo_root)
     drift: list[dict] = []
     for type_ in sdlc_md.DISCOVERY_TYPES:
         target = sdlc_md.default_terminal_status(type_)
         if not target:
             continue
         vocab = sdlc_md.status_vocab(type_, root)   # loop-invariant: one lookup per type
+        settled = sdlc_md.settled_before_success(type_)
         for p in sdlc_md.artifact_files(type_, root):
             text = sdlc_md.read_text_safe(p)
             status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
-            if not status or sdlc_md.is_terminal_status(type_, status):
+            if not status or (sdlc_md.is_terminal_status(type_, status)
+                              and status not in settled):
                 continue
             rid = sdlc_md.extract_record_id(p.stem) or p.stem
             if transition._request_terminal_gate(root, type_, rid, target) is not None:

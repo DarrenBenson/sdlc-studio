@@ -1,6 +1,6 @@
 # RFC-0002: Adversarial Audit (`/sdlc-studio audit`) as a first-class capability
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20

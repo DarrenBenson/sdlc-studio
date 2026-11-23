@@ -1,6 +1,6 @@
 # RFC-0041: A migrate command that reviews every artefact and upgrades where necessary
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0042
 > **Size:** L
 > **Date:** 2026-07-15

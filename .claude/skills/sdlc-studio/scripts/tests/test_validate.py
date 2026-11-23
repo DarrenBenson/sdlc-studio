@@ -2146,8 +2146,43 @@ class AcceptedRfcOpenDecisionTests(unittest.TestCase):
             self.assertTrue(hits)
             self.assertEqual(hits[0]["severity"], "warning")
 
+    def test_a_delivered_rfc_with_an_open_decision_is_a_violation(self) -> None:
+        """Delivered follows Accepted, so it claims the decisions are made just as Accepted
+        does: a file at Delivered with an Open row is the same defect, named by its own status.
+        A decorated Accepted still counts as Accepted, and a Withdrawn RFC (no decision claimed)
+        does not."""
+        cases = (("Delivered", "error", "Delivered"),
+                 ("Accepted (partially superseded)", "error", "Accepted"),
+                 ("Withdrawn", None, None))
+        for status, severity, named in cases:
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                p = _write(Path(d), "sdlc-studio/rfcs/RFC0001-r.md",
+                           _rfc(status, "| D1 | act or not | Open |\n"))
+                hits = [v for v in validate.validate_file(p, "rfc")
+                        if v["rule"] == "accepted-open-decision"]
+                if severity is None:
+                    self.assertEqual(hits, [])
+                    continue
+                self.assertEqual(len(hits), 1, hits)
+                self.assertEqual(hits[0]["severity"], severity)
+                self.assertIn(f"RFC is {named} but 1 decision row(s)", hits[0]["message"])
+                self.assertIn("D1", hits[0]["message"])
 
-_BAD_STATUS_STORY = ("# Bad\n\n> **Status:** Bananas\n\n## Acceptance Criteria\n\n### AC1: x\n"
+    def test_another_type_at_a_status_named_accepted_is_not_read_as_an_rfc(self) -> None:
+        """A project may declare Accepted for another type; the decision table check is an
+        RFC's, so a change request at that status is not held to it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "sdlc-studio/.config.yaml", "status_vocab:\n  cr:\n    - Accepted\n")
+            p = _write(root, "sdlc-studio/change-requests/CR0001-c.md",
+                       _rfc("Accepted", "| D1 | act or not | Open |\n").replace("RFC0001",
+                                                                                 "CR0001"))
+            out = validate.validate_file(p, "cr", repo_root=root)
+            self.assertFalse([v for v in out if v["rule"] == "status-vocab"], out)
+            self.assertEqual([v for v in out if v["rule"] == "accepted-open-decision"], [])
+
+
+_BAD_STATUS_STORY =("# Bad\n\n> **Status:** Bananas\n\n## Acceptance Criteria\n\n### AC1: x\n"
                      "- **Verify:** file a.py\n")
 
 

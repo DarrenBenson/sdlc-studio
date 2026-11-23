@@ -1,6 +1,7 @@
 # RFC-0018: self-check candidates vocabulary-consistency verb-taxonomy and telemetry surfacing
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-06-22
 > **Created-by:** sdlc-studio new
 

@@ -1,6 +1,6 @@
 # RFC-0053: A repair should be planned and the PLAN adversarially reviewed, because the repair is the only step in the loop with no review before execution
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** CR0402, EP0106
 > **Affects:** .claude/skills/sdlc-studio/scripts/plan_review.py,.claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/reference-review.md,.claude/skills/sdlc-studio/reference-sprint.md
 > **Date:** 2026-07-22

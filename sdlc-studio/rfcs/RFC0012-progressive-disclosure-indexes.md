@@ -1,6 +1,6 @@
 # RFC-0012: Progressive-disclosure indexes with release archival
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20

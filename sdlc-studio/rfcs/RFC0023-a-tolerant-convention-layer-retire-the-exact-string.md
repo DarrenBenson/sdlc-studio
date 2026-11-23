@@ -1,6 +1,7 @@
 # RFC-0023: a tolerant convention layer - retire the exact-string classification gates as a class
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-07-04
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

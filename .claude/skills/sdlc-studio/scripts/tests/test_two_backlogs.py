@@ -513,22 +513,22 @@ class DerivedStatusTests(unittest.TestCase):
             res = transition.transition(root, "CR0303", "Complete", dry_run=True, force=True)
             self.assertEqual(res["to"], "Complete")
 
-    def test_rfc_accepted_requires_child_crs_complete(self) -> None:
+    def test_rfc_delivered_requires_child_crs_complete(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _write(root / "sdlc-studio" / "rfcs" / "RFC0300-x.md",
-                   "# RFC0300: X\n\n> **Status:** In Review\n> **Decomposed-into:** CR0310\n")
-            # child CR still open -> RFC cannot be Accepted
+                   "# RFC0300: X\n\n> **Status:** Accepted\n> **Decomposed-into:** CR0310\n")
+            # child CR still open -> RFC cannot be Delivered
             self._cr(root, "CR0310", "Approved", decomposed="")
             _write(root / "sdlc-studio" / "change-requests" / "CR0310-x.md",
                    "# CR-0310: X\n\n> **Status:** Approved\n> **Size:** M\n> **Parent:** RFC0300\n")
             with self.assertRaises(ValueError):
-                transition.transition(root, "RFC0300", "Accepted", dry_run=True)
-            # complete the child CR -> RFC may be Accepted
+                transition.transition(root, "RFC0300", "Delivered", dry_run=True)
+            # complete the child CR -> RFC may be Delivered
             _write(root / "sdlc-studio" / "change-requests" / "CR0310-x.md",
                    "# CR-0310: X\n\n> **Status:** Complete\n> **Size:** M\n> **Parent:** RFC0300\n")
-            res = transition.transition(root, "RFC0300", "Accepted", dry_run=True)
-            self.assertEqual(res["to"], "Accepted")
+            res = transition.transition(root, "RFC0300", "Delivered", dry_run=True)
+            self.assertEqual(res["to"], "Delivered")
 
 
 class CreatorAgreementTests(unittest.TestCase):

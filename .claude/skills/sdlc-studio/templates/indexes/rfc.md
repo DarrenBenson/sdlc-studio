@@ -16,6 +16,7 @@ Related: help/rfc.md, reference-rfc.md
 | Draft | {{draft_count}} |
 | In Review | {{in_review_count}} |
 | Accepted | {{accepted_count}} |
+| Delivered | {{delivered_count}} |
 | Superseded | {{superseded_count}} |
 | Withdrawn | {{withdrawn_count}} |
 | **Total** | **{{total_count}}** |
@@ -29,7 +30,7 @@ Related: help/rfc.md, reference-rfc.md
 ## Notes
 
 - An RFC explores an **unsettled** design space (multiple options, open decisions) BEFORE a CR commits a change. Use a CR directly when the change is already clear.
-- Lifecycle: **Draft → In Review → Accepted** (then spawns CRs). Terminal: **Superseded / Withdrawn**.
-- An **Accepted** RFC is not "done" – it stays the living design home its CRs reference.
+- Lifecycle: **Draft → In Review → Accepted** (then spawns CRs) **→ Delivered** (derived once every spawned request is resolved). Terminal (settled): **Accepted / Delivered / Superseded / Withdrawn**.
+- An **Accepted** RFC is decided and settled, and stays the living design home its CRs reference; the work still owed lives in those CRs. A decision-only RFC stays Accepted with `Decomposed-into: none - <reason>`.
 - RFCs are numbered globally (RFC-0001, RFC-0002, …). Cross-repo: confirm the next free number against `origin/main` before filing.
 - Promote with `/sdlc-studio rfc accept --rfc RFC-NNNN` (records the decision + spawns/links the workstream CRs).

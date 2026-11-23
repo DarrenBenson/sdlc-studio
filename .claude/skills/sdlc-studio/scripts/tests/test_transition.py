@@ -4406,6 +4406,200 @@ class ArchivedRowSyncTests(unittest.TestCase):
                               or x["kind"] == "count-mismatch"], [], drift)
 
 
+_SKILL = DIR.parent
+
+
+def _page(rel: str) -> str:
+    return (_SKILL / rel).read_text(encoding="utf-8")
+
+
+def _accept_steps(page: str) -> list[str]:
+    """reference-rfc.md's `## accept` numbered steps, in the order written, one string each."""
+    section = page.split("\n## accept\n", 1)[1].split("\n## ", 1)[0]
+    steps: list[str] = []
+    for line in section.splitlines():
+        if re.match(r"^\d+\. ", line):
+            steps.append(line)
+        elif steps and line.startswith("   ") and line.strip():
+            steps[-1] += " " + line.strip()
+    return steps
+
+
+def _between_status(page: str) -> str | None:
+    """The status a page names for an RFC between decision and delivery."""
+    m = re.search(r"holds \*\*([\w ]+)\*\* between decision and delivery", page)
+    return m.group(1) if m else None
+
+
+def _successful_terminal(page: str) -> str | None:
+    """The status a page names as the RFC's successful terminal."""
+    m = re.search(r"\*\*([\w ]+)\*\* is the successful terminal", page)
+    return m.group(1) if m else None
+
+
+def _calls_accepted_terminal(page: str) -> bool | None:
+    """True or False when a page says whether Accepted is terminal; None when it says neither
+    or both, which is no answer at all."""
+    says = "**Accepted is terminal.**" in page
+    denies = "**Accepted is not terminal.**" in page
+    return None if says == denies else says
+
+
+def _decided_rfc_repo(root: Path, status: str = "In Review",
+                      rows: str = "| D1 | Which store | Resolved: the file store |\n") -> Path:
+    """An RFC whose decisions are resolved, in a project that enforces the two-backlog workflow,
+    so a request's successful terminal is derived from its children as the shipped gate does."""
+    _rfc_repo(root, status=status, rows=rows)
+    (root / "sdlc-studio" / ".config.yaml").write_text("two_backlog:\n  enforce: true\n",
+                                                       encoding="utf-8")
+    return root
+
+
+def _spawn_cr(root: Path, status: str = "Proposed") -> Path:
+    """A workstream CR minted as the accept step says: it names the RFC in its header."""
+    cd = root / "sdlc-studio" / "change-requests"
+    cd.mkdir(parents=True, exist_ok=True)
+    path = cd / "CR0001-ws.md"
+    path.write_text(f"# CR0001: ws\n\n> **Status:** {status}\n> **RFC:** RFC-0001\n\n"
+                    "## Summary\n\nx\n", encoding="utf-8")
+    return path
+
+
+class RfcAcceptWorkflowTests(unittest.TestCase):
+    """The accept steps reference-rfc.md documents go through `transition.py set` as written.
+    Accepted is the decided, settled status an RFC enters once its decisions are resolved, and
+    Delivered, the successful terminal, follows when the requests it spawned have finished: the
+    gate derived from the children stands there, not at Accepted."""
+
+    def _status(self, root: Path) -> str:
+        return sdlc_md.extract_field(_read(root, "rfcs", "RFC0001-r.md"), "Status")
+
+    def test_the_documented_accept_steps_pass_without_force(self) -> None:
+        page = _page("reference-rfc.md")
+        steps = _accept_steps(page)
+        spawn = [i for i, s in enumerate(steps) if "Spawn the workstream CRs" in s]
+        sets = [(i, m.group(1)) for i, s in enumerate(steps)
+                if (m := re.search(r"Set RFC status \*\*([\w ]+)\*\*", s))]
+        self.assertEqual(len(spawn), 1, steps)
+        self.assertEqual(len(sets), 1, steps)
+        self.assertLess(spawn[0], sets[0][0], "the page no longer spawns before it sets")
+        named = sets[0][1]
+        self.assertEqual(named, _between_status(page),
+                         "the step sets a status the page does not name for a decided RFC")
+        with tempfile.TemporaryDirectory() as d:
+            root = _decided_rfc_repo(Path(d))
+            for i, _step in enumerate(steps):
+                if i == spawn[0]:
+                    _spawn_cr(root)
+                if i == sets[0][0]:
+                    code, out = _cli(root, "set", "--id", "RFC0001", "--status", named)
+                    self.assertEqual(code, 0, f"the documented step was refused: {out}")
+                    self.assertNotIn("forced", out.lower())
+            self.assertEqual(self._status(root), named)
+            self.assertEqual(sdlc_md.extract_field(
+                _read(root, "change-requests", "CR0001-ws.md"), "Status"), "Proposed")
+
+    def test_the_delivery_claim_is_still_refused_over_an_unresolved_cr(self) -> None:
+        delivered = _successful_terminal(_page("reference-rfc.md"))
+        self.assertEqual(delivered, sdlc_md.default_terminal_status("rfc"))
+        with tempfile.TemporaryDirectory() as d:
+            root = _decided_rfc_repo(Path(d), status="Accepted")
+            cr = _spawn_cr(root)
+            code, out = _cli(root, "set", "--id", "RFC0001", "--status", delivered)
+            self.assertNotEqual(code, 0, f"delivered over an open CR: {out}")
+            self.assertIn("CR0001 (Proposed)", out)
+            self.assertIn("DERIVED", out)
+            self.assertEqual(self._status(root), "Accepted")
+            cr.write_text(cr.read_text(encoding="utf-8").replace("Status:** Proposed",
+                                                                 "Status:** Complete"),
+                          encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "RFC0001", "--status", delivered)
+            self.assertEqual(code, 0, f"a resolved CR still refused the delivery claim: {out}")
+            self.assertEqual(self._status(root), delivered)
+
+    def test_the_pages_and_the_tool_agree_on_what_accepted_means(self) -> None:
+        vocab = sdlc_md.STATUS_VOCAB["rfc"]
+        terminal = sdlc_md.terminal_statuses("rfc")
+        for rel in ("reference-rfc.md", "help/rfc.md", "reference-outputs.md"):
+            with self.subTest(page=rel):
+                page = _page(rel)
+                between = _between_status(page)
+                self.assertIsNotNone(between, f"{rel} names no status between decision and "
+                                              f"delivery")
+                self.assertIn(between, vocab)
+                self.assertNotEqual(between, sdlc_md.default_terminal_status("rfc"))
+                self.assertEqual(_calls_accepted_terminal(page), "Accepted" in terminal,
+                                 f"{rel} and the tool disagree on whether Accepted is terminal")
+                self.assertEqual(_successful_terminal(page),
+                                 sdlc_md.default_terminal_status("rfc"))
+                self.assertIn(_successful_terminal(page), terminal)
+        listed = re.search(r"Statuses: `([^`]+)`", _page("reference-rfc.md")).group(1)
+        self.assertEqual([s.strip() for s in listed.split("/")], vocab)
+        flags = re.search(r"--status \{([^}]+)\}", _page("help/rfc.md")).group(1)
+        self.assertEqual(flags.split("|"), [s.lower().replace(" ", "-") for s in vocab])
+        # The open-decision gate stands at the decided status, and at the delivered one that
+        # follows it; a resolved table passes both.
+        for target in (_between_status(_page("reference-rfc.md")),
+                       sdlc_md.default_terminal_status("rfc")):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as d:
+                root = _decided_rfc_repo(Path(d), rows="| D1 | Which store | Open |\n")
+                _spawn_cr(root, status="Complete")
+                code, out = _cli(root, "set", "--id", "RFC0001", "--status", target)
+                self.assertNotEqual(code, 0, f"{target} over an Open decision: {out}")
+                self.assertIn("D1", out)
+                self.assertEqual(self._status(root), "In Review")
+            with self.subTest(target=target, control="resolved"), \
+                    tempfile.TemporaryDirectory() as d:
+                root = _decided_rfc_repo(Path(d))
+                _spawn_cr(root, status="Complete")
+                code, out = _cli(root, "set", "--id", "RFC0001", "--status", target)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self._status(root), target)
+
+
+class RfcDeliveredStatusTests(unittest.TestCase):
+    """Delivered is the RFC's successful terminal although Accepted, also settled, comes first
+    in its vocabulary; the readers that ask whether a referent was delivered count it."""
+
+    def test_the_successful_terminal_is_named_not_taken_from_vocabulary_order(self) -> None:
+        self.assertEqual(sdlc_md.default_terminal_status("rfc"), "Delivered")
+        self.assertTrue({"Accepted", "Delivered"} <= sdlc_md.terminal_statuses("rfc"))
+        first = next(s for s in sdlc_md.STATUS_VOCAB["rfc"]
+                     if s in sdlc_md.terminal_statuses("rfc"))
+        self.assertEqual(first, "Accepted")
+        # A named status the type does not hold as terminal is ignored, never returned.
+        with unittest.mock.patch.dict(sdlc_md.SUCCESS_TERMINAL, {"rfc": "Draft"}):
+            self.assertEqual(sdlc_md.default_terminal_status("rfc"), "Accepted")
+        with unittest.mock.patch.dict(sdlc_md.SUCCESS_TERMINAL, {"cr": "Superseded"}):
+            self.assertEqual(sdlc_md.default_terminal_status("cr"), "Superseded")
+        self.assertEqual(sdlc_md.default_terminal_status("bug"), "Fixed")
+        self.assertEqual(sdlc_md.default_terminal_status("no-such-type"), "")
+
+    def test_a_delivered_rfc_meets_a_dependency_and_reads_delivered_at_handover(self) -> None:
+        import handoff  # noqa: PLC0415
+        import readiness  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rd = root / "sdlc-studio" / "rfcs"
+            rd.mkdir(parents=True)
+            (rd / "RFC0001-r.md").write_text("# RFC0001: r\n\n> **Status:** Delivered\n",
+                                             encoding="utf-8")
+            unmet, unresolved = readiness._unmet_deps(root, "> **Depends on:** RFC0001\n")
+            self.assertEqual((unmet, unresolved), ([], []))
+            row = handoff._classify(root, "RFC0001", {})
+            self.assertEqual((row["terminal"], row["delivered"], row["dropped"]),
+                             (True, True, False), row)
+
+    def test_a_recorded_override_lets_either_decided_status_through_with_its_warning(self) -> None:
+        for target in ("Accepted", "Delivered"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as d:
+                root = _rfc_repo(Path(d), override="settled at review")
+                res = transition.transition(root, "RFC0001", target, dry_run=True)
+                self.assertEqual(res["to"], target)
+                self.assertIn("decision-override recorded: settled at review",
+                              res["warning"] or "")
+
+
 if __name__ == "__main__":
     unittest.main()
 

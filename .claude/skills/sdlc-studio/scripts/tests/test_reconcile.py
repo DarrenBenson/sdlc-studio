@@ -3395,7 +3395,7 @@ class DerivableRequestDriftTests(unittest.TestCase):
 
     def _resolved_rfc_child(self, root, rid="RFC0001"):
         """The RFC's only child CR, already Complete - so G2 itself is satisfied and the only
-        thing left standing between the RFC and Accepted is the accept gate."""
+        thing left standing between the RFC and Delivered is the accept gate."""
         self._cr(root, status="Complete", children=("US0001",), parent=rid)
         self._story(root, "US0001", "Done")
 
@@ -3429,7 +3429,7 @@ class DerivableRequestDriftTests(unittest.TestCase):
             res = reconcile.apply_derivable_requests(root)
         self.assertEqual(len(res["unapplied"]), 1, res)
         u = res["unapplied"][0]
-        self.assertEqual((u["id"], u["target"]), ("RFC0001", "Accepted"))
+        self.assertEqual((u["id"], u["target"]), ("RFC0001", "Delivered"))
         self.assertIn("Open decision", u["reason"])
 
     def test_a_refused_derivation_drives_a_non_zero_exit(self):
@@ -3532,6 +3532,114 @@ class DerivableRequestDriftTests(unittest.TestCase):
             reconcile.main(["--root", str(root), "apply", "--format", "json"])
         payload = json.loads(buf.getvalue())
         self.assertNotIn("derivable_requests", payload["by_type"])
+
+
+class AcceptedRfcDerivesDeliveredTests(unittest.TestCase):
+    """An Accepted RFC is decided and settled; Delivered follows once the requests it spawned
+    have all finished. Accepted is in the terminal set, so the derivable sweep has to look past
+    it to the successful terminal, and only from a settled status that comes before it: a
+    Withdrawn or Superseded RFC is closed by a ruling and never derives a delivery."""
+
+    def _repo(self):
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        root = Path(d.name)
+        (root / "sdlc-studio").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            "two_backlog:\n  enforce: true\n", encoding="utf-8")
+        return root
+
+    def _rfc(self, root, status="Accepted", into="CR0001"):
+        d = root / "sdlc-studio" / "rfcs"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "RFC0001-r.md").write_text(
+            f"# RFC0001: r\n\n> **Status:** {status}\n> **Decomposed-into:** {into}\n\n"
+            "## Open Decisions\n\n| # | Decision | Status |\n| --- | --- | --- |\n"
+            "| D1 | which store | Resolved: the file store |\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# RFCs\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [RFC0001](RFC0001-r.md) | r | {status} |\n", encoding="utf-8")
+
+    def _cr(self, root, status):
+        d = root / "sdlc-studio" / "change-requests"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "CR0001-c.md").write_text(
+            f"# CR0001: c\n\n> **Status:** {status}\n> **Parent:** RFC0001\n", encoding="utf-8")
+
+    def _status(self, root):
+        return sdlc_md.extract_field(
+            (root / "sdlc-studio" / "rfcs" / "RFC0001-r.md").read_text(encoding="utf-8"),
+            "Status")
+
+    def test_an_accepted_rfc_whose_requests_finished_derives_delivered(self):
+        root = self._repo()
+        self._rfc(root)
+        self._cr(root, "Complete")
+        drift = reconcile.derivable_request_drift(root)
+        self.assertEqual([(d["id"], d["kind"]) for d in drift],
+                         [("RFC0001", "request-derivable")], drift)
+        self.assertIn("sets it Delivered", drift[0]["fix"])
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            res = reconcile.apply_derivable_requests(root)
+        self.assertEqual(res, {"synced": ["RFC0001"], "unapplied": []})
+        self.assertEqual(self._status(root), "Delivered")
+        self.assertEqual(reconcile.derivable_request_drift(root), [])
+
+    def test_an_accepted_rfc_with_an_open_request_stays_accepted(self):
+        root = self._repo()
+        self._rfc(root)
+        self._cr(root, "Proposed")
+        self.assertEqual(reconcile.derivable_request_drift(root), [])
+        self.assertEqual(reconcile.undecomposed_drift(root), [])
+
+    def test_a_decision_only_rfc_is_settled_and_quiet(self):
+        """Accepted with nothing beneath it and its Decomposed-into line reading `none -
+        <reason>`: no undecomposed item, no derivation, and settled in the shared terminal set."""
+        root = self._repo()
+        self._rfc(root, into="none - decided before decomposition was recorded")
+        self.assertEqual(reconcile.undecomposed_drift(root), [])
+        self.assertEqual(reconcile.derivable_request_drift(root), [])
+        self.assertTrue(sdlc_md.is_terminal_status("rfc", "Accepted"))
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            res = reconcile.apply_derivable_requests(root)
+        self.assertEqual(res, {"synced": [], "unapplied": []})
+        self.assertEqual(self._status(root), "Accepted")
+
+    def test_only_a_settled_status_before_the_successful_terminal_derives(self):
+        for status in ("Withdrawn", "Superseded", "Delivered"):
+            with self.subTest(status=status):
+                root = self._repo()
+                self._rfc(root, status=status)
+                self._cr(root, "Complete")
+                self.assertEqual(reconcile.derivable_request_drift(root), [])
+        self.assertEqual(sdlc_md.settled_before_success("rfc"), {"Accepted"})
+        for type_ in sdlc_md.STATUS_VOCAB:
+            if type_ != "rfc":
+                with self.subTest(type_=type_):
+                    self.assertEqual(sdlc_md.settled_before_success(type_), set())
+        self.assertEqual(sdlc_md.settled_before_success("no-such-type"), set())
+
+    def test_the_sweep_weighs_every_request_inside_one_corpus_cache(self):
+        """Every Accepted RFC is weighed now, each a `children_of` walk when no cache is open,
+        so the sweep opens one, and closes it before apply writes anything."""
+        import transition  # noqa: PLC0415 - the module object reconcile imports lazily
+        root = self._repo()
+        self._rfc(root)
+        self._cr(root, "Complete")
+        seen = []
+        real = transition._request_terminal_gate
+
+        def spy(*args, **kwargs):
+            seen.append(sdlc_md.corpus_cache_active())
+            return real(*args, **kwargs)
+
+        self.assertFalse(sdlc_md.corpus_cache_active())
+        with unittest.mock.patch.object(transition, "_request_terminal_gate", spy):
+            drift = reconcile.derivable_request_drift(root, explain=False)
+        self.assertEqual([d["id"] for d in drift], ["RFC0001"])
+        self.assertEqual(seen, [True])
+        self.assertFalse(sdlc_md.corpus_cache_active())
+
 
 class AlreadyDeliveredAdvisoryTests(unittest.TestCase):
     """US0415: `built-not-closed` reads the verification report, so an UNGROOMED skeleton - which

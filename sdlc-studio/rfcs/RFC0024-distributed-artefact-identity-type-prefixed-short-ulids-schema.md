@@ -1,6 +1,7 @@
 # RFC-0024: Distributed artefact identity: type-prefixed short ULIDs (schema v3)
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Priority:** High

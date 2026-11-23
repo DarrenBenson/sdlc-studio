@@ -1,6 +1,6 @@
 # RFC-0025: Evidence and benchmark harness: measure sdlc-studio against plain Claude Code
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Created:** 2026-07-06
 > **Created-by:** sdlc-studio new
 > **Priority:** Medium

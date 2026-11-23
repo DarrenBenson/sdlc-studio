@@ -1,6 +1,7 @@
 # RFC-0016: Persona engine v2 - substrate-tiered review seats (charter / authored identity)
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21

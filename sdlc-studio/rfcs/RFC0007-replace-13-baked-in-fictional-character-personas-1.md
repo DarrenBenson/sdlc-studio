@@ -1,6 +1,6 @@
 # RFC-0007: Replace 13 baked-in fictional-character personas (~1680 lines) with template plus generate-on-demand
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20

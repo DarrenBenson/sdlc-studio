@@ -1,6 +1,6 @@
 # RFC-0008: Consolidate the 5-file test reference clique (~2030 lines, triplicated anti-patterns, two files unreachable from the router)
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20

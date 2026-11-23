@@ -68,8 +68,8 @@ class RFC0009RecordTests(unittest.TestCase):
         """AC1. Five assertions, not one compound: deleting any single element must fail on its
         own line, which a single `all(...)` could not tell you."""
         # 1. the STATUS token, which a reader sees first.
-        self.assertEqual("Accepted (partially superseded)", _field(self.nine, "Status"),
-                         "RFC-0009's status still reads as plainly Accepted")
+        self.assertEqual("Delivered (partially superseded)", _field(self.nine, "Status"),
+                         "RFC-0009's status no longer reads 'Delivered (partially superseded)'")
         # 2. the header declaration on the superseded side.
         declared = _field(self.nine, "Partially superseded by")
         self.assertTrue(declared, "RFC-0009 declares no superseder in its header")

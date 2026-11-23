@@ -1,6 +1,6 @@
 # RFC-0026: Difficulty-aware model-tier routing for delegated workers
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Created:** 2026-07-08
 > **Created-by:** sdlc-studio new
 > **Priority:** High

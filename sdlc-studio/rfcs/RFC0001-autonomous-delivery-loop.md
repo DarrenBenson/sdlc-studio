@@ -1,6 +1,7 @@
 # RFC-0001: Autonomous Delivery Loop for SDLC Studio
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-20

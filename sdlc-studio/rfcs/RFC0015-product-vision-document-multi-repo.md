@@ -1,6 +1,7 @@
 # RFC-0015: Product Vision Document (PVD) - the multi-repo product layer
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21

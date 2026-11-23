@@ -1,6 +1,6 @@
 # RFC-0044: Adversarial reviewer vs reviewer of record: an amigo subagent finds issues, an independent principal signs off
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** CR0318, CR0323
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-workflow-personas.md
 > **Date:** 2026-07-16

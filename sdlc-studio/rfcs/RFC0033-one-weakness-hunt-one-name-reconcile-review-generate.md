@@ -1,6 +1,7 @@
 # RFC-0033: One weakness-hunt, one name: reconcile review generate, the adversarial audit, and the audit collision
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

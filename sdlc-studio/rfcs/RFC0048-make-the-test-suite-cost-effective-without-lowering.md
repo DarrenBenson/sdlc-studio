@@ -1,6 +1,6 @@
 # RFC-0048: Make the test suite cost-effective without lowering the floor: tier it by measured value, and review tests adversarially
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0093, CR0382
 > **Created:** 2026-07-19
 > **Created-by:** sdlc-studio new

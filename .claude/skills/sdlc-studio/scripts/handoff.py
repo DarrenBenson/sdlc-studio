@@ -70,7 +70,8 @@ JUDGEMENT_ISSUES = ("weak-AC", "unmet-deps", "unresolved-deps", "cross-epic-ac",
 # This is deliberately NOT `readiness.MET` - that is a DEPENDENCY-SATISFACTION set (a superseded
 # dependency is satisfied; a superseded unit was not delivered), and borrowing it here
 # printed a success the run never achieved.
-DELIVERED_STATUSES = frozenset({"Done", "Complete", "Fixed", "Verified", "Accepted", "Closed"})
+DELIVERED_STATUSES = frozenset({"Done", "Complete", "Fixed", "Verified", "Accepted", "Delivered",
+                                "Closed"})
 
 
 # --------------------------------------------------------------------------- inputs

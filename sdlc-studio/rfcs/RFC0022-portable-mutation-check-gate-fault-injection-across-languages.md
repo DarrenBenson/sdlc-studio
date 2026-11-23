@@ -1,6 +1,6 @@
 # RFC-0022: Portable mutation-check gate: fault injection across languages without a per-language framework
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Date:** 2026-07-04
 > **Created-by:** sdlc-studio file
 

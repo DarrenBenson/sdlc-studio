@@ -1,6 +1,6 @@
 # RFC-0059: A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0255
 > **Created:** 2026-09-16
 > **Created-by:** sdlc-studio new

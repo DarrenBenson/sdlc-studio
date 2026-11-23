@@ -1,6 +1,7 @@
 # RFC-0013: the deploy last-mile, without ecosystem lock-in
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** High
 > **Author:** Darren Benson (from the v2.2 usage retrospective)
 > **Date:** 2026-06-21

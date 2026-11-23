@@ -8,7 +8,7 @@ CRs** (its workstreams) rather than being actioned into epics itself.
 
 File: `sdlc-studio/rfcs/RFC{NNNN}-{slug}.md` · Index: `sdlc-studio/rfcs/_index.md`
 · Template: `templates/core/rfc.md` · Statuses: `Draft / In Review / Accepted /
-Superseded / Withdrawn` (see `reference-outputs.md`).
+Delivered / Superseded / Withdrawn` (see `reference-outputs.md`).
 
 ## When to use an RFC vs a CR vs an ADR
 
@@ -54,7 +54,8 @@ For each RFC:
   flag "stalled".
 - **Open Decisions** with an Open row > 7 days → flag "needs a decision (owner: X)".
 - **Accepted** → verify each Workstream row has a spawned CR that exists and links
-  back; flag any missing/unlinked.
+  back; flag any missing/unlinked. Once every spawned CR is resolved, `reconcile
+  apply` derives Delivered.
 
 ## decide
 
@@ -82,7 +83,8 @@ several RFCs have accumulated and need triaging together.
 5. **Route** - accept → run `accept` below (a scoped accept spawns only the chosen
    workstreams' CRs); defer → leave Draft, note the trigger in the Revision
    History; withdraw → `close`. An RFC whose decisions are all resolved reads
-   DECIDED in the digest (Accepted derives when its workstreams resolve).
+   DECIDED in the digest and is set Accepted; Delivered derives when its workstreams
+   resolve.
 
 Accepting grows the CR backlog (the workstreams), so a decision session is the
 moment to choose how much delivery to take on - not a rubber stamp.
@@ -103,13 +105,19 @@ Use when the Open Decisions are resolved.
    the ADR records the settled decision + consequences).
 6. Update the index (counts + Spawned CRs column).
 
-> **Accepted is not terminal.** The RFC remains the living design home its CRs
-> reference. Don't delete or archive it.
+> **Accepted is terminal.** An RFC holds **Accepted** between decision and delivery: decided
+> and settled, so it is no open work of its own (what remains lives in its CRs, which count as
+> open on their own), and it stays the living design home its CRs reference, so don't delete
+> it. **Delivered** is the successful terminal and follows Accepted, as a bug's Verified
+> follows Fixed, once every spawned request is resolved: under `two_backlog.enforce`,
+> `transition.py set --status Delivered` is refused while one is still open, naming it, and
+> `reconcile apply` derives it once none is. A decision-only RFC, with nothing to spawn, stays
+> Accepted with `> **Decomposed-into:** none - <reason>` and never derives Delivered.
 
 ### The accept gate, and its one false positive
 
-Step 1 is enforced, not advisory: a transition to **Accepted** is refused while any decision
-row reads Open (or unresolved / undecided / TBD / pending). The sanctioned escape is a
+Step 1 is enforced, not advisory: a transition to **Accepted**, or to **Delivered** after it,
+is refused while any decision row reads Open (or unresolved / undecided / TBD / pending). The sanctioned escape is a
 recorded `> **Decision-Override:** <reason>` line in the RFC header - `--force` does not
 bypass it, because a skip that leaves its reason in the file is auditable afterwards and a
 flag is not.

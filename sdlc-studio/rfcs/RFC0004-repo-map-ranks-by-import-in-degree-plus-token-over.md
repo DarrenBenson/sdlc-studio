@@ -1,6 +1,6 @@
 # RFC-0004: repo_map ranks by import in-degree plus token overlap only; decide between an Aider-style PageRank symbol graph or explicitly scoping it down
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20

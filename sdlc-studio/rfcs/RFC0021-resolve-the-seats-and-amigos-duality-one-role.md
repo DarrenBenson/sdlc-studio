@@ -1,6 +1,7 @@
 # RFC-0021: resolve the seats and amigos duality - one role-based actor model
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-06-25
 > **Created-by:** sdlc-studio new
 

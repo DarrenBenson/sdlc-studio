@@ -8,26 +8,27 @@
 | --- | --- |
 | Draft | 1 |
 | In Review | 0 |
-| Accepted | 62 |
+| Accepted | 26 |
 | Superseded | 2 |
 | Withdrawn | 3 |
+| Delivered | 36 |
 | **Total** | **68** |
 
 ## All RFCs
 
 | ID | Title | Priority | Status | Author | Date | Decomposed into |
 | --- | --- | --- | --- | --- | --- | --- |
-| [RFC-0056](RFC0056-keep-the-trd-and-tsd-true-mechanical-claim.md) | Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path | High | Accepted | Claude Fable 5 | 2026-07-27 | EP0167 |
-| [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | Accepted | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | EP0176 |
-| [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | Accepted | sdlc-studio | 2026-09-15 | EP0256 |
-| [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Accepted | sdlc-studio | 2026-09-16 | EP0255 |
-| [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Accepted | sdlc-studio | 2026-09-21 | CR0593, CR0604, EP0258, EP0259 |
+| [RFC-0056](RFC0056-keep-the-trd-and-tsd-true-mechanical-claim.md) | Keep the TRD and TSD true: mechanical claim-drift detection and a consumption path | High | Delivered | Claude Fable 5 | 2026-07-27 | EP0167 |
+| [RFC-0057](RFC0057-a-queue-of-planned-sprints-so-the-planner.md) | A queue of planned sprints, so the planner and the runner can be different people | High | Delivered | Claude Fable 5 (operator-raised, RUN-01KYHVWK resume discussion) | 2026-07-27 | EP0176 |
+| [RFC-0058](RFC0058-stakeholder-feedback-shapes-the-work-when-how-often.md) | Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted | High | Delivered | sdlc-studio | 2026-09-15 | EP0256 |
+| [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Delivered | sdlc-studio | 2026-09-16 | EP0255 |
+| [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Delivered | sdlc-studio | 2026-09-21 | CR0593, CR0604, EP0258, EP0259 |
 | [RFC-0061](RFC0061-personas-become-accountable-team-members-each-keeps-its.md) | Personas become accountable team members: each keeps its own memory, learns from its own verdicts at the retro, and passes a persona review before it is trusted | High | Accepted | Claude Opus 5.5 | 2026-10-09 | CR0631, CR0632, CR0633, CR0634 |
 | [RFC-0062](RFC0062-token-efficient-delivery-a-sprint-costs-at-most.md) | Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness | High | Accepted | Claude Opus 5.5 | 2026-11-06 | CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683 |
 | [RFC-0063](RFC0063-human-in-the-lead-the-accountable-engineering-lead.md) | Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-09 | CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702, CR0704, CR0706 |
 | [RFC-0064](RFC0064-production-learning-and-risk-proportionate-review.md) | Production learning and risk-proportionate review | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-10 | CR0695, CR0696 |
 | [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Accepted | sdlc-studio | 2026-11-17 | CR0729, CR0730 |
-| [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0731 |
+| [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Delivered | sdlc-studio | 2026-11-17 | CR0731 |
 | [RFC-0067](RFC0067-what-the-skill-should-learn-from-estate-scale.md) | What the skill should learn from estate-scale autonomous delivery: impact analysis before refine, tests before brownfield change, runtime inputs and running-app evidence | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0735, CR0736, CR0737, CR0738 |
 | [RFC-0068](RFC0068-should-the-canonical-skill-source-move-out-of.md) | Should the canonical skill source move out of .claude/skills/ to a harness-neutral path | Low | Draft | sdlc-studio | 2026-11-18 | -- |
 

@@ -43,8 +43,8 @@ TAUTOLOGY = "lint and tests green"
 # has AC-shaped markup but no authored criterion, so an item count alone reads it
 # as groomed - and `verify_ac` would then run `{{executable check}}` as its oracle.
 _PLACEHOLDER = re.compile(r"\{\{[^}]*\}\}")
-# A dependency counts as met once it has been delivered (or replaced).
-MET = {"Done", "Complete", "Verified", "Fixed", "Accepted", "Superseded", "Closed"}
+# A dependency counts as met once it has been delivered, decided (an Accepted RFC) or replaced.
+MET = {"Done", "Complete", "Verified", "Fixed", "Accepted", "Delivered", "Superseded", "Closed"}
 # Terminal-but-not-delivered: the dependency is dead, surfaced distinctly.
 DEAD = {"Rejected", "Withdrawn", "Won't Implement", "Won't Fix", "Deferred"}
 _AC_CHECKBOX = re.compile(r"^\s*- \[[ xX]\] ")

@@ -1,6 +1,6 @@
 # RFC-0005: Add an optional project-constitution artifact with a machine-checkable principle gate
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Priority:** Medium
 > **Author:** Adversarial Audit
 > **Date:** 2026-06-20

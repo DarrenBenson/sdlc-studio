@@ -1,6 +1,6 @@
 # RFC-0049: A test strategy set at sprint planning, derived from the TSD and the unit's risk band
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0157
 > **Size:** M
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/reference-sprint.md,.claude/skills/sdlc-studio/scripts/gate.py

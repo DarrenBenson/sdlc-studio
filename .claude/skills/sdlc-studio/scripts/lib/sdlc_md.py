@@ -1565,7 +1565,11 @@ STATUS_VOCAB: dict[str, list[str]] = {
     "plan": ["Draft", "In Progress", "Complete", "Superseded"],
     "bug": ["Open", "In Progress", "Fixed", "Verified", "Closed", "Won't Fix", "Superseded"],
     "cr": ["Proposed", "Approved", "In Progress", "Complete", "Rejected", "Deferred", "Superseded", "Blocked"],
-    "rfc": ["Draft", "In Review", "Accepted", "Superseded", "Withdrawn"],
+    # An RFC is Accepted when its decisions are resolved: decided and settled, the living design
+    # home its change requests reference. Delivered follows, DERIVED (G2) once every request or
+    # epic it was decomposed into is resolved, as a bug's Verified follows Fixed. Accepted comes
+    # first, so the successful terminal is named in SUCCESS_TERMINAL rather than taken from order.
+    "rfc": ["Draft", "In Review", "Accepted", "Delivered", "Superseded", "Withdrawn"],
     # An Issue is Discovery intake: Open (raw report) -> Triaging (being worked) -> Triaged
     # (decomposed into bugs, being delivered) -> Resolved (children all resolved; the DERIVED
     # successful terminal, G2). Closed/Won't Fix/Superseded are the abandonment terminals - an
@@ -1594,7 +1598,7 @@ TERMINAL_STATUS: dict[str, set[str]] = {
     "plan": {"Complete", "Superseded"},
     "bug": {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded"},
     "cr": {"Complete", "Rejected", "Superseded"},
-    "rfc": {"Accepted", "Superseded", "Withdrawn"},
+    "rfc": {"Accepted", "Delivered", "Superseded", "Withdrawn"},
     "issue": {"Resolved", "Closed", "Won't Fix", "Superseded"},
     "test-spec": {"Complete", "Superseded"},
     "workflow": {"Done", "Superseded"},
@@ -1640,14 +1644,37 @@ def create_status(type_: str) -> str:
     return st if st in STATUS_VOCAB.get(type_, []) else ""
 
 
+#: The successful terminal of a type whose vocabulary lists another settled status before it.
+#: An RFC is settled at Accepted, once decided, but its successful terminal is Delivered: the
+#: status a close defaults to, and the one the derived gate on its change requests guards.
+SUCCESS_TERMINAL: dict[str, str] = {"rfc": "Delivered"}
+
+
 def default_terminal_status(type_: str) -> str:
-    """The status a `close` moves `type_` to when the caller names none: the FIRST absorbing
-    state in the type's vocabulary order, which is its completed-successfully outcome (Done /
-    Complete / Fixed / Accepted). The later absorbing states are the abandonment outcomes
-    (Won't Fix, Rejected, Superseded, Withdrawn) - never a default; a caller asks for those
-    explicitly. Empty for an unknown type, or one with no absorbing state."""
+    """The status a `close` moves `type_` to when the caller names none, its
+    completed-successfully outcome (Done / Complete / Fixed / Delivered): the one
+    `SUCCESS_TERMINAL` names when it is absorbing for the type, otherwise the FIRST absorbing
+    state in the type's vocabulary order. The other absorbing states are settled decisions (an
+    RFC's Accepted) or abandonment outcomes (Won't Fix, Rejected, Superseded, Withdrawn) - never
+    a default; a caller asks for those explicitly. Empty for an unknown type, or one with no
+    absorbing state."""
     absorbing = terminal_statuses(type_)
+    named = SUCCESS_TERMINAL.get(type_, "")
+    if named in absorbing:
+        return named
     return next((s for s in STATUS_VOCAB.get(type_, []) if s in absorbing), "")
+
+
+def settled_before_success(type_: str) -> set[str]:
+    """The absorbing statuses `type_` lists before its successful terminal: settled, yet able to
+    move on to it once the work they wait on is done (an RFC's Accepted, before Delivered).
+    Empty for a type whose successful terminal is its first absorbing state, or an unknown one."""
+    vocab = STATUS_VOCAB.get(type_, [])
+    success = default_terminal_status(type_)
+    if success not in vocab:
+        return set()
+    absorbing = terminal_statuses(type_)
+    return {s for s in vocab[:vocab.index(success)] if s in absorbing}
 
 
 # Findings (bug/cr/rfc) gain an `inbox` triage lane under schema v3: an
@@ -1937,7 +1964,7 @@ REMEDIATION: dict[str, dict[str, str]] = {
         "linked-epics": "the request index's Linked Epics cell disagrees with the file's `Decomposed-into` - run `reconcile apply` to census it from the files; a request that was never decomposed keeps its placeholder and is not flagged",
         "stale-index-stamp": "the index's `**Last Updated:**` header is older than the newest date on its own rows, so it claims a freshness it does not have - run `reconcile apply` to restamp it from the rows (the stamp is derived, never hand-set; a header AHEAD of the rows is just an index nothing has been added to and is not flagged)",
         "index-field": "an index CELL disagrees with the artefact it is derived from - a bug's Severity, an RFC's Status, a CR's Priority. The index is derived output, and `status.py` reads it, so a stale cell makes every backlog figure taken from it wrong. Run `reconcile apply` to project the cells from the artefacts (an off-schema row is skipped rather than written into, and reported here so it can be fixed by hand)",        "spawned-column": "a request's index cell claiming the work it spawned disagrees with the census of what actually names it as parent. A one-off backfill corrected 33 such cells here and nothing kept them true, so the next decomposition left a stale one exactly as before - correct the cell from the census, which `children_of` computes; the column can be wrong by over-claiming as readily as by under-claiming",
-        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Accepted / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
+        "request-derivable": "every child a request produced is resolved, so its successful terminal is EARNED but was never recorded - run `reconcile apply` to derive it (Complete / Delivered / Resolved), which goes through `transition` so the index row and cascades still run; a childless request is the separate `undecomposed` case and is never derived. Where the item names a gate that still refuses (an RFC with an open decision, say), `reconcile apply` CANNOT clear it and says so - resolve that gate first",
     },
 }
 

@@ -1,6 +1,7 @@
 # RFC-0017: Cooper goal-directed persona model (the canonical persona model)
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Priority:** High
 > **Author:** Darren Benson
 > **Date:** 2026-06-21

@@ -1,6 +1,6 @@
 # RFC-0042: Make the sprint close-down un-skippable: enforce the retro/close-gate mechanically, not just by doctrine
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0046
 > **Size:** L
 > **Date:** 2026-07-15

@@ -1,6 +1,6 @@
 # RFC-0058: Stakeholder feedback shapes the work: when, how often and at what cost the stakeholder personas are consulted
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0256
 > **Created:** 2026-09-15
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,6 @@
 # RFC-0050: An adversarial pass over the sprint plan and test plan before the build starts
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0158
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py,.claude/skills/sdlc-studio/scripts/critic.py,.claude/skills/sdlc-studio/reference-sprint.md

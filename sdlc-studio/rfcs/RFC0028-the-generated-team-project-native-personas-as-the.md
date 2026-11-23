@@ -1,6 +1,7 @@
 # RFC-0028: the generated team: project-native personas as the v4 differentiator
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Date:** 2026-07-10
 > **Created-by:** sdlc-studio file
 

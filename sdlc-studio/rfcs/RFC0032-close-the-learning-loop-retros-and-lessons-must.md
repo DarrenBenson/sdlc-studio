@@ -1,6 +1,7 @@
 # RFC-0032: Close the learning loop: retros and lessons must drive review, audit and the backlog
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Created:** 2026-07-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

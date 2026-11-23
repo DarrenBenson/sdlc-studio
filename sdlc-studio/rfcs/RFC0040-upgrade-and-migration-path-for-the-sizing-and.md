@@ -1,6 +1,6 @@
 # RFC-0040: Upgrade and migration path for the sizing and two-backlog model, before release
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Decomposed-into:** EP0034, EP0037, CR0319
 > **Size:** L
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate_v3.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/transition.py

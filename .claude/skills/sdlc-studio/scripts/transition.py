@@ -411,17 +411,24 @@ def _rfc_open_decisions_unstructured(text: str) -> list[str]:
     return open_rows
 
 
+#: The RFC statuses that claim its decisions are made: Accepted (decided) and Delivered (decided,
+#: and every request or epic it produced resolved). Neither is reachable over an Open decision
+#: row unless the RFC records a `Decision-Override:` reason.
+_RFC_DECIDED = ("Accepted", "Delivered")
+
+
 def _rfc_accept_gate(text: str, target_canon: str | None) -> str | None:
-    """Block an RFC reaching Accepted while any decision row is Open.
+    """Block an RFC reaching Accepted, or Delivered, while any decision row is Open.
 
     `reference-rfc.md`'s accept step has always forbidden this, but only in prose, and a
     rule with no mechanism fires when somebody remembers: six RFCs reached Accepted, were
-    decomposed and were delivered carrying nothing but the boilerplate Open row.
+    decomposed and were delivered carrying nothing but the boilerplate Open row. Delivered
+    is guarded too, because a derivation may take an In Review RFC straight to it.
 
     The sanctioned escape is a RECORDED `> **Decision-Override:**` reason, not `--force`: a
     skip that leaves its reason in the file is auditable afterwards, a force flag is not.
     """
-    if target_canon != "Accepted":
+    if target_canon not in _RFC_DECIDED:
         return None
     still_open, from_fallback = _rfc_open_decisions_detail(text)
     if not still_open:
@@ -554,13 +561,13 @@ def _request_children_gate(root: Path, type_: str, artifact_id: str,
                            target_canon: str | None) -> str | None:
     """A DISCOVERY item (CR/RFC/Issue) may not reach its SUCCESSFUL terminal by assertion (G2). A
     CR is Complete only when every story and epic it produced is resolved (in a terminal state);
-    an RFC is Accepted only when every CR it produced is resolved; an Issue is Resolved only when
-    every bug it was triaged into is resolved. "Resolved" is terminal, not strictly Done: a child
-    legitimately dropped (a Won't-Implement story, a Won't-Fix bug, a Rejected child CR) does not
-    force the parent onto --force. A childless discovery item cannot be successfully terminal - it
-    produced nothing, so it delivered nothing.
+    an RFC is Delivered only when every CR or epic it produced is resolved; an Issue is Resolved
+    only when every bug it was triaged into is resolved. "Resolved" is terminal, not strictly
+    Done: a child legitimately dropped (a Won't-Implement story, a Won't-Fix bug, a Rejected
+    child CR) does not force the parent onto --force. A childless discovery item cannot be
+    successfully terminal - it produced nothing, so it delivered nothing.
 
-    Scoped to the successful terminal (Complete for a CR, Accepted for an RFC, Resolved for an
+    Scoped to the successful terminal (Complete for a CR, Delivered for an RFC, Resolved for an
     Issue): a discovery item the team decides NOT to build is still closable as Rejected /
     Superseded / Withdrawn / Won't Fix / Closed without children, because that closure asserts no
     delivery. Returns a block reason, or None to allow. Overridable with --force, like the other
@@ -1201,9 +1208,10 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         if block:
             blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
     # A request's successful terminal is DERIVED from its children, never asserted (G2): a CR is
-    # Complete only when its stories/epics are resolved, an RFC Accepted only when its CRs are.
-    # Overridable with --force, like the other close gates. Fires only when the project enforces
-    # the two-backlog workflow - an unenforced project completes a CR by assertion, as before.
+    # Complete only when its stories/epics are resolved, an RFC Delivered only when its CRs and
+    # epics are (Accepted, its decided status, is not gated on them). Overridable with --force,
+    # like the other close gates. Fires only when the project enforces the two-backlog workflow -
+    # an unenforced project completes a CR by assertion, as before.
     if not force and sdlc_md.two_backlog_enforced(root):
         block = _request_terminal_gate(root, type_, artifact_id, target_canon)
         if block:
@@ -1215,7 +1223,7 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
         block = _rfc_accept_gate(text, target_canon)
         if block:
             blocks.append(f"{artifact_id} -> {new_status}: {block}")
-        elif target_canon == "Accepted":
+        elif target_canon in _RFC_DECIDED:
             reason = _rfc_override_reason(text)
             if reason and _rfc_open_decisions(text):
                 skip = f"decision-override recorded: {reason}"

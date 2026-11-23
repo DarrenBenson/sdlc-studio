@@ -1,6 +1,7 @@
 # RFC-0027: Roadmap to world-class: reliability tier, gate integrity, era completion and evidence-backed maturity
 
 > **Status:** Accepted
+> **Decomposed-into:** none - decided before decomposition was recorded
 > **Date:** 2026-07-09
 > **Created-by:** sdlc-studio file
 
