@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 272 |
+| Open | 273 |
 | In Progress | 0 |
 | Fixed | 1118 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1731** |
+| **Total** | **1732** |
 
 ## All Bugs
 
@@ -807,6 +807,7 @@
 | [BG1729](BG1729-us1326-did-not-converge-in-review-round-2.md) | US1326 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1730](BG1730-unittest-discovery-over-tools-tests-crashes-on-a.md) | unittest discovery over tools/tests crashes on a test module name the skill's tests also use, so US0253 AC2 reads red | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Open | Low | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 
