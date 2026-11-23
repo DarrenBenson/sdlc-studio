@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, changelog.d/BG1510.md
+> **Affects:** .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py, changelog.d/BG1510.md
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -42,3 +42,4 @@ A tag can ship pages that misstate the signed evidence and the open-defect discl
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to tests/test_lean_tag_no_close_owed.py, which pins tag-check and record-green behaviour this fix changes (the REL builder stopped on it before building) |

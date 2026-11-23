@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, changelog.d/BG1542.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_tag_no_close_owed.py, changelog.d/BG1542.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/scripts/release_cut.py `record_green` (line 69) and `tag_check` (line 293, `if green != commit`)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -42,3 +42,4 @@ Resolve both sides to a full commit sha before storing or comparing. In `record_
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to tests/test_lean_tag_no_close_owed.py, which pins tag-check and record-green behaviour this fix changes (the REL builder stopped on it before building) |
