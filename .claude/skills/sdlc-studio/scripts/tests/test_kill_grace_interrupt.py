@@ -15,6 +15,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 import unittest
 import unittest.mock
@@ -25,10 +26,13 @@ import test_lane_run as base  # noqa: E402 - the lane run fixture: repository an
 
 lanes = base.lanes
 SPRINT = base.SCRIPTS / "sprint.py"
-#: a child that ignores SIGTERM, as a hung tool would, and says so once it does
-DEAF = ("import signal, sys, time\n"
+#: a child that ignores SIGTERM, as a hung tool would, and says so once it does: its pid is
+#: written under a temporary name and renamed into place, so child.pid is never seen empty
+DEAF = ("import os, signal, sys, time\n"
         "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
-        "open(sys.argv[1], 'w').write(str(__import__('os').getpid()))\n"
+        "with open(sys.argv[1] + '.tmp', 'w') as fh:\n"
+        "    fh.write(str(os.getpid()))\n"
+        "os.replace(sys.argv[1] + '.tmp', sys.argv[1])\n"
         "time.sleep(60)\n")
 #: the fake CLI: it records its pid, starts the deaf child, and on SIGTERM marks it and exits
 FAKE = r'''#!{python}
@@ -53,6 +57,14 @@ def _wait_for(check, seconds: float, what: str) -> None:
         time.sleep(0.01)
 
 
+def _read_pid(path: Path) -> int | None:
+    """The pid `path` holds, or None while it is missing or holds no integer yet."""
+    try:
+        return int(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 @unittest.skipUnless(hasattr(os, "killpg") and Path("/proc/self/stat").exists(),
                      "process groups and /proc are needed to see the child")
 class KillGraceInterruptTests(base._LaneCase):
@@ -62,8 +74,12 @@ class KillGraceInterruptTests(base._LaneCase):
         (self.bin / "codex").write_text(FAKE.format(python=sys.executable, deaf=DEAF),
                                         encoding="utf-8")
 
-    def _child(self) -> int:
-        pid = int((self.log / "child.pid").read_text(encoding="utf-8"))
+    def _child(self, seconds: float = 30) -> int:
+        """The deaf child's pid, waited for under `seconds` until child.pid holds one: read
+        sooner, the file can be missing, or empty if its writer creates it before writing."""
+        path = self.log / "child.pid"
+        _wait_for(lambda: _read_pid(path) is not None, seconds, "a pid in child.pid")
+        pid = _read_pid(path)
         self.addCleanup(base._sigkill, pid)  # a case that fails leaves no child behind
         return pid
 
@@ -104,6 +120,59 @@ class KillGraceInterruptTests(base._LaneCase):
                 lanes._kill_group(leader, grace=30)
         self.assertFalse(base._outlives(child), "the child ignoring SIGTERM outlived the kill")
         self.assertIsNotNone(leader.returncode, "the group's leader was not reaped")
+
+    def _throwaway(self) -> subprocess.Popen:
+        """A process whose pid a pid file can hold: killed and reaped at cleanup."""
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        self.addCleanup(proc.wait)
+        self.addCleanup(proc.kill)
+        return proc
+
+    def test_child_waits_for_a_child_pid_its_writer_has_not_filled(self) -> None:
+        """MUTANT: `_child` reads child.pid the moment it is called. A writer caught between
+        creating the file and writing to it leaves it empty (ValueError); one not yet started
+        leaves it missing (OSError). Here the pid lands 0.3 s after the read begins."""
+        path = self.log / "child.pid"
+        for created in (True, False):
+            with self.subTest(created=created):
+                path.unlink(missing_ok=True)
+                if created:
+                    path.write_text("", encoding="utf-8")
+                proc = self._throwaway()
+                timer = threading.Timer(0.3, path.write_text, (str(proc.pid),),
+                                        {"encoding": "utf-8"})
+                timer.start()
+                self.addCleanup(timer.cancel)
+                self.assertEqual(proc.pid, self._child())
+
+    def test_child_gives_up_at_its_bound(self) -> None:
+        """MUTANT: `_child` ignores the bound it is handed, or reads without waiting (ValueError,
+        not the timeout): a child.pid that never fills fails the case by name, inside the bound."""
+        (self.log / "child.pid").write_text("", encoding="utf-8")
+        started = time.monotonic()
+        with self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in child.pid"):
+            self._child(0.2)
+        self.assertLess(time.monotonic() - started, 10, "the wait ignored its bound")
+
+    def test_the_deaf_child_moves_its_pid_into_place(self) -> None:
+        """MUTANT: the deaf child writes child.pid in place, `open(path, 'w')` creating it empty
+        before the write. A child.pid already there read-only cannot be opened for writing,
+        though a rename over it lands, and no temporary name is left behind."""
+        if os.geteuid() == 0:
+            self.skipTest("root writes a read-only file in place")
+        work = self.log / "atomic"
+        work.mkdir()
+        path = work / "child.pid"
+        path.write_text("old", encoding="utf-8")
+        path.chmod(0o444)
+        deaf = subprocess.Popen([sys.executable, "-c", DEAF, str(path)],
+                                stderr=subprocess.DEVNULL)
+        self.addCleanup(deaf.wait)
+        self.addCleanup(deaf.kill)
+        _wait_for(lambda: _read_pid(path) is not None or deaf.poll() is not None, 30,
+                  "the deaf child's pid or its exit")
+        self.assertEqual(deaf.pid, _read_pid(path))
+        self.assertEqual(["child.pid"], [p.name for p in work.iterdir()])
 
 
 if __name__ == "__main__":

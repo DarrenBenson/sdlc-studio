@@ -26,11 +26,12 @@ import test_lane_land as base  # noqa: E402 - the lane fixture every landing cas
 A = base.A
 #: the bound the land runs under, in seconds: well past git's own start, well short of the child
 BOUND = 3
-#: a commit-msg hook that records its pid, starts a child that would run 300 s, and waits on it
+#: a commit-msg hook that records its pid, starts a child that would run 300 s, and waits on it;
+#: each pid is written under a temporary name and renamed into place, so is never seen empty
 HOOK = """#!/bin/sh
-echo $$ > "{dir}/hook.pid"
+echo $$ > "{dir}/hook.pid.tmp" && mv "{dir}/hook.pid.tmp" "{dir}/hook.pid"
 sleep 300 &
-echo $! > "{dir}/child.pid"
+echo $! > "{dir}/child.pid.tmp" && mv "{dir}/child.pid.tmp" "{dir}/child.pid"
 wait
 """
 #: `sprint.py` run as a command, with the commit's bound shrunk in its own process
@@ -73,6 +74,14 @@ def _outlives(pid: int, seconds: float = 2.0) -> bool:
     return False
 
 
+def _read_pid(path: Path) -> int | None:
+    """The pid `path` holds, or None while it is missing or holds no integer yet."""
+    try:
+        return int(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
 
     def setUp(self) -> None:
@@ -82,8 +91,15 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
         hook.write_text(HOOK.format(dir=self.dir), encoding="utf-8")
         hook.chmod(0o755)
 
-    def _pid(self, name: str) -> int:
-        pid = int((self.dir / name).read_text(encoding="utf-8").strip())
+    def _pid(self, name: str, seconds: float = 30) -> int:
+        """The pid in the file `name`, waited for under `seconds` until it holds one: read
+        sooner, the file can be missing, or empty if its writer creates it before writing."""
+        path = self.dir / name
+        deadline = time.monotonic() + seconds
+        while (pid := _read_pid(path)) is None:
+            if time.monotonic() > deadline:
+                raise AssertionError(f"timed out waiting for a pid in {name}")
+            time.sleep(0.01)
         self.addCleanup(_sigkill, pid)  # a case that fails leaves nothing of the hook behind
         return pid
 
@@ -202,6 +218,65 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
         r = self._land_bounded()
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertEqual(f"feat({A}): a is two", base._git(self.root, "log", "-1", "--format=%s"))
+
+    def _throwaway(self) -> subprocess.Popen:
+        """A process whose pid a pid file can hold: killed and reaped at cleanup."""
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        self.addCleanup(proc.wait)
+        self.addCleanup(proc.kill)
+        return proc
+
+    def test_pid_waits_for_a_pid_file_its_writer_has_not_filled(self) -> None:
+        """MUTANT: `_pid` reads the file the moment it is called. `echo $$ > file` caught
+        between creating the file and writing to it leaves it empty (ValueError); a writer not
+        yet started leaves it missing (OSError). Here the pid lands 0.3 s after the read begins."""
+        path = self.dir / "hook.pid"
+        for created in (True, False):
+            with self.subTest(created=created):
+                path.unlink(missing_ok=True)
+                if created:
+                    path.write_text("", encoding="utf-8")
+                proc = self._throwaway()
+                timer = threading.Timer(0.3, path.write_text, (f"{proc.pid}\n",),
+                                        {"encoding": "utf-8"})
+                timer.start()
+                self.addCleanup(timer.cancel)
+                self.assertEqual(proc.pid, self._pid("hook.pid"))
+
+    def test_pid_gives_up_at_its_bound(self) -> None:
+        """MUTANT: `_pid` ignores the bound it is handed, or reads without waiting (ValueError,
+        not the timeout): a pid file that never fills fails the case by name, inside the bound."""
+        (self.dir / "hook.pid").write_text("", encoding="utf-8")
+        started = time.monotonic()
+        with self.assertRaisesRegex(AssertionError, "timed out waiting for a pid in hook.pid"):
+            self._pid("hook.pid", 0.2)
+        self.assertLess(time.monotonic() - started, 10, "the wait ignored its bound")
+
+    def test_the_hook_moves_its_pid_files_into_place(self) -> None:
+        """MUTANT: the hook writes a pid file in place, `echo $$ > file` creating it empty
+        before the write. Pid files already there read-only cannot be written in place, though
+        a rename over them lands, and no temporary name is left behind."""
+        if os.geteuid() == 0:
+            self.skipTest("root writes a read-only file in place")
+        work, fake = self.dir / "atomic", self.dir / "atomic-bin"
+        work.mkdir()
+        fake.mkdir()
+        (fake / "sleep").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        (fake / "sleep").chmod(0o755)
+        for name in ("hook.pid", "child.pid"):
+            (work / name).write_text("old", encoding="utf-8")
+            (work / name).chmod(0o444)
+        hook = self.dir / "atomic-hook"
+        hook.write_text(HOOK.format(dir=work), encoding="utf-8")
+        hook.chmod(0o755)
+        env = {**os.environ, "PATH": f"{fake}{os.pathsep}{os.environ.get('PATH', '')}"}
+        proc = subprocess.Popen([str(hook)], env=env, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        out, _ = proc.communicate(timeout=60)
+        self.assertEqual(0, proc.returncode, out)
+        self.assertEqual(proc.pid, _read_pid(work / "hook.pid"), out)
+        self.assertNotIn(_read_pid(work / "child.pid"), (None, proc.pid), out)
+        self.assertEqual(["child.pid", "hook.pid"], sorted(p.name for p in work.iterdir()))
 
 
 if __name__ == "__main__":
