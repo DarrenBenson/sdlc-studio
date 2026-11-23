@@ -2603,6 +2603,21 @@ class PlanTestModuleAdvisoryTests(unittest.TestCase):
                 {"script": "scripts/lib/surface.py", "tests": [
                     "tests/test_r_after.py", "tests/test_r_open.py", "tests/test_r_paren.py"]}]}])
 
+    def test_a_comment_holding_a_comma_inside_a_parenthesised_import_hides_no_name(self) -> None:
+        """A comment holding a comma is taken whole to its line's end: `# noqa: E402, F401` after
+        the `(` leaves the name on the next line read, and a name after a comma in a comment,
+        as in `# see a, surface`, is not read."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/lib/surface.py", {
+                "scripts/lib/surface.py": "X = 1\n",
+                "tests/test_r_noqa.py": "from lib import (  # noqa: E402, F401\n    surface,\n)\n",
+                "tests/test_m_comma.py": "from lib import (\n    other,  # see a, surface\n)\n"})
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                "    US0001: scripts/lib/surface.py -> tests/test_r_noqa.py"], out)
+
     def test_an_unclosed_parenthesised_import_is_read_in_linear_time(self) -> None:
         """A comment runs to its line's end and no further, so a list no `)` closes is given up
         at once rather than tried at every split of each comment (which never ends)."""
