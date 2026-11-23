@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, sdlc-studio/prd.md, changelog.d/BG0959.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, sdlc-studio/prd.md, changelog.d/BG0959.md
 > **Evidence:** Field report, 2026-10-07, planning Sprint 0 on a consuming project. engagement_floor.py check printed the adopt_after remedy for 13 Fixed ULID bugs. Reproduced at HEAD: `_mode_and_cutoff` on a config of `adopt_after: BG-01KXB3QF` raises ValueError.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -46,3 +46,4 @@ Parse the floor's cutoff with allow_ulid and exempt with cutoff_exempts, the sam
 | --- | --- | --- |
 | 2026-10-07 | Grok 4.7 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Groomed: reproduced at fb1ce886 (`_mode_and_cutoff` raises ValueError on BG-01KXB3QF); the ULID helpers live in `sdlc_md`, not `conformance`; 3 -> 2 points; a CLI criterion and a numeric positive control added; changelog fragment added to Affects |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to migrate.py and lib/sdlc_md.py before landing: the fix makes migrate.py:709 ("no cutoff can reach" a v3 id) false, and parse_cutoff's error names only an integer or a prefixed id even when a ULID is allowed; both fixed inside the unit (D0561). The PRD flip moves with the Fixed status, as 383fe618 did for BG1023 |
