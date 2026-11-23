@@ -1,0 +1,106 @@
+{
+  "unit": "BG1717",
+  "digest": "0a2cb5891164f10b at af8f56aa38a4",
+  "report": "sdlc-studio/.local/lane/landed/agent-a69749044a88e1d08/BG1717-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the attached value split at its first = wherever it falls, as argparse splits --opt=value",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached.partition(\"=\")[2] if \"=\" in attached else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the attached value split at its last =",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached.rpartition(\"=\")[2] if \"=\" in attached else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the attached value split at every =, keeping the second piece",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached.split(\"=\")[1] if \"=\" in attached else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the cluster -qm'device(serial=1)' expected to name only 1), so the case is seen to assert the whole value",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py",
+      "old": "(\"pytest tests/a.py -qm'device(serial=1)'\",\n                 ([\"tests/a.py\"], [\"-m 'device(serial=1)'\"])),",
+      "new": "(\"pytest tests/a.py -qm'device(serial=1)'\",\n                 ([\"tests/a.py\"], [\"-m '1)'\"])),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: -m='device(serial=1)' expected to keep its leading =",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py",
+      "old": "(\"pytest -m='device(serial=1)' tests/a.py\",\n                 ([\"tests/a.py\"], [\"-m 'device(serial=1)'\"])),",
+      "new": "(\"pytest -m='device(serial=1)' tests/a.py\",\n                 ([\"tests/a.py\"], [\"-m '=device(serial=1)'\"])),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a cluster ending in k skipped as a plain option",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if letter in _PYTEST_SHORT_VALUE_LETTERS:",
+      "new": "if letter in _PYTEST_SHORT_VALUE_LETTERS and at == 2:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests::test_a_cluster_of_short_flags_is_read_as_pytest_reads_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the = after the value letter kept",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every leading = dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached.lstrip(\"=\") if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "-k= taking the next word",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached[1:] or next(rest, \"\") if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the = dropped only after a lone option letter, not in a cluster",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "value = attached[1:] if attached[:1] == \"=\" else attached or next(rest, \"\")",
+      "new": "value = attached[1:] if attached[:1] == \"=\" and at == 2 else attached or next(rest, \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a long --opt=value taking the next word as well",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if word in _PYTEST_VALUE_OPTIONS:",
+      "new": "            if word.split(\"=\", 1)[0] in _PYTEST_VALUE_OPTIONS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_kept_list.py::CriticReplaySelectorTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,284 +1,50 @@
 {
   "unit": "BG1475",
-  "digest": "035e9c245c791708 at 27155e5b4632",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aebe7140aa84abdcd/BG1475-mutation-edits.json",
+  "digest": "34a54ddcb33ef1cc at 44b6d7d4fb68",
+  "report": "sdlc-studio/.local/lane/landed/agent-af210760057084413/BG1475-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "one-git-log-per-artefact",
+      "mutant": "one git log -1 per artefact",
       "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "        git = times.get(path.relative_to(repo_root).as_posix())\n        modified, method = (git, \"git\") if git else (_mtime_iso(path), \"mtime\")\n",
-      "new": "        modified, method = _modified_iso(path, repo_root)\n",
+      "old": "    times = _git_commit_times(repo_root, {p.relative_to(repo_root).as_posix() for _, p in found})",
+      "new": "    times = {p.relative_to(repo_root).as_posix(): _git_iso(p, repo_root) for _, p in found}\n    times = {k: v for k, v in times.items() if v}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_git_calls_do_not_grow_with_the_artefacts",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "last-commit-in-the-walk-wins",
+      "mutant": "the newline-led key dropped",
       "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "        elif rel in tracked and rel not in times:\n",
-      "new": "        elif rel in tracked:\n",
+      "old": "names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel",
+      "new": "names[prefix + rel] = rel",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "git-quotes-a-non-ascii-path",
+      "mutant": "an older commit overwrites a newer",
       "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "\"-c\", \"core.quotePath=false\", ",
-      "new": "",
+      "old": "elif token in names and names[token] not in times:",
+      "new": "elif token in names:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "untracked-fallback-lost",
+      "mutant": "the untracked fallback lost",
       "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "(git, \"git\") if git else (_mtime_iso(path), \"mtime\")",
-      "new": "(git, \"git\")",
+      "old": "modified, method = (git, \"git\") if git else (_mtime_iso(path), \"mtime\")",
+      "new": "modified, method = (git, \"git\") if git else (_mtime_iso(path), \"git\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "history-walked-with-nothing-tracked",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "    if not tracked:\n        return {}\n    walked",
-      "new": "    walked",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_no_history_is_walked_when_nothing_is_tracked",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every-path-taken-as-tracked",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "    tracked = set((listed or \"\").splitlines()) & rels\n",
-      "new": "    tracked = set(rels)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_no_history_is_walked_when_nothing_is_tracked",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "commit-time-left-unread",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "            when = line[1:].strip()\n",
-      "new": "            pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "staleness-read-twice-in-the-lane",
-      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
-      "old": "        anchor_rev = _anchor_last_commit(rr, latest)\n        judged =",
-      "new": "        anchor_rev = _anchor_last_commit(rr, latest)\n        recs = review_prep.staleness(rr)\n        judged =",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::ReviewCurrentDirtyTests::test_a_stale_anchor_reads_the_staleness_once",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "close-dry-run-prints-no-progress",
+      "mutant": "the close preview names no step",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "result = close_dry_run(root, args.retro, goal_verdict=supplied, progress=lambda name: print(\n            f\"close --dry-run: running {name}\", file=sys.stderr, flush=True))",
-      "new": "result = close_dry_run(root, args.retro, goal_verdict=supplied)",
+      "old": "progress=lambda name: print(\n            f\"close --dry-run: running {name}\", file=sys.stderr, flush=True))",
+      "new": "progress=lambda name: None)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "step-named-after-it-ran",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                started(step)\n                with _on_the_copy():\n                    ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)\n",
-      "new": "                with _on_the_copy():\n                    ok, detail, remedy = fn(scratch, rid, run_state.read(scratch) or state, **kw)\n                started(step)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "preflight-unannounced",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    started(\"prerequisites and gate\")\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "scaffold-unannounced",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if not retro_id:\n            started(\"retro-scaffold\")\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-expects-a-files-first-commit",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
-      "old": "        self.assertEqual(review_prep._parse_dt(t3), stamp(\"BG0001\"), got[\"BG0001\"])\n",
-      "new": "        self.assertEqual(review_prep._parse_dt(t1), stamp(\"BG0001\"), got[\"BG0001\"])\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-counts-the-same-artefacts-twice",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
-      "old": "        for many in (2, 12):\n",
-      "new": "        for many in (12, 12):\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_git_calls_do_not_grow_with_the_artefacts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "merge-resolution-unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "run(\"log\", \"-c\", \"--name-only\",",
-      "new": "run(\"log\", \"--name-only\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "scaffold-announced-under-a-named-retro",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if not retro_id:\n            started(\"retro-scaffold\")",
-      "new": "        if True:\n            started(\"retro-scaffold\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_a_named_retro_announces_no_scaffold",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "progress-printed-on-stdout",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "f\"close --dry-run: running {name}\", file=sys.stderr, flush=True))",
-      "new": "f\"close --dry-run: running {name}\", file=sys.stdout, flush=True))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-reads-both-streams-as-one",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
-      "old": "            stack.enter_context(contextlib.redirect_stderr(err))\n            sprint.main([\"close\", \"--dry-run\", *argv])",
-      "new": "            stack.enter_context(contextlib.redirect_stderr(out))\n            sprint.main([\"close\", \"--dry-run\", *argv])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-reviewed-after-the-merge",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
-      "old": "{\"BG0001\": {\"last_reviewed\": \"2026-03-15T00:00:00+00:00\"}}",
-      "new": "{\"BG0001\": {\"last_reviewed\": \"2026-04-15T00:00:00+00:00\"}}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "diff-walk-unread",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "    walked = run(\"log\", \"-c\", \"--name-only\", \"--format=%x00%cI\", \"--\", *folders)",
-      "new": "    walked = None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "clean-merge-unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "run(\"log\", \"-c\", \"--name-only\",",
-      "new": "run(\"log\", \"--name-only\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_clean_merge_is_read_as_git_log_reads_each_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "merge-read-against-each-parent",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "run(\"log\", \"-c\", \"--name-only\",",
-      "new": "run(\"log\", \"-m\", \"--name-only\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_clean_merge_is_read_as_git_log_reads_each_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "prefix-left-on-each-path",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "        rel = line.removeprefix(prefix)\n",
-      "new": "        rel = line\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_project_below_the_repository_root_reads_its_commit_times",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "merge-path-from-the-top-unmapped",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "        rel = line.removeprefix(prefix)\n",
-      "new": "        rel = line\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_below_the_repository_root_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "clean-merge-below-the-top-unmapped",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "        rel = line.removeprefix(prefix)\n",
-      "new": "        rel = line\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_clean_merge_is_read_as_git_log_reads_each_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "folder-never-asked",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n",
-      "new": "    prefix = \"\"\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_below_the_repository_root_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "folder-keeps-its-newline",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "(run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")",
-      "new": "(run(\"rev-parse\", \"--show-prefix\") or \"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_below_the_repository_root_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no-folder-outside-a-repository-crashes",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "(run(\"rev-parse\", \"--show-prefix\") or \"\")",
-      "new": "run(\"rev-parse\", \"--show-prefix\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_project_in_no_repository_reads_each_file_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "folder-asked-of-the-top",
-      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
-      "old": "run(\"rev-parse\", \"--show-prefix\")",
-      "new": "run(\"rev-parse\", \"--show-cdup\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_below_the_repository_root_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-expects-the-earlier-parent",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
-      "old": "        self.assertEqual(review_prep._parse_dt(t4),\n                         review_prep._parse_dt(got[\"BG0001\"][\"last_modified\"]), got[\"BG0001\"])",
-      "new": "        self.assertEqual(review_prep._parse_dt(t3),\n                         review_prep._parse_dt(got[\"BG0001\"][\"last_modified\"]), got[\"BG0001\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_below_the_repository_root_reads_the_merge_time",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-expects-git-outside-a-repository",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
-      "old": "        self.assertEqual(\"mtime\", got[\"BG0001\"][\"modified_method\"], got[\"BG0001\"])\n        self.assertEqual(datetime.fromtimestamp(1_700_000_000, timezone.utc),\n                         review_prep._parse_dt(got[\"BG0001\"][\"last_modified\"]))\n        self.assertTrue(any(",
-      "new": "        self.assertEqual(\"git\", got[\"BG0001\"][\"modified_method\"], got[\"BG0001\"])\n        self.assertEqual(datetime.fromtimestamp(1_700_000_000, timezone.utc),\n                         review_prep._parse_dt(got[\"BG0001\"][\"last_modified\"]))\n        self.assertTrue(any(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_project_in_no_repository_reads_each_file_time",
       "result": "killed",
       "answer": ""
     }

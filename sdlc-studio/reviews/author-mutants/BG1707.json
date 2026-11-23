@@ -1,0 +1,214 @@
+{
+  "unit": "BG1707",
+  "digest": "34a54ddcb33ef1cc at 44b6d7d4fb68",
+  "report": "sdlc-studio/.local/lane/landed/agent-af210760057084413/BG1707-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the walk and listing reverted to the earlier round's",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-z\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").split(\"\\0\")) & rels\n    if not tracked:\n        return {}\n    names: dict[str, str] = {}\n    for rel in tracked:\n        names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel\n    walked = run(\"log\", \"-z\", \"--no-relative\", \"-c\", \"--name-only\", \"--format=/%cI\",\n                 \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for token in (walked or \"\").split(\"\\0\"):\n        if token.startswith(\"/\"):\n            when = token[1:]\n        elif token in names and names[token] not in times:\n            times[names[token]] = when\n    return times\n",
+      "new": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), \"-c\", \"core.quotePath=false\", *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").splitlines()) & rels\n    if not tracked:\n        return {}\n    walked = run(\"log\", \"-c\", \"--name-only\", \"--format=%x00%cI\", \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for line in (walked or \"\").splitlines():\n        rel = line.removeprefix(prefix)\n        if line.startswith(\"\\0\"):\n            when = line[1:].strip()\n        elif rel in tracked and rel not in times:\n            times[rel] = when\n    return times\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_project_in_a_folder_git_quotes_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the earlier round's walk, diff.relative",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-z\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").split(\"\\0\")) & rels\n    if not tracked:\n        return {}\n    names: dict[str, str] = {}\n    for rel in tracked:\n        names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel\n    walked = run(\"log\", \"-z\", \"--no-relative\", \"-c\", \"--name-only\", \"--format=/%cI\",\n                 \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for token in (walked or \"\").split(\"\\0\"):\n        if token.startswith(\"/\"):\n            when = token[1:]\n        elif token in names and names[token] not in times:\n            times[names[token]] = when\n    return times\n",
+      "new": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), \"-c\", \"core.quotePath=false\", *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").splitlines()) & rels\n    if not tracked:\n        return {}\n    walked = run(\"log\", \"-c\", \"--name-only\", \"--format=%x00%cI\", \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for line in (walked or \"\").splitlines():\n        rel = line.removeprefix(prefix)\n        if line.startswith(\"\\0\"):\n            when = line[1:].strip()\n        elif rel in tracked and rel not in times:\n            times[rel] = when\n    return times\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_the_users_diff_relative_setting_reads_as_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the earlier round's walk, merge in a quoted folder",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-z\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").split(\"\\0\")) & rels\n    if not tracked:\n        return {}\n    names: dict[str, str] = {}\n    for rel in tracked:\n        names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel\n    walked = run(\"log\", \"-z\", \"--no-relative\", \"-c\", \"--name-only\", \"--format=/%cI\",\n                 \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for token in (walked or \"\").split(\"\\0\"):\n        if token.startswith(\"/\"):\n            when = token[1:]\n        elif token in names and names[token] not in times:\n            times[names[token]] = when\n    return times\n",
+      "new": "    def run(*args: str) -> str | None:\n        try:\n            r = subprocess.run([\"git\", \"-C\", str(repo_root), \"-c\", \"core.quotePath=false\", *args],\n                               capture_output=True, text=True, timeout=_HISTORY_TIMEOUT)\n        except (OSError, subprocess.SubprocessError):\n            return None\n        return r.stdout if r.returncode == 0 else None\n\n    prefix = (run(\"rev-parse\", \"--show-prefix\") or \"\").rstrip(\"\\n\")\n    folders = sorted({Path(rel).parent.as_posix() for rel in rels})\n    listed = run(\"ls-tree\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").splitlines()) & rels\n    if not tracked:\n        return {}\n    walked = run(\"log\", \"-c\", \"--name-only\", \"--format=%x00%cI\", \"--\", *folders)\n    times: dict[str, str] = {}\n    when = \"\"\n    for line in (walked or \"\").splitlines():\n        rel = line.removeprefix(prefix)\n        if line.startswith(\"\\0\"):\n            when = line[1:].strip()\n        elif rel in tracked and rel not in times:\n            times[rel] = when\n    return times\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_conflict_resolved_in_a_merge_in_a_folder_git_quotes_reads_the_merge_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "--no-relative dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"log\", \"-z\", \"--no-relative\", \"-c\"",
+      "new": "\"log\", \"-z\", \"-c\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_the_users_diff_relative_setting_reads_as_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "--no-relative to --relative",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"--no-relative\", \"-c\"",
+      "new": "\"--relative\", \"-c\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_the_users_diff_relative_setting_reads_as_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "-z dropped from the walk",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"log\", \"-z\", \"--no-relative\"",
+      "new": "\"log\", \"--no-relative\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_project_in_a_folder_git_quotes_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "-z dropped from the walk, merge",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"log\", \"-z\", \"--no-relative\"",
+      "new": "\"log\", \"--no-relative\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_conflict_resolved_in_a_merge_in_a_folder_git_quotes_reads_the_merge_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the listing reverted to quoted lines",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"ls-tree\", \"-z\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").split(\"\\0\")) & rels",
+      "new": "\"ls-tree\", \"-r\", \"--name-only\", \"HEAD\", \"--\", *folders)\n    tracked = set((listed or \"\").splitlines()) & rels",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_the_users_diff_relative_setting_reads_as_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the listing's -z dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"ls-tree\", \"-z\", \"-r\"",
+      "new": "\"ls-tree\", \"-r\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the listing split by lines",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "set((listed or \"\").split(\"\\0\"))",
+      "new": "set((listed or \"\").splitlines())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the listing not narrowed to the artefacts",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "split(\"\\0\")) & rels",
+      "new": "split(\"\\0\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_no_history_is_walked_when_nothing_is_tracked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the prefix read with strip",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": ".rstrip(\"\\n\")",
+      "new": ".strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_project_in_a_folder_git_quotes_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the newline-led key dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel",
+      "new": "names[prefix + rel] = rel",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the plain key dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel",
+      "new": "names[\"\\n\" + prefix + rel] = rel",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_conflict_resolved_in_a_merge_reads_the_merge_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the folder dropped from the keys",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "names[prefix + rel] = names[\"\\n\" + prefix + rel] = rel",
+      "new": "names[rel] = names[\"\\n\" + rel] = rel",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_a_project_below_the_repository_root_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the time's marker dropped from the format",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "\"--format=/%cI\"",
+      "new": "\"--format=%cI\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the marker kept in the time",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "when = token[1:]",
+      "new": "when = token",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the time not read by its marker",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "if token.startswith(\"/\"):",
+      "new": "if token.startswith(\"2\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an older commit overwrites a newer",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "elif token in names and names[token] not in times:",
+      "new": "elif token in names:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "NUL split read as lines",
+      "file": ".claude/skills/sdlc-studio/scripts/review_prep.py",
+      "old": "for token in (walked or \"\").split(\"\\0\"):",
+      "new": "for token in (walked or \"\").splitlines():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the expected times swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "old": "((\"BG0001\", self.T1), (\"BG0002\", self.T2))",
+      "new": "((\"BG0001\", self.T2), (\"BG0002\", self.T1))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_project_in_a_folder_git_quotes_reads_its_commit_times",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the user's setting made one git refuses",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "old": "RELATIVE = \"[diff]\\n\\trelative = true\\n\"",
+      "new": "RELATIVE = \"[diff]\\n\\trelative = maybe\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_the_users_diff_relative_setting_reads_as_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the file time set to the commit time",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "old": "os.utime(path, (1_700_000_000, 1_700_000_000))\n        return root",
+      "new": "os.utime(path, (1_767_261_600, 1_767_261_600))\n        return root",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::QuotedAndRelativePathTests::test_a_project_in_a_folder_git_quotes_reads_its_commit_times",
+      "result": "survived",
+      "answer": "equivalent: _assert_commit_times also asserts modified_method == git for each record, so a file time equal to the commit time cannot pass for a git read; the utime is a second guard, which this probe shows the method check already covers"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1714: BG1532 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/github_sync.py, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1532.md
@@ -27,12 +27,16 @@ Fix each finding above, then deliver BG1532 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1532 AC1 still passes: Given a signed run report on disk, when `sprint_report.py` rewrites the report JSON and its Markdown twin and the write is interrupted before it completes, then both files still hold their previous content in full. Fails on: a truncated or half-written report left where a signature is recorded.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** BG1532 AC2 still passes: Given the scripts under `.claude/skills/sdlc-studio/scripts`, when they are scanned for whole-file rewrites of tracked workspace paths, then every site goes through `sdlc_md.atomic_write`, sits on the explicit allowlist of scratch or untracked targets, or sits on the separate not-yet-moved list that `sdlc-studio/trd.md` names with each writer's reason (D0587; the moves are BG1712), and the story Verified rewrite in `verify_ac.py`, `write_project_file` in `lessons.py`, the epic rewrite in `artifact.py` and the artefact stamp in `github_sync.py` are on neither list because each now goes through `sdlc_md.atomic_write`. Fails on: a whole-file rewrite of a committed file that bypasses the atomic helper.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** BG1532 AC3 still passes: Given a script fixture with a planted truncating `write_text` on a tracked workspace path, when the same scan runs over it, then it names that site; the same write to a scratch path on the allowlist is not named. Fails on: a scan that cannot see the defect it exists to catch.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC5** BG1532 AC4 still passes: Given rule 5 of the script contract and the scripts row of the component table in `sdlc-studio/trd.md`, when they are read, then a shared file is defined as any tracked workspace file a script rewrites whole, and every writer left outside the guarantee is listed with its reason. Fails on: the guarantee stated with no definition of a shared file, or the ledgers still called the one exception while others exist.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed
+  - **Verified:** yes (2026-11-23)
 
 - [ ] **AC6** The round 3 REJECT finding no longer holds: the comment on `_OPEN_MODULES` (`test_confinement.py:791`) says those are the modules whose `open` takes `(file, mode)`, but `gzip`, `bz2`, `lzma` and `tarfile` take it too and are not caught. The comment states the sweep's reach exactly, as the TRD already does for `gzip` (verdict 790b61cc4104-369447a8, D0588).
   - **Verify:** manual - the independent review of the redelivery re-checks this finding

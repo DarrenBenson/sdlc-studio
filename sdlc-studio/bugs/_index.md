@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 294 |
+| Open | 292 |
 | In Progress | 0 |
-| Fixed | 1083 |
+| Fixed | 1085 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -607,7 +607,7 @@
 | [BG1529](BG1529-the-trd-promises-sub-second-reconcile-and-status.md) | The TRD promises sub-second reconcile and status, which this repository misses by more than tenfold | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1530](BG1530-adr-012-says-persona-learning-approval-close-listing.md) | ADR-012 says persona learning approval, close listing and signature are unbuilt while they are Done and shipped | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Fixed | Medium | 2026-11-17 | 2026-11-17 |
@@ -789,7 +789,7 @@
 | [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1712](BG1712-nine-whole-file-rewrites-of-tracked-workspace-files.md) | Nine whole-file rewrites of tracked workspace files still truncate in place instead of going through sdlc_md.atomic_write, so an interrupted write can leave the file half-written | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1713](BG1713-two-lanes-of-one-parallel-drive-wave-create.md) | Two lanes of one parallel drive wave create their worktrees at the same moment, and git's concurrent worktree add can refuse one, stopping that unit at build | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1714](BG1714-bg1532-did-not-converge-in-review-round-2.md) | BG1532 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1714](BG1714-bg1532-did-not-converge-in-review-round-2.md) | BG1532 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1715](BG1715-bg1229-did-not-converge-in-review-round-2.md) | BG1229 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |

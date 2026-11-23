@@ -1,0 +1,259 @@
+{
+  "unit": "BG1549",
+  "digest": "12fde1afd032abf6 at 412120be2d60",
+  "report": "sdlc-studio/.local/lane/landed/agent-a10a687703f99f617/BG1549-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "page: the old sentence restored",
+      "file": "docs/why-sdlc-studio.md",
+      "old": "Done only when its executable criteria have passed; a bug is refused Fixed when nothing speaks\nfor the fix - no criterion ticked and none carrying a `Verify:` line - or when a recorded run of\nits criteria is red)",
+      "new": "Done, and a bug Fixed, only when its criteria pass)",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page: the red-run refusal dropped",
+      "file": "docs/why-sdlc-studio.md",
+      "old": " - or when a recorded run of\nits criteria is red)",
+      "new": ")",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1039: AC1 Verify back to the file that never existed",
+      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
+      "old": "pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_ci_suite_step_installs_from_requirements_dev",
+      "new": "pytest tools/tests/test_prereq_list_is_ci_list_strict.py::StrictOneListTests::test_the_suite_step_installs_with_r",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1039: AC2 recorded run dropped",
+      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
+      "old": "test_the_readers_and_rules_refuse_what_they_must\n  - **Verified:** yes (2026-11-23)",
+      "new": "test_the_readers_and_rules_refuse_what_they_must",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1039: reopened with no Revision History row",
+      "file": "sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md",
+      "old": "> **Status:** Fixed",
+      "new": "> **Status:** Open",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "over-claim: story exclusion dropped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:(?!\\bstor(?:y|ies)\\b)[^.;])*?",
+      "new": "[^.;]*?",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "over-claim: first gap crosses a semicolon",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?!\\bstor(?:y|ies)\\b)[^.;])*?",
+      "new": "(?!\\bstor(?:y|ies)\\b)[^.])*?",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "over-claim: only if not read",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "only (?:when|if)",
+      "new": "only when",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "over-claim: passed not read as pass",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "[^.;]*?\\bpass\")",
+      "new": "[^.;]*?\\bpass\\b\")",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate claims counted in any paragraph",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "gate = [p for p in paragraphs if re.search(r\"\\bFixed\\b\", p)]",
+      "new": "gate = paragraphs",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page read as one paragraph",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "for p in re.split(r\"\\n\\s*\\n\", text)]",
+      "new": "for p in [text]]",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "paragraphs not normalised",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "paragraphs = [_norm(p) for p",
+      "new": "paragraphs = [p for p",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Verified not a fix-claiming status",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{\"Fixed\", \"Verified\", \"Closed\"}",
+      "new": "{\"Fixed\", \"Closed\"}",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Closed not a fix-claiming status",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{\"Fixed\", \"Verified\", \"Closed\"}",
+      "new": "{\"Fixed\", \"Verified\"}",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reopen row read case-sensitively",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?im)^\\|.*\\breopen",
+      "new": "(?m)^\\|.*\\breopen",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reopen row not accepted",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "            return []\n        return [f\"stands at",
+      "new": "            pass\n        return [f\"stands at",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-criteria guard removed",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "    if not blocks:\n        return [\"claims its fix with no acceptance criteria\"]\n",
+      "new": "",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "text before the first criterion read as a block",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "m.group(1) if m else \"\")[1:]",
+      "new": "m.group(1) if m else \"\")",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a ticked criterion not read",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "^- \\[[ xX]\\] ",
+      "new": "^- \\[[ ]\\] ",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "criterion id keeps its bold markers",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "block.split()[0].strip(\"*\")",
+      "new": "block.split()[0]",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-Verify guard removed",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "        if not selectors:\n            problems.append(f\"{ac} carries no pytest Verify line\")\n",
+      "new": "",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing file check skipped",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "if not (repo / path).is_file():",
+      "new": "if False:",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing file read anyway",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "which does not exist\")\n                continue\n",
+      "new": "which does not exist\")\n",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a class not read as a definition",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(?:class|def) {re",
+      "new": "def {re",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a name prefix accepted as the definition",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{re.escape(name)}\\b\", source",
+      "new": "{re.escape(name)}\", source",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any Verified marker taken as a passing run",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "\\*\\*Verified:\\*\\* yes\\b\", block",
+      "new": "\\*\\*Verified:\\*\\*\", block",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "criteria section runs to the end of the file",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "(.*?)(?=^## |\\Z)\", text",
+      "new": "(.*?)\\Z\", text",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a record with no status named blank",
+      "file": "tools/tests/test_doc_claims.py",
+      "old": "{status or 'no status'}",
+      "new": "{status}",
+      "test": "tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

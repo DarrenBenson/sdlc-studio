@@ -1,496 +1,46 @@
 {
   "unit": "BG1532",
-  "digest": "bc5cf83c4766825f at 250eca4eefe4",
-  "report": "sdlc-studio/.local/lane/landed/agent-a61e8a1ceb586759c/BG1532-mutation-edits.json",
+  "digest": "36dcc89f1623adaa at 7aa9e935b78d",
+  "report": "sdlc-studio/.local/lane/landed/agent-a94337ee771204620/BG1532-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "report-pair-written-one-by-one",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "    _write_together([(path, json.dumps(report, indent=2, ensure_ascii=False) + \"\\n\"),\n                     (md, render_markdown(report))])\n",
-      "new": "    sdlc_md.atomic_write(path, json.dumps(report, indent=2, ensure_ascii=False) + \"\\n\")\n    sdlc_md.atomic_write(md, render_markdown(report))\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "report-json-truncating-write",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "    _write_together([(path, json.dumps(report, indent=2, ensure_ascii=False) + \"\\n\"),\n                     (md, render_markdown(report))])\n",
-      "new": "    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + \"\\n\", encoding=\"utf-8\")\n    md.write_text(render_markdown(report), encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "staged-file-moved-at-once",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "            staged.append((tmp, path))\n",
-      "new": "            staged.append((tmp, path))\n            tmp.replace(path)\n            continue\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "staged-files-left-behind",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "        for tmp, _path in staged:\n            tmp.unlink(missing_ok=True)\n",
-      "new": "        pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "cleanup-refuses-a-moved-file",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "tmp.unlink(missing_ok=True)",
-      "new": "tmp.unlink(missing_ok=False)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "mode-not-carried",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "            if path.exists():\n                shutil.copymode(path, tmp)\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_a_rewrite_keeps_each_file_s_mode",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "mode-guard-inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "            if path.exists():\n",
-      "new": "            if not path.exists():\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_a_rewrite_keeps_each_file_s_mode",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "staging-through-write-text",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "            sdlc_md.atomic_write(tmp, text)\n",
-      "new": "            tmp.write_text(text, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "render-out-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "        sdlc_md.atomic_write(Path(args.out), page)\n",
-      "new": "        Path(args.out).write_text(page, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "verified-line-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        sdlc_md.atomic_write(story_path, new_text)\n",
-      "new": "        story_path.write_text(new_text, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "scaffold-out-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        sdlc_md.atomic_write(out, matrix)\n",
-      "new": "        out.write_text(matrix, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "lessons-file-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "    sdlc_md.atomic_write(path, \"\".join(parts))\n",
-      "new": "    path.write_text(\"\".join(parts), encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "global-lesson-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "        sdlc_md.atomic_write(dest, content)\n",
-      "new": "        dest.write_text(content, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "summary-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "        sdlc_md.atomic_write(out_path, text)\n",
-      "new": "        out_path.write_text(text, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "epic-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "            sdlc_md.atomic_write(ep, \"\\n\".join(lines) + \"\\n\")\n",
-      "new": "            ep.write_text(\"\\n\".join(lines) + \"\\n\", encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "revision-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "        sdlc_md.atomic_write(path, \"\\n\".join(lines) + (\"\\n\" if text.endswith(\"\\n\") else \"\"))\n",
-      "new": "        path.write_text(\"\\n\".join(lines) + (\"\\n\" if text.endswith(\"\\n\") else \"\"))\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "issue-stamp-truncating",
-      "file": ".claude/skills/sdlc-studio/scripts/github_sync.py",
-      "old": "    sdlc_md.atomic_write(path, new_text)\n",
-      "new": "    path.write_text(new_text, encoding=\"utf-8\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-definition-dropped",
-      "file": "sdlc-studio/trd.md",
-      "old": "   A shared file is any tracked workspace file a script rewrites whole. Its rewrite goes\n",
-      "new": "   Its rewrite goes\n",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-exception-unlisted",
-      "file": "sdlc-studio/trd.md",
-      "old": "   - `docgen.py`: the pages it rewrites are generated, and a rerun derives each whole again.\n",
-      "new": "",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-exception-without-reason",
-      "file": "sdlc-studio/trd.md",
-      "old": "   - `docgen.py`: the pages it rewrites are generated, and a rerun derives each whole again.\n",
-      "new": "   - `docgen.py`: generated.\n",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-row-definition-dropped",
-      "file": "sdlc-studio/trd.md",
-      "old": " (any tracked workspace file a script rewrites whole; \u00a75 rule 5 lists the writers left outside)",
-      "new": "",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-allowlist-entry-dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    \"docgen.py::_write::path\": (OUTSIDE, \"generated pages, re-derived by a rerun\"),\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-planted-scratch-unlisted",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "            allowlist = {\"planted.py::scratch::rc\": (SCRATCH, \"a temporary directory\")}\n",
-      "new": "            allowlist = {}\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-sweep-reads-the-tests",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "        if rel.parts[0] != \"tests\":\n",
-      "new": "        if True:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-sweep-reads-top-level-only",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    for p in sorted(scripts.rglob(\"*.py\")):\n",
-      "new": "    for p in sorted(scripts.glob(\"*.py\")):\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-tear-never-happens",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
-      "old": "            if seen[0] == nth:\n",
-      "new": "            if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "write-bytes-not-seen",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "func.attr in _CONTENT_WRITES",
-      "new": "func.attr == \"write_text\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "path-open-not-seen",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    if not (builtin or dotted):\n",
-      "new": "    if not builtin:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "builtin-mode-read-first",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "at = 1 if builtin else 0",
-      "new": "at = 0",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "mode-keyword-ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "modes = [kw.value for kw in call.keywords if kw.arg == \"mode\"] + call.args[at:at + 1]",
-      "new": "modes = call.args[at:at + 1]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every-mode-truncates",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"w\" in str(modes[0].value)",
-      "new": "True",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "append-truncates",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"w\" in str(modes[0].value)",
-      "new": "any(c in str(modes[0].value) for c in \"wa\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "mode-in-a-name-read",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "modes and isinstance(modes[0], ast.Constant) and ",
-      "new": "modes and ",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no-mode-read",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "modes and isinstance(modes[0], ast.Constant) and ",
-      "new": "isinstance(modes[0], ast.Constant) and ",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "file-keyword-target",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "return call.args[0] if call.args else call",
-      "new": "return call.args[0]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "method-target-is-the-call",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    if not builtin:\n        return func.value\n",
-      "new": "    if not builtin:\n        return call\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "not-yet-moved-ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "if site not in allowlist and site not in not_yet_moved)",
-      "new": "if site not in allowlist)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-not-yet-moved-back-on-the-allowlist",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    \"pvd.py::sync::dest\": (OUTSIDE,",
-      "new": "    \"retro.py::cmd_cost_baseline::path\": (OUTSIDE, \"x\"),\n    \"pvd.py::sync::dest\": (OUTSIDE,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-rollback-not-listed",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    \"artifact.py::_WriteJournal.rollback::p\": \"restores a file a failed retitle touched\",\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-not-yet-moved-without-a-target",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"retro.py::cmd_cost_baseline::path\": \"the cost-baseline history row\"",
-      "new": "\"retro.py::cmd_cost_baseline::path\": \" \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-rollback-unlisted",
-      "file": "sdlc-studio/trd.md",
-      "old": "`artifact.py` (`_WriteJournal.rollback`), `close_owed.py`",
-      "new": "`close_owed.py`",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-restore-function-unnamed",
-      "file": "sdlc-studio/trd.md",
-      "old": "(`revert_check`,\n     `revert_check.restore`)",
-      "new": "(`revert_check`)",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-mutation-unlisted",
-      "file": "sdlc-studio/trd.md",
-      "old": "   - `mutation.py` (`applied` and its restores): ",
-      "new": "   - (`applied` and its restores): ",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-pvd-unlisted",
-      "file": "sdlc-studio/trd.md",
-      "old": "   - `pvd.py` (`sync`): ",
-      "new": "   - (`sync`): ",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-sweep-sees-write-text-only",
-      "file": "sdlc-studio/trd.md",
-      "old": "names every `write_text` and `write_bytes` call, and\n   every `open` given a literal mode holding `w` (read as",
-      "new": "names every `write_text` call (read as",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-pending-not-said",
-      "file": "sdlc-studio/trd.md",
-      "old": "and is not yet moved onto\n     `atomic_write`",
-      "new": "and is outside\n     `atomic_write`",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-one-exception-again",
-      "file": "sdlc-studio/trd.md",
-      "old": "The writers left outside the\n   guarantee, each with its reason:",
-      "new": "The one deliberate exception, each with its reason:",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-rename-tear-on-the-json",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
-      "old": "            if len(calls) == 2:\n",
-      "new": "            if len(calls) == 1:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_a_failure_between_the_renames_leaves_each_file_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test-rename-never-torn",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py",
-      "old": "            if len(calls) == 2:\n",
-      "new": "            if len(calls) == 3:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_a_failure_between_the_renames_leaves_each_file_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "module-open-read-as-method",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "               or dotted and isinstance(func.value, ast.Name) and func.value.id in modules)\n",
-      "new": "               )\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "module-set-inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "func.value.id in modules)",
-      "new": "func.value.id not in modules)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "module-receiver-not-a-name",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "dotted and isinstance(func.value, ast.Name) and func.value.id",
-      "new": "dotted and func.value.id",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "io-not-read",
+      "mutant": "bz2 read as the builtin",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
       "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
-      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\")",
+      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\", \"bz2\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "builtins-not-read",
+      "mutant": "lzma read as the builtin",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
       "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
-      "new": "_OPEN_MODULES = (\"codecs\", \"io\")",
+      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\", \"lzma\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "codecs-not-read",
+      "mutant": "tarfile read as the builtin",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
+      "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
+      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\", \"tarfile\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gzip read as the builtin",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
+      "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
+      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\", \"gzip\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "codecs dropped from the set",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
       "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
       "new": "_OPEN_MODULES = (\"builtins\", \"io\")",
@@ -499,97 +49,34 @@
       "answer": ""
     },
     {
-      "mutant": "sweep-module-added-trd-silent",
+      "mutant": "io dropped from the set",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
       "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
-      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"gzip\", \"io\")",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "dotted-any-attribute",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    dotted = isinstance(func, ast.Attribute) and func.attr == \"open\"\n",
-      "new": "    dotted = isinstance(func, ast.Attribute)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "builtin-name-dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "    builtin = (isinstance(func, ast.Name) and func.id == \"open\"\n               or dotted",
-      "new": "    builtin = (dotted",
+      "new": "_OPEN_MODULES = (\"builtins\", \"codecs\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "control-io-append-made-truncating",
+      "mutant": "builtins dropped from the set",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"    io.open(story, 'a').close()\\n\"",
-      "new": "\"    io.open(story, 'w').close()\\n\"",
+      "old": "_OPEN_MODULES = (\"builtins\", \"codecs\", \"io\")",
+      "new": "_OPEN_MODULES = (\"codecs\", \"io\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "control-codecs-read-made-truncating",
+      "mutant": "a method's mode read from the second argument",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"    codecs.open(story, 'r', 'utf-8').close()\\n\"",
-      "new": "\"    codecs.open(story, 'w', 'utf-8').close()\\n\"",
+      "old": "    at = 1 if builtin else 0\n",
+      "new": "    at = 1\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "trd-module-unnamed",
-      "file": "sdlc-studio/trd.md",
-      "old": "`io.open`, `builtins.open` or `codecs.open`",
-      "new": "`io.open` or `builtins.open`",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-module-extra",
-      "file": "sdlc-studio/trd.md",
-      "old": "`io.open`, `builtins.open` or `codecs.open`",
-      "new": "`io.open`, `gzip.open`, `builtins.open` or `codecs.open`",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-method-reading-dropped",
-      "file": "sdlc-studio/trd.md",
-      "old": ", and as a method's `(mode)` on any other receiver,\n   so `gzip.open(path, 'wt')` is not named)",
-      "new": ")",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "trd-builtin-reading-dropped",
-      "file": "sdlc-studio/trd.md",
-      "old": "(read as the builtin's `(file, mode)` when it\n   is called as",
-      "new": "(when it\n   is called as",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "shadow-read-as-module",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "func.value.id in modules)",
-      "new": "func.value.id in _OPEN_MODULES)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "alias-not-read",
+      "mutant": "an import's as alias ignored",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
       "old": "alias.asname or alias.name for node",
       "new": "alias.name for node",
@@ -598,73 +85,10 @@
       "answer": ""
     },
     {
-      "mutant": "plain-import-not-read",
+      "mutant": "every module open read as the builtin",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "alias.asname or alias.name for node",
-      "new": "alias.asname for node",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "any-import-binds",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "                     if alias.name in _OPEN_MODULES)",
-      "new": "                     )",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "from-import-binds",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "if isinstance(node, ast.Import) for alias",
-      "new": "if isinstance(node, (ast.Import, ast.ImportFrom)) for alias",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "second-alias-not-read",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "for alias in node.names\n",
-      "new": "for alias in node.names[:1]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "imports-read-at-top-level-only",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "for node in ast.walk(tree)",
-      "new": "for node in ast.iter_child_nodes(tree)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "modules-not-read-from-the-file",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "visit(tree, rel.as_posix(), \"\", _open_modules(tree))",
-      "new": "visit(tree, rel.as_posix(), \"\", frozenset())",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "modules-not-passed-down",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "visit(child, rel, inner, modules)",
-      "new": "visit(child, rel, inner, frozenset())",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "modules-not-given-to-rewritten",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "_rewritten(child, modules) if",
-      "new": "_rewritten(child) if",
+      "old": "or dotted and isinstance(func.value, ast.Name) and func.value.id in modules)",
+      "new": "or dotted and isinstance(func.value, ast.Name))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write",
       "result": "killed",
       "answer": ""

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, changelog.d/BG1537.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/reference-persona.md, changelog.d/BG1537.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/templates/personas/persona-template.md persona-template.md header comment (line 3) against `check_personas` in .claude/skills/sdlc-studio/scripts/validate.py lines 1278-1335
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -35,9 +35,14 @@ In `check_personas` in `validate.py`, apply the existing placeholder check to ea
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_the_template_role_list_is_not_a_declared_cast_role
 - [ ] **AC3** Given a filled persona card beside the template copy, when the personas check runs, then the filled card draws no warning and the findings on the copy are warnings, not errors. Fails on: a placeholder warning on a filled card, or the advisory check turned blocking.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory
+- [ ] **AC4** Given two Primary persona cards that are both unfilled copies of `persona-template.md`, so each Quick Reference `Interface` cell still holds the template's placeholder, when the personas check runs, then no error says the two Primaries declare the same Interface: a placeholder Interface is no Interface, as a placeholder cast-role cell is no role. Fails on: the shared-Interface error over two template placeholders, or a real shared Interface no longer erroring.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k placeholder_interface
+- [ ] **AC5** Given a scratch root whose only persona card is a byte-for-byte copy of `persona-template.md` and no registry entry, when `status.py` gathers requirements, then `personas` reads no (`personas=no` in the human line), and a root holding one filled card reads yes. Fails on: `personas_present` counting an unfilled template copy as a declared persona.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py -k status_personas_template_copy
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC4 and AC5 added and Affects widened (status.py, reference-persona.md) before landing: the title's status half and the shared-Interface error over two template placeholders, both found by the VAL builder; the persona-section rule's page text is fixed in the unit (D0561) |

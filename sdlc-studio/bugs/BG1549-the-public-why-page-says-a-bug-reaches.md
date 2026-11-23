@@ -32,9 +32,11 @@ Correct the sentence in docs/why-sdlc-studio.md to claim what the gate enforces:
 - [ ] **AC1** Given docs/why-sdlc-studio.md, when its account of the closing gates is read, then it says a story reaches Done only when its executable criteria have passed and that a bug is refused Fixed when nothing speaks for the fix or a recorded run of its criteria is red, and it does not claim a bug's criteria must pass. Fails on: the sentence that a bug reaches Fixed only when its criteria pass surviving on the public page.
   - **Verify:** pytest tools/tests/test_doc_claims.py::FixedGateClaimTests::test_the_why_page_claims_only_what_the_fixed_gate_enforces
 - [ ] **AC2** Given BG1039 after the fix, when its record is read, then its Verify lines name a test that exists and a run of them is recorded, or the bug is reopened with a Revision History row saying why. Fails on: BG1039 standing at Fixed on Verify lines naming `test_prereq_list_is_ci_list_strict.py`, a file that has never existed.
+  - **Verify:** pytest tools/tests/test_doc_claims.py::FixedGateClaimTests::test_bg1039_names_tests_that_exist_and_records_their_run
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC2 given the Verify line the DOC builder wrote and ran green; it had none |
