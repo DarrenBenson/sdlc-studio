@@ -1120,28 +1120,35 @@ def registry_advisories(repo_root: Path | str, text: str, cache: dict | None = N
 
 #: The human plan names this many test modules per script; `--format json` lists every one.
 REACHING_TEST_CAP = 10
-#: Both patterns open on a literal, so the search skips to it: one opening on a character class or
+#: Each pattern opens on a literal, so the search skips to it: one opening on a character class or
 #: `^` tries every position, and over a repository's test modules that costs seconds. An import
-#: statement is read after a newline (the text is read with one put before it). A `.py` file name
-#: is read on the reversed text, as `yp.` and then the name, with no word character after `.py`
-#: and no `.` before the name, so `a.tool.py` is not `tool.py`.
-_REACH_IMPORT = re.compile(r"\n[ \t]*(?:from[ \t]+([\w.]+)[ \t]+import[ \t]+(\([^)]*\)|[^#\n]*)"
-                           r"|import[ \t]+([^#\n]*))")
-_REACH_FILE = re.compile(r"yp\.(?<!\wyp\.)[\w-]+(?!\.)")
+#: statement is read after a newline (the text is read with one put before it); a parenthesised
+#: name list runs to its `)`, each comment in it taken whole to its line's end, so a `)` in a
+#: comment does not close it. A `.py` file name is read on the reversed text, as `yp.` and then
+#: the whole name, with no word character after `.py` and none of `.`, `-` or a word character
+#: before the name, so `a.tool.py` names neither `tool.py` nor the `ool.py` a shorter match
+#: would give back.
+_REACH_IMPORT = re.compile(r"\n[ \t]*(?:from[ \t]+([\w.]+)[ \t]+import[ \t]+"
+                           r"(\([^)#]*(?:#[^\n]*\n[^)#]*)*\)|[^#\n]*)|import[ \t]+([^#\n]*))")
+_REACH_FILE = re.compile(r"yp\.(?<!\wyp\.)[\w-]+(?![\w.-])")
+_REACH_COMMENT = re.compile(r"#[^\n]*")
 
 
 def reaching_test_advisories(repo_root: Path | str, text: str,
                              cache: dict | None = None) -> list[dict]:
     """`[{script, tests}]`: per `.py` file a unit's `Affects` declares, the test modules outside
-    that `Affects` which import it or name its file, as a command running it does.
+    that `Affects` which import it or name its file, as a command running it does. A directory
+    the `Affects` declares covers every module beneath it.
 
     A test module is a `test_*.py` file `git ls-files` lists under the project root, so an
-    untracked module and the copies a worktree under the project holds are never read. A module
-    imports `pkg/tool.py` by `import tool`, `import x.tool`, `from tool import ...`,
-    `from x.tool import ...` or `from pkg import tool`, and runs it when `tool.py` stands in its
-    text as a whole file name (not `mytool.py` or `tool.pyi`). Read by pattern rather than
-    parsed, and matched by name, so two scripts sharing a file name share their list. The scan is
-    made once per `cache`, which the plan shares across its units.
+    untracked module and the copies a worktree under the project holds are never read; a path
+    the index holds at several merge stages is read once. A module imports `pkg/tool.py` by
+    `import tool`, `import x.tool`, `from tool import ...`, `from x.tool import ...` or
+    `from pkg import tool` (a comment inside a parenthesised list hiding no name after it), and
+    runs it when `tool.py` stands in its text as a whole file name (not `mytool.py`, `a.tool.py`
+    or `tool.pyi`). Read by pattern rather than parsed, and matched by name, so two scripts
+    sharing a file name share their list. The scan is made once per `cache`, which the plan
+    shares across its units.
 
     ADVISORY BY CONSTRUCTION, like `registry_advisories`: it returns findings and decides
     nothing, and a project outside a git checkout has none."""
@@ -1156,7 +1163,8 @@ def reaching_test_advisories(repo_root: Path | str, text: str,
                                  ":(glob)**/test_*.py"], capture_output=True, timeout=30).stdout
         except (OSError, subprocess.SubprocessError):
             ls = b""                         # no git to run, or it hung
-        for rel in sorted(os.fsdecode(r) for r in ls.split(b"\0") if r):
+        # A set: mid-merge the index lists a conflicted path once per stage, read here once.
+        for rel in sorted({os.fsdecode(r) for r in ls.split(b"\0") if r}):
             try:
                 src = (root / rel).read_text(encoding="utf-8", errors="replace")
             except OSError:
@@ -1165,16 +1173,18 @@ def reaching_test_advisories(repo_root: Path | str, text: str,
             for frm, what, plain in _REACH_IMPORT.findall("\n" + src):
                 if frm:
                     pkg = frm.rsplit(".", 1)[-1]
-                    names |= {pkg} | {f"{pkg}.{n.split()[0]}" for n in what.strip("()").split(",")
-                                      if n.strip()}
+                    listed = _REACH_COMMENT.sub("", what).strip("()").split(",")
+                    names |= {pkg} | {f"{pkg}.{n.split()[0]}" for n in listed if n.strip()}
                 else:
                     names |= {n.split()[0].rsplit(".", 1)[-1] for n in plain.split(",")
                               if n.strip()}
             index.append((rel, names, {f[::-1] for f in _REACH_FILE.findall(src[::-1])}))
+    dirs = tuple(k + "/" for k in declared)  # a declared directory covers its tree
     out: list[dict] = []
     for script in sorted(k for k in declared if k.endswith(".py")):
         p = Path(script)
-        tests = [rel for rel, names, files in cache[key] if rel not in declared
+        tests = [rel for rel, names, files in cache[key]
+                 if rel not in declared and not rel.startswith(dirs)
                  and (p.stem in names or f"{p.parent.name}.{p.stem}" in names or p.name in files)]
         if tests:
             out.append({"script": script, "tests": tests})

@@ -2552,6 +2552,114 @@ class PlanTestModuleAdvisoryTests(unittest.TestCase):
             self.assertEqual(len(first[0]["tests"]), 3)
             self.assertIn("tests/test_tool_new.py", fresh[0]["tests"])
 
+    def test_a_module_conflicted_mid_merge_is_listed_once(self) -> None:
+        """`git ls-files` prints an unmerged path once per index stage; the plan reads it once."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root)
+            mod = root / "tests/test_tool_import.py"
+            gitutil.git(["commit", "-qm", "base"], root)
+            gitutil.git(["checkout", "-qb", "side"], root)
+            mod.write_text("import tool\nA = 1\n", encoding="utf-8")
+            gitutil.git(["commit", "-qam", "side"], root)
+            gitutil.git(["checkout", "-q", "-"], root)
+            mod.write_text("import tool\nA = 2\n", encoding="utf-8")
+            gitutil.git(["commit", "-qam", "trunk"], root)
+            self.assertNotEqual(gitutil.git(["merge", "-q", "side"], root, check=False).returncode,
+                                0)
+            staged = gitutil.git(["ls-files", "--", "tests/test_tool_import.py"], root, text=True)
+            self.assertEqual(staged.stdout.split(), ["tests/test_tool_import.py"] * 3)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [_REACH_LINE])
+
+    def test_a_dotted_file_name_names_no_shorter_script(self) -> None:
+        """`a.tool.py` names neither `tool.py` nor `ool.py`, nor `c.my-ool.py` `ool.py`: the
+        file-name match gives back no character to find a shorter name, and `ool.py` standing
+        alone is still read."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/ool.py", {
+                "scripts/ool.py": "X = 1\n",
+                "tests/test_m_dotted.py": ('P = "build/a.tool.py"\nQ = "b.ool.py"\n'
+                                           'R = "c.my-ool.py"\n'),
+                "tests/test_r_ool.py": 'P = "build/ool.py"\n'})
+            self.assertEqual(self._json(root)["test_advisories"], [{"id": "US0001", "items": [
+                {"script": "scripts/ool.py", "tests": ["tests/test_r_ool.py"]}]}])
+
+    def test_a_comment_inside_a_parenthesised_import_hides_no_name(self) -> None:
+        """A comment after a name, after the opening parenthesis or holding a parenthesis of its
+        own leaves the names after it read; a name standing only in a comment is not read."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/lib/surface.py", {
+                "scripts/lib/surface.py": "X = 1\n",
+                "tests/test_r_after.py": "from lib import (\n    other,  # why\n    surface,\n)\n",
+                "tests/test_r_open.py": "from lib import (  # noqa: E402\n    surface,\n)\n",
+                "tests/test_r_paren.py": ("from lib import (\n    other,  # why\n"
+                                          "    more,  # see f()\n    surface,\n)\n"),
+                "tests/test_m_comment.py": "from lib import (\n    other,  # surface\n)\n"})
+            self.assertEqual(self._json(root)["test_advisories"], [{"id": "US0001", "items": [
+                {"script": "scripts/lib/surface.py", "tests": [
+                    "tests/test_r_after.py", "tests/test_r_open.py", "tests/test_r_paren.py"]}]}])
+
+    def test_an_unclosed_parenthesised_import_is_read_in_linear_time(self) -> None:
+        """A comment runs to its line's end and no further, so a list no `)` closes is given up
+        at once rather than tried at every split of each comment (which never ends)."""
+        body = "\nfrom lib import (\n" + ("    a,  # " + "x" * 30 + "\n") * 30
+        code = ("import sys; sys.path.insert(0, sys.argv[1]); import sprint; "
+                "print(len(sprint._REACH_IMPORT.findall(sys.argv[2])))")
+        proc = subprocess.run([sys.executable, "-c", code, str(SCRIPT.parent), body],
+                              capture_output=True, text=True, timeout=20, check=False)
+        self.assertEqual(proc.stdout.strip(), "1", proc.stderr)
+
+    def test_a_module_under_a_declared_directory_is_not_listed(self) -> None:
+        """A directory in `Affects` covers its whole tree; a declared path that only begins a
+        module's name is no directory and covers nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, tests/",
+                           {"tests/deep/test_tool_deep.py": "import tool\n"})
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out), [])
+            self.assertNotIn("US0001: scripts/tool.py", out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, "scripts/tool.py, tests/test_tool")
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [_REACH_LINE])
+
+    def test_one_module_past_the_cap_is_counted(self) -> None:
+        """Eleven modules print ten and `+1 more`: the one left out is counted, never dropped."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            more = {f"tests/test_tool_more_{n:02d}.py": "import tool\n" for n in range(1, 9)}
+            _reach_project(root, extra=more)
+            every = sorted(["tests/test_tool_cli.py", "tests/test_tool_from.py",
+                            "tests/test_tool_import.py", *more])
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(self._block(out)[1:], [
+                f"    US0001: scripts/tool.py -> {', '.join(every[:10])}, +1 more "
+                + "(--format json lists all)"])
+
+    def test_the_header_is_printed_once_over_two_units(self) -> None:
+        """Two units that each reach a test module share one header, a line each under it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _reach_project(root, extra={"scripts/other.py": "X = 1\n",
+                                        "tests/test_other.py": "import other\n"}, git=False)
+            _verified_story(root, 2, "scripts/other.py", ["shell true"])
+            gitutil.git(["init", "-q"], root)
+            gitutil.git(["add", "-A"], root)
+            rc, out = self._plan(root)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(out.count(_REACH_HEADER), 1, out)
+            self.assertEqual(self._block(out)[1:], [
+                _REACH_LINE, "    US0002: scripts/other.py -> tests/test_other.py"])
+
 
 class DerivedClusterFileTests(unittest.TestCase):
     """US0291/CR0347: the collision analysis saw only what somebody DECLARED, and test files
