@@ -1,6 +1,6 @@
 # BG0995: refine leaves the bold **ACn** label in seeded AC headings, so a request written by the skill's own filer seeds '### AC1: **AC1** ...' (BG0291 incomplete)
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, changelog.d/BG0995.md
@@ -26,6 +26,7 @@ Accept the bold label with or without a separator, and a separator inside the bo
 
 - [ ] **AC1** Refining a request whose criteria are written `**ACn** text` or `**ACn:** text` seeds headings `### ACn: text` with no duplicated label, and the BG0291 forms still strip
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_bold_ac_label.py -k every_filer_form_strips
+  - **Verified:** yes (2026-11-23)
 
 ## Triage
 

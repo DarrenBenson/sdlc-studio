@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, changelog.d/BG1694.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py, tools/tests/test_test_census.py, changelog.d/BG1694.md
 > **Evidence:** .local/run21/land-RBG1470b.log: FAILED test_kill_grace_interrupt.py::KillGraceInterruptTests::test_an_interrupted_grace_sigkills_the_group_and_propagates, ValueError at line 66; test_kill_grace_interrupt.py:29-31 (DEAF writes with open().write), :64-66 (_child reads at once). Introduced by 09cf0766.
 > **Created:** 2026-11-21
 > **Created-by:** sdlc-studio file
@@ -44,3 +44,4 @@ In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an intege
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | AC3 added and Affects widened: test_lane_land_commit_timeout_group's `_pid` reads the hook's pid file before the hook writes it, the same race, which blocked the EFCI commit at load 13 in run twenty-three |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Groomed AC1 and AC2 into executable criteria and pointed at 2 for AC3's second test, after the race refused a push of e2a109be on the gate host; pulled into run twenty-three |
 | 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Reopened with AC4: the landed fix's two bound tests assert a wall-clock duration in commit-run tests, which the wall-clock census refuses; found when REF2's commit selected the census |
+| 2026-11-23 | Claude Opus 5.5 (run twenty-three orchestrator) | Affects widened to tools/tests/test_test_census.py, the test AC4's Verify runs: the repair's two wall-clock mutants are killed by the census, and the land refuses a mutant checked against a test the unit does not declare |

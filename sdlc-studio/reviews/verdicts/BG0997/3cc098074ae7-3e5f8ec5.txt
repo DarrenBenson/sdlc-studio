@@ -1,0 +1,6 @@
+UNIT: BG0997
+BRIEF: 3cc098074ae7-3e5f8ec5
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round three over 7d003c05, judged on its diff against a88149b8: one test row and the test's docstring, with engagement_floor.py and changelog.d/BG0997.md unchanged. "The docstring's "A subject with a further `:` segment names no unit"" CLOSED: the row `rule:engagement-floor:BG-01JQK3F8:ac2` is in test_a_per_unit_waiver_holds_only_while_accepted_and_naming_one_whole_id, and the round-two first-segment mutant now fails exactly that test. Reviewer mutants on the segment guard, all KILLED by it: the first segment matched, the last segment matched, one further segment tolerated, any segment matched, and a trailing segment stripped before matching. The test's docstring, a further segment "before the id, inside it or after it", is TRUE against those rows. Verify dry-run 2/2 pass, and test_engagement_floor.py with test_decisions.py passes (152 passed, 21 subtests). The round-two rulings on the status filter (CLOSED) and the author's anchor survivor (equivalent) stand.

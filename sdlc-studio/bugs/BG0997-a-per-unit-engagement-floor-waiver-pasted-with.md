@@ -1,6 +1,6 @@
 # BG0997: A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG0997.md

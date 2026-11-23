@@ -1,100 +1,109 @@
 {
   "unit": "BG1552",
-  "digest": "8d022671d2966064 at e7afcc97bbf0",
-  "report": "sdlc-studio/.local/lane/landed/agent-a3e89498b69b8ab82/BG1552-mutation-edits.json",
+  "digest": "5fadf8dfb6274420 at 7d003c053f49",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3bd6932f92922ac7/BG1552-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no vocabulary guard",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "    if _EPIC_WORKING not in vocab:\n        return []\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_vocabulary_without_in_progress_has_no_partial_lane",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "In Progress counts as not started",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "not_started = vocab[:vocab.index(_EPIC_WORKING)]",
-      "new": "not_started = vocab[:vocab.index(_EPIC_WORKING) + 1]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every status judged",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "if canon not in not_started or _finished_breakdown(root, text) is not None:",
-      "new": "if _finished_breakdown(root, text) is not None:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_which_epics_and_children_count",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "finished breakdown not left to the live lane",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "if canon not in not_started or _finished_breakdown(root, text) is not None:",
-      "new": "if canon not in not_started:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_writes_in_progress_and_a_second_detect_is_clean",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "Review not under way",
+      "mutant": "a Ready child counts as work under way",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
       "old": "_CHILD_UNDER_WAY = frozenset({\"In Progress\", \"Review\"})",
-      "new": "_CHILD_UNDER_WAY = frozenset({\"In Progress\"})",
+      "new": "_CHILD_UNDER_WAY = frozenset({\"In Progress\", \"Review\", \"Ready\"})",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_which_epics_and_children_count",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "In Progress not under way",
+      "mutant": "apply forces the move round the epic's gates",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "_CHILD_UNDER_WAY = frozenset({\"In Progress\", \"Review\"})",
-      "new": "_CHILD_UNDER_WAY = frozenset({\"Review\"})",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported",
+      "old": "transition.transition(root, d[\"id\"], d[\"target\"], dry_run=dry_run)",
+      "new": "transition.transition(root, d[\"id\"], d[\"target\"], dry_run=dry_run, force=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_refused_move_is_counted_and_named_and_never_forced",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "ruled-out child counts",
+      "mutant": "settle leaves the partial lane alone (the regression)",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "if u_canon in _CHILD_UNDER_WAY or sdlc_md.is_delivered_terminal(utype, u_canon)]",
-      "new": "if u_canon in _CHILD_UNDER_WAY or sdlc_md.is_terminal_status(utype, u_canon)]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_which_epics_and_children_count",
+      "old": "                 + [(\"started\", d) for d in epic_partial_delivery_drift(root)])",
+      "new": "                 + [])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_commit_that_starts_a_story_is_settled_not_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "delivered child not counted",
+      "mutant": "settle leaves the partial lane alone, seen by the lean report fixture",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "if u_canon in _CHILD_UNDER_WAY or sdlc_md.is_delivered_terminal(utype, u_canon)]",
-      "new": "if u_canon in _CHILD_UNDER_WAY]",
+      "old": "                 + [(\"started\", d) for d in epic_partial_delivery_drift(root)])",
+      "new": "                 + [])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py::KnownIssuesTests::test_a_clean_run_hands_over_no_close_gap",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the partial item carries no target, so the gate counts it",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "                      \"target\": _EPIC_WORKING,",
+      "new": "                      \"derived\": _EPIC_WORKING,",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_draft_epic_with_a_done_child_is_reported_as_in_progress",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "untouched epic reported",
+      "mutant": "the detector does not ask the epic's gates",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        if not moved:\n            continue\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported",
+      "old": "            transition.transition(root, eid, _EPIC_WORKING, dry_run=True)\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_epic_whose_own_gates_refuse_the_move_is_left_as_it_was",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "derives Done",
+      "mutant": "a refused move is reported anyway",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "\"derived\": _EPIC_WORKING,",
-      "new": "\"derived\": \"Done\",",
+      "old": "            continue          # the epic's own gates hold it where it is",
+      "new": "            pass              # the epic's own gates hold it where it is",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_epic_whose_own_gates_refuse_the_move_is_left_as_it_was",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the detector's probe is a real move",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "            transition.transition(root, eid, _EPIC_WORKING, dry_run=True)\n",
+      "new": "            transition.transition(root, eid, _EPIC_WORKING, dry_run=False)\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_draft_epic_with_a_done_child_is_reported_as_in_progress",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "lane not in the sweep",
+      "mutant": "settle records a start as a close",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "            out[lane].append((d[\"id\"], d[\"file_status\"], d[\"target\"]))",
+      "new": "            out[\"closed\"].append((d[\"id\"], d[\"file_status\"], d[\"target\"]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_commit_that_starts_a_story_is_settled_not_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settle does not name the start it made",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        print(f\"settled {eid}: {frm} -> {to} (a breakdown unit is delivered or under way)\")",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_settle_names_the_start_it_makes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the fix line does not name settle",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "                             f\"`reconcile settle` does so at commit\"})",
+      "new": "                             f\"\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_draft_epic_with_a_done_child_is_reported_as_in_progress",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the detector is dropped from the sweep",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
       "old": "        all_drift.extend(epic_partial_delivery_drift(repo_root))\n",
       "new": "",
@@ -103,128 +112,20 @@
       "answer": ""
     },
     {
-      "mutant": "apply writes on a dry run",
+      "mutant": "settle's refusal line calls every move a close",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "transition.transition(root, d[\"id\"], d[\"derived\"], dry_run=dry_run)",
-      "new": "transition.transition(root, d[\"id\"], d[\"derived\"], dry_run=False)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_dry_run_and_json_report_without_writing",
+      "old": "print(f\"left {eid}: its derived move was refused - {reason}\")",
+      "new": "print(f\"left {eid}: its derived close was refused - {reason}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_settle_leaves_a_start_that_derives_from_unstaged_edits",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "refusal reason crashes on an empty message",
+      "mutant": "settle starts an epic whose child carries unstaged edits",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "\"reason\": (str(exc).strip() or type(exc).__name__).splitlines()[0]})",
-      "new": "\"reason\": str(exc).strip().splitlines()[0]})",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_refused_move_is_counted_and_named",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal not caught",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            transition.transition(root, d[\"id\"], d[\"derived\"], dry_run=dry_run)\n            done.append(d[\"id\"])\n        except (ValueError, FileNotFoundError) as exc:",
-      "new": "            transition.transition(root, d[\"id\"], d[\"derived\"], dry_run=dry_run)\n            done.append(d[\"id\"])\n        except FileNotFoundError as exc:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_refused_move_is_counted_and_named",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refusal not counted",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "{u['reason']}\", file=sys.stderr)\n            unapplied += 1\n        le = apply_linked_epics(",
-      "new": "{u['reason']}\", file=sys.stderr)\n        le = apply_linked_epics(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_a_refused_move_is_counted_and_named",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "json path skips the writer",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            by_type[\"epic_progress\"] = apply_epic_partial_delivery(repo_root,\n                                                                   dry_run=args.dry_run)\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_dry_run_and_json_report_without_writing",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "text path skips the writer",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        pd = apply_epic_partial_delivery(repo_root, dry_run=args.dry_run)",
-      "new": "        pd = {\"synced\": [], \"unapplied\": []}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_apply_writes_in_progress_and_a_second_detect_is_clean",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reference: rule line drops Done children",
-      "file": ".claude/skills/sdlc-studio/reference-epic.md",
-      "old": "If any In Progress, or Done while others remain open",
-      "new": "If any In Progress",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_reference_epic_states_the_rule_the_script_holds",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reference: Approved not named",
-      "file": ".claude/skills/sdlc-studio/reference-epic.md",
-      "old": "a Draft, Ready or Approved epic",
-      "new": "a Draft or Ready epic",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_reference_epic_states_the_rule_the_script_holds",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hint: the terminal shape unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": ", or records the ruling with `transition.py annotate --id EPxxxx --field Decision-Override --value <ruling>`",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_the_kind_is_registered_and_carries_a_remediation_hint",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hint: the terminal shape said to be rewritten",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "reported and never rewritten",
-      "new": "reported and rewritten by `reconcile apply`",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_the_kind_is_registered_and_carries_a_remediation_hint",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "hint: the partial shape unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": " A Draft, Ready or Approved epic with a unit delivered or under way while its breakdown is unfinished: it derives In Progress, and `reconcile apply` moves it there through `transition.py`",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_the_kind_is_registered_and_carries_a_remediation_hint",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "lean close fixture: epic left at Draft",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_close.py",
-      "old": "    _cli(\"transition\", \"set\", \"--id\", eid, \"--status\", \"In Progress\", \"--root\", str(root))\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_close.py::CloseDriftTests::test_one_drift_item_is_one_known_issue",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "lean report fixture: epic left at Draft",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py",
-      "old": "    _ok(root, \"transition.py\", \"set\", epic, \"In Progress\")\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py::KnownIssuesTests::test_a_clean_run_hands_over_no_close_gap",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: expect the In Progress epic reported",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
-      "old": "        self.assertEqual([], self._naming(\"EP0004\"))",
-      "new": "        self.assertEqual(1, len(self._naming(\"EP0004\")))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_an_all_draft_epic_and_an_in_progress_epic_are_not_reported",
+      "old": "        lanes = ([(\"closed\", d) for d in epic_status_stale_drift(root)]\n                 + [(\"started\", d) for d in epic_partial_delivery_drift(root)])\n        for lane, d in lanes:",
+      "new": "        lanes = ([(\"closed\", d) for d in epic_status_stale_drift(root)])\n        stale.extend((\"started\", d) for d in epic_partial_delivery_drift(root))\n        for lane, d in lanes:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicPartialDeliveryTests::test_settle_leaves_a_start_that_derives_from_unstaged_edits",
       "result": "killed",
       "answer": ""
     }

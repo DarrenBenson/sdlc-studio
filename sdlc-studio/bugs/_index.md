@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 278 |
+| Open | 275 |
 | In Progress | 0 |
-| Fixed | 1107 |
+| Fixed | 1112 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1726** |
+| **Total** | **1728** |
 
 ## All Bugs
 
@@ -70,9 +70,9 @@
 | [BG0992](BG0992-bg0989-s-approved-repair-leaves-three-branches-unpinned.md) | BG0989's approved repair leaves three branches unpinned, and its docs over-claim which commands move the legacy lessons log | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG0993](BG0993-the-open-sprint-run-lives-in-one-machine.md) | The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG0994](BG0994-bg0989-left-test-lessons-py-s-fixtures-on.md) | BG0989 left test_lessons.py's fixtures on the legacy lessons path, so seven tests print the migration line and CI's noise gate is red on main | Fixed | High | 2026-10-08 | 2026-10-08 |
-| [BG0995](BG0995-refine-leaves-the-bold-acn-label-in-seeded.md) | refine leaves the bold **ACn** label in seeded AC headings, so a request written by the skill's own filer seeds '### AC1: **AC1** ...' (BG0291 incomplete) | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0995](BG0995-refine-leaves-the-bold-acn-label-in-seeded.md) | refine leaves the bold **ACn** label in seeded AC headings, so a request written by the skill's own filer seeds '### AC1: **AC1** ...' (BG0291 incomplete) | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0996](BG0996-the-finding-filer-s-identifier-wrapper-pulls-trailing.md) | The finding filer's identifier wrapper pulls trailing punctuation into the code span: (`API_KEY_2`, `TOKEN_V2)` and `keep_alive.` | Open | Low | 2026-10-08 | 2026-10-08 |
-| [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
@@ -527,7 +527,7 @@
 | [BG1449](BG1449-lane-accept-refuses-to-record-a-reject-when.md) | lane accept refuses to record a REJECT when the unit's self-check is stale, though a REJECT moves nothing | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1450](BG1450-a-reviewer-s-verdict-file-is-refused-by.md) | A reviewer's verdict file is refused by critic.py record over one code span with a leading space, and the review brief does not warn | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1451](BG1451-the-commit-msg-hook-refuses-git-commit-amend.md) | The commit-msg hook refuses git commit --amend on a lane commit because it attributes only the newly staged files | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
-| [BG1452](BG1452-reconcile-derives-a-request-complete-when-every-child.md) | reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1452](BG1452-reconcile-derives-a-request-complete-when-every-child.md) | reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1453](BG1453-file-finding-keeps-a-placeholder-id-such-as.md) | file_finding keeps a placeholder id such as changelog.d/BGXXXX.md in Affects verbatim instead of substituting the minted id or refusing it | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1454](BG1454-sprint-lane-return-agent-agent-id-leaves-the.md) | sprint lane return --agent agent-<id> leaves the unit unpriced, while lane land prints the builder as agent-<id> | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1455](BG1455-escape-py-trace-counts-a-mentions-trailer-id.md) | escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects | Open | Medium | 2026-11-15 | 2026-11-15 |
@@ -626,7 +626,7 @@
 | [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Fixed | Low | 2026-11-17 | 2026-11-17 |
@@ -800,8 +800,10 @@
 | [BG1722](BG1722-conformance-adopt-after-takes-a-schema-v3-cutoff.md) | `conformance.adopt_after` takes a schema v3 cutoff on a schema v2 project, so the conformance lane exempts every sequential unit | Open | Low | 2026-11-23 | 2026-11-23 |
 | [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
-| [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1726](BG1726-readiness-detector-owed-reports-a-project-lens-as.md) | readiness detector-owed reports a project lens as PRD (None) and would declare a bare pack directory as the owed unit's Affects | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1727](BG1727-bg1694-did-not-converge-in-review-round-2.md) | BG1694 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1728](BG1728-bg1552-did-not-converge-in-review-round-2.md) | BG1552 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

@@ -1,0 +1,6 @@
+UNIT: BG0995
+BRIEF: dc376d08dff8-b0992f1a
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, judged over the repair 7d003c05. "the bold-label alternative's multi-digit branch is unpinned" CLOSED. Each round-one survivor is now killed: narrowing `\d+` to `\d` (3 failed), dropping the space between AC and the digits (1 failed), and dropping `)`, `]` and `-` as the separator inside the bold (3 failed). A further mutant of my own, the opening bold reduced to exactly two stars, is killed too (1 failed). Each was applied once with `__pycache__` purged. The killing tests are `test_every_filer_form_strips_past_nine_criteria` and `test_every_filer_form_strips_each_separator_and_spacing_in_the_bold`. "the test module's docstring says a request the skill itself filed" CLOSED. The docstring now says neither request filer writes a bold row, and executed at 7d003c05 `file_finding.py file --type cr` and `artifact.py new --type cr` both write `- [ ] text`. The changed `refine.py` comment is TRUE. So is the changelog's "any number of digits, `**AC10**` included". AC1 passes: verify_ac dry-run reports 1 of 1. The new tests sit under its `-k every_filer_form_strips` selector. The three refine modules pass (83 passed). Later commits on main do not touch this unit's files.

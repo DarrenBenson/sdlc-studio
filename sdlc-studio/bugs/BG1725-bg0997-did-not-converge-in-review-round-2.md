@@ -1,6 +1,6 @@
 # BG1725: BG0997 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG0997.md
@@ -27,8 +27,10 @@ Fix each finding above, then deliver BG0997 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG0997 AC1 still passes: A waiver recorded as rule:engagement-floor:BG-01JQK3F8 waives the unit BG-01JQK3F8 and no other unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** BG0997 AC2 still passes: A waiver recorded with the dash already removed still waives that same unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::WaiverTests::test_per_unit_waiver_exempts_only_that_unit_for_a_dashed_v3_id_and_the_dashless_form
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

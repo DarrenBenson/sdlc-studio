@@ -1,6 +1,6 @@
 # BG1551: EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md, sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_reconcile_blocked.py, changelog.d/BG1551.md
@@ -32,12 +32,16 @@ Extend the epic status drift lane in reconcile.py so a terminal epic is also com
 
 - [ ] **AC1** Given a fixture epic at Done whose declared children are all Superseded, when `reconcile.py detect` runs, then it reports a drift item naming the epic as Done where its children derive Superseded. Fails on: zero drift items over a terminal epic that no child delivered.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_done_epic_over_all_superseded_children_is_drift
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given a fixture epic at Done with at least one Done child, when `detect` runs, then no drift item names it. Fails on: every terminal epic with a ruled-out child reported.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_a_done_epic_over_a_delivered_child_is_not_drift
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given the first fixture, when `reconcile.py` applies its fixes, then the epic's Status line is left as written and the item stays reported. Fails on: a terminal status that may record a ruling rewritten unasked.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::EpicStatusStaleTests::test_apply_reports_a_terminal_epic_and_does_not_rewrite_it
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC4** Given the corpus after the fix, when EP0246 and CR0561 are read, then EP0246 reads Superseded naming US0908, or names the decision that keeps it Done, and CR0561's Revision History carries a row recording its completion and what delivered it. Fails on: a request reading as delivered by an epic none of whose stories was built, with no row saying how.
   - **Verify:** shell grep -q '^> \*\*Status:\*\* Superseded' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Superseded by US0908' sdlc-studio/epics/EP0246-the-declared-python-floor-is-a-gate-not.md && grep -q 'Complete, delivered by US0908' sdlc-studio/change-requests/CR0561-the-declared-python-3-10-floor-is-stated.md
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1452: reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/help/refine.md, changelog.d/BG1452.md
@@ -26,6 +26,7 @@ Let refine mark a request decomposed in part (naming the criteria left), and hav
 
 - [ ] **AC1** Given a request refined in part, when all its children resolve, then reconcile does not derive it Complete and names the criteria still unrefined. Fails on: a derived Complete.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine_partial.py::RefinePartialTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 
