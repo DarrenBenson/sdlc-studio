@@ -299,6 +299,35 @@ class EpicIndexNegativeControlTests(unittest.TestCase):
         self.assertEqual("EP0900", rec)
         self.assertEqual([("EP0900", "Stories")], [(f["id"], f["column"]) for f in found])
 
+    def test_a_live_row_is_blanked_in_place_and_no_row_is_added(self) -> None:
+        """With a live row present the control blanks that row where it stands.
+
+        The live index holds one usable row and the archive another. The mutated live index must
+        still hold exactly one row, the original, with its Stories cell blanked: a second row
+        copied in from elsewhere would be a different mutation and leave the original intact.
+        """
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            copy = Path(d)
+            epics = copy / "sdlc-studio" / "epics"
+            (epics / "archive" / "v1").mkdir(parents=True)
+            (copy / "sdlc-studio" / "stories").mkdir()
+            head = ("| ID | Title | Status | Stories | Deps | Created | Updated |\n"
+                    "| --- | --- | --- | --- | --- | --- | --- |\n")
+            live_row = "| [EP0900](../../EP0900-x.md) | T | Done | 0 | -- | 2026-01-01 | 2026-01-01 |\n"
+            arch_row = "| [EP0901](../../EP0901-y.md) | U | Done | 0 | -- | 2026-01-01 | 2026-01-01 |\n"
+            (epics / "_index.md").write_text("# Epic Index\n\n" + head + live_row, encoding="utf-8")
+            (epics / "archive" / "v1" / "epic.md").write_text("# archive\n\n" + head + arch_row,
+                                                              encoding="utf-8")
+            for n, t in (("0900-x", "EP0900: T"), ("0901-y", "EP0901: U")):
+                (epics / f"EP{n}.md").write_text(f"# {t}\n\n> **Status:** Done\n", encoding="utf-8")
+            rec, found = _mutate_one_row_and_sweep(copy)
+            after = _index_rows_live(copy)
+        self.assertEqual("EP0900", rec)
+        self.assertEqual(1, len(after), "a row was added to the live index instead of blanking one")
+        self.assertEqual(sdlc_md.CELL_NOT_STATED, reconcile._split_row_cells(after[0])[3])
+        self.assertEqual([("EP0900", "Stories")], [(f["id"], f["column"]) for f in found])
+
 
 if __name__ == "__main__":
     unittest.main()
