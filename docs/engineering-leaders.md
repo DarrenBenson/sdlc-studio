@@ -13,9 +13,12 @@ independently, what is known to be wrong, and the accountable person, who is the
 signed the run's report ([evidence_pack.py](../.claude/skills/sdlc-studio/scripts/evidence_pack.py),
 [how the pack is built](../.claude/skills/sdlc-studio/reference-scripts-domain.md#evidence_packpy)).
 
-The pack refuses a report nobody has signed, and it refuses to name an agent as the accountable
-person. It reads only what is committed, so an edit nobody has committed cannot change what the
-board sees ([evidence_pack.py](../.claude/skills/sdlc-studio/scripts/evidence_pack.py)).
+The pack refuses a report nobody has signed, and a signer it can see is not a person: a blank
+principal, one that reads as an agent by name (the word agent or subagent in it), and one the
+committed review ledgers record as an author of the report's own units, unless the ledger records
+that author as a person. It cannot tell a person from an agent session signing under another
+name, so the person it names is the operator's responsibility. It reads only what is committed,
+so an edit nobody has committed cannot change what the board sees ([evidence_pack.py](../.claude/skills/sdlc-studio/scripts/evidence_pack.py)).
 
 A story reaches Done only through one gate, which refuses it while any of its executable
 acceptance criteria is failing or has never run

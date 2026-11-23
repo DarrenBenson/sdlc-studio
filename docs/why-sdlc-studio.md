@@ -284,8 +284,10 @@ artifacts mint ULIDs) is fully supported.
 
 Around that identity sits the quality floor: a mechanical **independence gate** (the author
 of a change can never be its reviewer), **executable acceptance criteria** (a story reaches
-Done, and a bug Fixed, only when its criteria pass), a **portable CI gate** (`gate.py`, runs the
-same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
+Done only when its executable criteria have passed; a bug is refused Fixed when nothing speaks
+for the fix - no criterion ticked and none carrying a `Verify:` line - or when a recorded run of
+its criteria is red), a **portable CI gate** (`gate.py`, runs the same checks anywhere), and
+reconciliation that keeps every index and epic checkbox in step with
 the files - recomputed from them, not asserted.
 
 And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to

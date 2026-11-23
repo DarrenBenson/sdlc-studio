@@ -16,6 +16,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 PAGE = REPO / "docs" / "engineering-leaders.md"
+REFERENCE = REPO / ".claude" / "skills" / "sdlc-studio" / "reference-scripts-domain.md"
 REPORTS = REPO / "sdlc-studio" / "reports"
 WORD_LIMIT = 1200
 
@@ -212,6 +213,58 @@ def refusal_link_problems(body: str) -> list[str]:
     return problems if named else ["names no refusal of the evidence pack"]
 
 
+#: The three refusals of the pack's signer check (`evidence_pack.principal_refusal`), as the
+#: page and the reference word them.
+SIGNER_REFUSALS = {
+    "a blank principal": re.compile(r"\ba blank principal\b", re.I),
+    "one that reads as an agent by name": re.compile(r"\breads as an agent by name\b", re.I),
+    "one recorded as an author of the report's own units":
+        re.compile(r"\brecord(?:ed|s)? as an author of the report's own units\b", re.I),
+}
+#: What the check cannot see, and whose the remainder is, in one sentence.
+_SIGNER_LIMIT = re.compile(r"\bcannot tell a person from an agent session\b[^.]*"
+                           r"\bunder another name\b[^.]*\bthe operator's responsibility\b", re.I)
+#: The author refusal's exception: `unit_authors` drops an author typed `human`.
+_HUMAN_AUTHOR = re.compile(r"\bunless the ledger records that author as a person\b", re.I)
+
+
+def reference_entry(text: str, heading: str = "### `evidence_pack.py`") -> str:
+    """The body under a reference page's script heading, up to the next heading, or empty."""
+    rest = text.partition(f"\n{heading}\n")[2]
+    end = re.search(r"^#{1,6} ", rest, re.M)
+    return rest[:end.start()] if end else rest
+
+
+def signer_refusals(body: str) -> set[str]:
+    """Each signer refusal stated in a claim that names a refusal."""
+    named = [c for c in claims(body) if re.search(r"\brefus", c, re.I)]
+    return {name for name, pattern in SIGNER_REFUSALS.items()
+            if any(pattern.search(c) for c in named)}
+
+
+def signer_limit_stated(body: str) -> bool:
+    """Whether one sentence says the check cannot tell a person from an agent session signing
+    under another name and leaves the named person to the operator."""
+    return any(_SIGNER_LIMIT.search(c) for c in claims(body))
+
+
+def signer_check_problems(body: str) -> list[str]:
+    """The signer check stated as more or less than it enforces: a refusal of agents stated
+    without saying it reads the name, a refusal or its exception left out, or the limit unsaid."""
+    problems = [f"states the agent refusal as absolute: {c[:60]}" for c in clauses(body)
+                if re.search(r"\brefus", c, re.I) and re.search(r"\bagents?\b", c, re.I)
+                and not re.search(r"\bby name\b", c, re.I)]
+    stated = signer_refusals(body)
+    problems += [f"does not state the refusal of {name}" for name in SIGNER_REFUSALS
+                 if name not in stated]
+    if not any(_HUMAN_AUTHOR.search(c) for c in claims(body)):
+        problems.append("does not say an author the ledger records as a person is not refused")
+    if not signer_limit_stated(body):
+        problems.append("does not say the pack cannot tell a person from an agent session "
+                        "signing under another name")
+    return problems
+
+
 def author_stamp_problems(body: str) -> list[str]:
     """An author-stamping claim stronger than the verdict writer enforces."""
     problems = []
@@ -282,7 +335,8 @@ class EngineeringLeadersPageTests(unittest.TestCase):
 
 
 class FactualWordingTests(unittest.TestCase):
-    """Three sentences held to what the code does: pricing, the pack's refusals, author stamping."""
+    """Claims held to what the code does: pricing, where the pack's refusals link, what its
+    signer check refuses and cannot see, and author stamping."""
 
     def setUp(self) -> None:
         self.text = PAGE.read_text(encoding="utf-8")
@@ -311,6 +365,75 @@ class FactualWordingTests(unittest.TestCase):
         self.assertEqual(len(refusal_link_problems(cut)), 2)
         self.assertEqual(refusal_link_problems("The pack lists each change."),
                          ["names no refusal of the evidence pack"])
+
+    GOOD_SIGNER = ("The pack refuses a blank principal, one that reads as an agent by name, and one "
+                   "the review ledgers record as an author of the report's own units, unless the "
+                   "ledger records that author as a person. It cannot tell a person from an agent "
+                   "session signing under another name, so the person it names is the operator's "
+                   "responsibility.")
+    LIMIT_MISSING = ("does not say the pack cannot tell a person from an agent session signing "
+                     "under another name")
+
+    def test_the_agent_refusal_is_not_stated_as_absolute(self) -> None:
+        self.assertEqual(signer_check_problems(section_body(self.text, "change approval")), [])
+        # Planted failures beside a positive control.
+        good = self.GOOD_SIGNER
+        self.assertEqual(signer_check_problems(good), [])
+        old = ("The pack refuses a report nobody has signed, and it refuses to name an agent as the "
+               "accountable\nperson.")
+        found = signer_check_problems(old)
+        self.assertTrue(found[0].startswith("states the agent refusal as absolute"), found)
+        self.assertEqual(len(found), 6, found)
+        self.assertEqual(signer_check_problems(good + " It refuses agents."),
+                         ["states the agent refusal as absolute: It refuses agents."])
+        # Not a refusal of agents: one that says it reads the name, one of something else, and
+        # an agent named in a sentence that refuses nothing.
+        for said in (" It refuses as accountable any signer that reads as an agent by name.",
+                     " It refuses an unsigned report.", " No agent is the accountable person."):
+            with self.subTest(said=said):
+                self.assertEqual(signer_check_problems(good + said), [])
+        self.assertEqual(signer_check_problems(good.replace("unless the ledger", "if the ledger")),
+                         ["does not say an author the ledger records as a person is not refused"])
+        for name, (said, cut) in {
+                "a blank principal": ("a blank principal", "a principal"),
+                "one that reads as an agent by name": ("reads as an agent by name", "is odd"),
+                "one recorded as an author of the report's own units":
+                    ("record as an author", "record as a reviewer")}.items():
+            with self.subTest(dropped=name):
+                self.assertEqual(signer_check_problems(good.replace(said, cut)),
+                                 [f"does not state the refusal of {name}"])
+        for said in ("cannot tell", "another name", "the operator's responsibility"):
+            with self.subTest(limit=said):
+                self.assertEqual(signer_check_problems(good.replace(said, "x")),
+                                 [self.LIMIT_MISSING])
+        # The limit across two sentences is not stated: the remainder must be the operator's.
+        self.assertEqual(signer_check_problems(good.replace("name, so", "name. So")),
+                         [self.LIMIT_MISSING])
+        # A refusal stated in a claim that says the pack refuses nothing does not count.
+        self.assertEqual(signer_refusals("The pack names a blank principal.\n\n" + good.replace(
+            "a blank principal, ", "")), set(SIGNER_REFUSALS) - {"a blank principal"})
+
+    def test_the_reference_states_the_same_refusals_and_limit(self) -> None:
+        entry = reference_entry(REFERENCE.read_text(encoding="utf-8"))
+        self.assertIn("evidence pack", entry, "the reference has no evidence_pack.py entry")
+        self.assertEqual(signer_check_problems(entry), [])
+        page = section_body(self.text, "change approval")
+        self.assertEqual(signer_refusals(entry), signer_refusals(page))
+        self.assertEqual(signer_limit_stated(entry), signer_limit_stated(page))
+        # Planted failures beside a positive control.
+        old = ("It reads the committed copies, so an uncommitted edit never changes the pack, and "
+               "it refuses an unsigned report or an agent named as accountable.")
+        self.assertTrue(signer_check_problems(old)[0].startswith(
+            "states the agent refusal as absolute"))
+        two = self.GOOD_SIGNER.replace("a blank principal, ", "")
+        self.assertNotEqual(signer_refusals(two), signer_refusals(self.GOOD_SIGNER))
+        self.assertNotEqual(signer_limit_stated(two.replace("cannot tell", "x")),
+                            signer_limit_stated(self.GOOD_SIGNER))
+        heading = "### `evidence_pack.py`"
+        self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA.\n\n### `flow.py`\n\nB.\n"),
+                         "\nA.\n\n")
+        self.assertEqual(reference_entry(f"# P\n\n{heading}\n\nA.\n"), "\nA.\n")
+        self.assertEqual(reference_entry("Intro.\n\n### `flow.py`\n\nB.\n"), "")
 
     def test_author_stamping_claims_no_more_than_the_writer_enforces(self) -> None:
         self.assertEqual(author_stamp_problems(section_body(self.text, "separation of duties")), [])

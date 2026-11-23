@@ -91,8 +91,12 @@ A release's evidence pack, built from committed records alone and run as `releas
 evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy`. For each unit the named signed reports
 delivered, the pack states what changed, which criteria passed, who reviewed it independently,
 what is known to be wrong and the accountable person, the report's signing principal. It reads
-the committed copies, so an uncommitted edit never changes the pack, and it refuses an unsigned
-report or an agent named as accountable.
+the committed copies, so an uncommitted edit never changes the pack. It refuses an unsigned
+report, and a signer it can see is not a person (`principal_refusal`): a blank principal, one that
+reads as an agent by name (the word agent or subagent in it), and one the committed review ledgers
+record as an author of the report's own units, unless the ledger records that author as a person
+(typed `human`). It cannot tell a person from an agent session signing under another name, so the
+person it names is the operator's responsibility.
 
 ### `flow.py`
 

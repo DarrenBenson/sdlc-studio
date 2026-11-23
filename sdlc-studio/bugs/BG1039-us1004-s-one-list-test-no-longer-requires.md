@@ -24,9 +24,11 @@ Require `-r requirements-dev.txt` on the suite step again, and judge hand instal
 ## Acceptance Criteria
 
 - [ ] **AC1** Given the ci suite step reading `-c requirements-dev.txt`, when the one-list test runs, then it fails
-  - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list_strict.py::StrictOneListTests::test_the_suite_step_installs_with_r
+  - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_ci_suite_step_installs_from_requirements_dev
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given a package declared in requirements-dev.txt and installed by hand in another ci step, when the one-list test runs, then it fails
-  - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list_strict.py::StrictOneListTests::test_no_declared_package_is_installed_by_hand
+  - **Verify:** pytest tools/tests/test_prereq_list_is_ci_list.py::OneListTests::test_the_readers_and_rules_refuse_what_they_must
+  - **Verified:** yes (2026-11-23)
 
 ## Impact
 
@@ -38,3 +40,4 @@ Low: the suite still catches the first shape through sibling pins; the second le
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): already fixed: both mutants it names are now refused, fixed by 6456f66f (BG1053) and 95e5e3f8 (BG1056) |
+| 2026-11-23 | Dani Okafor (engineering) | BG1549: the Verify lines named `test_prereq_list_is_ci_list_strict.py`, a file that has never existed, so nothing ran for the Fixed status. They now name the one-list tests that pin each criterion: the live workflow's suite step changed to `-c` fails `test_the_ci_suite_step_installs_from_requirements_dev`, and `test_the_readers_and_rules_refuse_what_they_must` requires the check to refuse a declared package installed by hand in another step ("a declared package by hand"), so it fails if the check stops refusing it. A `verify_ac.py run --id BG1039` recorded both green below each criterion |
