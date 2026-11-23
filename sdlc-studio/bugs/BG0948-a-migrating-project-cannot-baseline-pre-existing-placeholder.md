@@ -1,6 +1,6 @@
 # BG0948: A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, changelog.d/BG0948.md
@@ -25,10 +25,13 @@ Have --emit-baseline also emit the placeholder record (ID:{{token}}) for a separ
 
 - [ ] **AC1** `validate.py check --emit-baseline` can produce the `ID:{{token}}` placeholder baseline record from the checker's own output, redirectable separately from the criteria record
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** A placeholder finding in a v3-id artefact (`US-01JQK3F8`) listed in the placeholder baseline is reported as a warning, not an error
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_v3_placeholder_in_the_baseline_is_a_warning
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** A placeholder token absent from the baseline still errors, in an artefact whose other tokens are baselined
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_new_placeholder_beside_baselined_ones_still_errors
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

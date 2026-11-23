@@ -1,6 +1,6 @@
 # BG1724: BG0974 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG0974.md
@@ -31,10 +31,13 @@ Fix each finding above, then deliver BG0974 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC4** BG0974 AC1 still passes: A finding titled with a bare `snake_case` identifier is written with that identifier inside a code span in its H1 and in its index row, so no `_` outside a code span remains on either line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k title_identifier_is_code_spanned
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC5** BG0974 AC2 still passes: An Evidence value holding such an identifier is written with it inside a code span, and its text otherwise reads byte-identical
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k evidence_identifier_is_code_spanned
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC6** BG0974 AC3 still passes: (carried from BG1423) Given a finding title holding two identifiers that begin with underscores, when it is filed, then the bug file and the index row pass markdownlint. Fails on: an MD037 error on either.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

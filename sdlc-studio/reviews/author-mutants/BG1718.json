@@ -1,7 +1,7 @@
 {
   "unit": "BG1718",
-  "digest": "4408920f5f644b9e at c7dfd991bd81",
-  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/BG1718-mutation-edits.json",
+  "digest": "05163c7365815536 at bfaa3ca5a109",
+  "report": "sdlc-studio/.local/lane/landed/agent-aa8f0fda966e7a1bd/BG1718-mutation-edits.json",
   "mutants": [
     {
       "mutant": "ids are not blanked before the split",
@@ -27,8 +27,8 @@
       "old": "    return sdlc_md.ID_SEARCH_RE.sub(\" \", text)\n",
       "new": "    return sdlc_md.ID_SEARCH_RE.sub(\"\", text)\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
-      "result": "survived",
-      "answer": "equivalent where the id stands between non-word characters, which is every H1 prefix; it differs only for an id glued to word characters on both sides"
+      "result": "killed",
+      "answer": ""
     },
     {
       "mutant": "only the v3 shape is blanked",
@@ -53,6 +53,15 @@
       "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
       "old": "            if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w)}\n",
       "new": "            if w not in _STOP and len(w) > 2}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the three-digit spelling is no longer dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/backlog_triage.py",
+      "old": "_ID_TOKEN_RE = re.compile(r\"^(?:us|bg|ep|cr|rfc|is|pl|ts|wf)\\d{3,}$\")\n",
+      "new": "_ID_TOKEN_RE = re.compile(r\"^(?:us|bg|ep|cr|rfc|is|pl|ts|wf)\\d{4,}$\")\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept",
       "result": "killed",
       "answer": ""

@@ -6,10 +6,10 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 63 |
+| Draft | 62 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 6 |
+| In Progress | 7 |
 | Done | 275 |
 | Superseded | 34 |
 | **Total** | **378** |
@@ -128,7 +128,7 @@
 | [EP0375](EP0375-a-review-can-see-the-running-application.md) | A review can see the running application | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0376](EP0376-review-in-this-repository-treats-a-change-to.md) | Review in this repository treats a change to a gate as high risk | Done | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0377](EP0377-harness-agnostic-enterprise-ready-public-surfaces.md) | Harness-agnostic, enterprise-ready public surfaces | Done | 7 | -- | 2026-11-18 | 2026-11-18 |
-| [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | Draft | 4 | -- | 2026-11-23 | 2026-11-23 |
+| [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | In Progress | 4 | -- | 2026-11-23 | 2026-11-23 |
 
 ## Archived Releases
 

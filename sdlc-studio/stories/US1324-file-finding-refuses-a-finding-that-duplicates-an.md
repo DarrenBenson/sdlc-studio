@@ -1,6 +1,6 @@
 # US1324: file_finding refuses a finding that duplicates an artefact of its type, sharing every Affects path and scoring at or above the duplicate bar, before it mints an id, unless the filer names it with --distinct-from
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0745
 > **Created:** 2026-11-23
@@ -27,6 +27,7 @@
 - **When** `file_finding.py file --type bug` files the new title with `--affects src/thing.py`, and again with `--dry-run`
 - **Then** every run exits 1 with nothing on stdout (no `filed` and no `would file` line), and its stderr begins `file refused:` and names the existing bug's id, its status, the shared path, the lens score and `--distinct-from <that id>` as the way to file anyway; the bugs folder and its `_index.md` are byte-identical afterwards. Fails on: today's behaviour, `filed <id>` followed by a `warning: possible duplicate of` line and exit 0; a refusal raised after the write that leaves a file or an index row; a check scoped to open bugs that lets the Fixed one through
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_full_affects_duplicate_is_refused_before_an_id_is_minted
+- **Verified:** yes (2026-11-23)
 
 ### AC2: --distinct-from files the finding and records the ruling on it
 
@@ -34,6 +35,7 @@
 - **When** the new title is filed with `--distinct-from <existing id>`, and again from a `--fields-file` document carrying `"distinct_from": "<existing id>"`
 - **Then** each exits 0, prints `filed <new id> -> <path>`, and the new artefact's metadata block carries `> **Distinct-from:** <existing id>`. Fails on: a flag that parses and is then dropped by the CLI's hand-enumerated flag dict, so the filing succeeds with no record of the ruling; a document key refused as unknown, so the shell-free path cannot rule at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling
+- **Verified:** yes (2026-11-23)
 
 ### AC3: --distinct-from does not unlock a filing it does not rule on
 
@@ -41,6 +43,7 @@
 - **When** the new title is filed with `--distinct-from` naming the unrelated bug, and again naming an id that resolves to no artefact
 - **Then** the first exits 1 with the AC1 refusal naming the duplicate it left unanswered, the second exits 1 with `file refused:` naming the id that does not resolve, and neither writes a file. Fails on: `--distinct-from` read as a bypass switch whatever id it names; a ruling recorded against an artefact that does not exist
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_naming_another_or_no_artefact_still_refuses
+- **Verified:** yes (2026-11-23)
 
 ### AC4: The refusal reads the declared paths and the lens's bar, at or above
 
@@ -48,6 +51,7 @@
 - **When** each is filed through `file_finding.py file`
 - **Then** the title at the bar exits 1 refused, the title just below exits 0 with `filed <id> -> <path>` and no duplicate line, and the third exits 1 refused. Fails on: `>` where the rule says at or above; a second bar hard-coded in `file_finding.py` that drifts from the lens; a refusal keyed on shared Affects alone; an overlap judged on the completed Affects, so the companion test the tool added lets every older duplicate through
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_refusal_reads_declared_paths_and_the_lens_bar_at_or_above
+- **Verified:** yes (2026-11-23)
 
 ### AC5: A partial overlap, or no Affects at all, keeps today's warning
 
@@ -55,6 +59,7 @@
 - **When** each new finding is filed through `file_finding.py file`
 - **Then** each exits 0, prints `filed <id> -> <path>` and then the `warning: possible duplicate of <existing id>` line it prints today. Fails on: a refusal on any shared path; an every-path test that reads an empty `Affects` as sharing every path, so every Affects-less CR with a similar title is refused
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_a_partial_or_absent_affects_overlap_still_only_warns
+- **Verified:** yes (2026-11-23)
 
 ### AC6: A machine caller of the library filer is not refused
 
@@ -62,6 +67,7 @@
 - **When** `file_finding.file_finding()` is called the way `critic.py`'s review-cap carry and `gate.py`'s red-main regression filer call it, with no override argument
 - **Then** it returns the new id with `duplicate_warnings` naming the existing bug, as it does today. Fails on: the refusal placed inside the library function, where no filer is present to rule: `critic.py` re-carrying a unit files the same title over the same `Affects` (BG1682 and BG1703 are that pair for BG1534), so the second carry would raise and stop the close; and `command_audit.py`'s coverage filer, whose second finding in one run scores 0.67 against its first over the same `Affects` (`test_command_audit.py::CoverageFindingTests::test_the_first_run_files_and_the_second_adds_nothing` exercises it), would raise mid-run
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_library_filer_still_files_and_warns
+- **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,0 +1,187 @@
+{
+  "unit": "BG1694",
+  "digest": "eaa97f332b97dc41 at e14e7052a676",
+  "report": "sdlc-studio/.local/lane/landed/agent-a6f1bebc825ae3c6d/BG1694-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "_child reads without waiting",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "        _wait_for(lambda: _read_pid(path) is not None, seconds, \"a pid in child.pid\")\n        pid = _read_pid(path)\n",
+      "new": "        pid = int(path.read_text(encoding=\"utf-8\"))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_waits_for_a_child_pid_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_child ignores the bound it is handed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "seconds, \"a pid in child.pid\")",
+      "new": "30, \"a pid in child.pid\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_gives_up_at_its_bound",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_child default bound zero",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "def _child(self, seconds: float = 30)",
+      "new": "def _child(self, seconds: float = 0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_waits_for_a_child_pid_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_child wait condition inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "_read_pid(path) is not None, seconds",
+      "new": "_read_pid(path) is None, seconds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_waits_for_a_child_pid_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K _read_pid lets a missing file raise",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "    except (OSError, ValueError):\n        return None",
+      "new": "    except ValueError:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_waits_for_a_child_pid_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K _read_pid lets an empty file raise",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "    except (OSError, ValueError):\n        return None",
+      "new": "    except OSError:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_child_waits_for_a_child_pid_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "deaf child writes child.pid in place",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "        \"with open(sys.argv[1] + '.tmp', 'w') as fh:\\n\"\n        \"    fh.write(str(os.getpid()))\\n\"\n        \"os.replace(sys.argv[1] + '.tmp', sys.argv[1])\\n\"\n",
+      "new": "        \"open(sys.argv[1], 'w').write(str(os.getpid()))\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_the_deaf_child_moves_its_pid_into_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "deaf child never renames its temporary file",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "        \"os.replace(sys.argv[1] + '.tmp', sys.argv[1])\\n\"\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_the_deaf_child_moves_its_pid_into_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K root guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "        if os.geteuid() == 0:\n            self.skipTest(\"root writes a read-only file in place\")\n        work = self.log / \"atomic\"",
+      "new": "        if os.geteuid() != 0:\n            self.skipTest(\"root writes a read-only file in place\")\n        work = self.log / \"atomic\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_the_deaf_child_moves_its_pid_into_place",
+      "result": "survived",
+      "answer": "survived: the guard skips the case for every user but root when inverted, and a case cannot kill the mutant that skips it; under root chmod 0444 does not stop a write in place, so there the case could not tell the two writers apart"
+    },
+    {
+      "mutant": "_pid reads without waiting",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "        deadline = time.monotonic() + seconds\n        while (pid := _read_pid(path)) is None:\n            if time.monotonic() > deadline:\n                raise AssertionError(f\"timed out waiting for a pid in {name}\")\n            time.sleep(0.01)\n",
+      "new": "        pid = int(path.read_text(encoding=\"utf-8\").strip())\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_waits_for_a_pid_file_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_pid ignores the bound it is handed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "path = self.dir / name\n        deadline = time.monotonic() + seconds",
+      "new": "path = self.dir / name\n        deadline = time.monotonic() + 30",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_gives_up_at_its_bound",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_pid default bound zero",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "def _pid(self, name: str, seconds: float = 30)",
+      "new": "def _pid(self, name: str, seconds: float = 0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_waits_for_a_pid_file_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_pid deadline test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "            if time.monotonic() > deadline:\n                raise AssertionError(f\"timed out",
+      "new": "            if time.monotonic() < deadline:\n                raise AssertionError(f\"timed out",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_waits_for_a_pid_file_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_pid stops waiting silently at the bound",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "                raise AssertionError(f\"timed out waiting for a pid in {name}\")\n",
+      "new": "                break\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_gives_up_at_its_bound",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "G _read_pid lets a missing file raise",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "    except (OSError, ValueError):\n        return None",
+      "new": "    except ValueError:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_waits_for_a_pid_file_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "G _read_pid lets an empty file raise",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "    except (OSError, ValueError):\n        return None",
+      "new": "    except OSError:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_pid_waits_for_a_pid_file_its_writer_has_not_filled",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook writes hook.pid in place",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "echo $$ > \"{dir}/hook.pid.tmp\" && mv \"{dir}/hook.pid.tmp\" \"{dir}/hook.pid\"",
+      "new": "echo $$ > \"{dir}/hook.pid\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_hook_moves_its_pid_files_into_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook writes child.pid in place",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "echo $! > \"{dir}/child.pid.tmp\" && mv \"{dir}/child.pid.tmp\" \"{dir}/child.pid\"",
+      "new": "echo $! > \"{dir}/child.pid\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_hook_moves_its_pid_files_into_place",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook renames hook.pid even if its write failed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "echo $$ > \"{dir}/hook.pid.tmp\" && mv",
+      "new": "echo $$ > \"{dir}/hook.pid.tmp\"; mv",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_hook_moves_its_pid_files_into_place",
+      "result": "survived",
+      "answer": "survived, equivalent: when the write to the temporary name fails there is no file to rename, so `mv` fails too and leaves the same state as `&&` skipping it; when the write succeeds both run the rename"
+    },
+    {
+      "mutant": "G root guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "        if os.geteuid() == 0:\n            self.skipTest(\"root writes a read-only file in place\")\n        work, fake",
+      "new": "        if os.geteuid() != 0:\n            self.skipTest(\"root writes a read-only file in place\")\n        work, fake",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_hook_moves_its_pid_files_into_place",
+      "result": "survived",
+      "answer": "survived: the guard skips the case for every user but root when inverted, and a case cannot kill the mutant that skips it; under root chmod 0444 does not stop a write in place, so there the case could not tell the two writers apart"
+    }
+  ]
+}

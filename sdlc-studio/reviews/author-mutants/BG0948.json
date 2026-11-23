@@ -1,131 +1,41 @@
 {
   "unit": "BG0948",
-  "digest": "64f7a03cf4a71a20 at 65dc7d626b33",
-  "report": "sdlc-studio/.local/lane/landed/agent-a896cd0d4cfb6e682/BG0948-mutation-edits.json",
+  "digest": "3df7005c1c282621 at a899c02910c2",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac325d8f556bcd4b5/BG0948-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "key-side id not keyed through norm_id",
+      "mutant": "the record line is the whole slot line, not its token",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    return f\"{sdlc_md.norm_id(rec)}:{token}\" if rec else None",
-      "new": "    return f\"{rec}:{token}\" if rec else None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_v3_placeholder_in_the_baseline_is_a_warning",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "baseline lines read without keying their id through norm_id",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    return {f\"{sdlc_md.norm_id(rid)}:{tok}\" for rid, _, tok in",
-      "new": "    return {f\"{rid}:{tok}\" for rid, _, tok in",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_v3_placeholder_in_the_baseline_is_a_warning",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the old four-digit-only id read restored",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    rec = sdlc_md.extract_record_id(Path(path).stem)\n    return f\"{sdlc_md.norm_id(rec)}",
-      "new": "    rec = (re.search(r\"(?:BG|US|EP|CR|RFC)\\d{4}\", Path(path).name) or [None])[0]\n    return f\"{sdlc_md.norm_id(rec)}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_v3_placeholder_in_the_baseline_is_a_warning",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "five-digit id truncated to its four-digit prefix",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    rec = sdlc_md.extract_record_id(Path(path).stem)\n    return f\"{sdlc_md.norm_id(rec)}",
-      "new": "    rec = sdlc_md.extract_record_id(Path(path).stem[:6])\n    return f\"{sdlc_md.norm_id(rec)}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_five_digit_id_is_not_read_as_its_four_digit_prefix",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "both records printed by one run",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "if v.get(\"baseline_key\")\n                       and v.get(\"baseline\", \"criteria\") == record})",
-      "new": "if v.get(\"baseline_key\")})",
+      "old": "key = baseline_key(tok.group(0)) if baseline_key else None",
+      "new": "key = baseline_key(line.strip()) if baseline_key else None",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "an unlabelled finding read as the placeholder record",
+      "mutant": "a token found on two lines prints twice (no set)",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "v.get(\"baseline\", \"criteria\") == record",
-      "new": "v.get(\"baseline\", \"placeholder\") == record",
+      "old": "        keys = sorted({v[\"baseline_key\"] for v in violations if v.get(\"baseline_key\")\n                       and v.get(\"baseline\", \"criteria\") == record})",
+      "new": "        keys = sorted([v[\"baseline_key\"] for v in violations if v.get(\"baseline_key\")\n                       and v.get(\"baseline\", \"criteria\") == record])",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "placeholder finding labelled as the criteria record",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "{\"baseline_key\": key, \"baseline\": \"placeholder\"}",
-      "new": "{\"baseline_key\": key, \"baseline\": \"criteria\"}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "placeholder findings carry no key",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "            key = baseline_key(tok.group(0)) if baseline_key else None",
-      "new": "            key = None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an in-flight artefact's placeholder keyed too",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    _key = (lambda tok: _placeholder_key(path, tok)) if _terminal else None",
-      "new": "    _key = (lambda tok: _placeholder_key(path, tok))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the bare flag prints the placeholder record",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "const=\"criteria\"",
-      "new": "const=\"placeholder\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the header does not name the file to redirect into",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "{sdlc_md.now_iso8601()} into {_BASELINES[record]} - do not hand-edit.",
-      "new": "{sdlc_md.now_iso8601()} - do not hand-edit.",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unknown record name accepted",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "choices=sorted(_BASELINES), dest=\"emit_baseline\"",
-      "new": "dest=\"emit_baseline\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_refuses_an_unknown_record",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the per-token expectation flipped (the assertion discriminates)",
+      "mutant": "test: the fixture loses its labelled and bulleted slot lines",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "{\"{{what changes and why}}\": \"warning\",\n                                     \"{{a brand new blank}}\": \"error\"}",
-      "new": "{\"{{what changes and why}}\": \"error\",\n                                     \"{{a brand new blank}}\": \"error\"}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_new_placeholder_beside_baselined_ones_still_errors",
+      "old": "\"**Points:** {{1|2|3|5|8|13|20}}\\n\\n- {{a bulleted slot}}\\n\\n\"",
+      "new": "\"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: another v3 id's line expected to waive (the near-miss discriminates)",
+      "mutant": "test: the redirect is expected to quieten only one finding",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "            self._baseline(repo, \"US-01JQK3F9:{{what changes and why}}\")\n            self.assertEqual(self._sev(self._story(repo, self.V3), repo), [\"error\"])",
-      "new": "            self._baseline(repo, \"US-01JQK3F9:{{what changes and why}}\")\n            self.assertEqual(self._sev(self._story(repo, self.V3), repo), [\"warning\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_a_v3_placeholder_in_the_baseline_is_a_warning",
+      "old": "self.assertEqual(self._sev(story, repo), [\"warning\"] * 4,",
+      "new": "self.assertEqual(self._sev(story, repo), [\"warning\"],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PlaceholderBaselineTests::test_emit_baseline_emits_the_placeholder_record",
       "result": "killed",
       "answer": ""
     }

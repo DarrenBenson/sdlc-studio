@@ -1,6 +1,6 @@
 # BG0974: The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI
 
-> **Status:** Open
+> **Status:** Fixed
 > **Supersedes:** BG1423
 > **Severity:** Low
 > **Points:** 2

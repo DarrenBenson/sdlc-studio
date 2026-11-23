@@ -1,7 +1,7 @@
 {
   "unit": "BG1541",
-  "digest": "23b280a376ca1d4a at c7dfd991bd81",
-  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/BG1541-mutation-edits.json",
+  "digest": "944dd1df9a27a56a at bfaa3ca5a109",
+  "report": "sdlc-studio/.local/lane/landed/agent-aa8f0fda966e7a1bd/BG1541-mutation-edits.json",
   "mutants": [
     {
       "mutant": "release_tag tries no other spelling",
@@ -126,6 +126,24 @@
       "old": "is not a unit release {tag} shipped",
       "new": "is not a unit release {shipped} shipped",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::EscapedViaOutsideTheReleaseTests::test_a_unit_the_release_did_not_ship_is_not_accepted_silently",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the previous tag is looked up from the stored spelling, not its tag",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    prev = (_git(root, \"describe\", \"--tags\", \"--abbrev=0\", f\"{tag}^\") or \"\").strip()\n",
+      "new": "    prev = (_git(root, \"describe\", \"--tags\", \"--abbrev=0\", f\"{release}^\") or \"\").strip()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the span drops the previous tag's bound",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    span = f\"{prev}..{tag}\" if prev else tag\n",
+      "new": "    span = tag\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 # BG1718: The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, changelog.d/BG1718.md
@@ -26,8 +26,10 @@ Drop the artefact's own id token in either shape: match the v3 suffix by reading
 
 - [ ] **AC1** A v3 id suffix is not a token: given two bugs in a v3 project whose H1 titles differ only in their ids (`BG-01JQK3F8` and `BG-01JQK3G2`), when the duplicate lens scores the pair, then the score equals the score of the same pair titled `BG0001` and `BG0002`. Fails on: the v3 pair scoring lower, or either suffix appearing in `_tokens`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_v3_id_suffix_is_not_a_token
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** A word that only looks like a suffix is kept: given a title holding an eight-character word of digits and letters that is not the artefact's id (for example `sha256ab`), when `_tokens` reads it, then the word is kept. Fails on: dropping every eight-character alphanumeric word.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py::V3IdTokenTests::test_a_non_id_word_is_kept
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

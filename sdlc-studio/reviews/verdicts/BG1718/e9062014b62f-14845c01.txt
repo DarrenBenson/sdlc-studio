@@ -1,0 +1,6 @@
+UNIT: BG1718
+BRIEF: e9062014b62f-14845c01
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, light pass. "The new comment in `_tokens`" CLOSED. backlog_triage.py:93-94 now says `_ID_TOKEN_RE` still drops the three-digit spelling in either case (`US123`, `us123`), which the id pattern does not read since its v2 form needs four digits. That is TRUE. `ID_SEARCH_RE` ends its v2 form in four or more digits, and in round one I ran both `US123` and `us123` in-process: the pattern did not match either, and `_ID_TOKEN_RE` dropped both. The new `US123: regression of BG012 fixed` subtest pins the upper-case three-digit case: a mutant requiring four digits in `_ID_TOKEN_RE` was KILLED. The `snake_BG0001_case` assertions pin the blank-by-a-space behaviour that survived in round one: the mutant blanking to the empty string is now KILLED. The repair changes only the comment and the test. `verify_ac run --id BG1718 --dry-run` passes 2 of 2. test_backlog_triage ran green inside the touched-module run. `tools/lint-style.sh` is clean.

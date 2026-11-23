@@ -1,7 +1,7 @@
 {
   "unit": "US1324",
-  "digest": "ef1c49c72283539b at c7dfd991bd81",
-  "report": "sdlc-studio/.local/lane/landed/agent-a8cef7f87b5e9af3c/US1324-mutation-edits.json",
+  "digest": "704e3436c855877f at bfaa3ca5a109",
+  "report": "sdlc-studio/.local/lane/landed/agent-aa8f0fda966e7a1bd/US1324-mutation-edits.json",
   "mutants": [
     {
       "mutant": "the CLI does not ask for the refusal",
@@ -189,6 +189,42 @@
       "old": "    val = prose_value(f, \"distinct_from\")\n",
       "new": "    val = prose_value(f, \"distinct\")\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hint names only the first unanswered duplicate",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    ids = \",\".join(c[\"id\"] for c in unanswered)\n",
+      "new": "    ids = unanswered[0][\"id\"]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hint joins the ids with a space",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    ids = \",\".join(c[\"id\"] for c in unanswered)\n",
+      "new": "    ids = \" \".join(c[\"id\"] for c in unanswered)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_files_and_records_the_ruling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the library filer leaves an unresolvable ruling unrefused",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    fields = resolve_distinct_from(root, fields)\n",
+      "new": "    fields = resolve_distinct_from(root, fields) if refuse_duplicates else fields\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_distinct_from_naming_another_or_no_artefact_still_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the library filer records a ruling as passed, not canonicalised",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    fields = resolve_distinct_from(root, fields)\n",
+      "new": "    fields = resolve_distinct_from(root, fields) if refuse_duplicates else fields\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::DuplicateRefusalTests::test_the_library_filer_still_files_and_warns",
       "result": "killed",
       "answer": ""
     }

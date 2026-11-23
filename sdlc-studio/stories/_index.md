@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 165 |
+| Draft | 164 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 974 |
+| Done | 975 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -361,7 +361,7 @@
 | [US1321](US1321-the-evidence-page-shows-the-model-each-signed.md) | The evidence page shows the model each signed run used, regenerated through RPT0035 | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1322](US1322-a-project-upgrading-to-the-persona-standard-is.md) | A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on | Done | EP0287 | 2026-11-20 | 2026-11-20 |
 | [US1323](US1323-the-signed-sprint-report-states-the-run-s.md) | The signed sprint report states the run's actual cost in one line under the verdict, beside the previous signed run's, and its Estimates table reads Actual before Forecast | Draft | EP0378 | 2026-11-23 | 2026-11-23 |
-| [US1324](US1324-file-finding-refuses-a-finding-that-duplicates-an.md) | file_finding refuses a finding that duplicates an artefact of its type, sharing every Affects path and scoring at or above the duplicate bar, before it mints an id, unless the filer names it with --distinct-from | Draft | EP0378 | 2026-11-23 | 2026-11-23 |
+| [US1324](US1324-file-finding-refuses-a-finding-that-duplicates-an.md) | file_finding refuses a finding that duplicates an artefact of its type, sharing every Affects path and scoring at or above the duplicate bar, before it mints an id, unless the filer names it with --distinct-from | Done | EP0378 | 2026-11-23 | 2026-11-23 |
 | [US1325](US1325-the-audit-finder-template-and-the-backlog-triage.md) | The audit finder template and the backlog triage briefs carry a persona seat's render, and the agent prompt template refuses a brief that names no seat | Draft | EP0378 | 2026-11-23 | 2026-11-23 |
 | [US1326](US1326-sprint-plan-lists-per-unit-the-test-modules.md) | sprint plan lists, per unit, the test modules outside its Affects that import or run a script its Affects names, as an advisory grooming list | Draft | EP0378 | 2026-11-23 | 2026-11-23 |
 

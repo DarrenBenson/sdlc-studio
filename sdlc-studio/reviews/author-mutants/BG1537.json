@@ -1,230 +1,239 @@
 {
   "unit": "BG1537",
-  "digest": "f971b1bcb625cf94 at 65dc7d626b33",
-  "report": "sdlc-studio/.local/lane/landed/agent-a896cd0d4cfb6e682/BG1537-mutation-edits.json",
+  "digest": "ef2a75a97d743f53 at a899c02910c2",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac325d8f556bcd4b5/BG1537-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "an unfilled Cast role cell still read for a role word",
+      "mutant": "wrapped join crosses a blank line (drop the `$` bound)",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    if not m or _unfilled(m.group(1)):",
-      "new": "    if not m:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_the_template_role_list_is_not_a_declared_cast_role",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\|))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unfilled sections never reported",
+      "mutant": "wrapped join crosses a line of spaces (drop the leading-space allowance)",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "        for name in _persona_unfilled_sections(text):",
-      "new": "        for name in []:",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?!(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wrapped join crosses a heading (drop `#`)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wrapped join crosses a backtick fence",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wrapped join crosses a tilde fence",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wrapped join crosses a table row (drop the pipe bound)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a stray brace runs into another placeholder",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the join runs past the first close",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the opening segment crosses lines unbounded",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a single-line slot also matches the join (`+` to `*`)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)+\\}\\}\"",
+      "new": "r\"\\{\\{[^}\\n]*(?:\\n(?![ \\t]*(?:#|```|~~~|\\||$))[^{}\\n]*)*\\}\\}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "survived",
+      "answer": "equivalent: a single-line match holds no newline, so its replacement is the identical text, and the opening segment stops at the first `}` so no wrapped match from the same `{{` is displaced; probe: WRAP_BOUNDS, the stray-brace card and the template copy read the same under both"
+    },
+    {
+      "mutant": "the wrapped join is dropped entirely",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "joined = _WRAPPED_SLOT.sub(lambda m: m.group(0).replace(\"\\n\", \" \"), text)",
+      "new": "joined = text",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a slot inside a fence read",
+      "mutant": "the title line is read as a slot line too",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "        if is_fence_line or fence is not None:",
-      "new": "        if is_fence_line:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a table row read whole, not by its value cell",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "        value = (line.strip().strip(\"|\").split(\"|\")[-1] if line.lstrip().startswith(\"|\")",
-      "new": "        value = (line if line.lstrip().startswith(\"|\")",
+      "old": "        if title is not None and start <= title.start() < end:\n            continue",
+      "new": "        if False:\n            continue",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a table row read by its first cell",
+      "mutant": "the title's own line is not skipped (`<=` to `<`)",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": ".split(\"|\")[-1] if line.lstrip()",
-      "new": ".split(\"|\")[0] if line.lstrip()",
+      "old": "and start <= title.start() < end:",
+      "new": "and start < title.start() < end:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a numbered item's number kept in its value",
+      "mutant": "the line ending at the title start is skipped (`<` to `<=`)",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "                 else _body_value(_ORDINAL.sub(\"\", line)))",
-      "new": "                 else _body_value(line))",
+      "old": "and start <= title.start() < end:",
+      "new": "and start <= title.start() <= end:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every line before the title is skipped (no lower bound)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "and start <= title.start() < end:",
+      "new": "and title.start() < end:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every line after the title start is skipped (no upper bound)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "and start <= title.start() < end:",
+      "new": "and start <= title.start():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no guard for a card without a title",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        if title is not None and start <=",
+      "new": "        if start <=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a line's end offset leaves out its line break",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "end, end + len(raw)",
+      "new": "end, end + len(line)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "only a closing-paren ordinal stripped",
+      "mutant": "no title warning",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "_ORDINAL = re.compile(r\"^\\s*\\d+[.)]\\s+\")",
-      "new": "_ORDINAL = re.compile(r\"^\\s*\\d+[)]\\s+\")",
+      "old": "wheres = [\"the title\"] if persona_card_names_nobody(text) else []",
+      "new": "wheres = []",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a placeholder wrapped over lines not joined",
+      "mutant": "the text above the first section is called the title",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    for line in _PLACEHOLDER.sub(lambda m: m.group(0).replace(\"\\n\", \" \"), text).splitlines():",
-      "new": "    for line in text.splitlines():",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
+      "old": "else \"the text above the first section\"",
+      "new": "else \"the title\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a section named once per slot, not once",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "_unfilled(value) and section not in found:",
-      "new": "_unfilled(value):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a line with no placeholder read as a slot",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "        if _PLACEHOLDER.search(value) and _unfilled(value)",
-      "new": "        if _unfilled(value)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the title named as an empty section",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "            where = f'section \"{name}\"' if name else \"the title\"",
-      "new": "            where = f'section \"{name}\"'",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the section never advanced past the title",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "            section = heading.group(1).strip()",
-      "new": "            section = \"\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a subheading not opening a section",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "        heading = re.match(r\"^##+\\s+(.*)$\", line)",
-      "new": "        heading = re.match(r\"^##\\s+(.*)$\", line)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_heading_left_as_a_slot_is_named",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the unfilled-section finding turned blocking",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "            out.append({\"severity\": \"warning\", \"rule\": \"persona-section\", \"file\": str(p),\n                        \"message\": f\"{where}",
-      "new": "            out.append({\"severity\": \"error\", \"rule\": \"persona-section\", \"file\": str(p),\n                        \"message\": f\"{where}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the clean line expected over the copy (the assertion discriminates)",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "            self.assertNotIn(\"personas look well-formed.\", out)",
-      "new": "            self.assertIn(\"personas look well-formed.\", out)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the filled card expected to draw a finding (the assertion discriminates)",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "            self.assertEqual([f for f in found if f[\"file\"] == str(dd / \"maya.md\")], [])",
-      "new": "            self.assertNotEqual([f for f in found if f[\"file\"] == str(dd / \"maya.md\")], [])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a card with no title read as naming nobody",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    return title is not None and _unfilled(title)",
-      "new": "    return _unfilled(title)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_reads_its_title_alone",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every titled card read as naming nobody",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "    return title is not None and _unfilled(title)",
-      "new": "    return title is not None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_is_not_a_declared_persona",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a placeholder Interface read as an Interface",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "if im and not _unfilled(im.group(1)) else None",
-      "new": "if im else None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_placeholder_interface_is_no_interface",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a real Interface read as none",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "if im and not _unfilled(im.group(1)) else None",
-      "new": "if im and _unfilled(im.group(1)) else None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_placeholder_interface_is_no_interface",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the shared-Interface error expected over two slots (the assertion discriminates)",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "            self.assertEqual([f[\"severity\"] for f in found], [\"warning\"], found)\n            for card in cards:",
-      "new": "            self.assertEqual([f[\"severity\"] for f in found], [\"error\"], found)\n            for card in cards:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_placeholder_interface_is_no_interface",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the template copy expected to count (the assertion discriminates)",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
-      "old": "            self.assertFalse(status.personas_present(root))\n            self.assertIn(\"personas=no\"",
-      "new": "            self.assertTrue(status.personas_present(root))\n            self.assertIn(\"personas=no\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_is_not_a_declared_persona",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "status: template-copy cards counted again (the title check dropped)",
+      "mutant": "status reads a non-UTF-8 card as empty again",
       "file": ".claude/skills/sdlc-studio/scripts/status.py",
-      "old": "p.name not in PERSONA_INDEX_NAMES and _names_a_persona(p)",
-      "new": "p.name not in PERSONA_INDEX_NAMES",
+      "old": "        text, _ = validate.read_card(card, \"warning\")",
+      "new": "        text = sdlc_md.read_text_safe(card)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unreadable card no longer counts",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": "    except OSError:\n        return True\n    return not validate",
+      "new": "    except OSError:\n        return False\n    return not validate",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_still_counts_a_card_it_cannot_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status ignores the title slot",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": "    return not validate.persona_card_names_nobody(text)",
+      "new": "    return True",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_is_not_a_declared_persona",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "status: the title reading inverted",
-      "file": ".claude/skills/sdlc-studio/scripts/status.py",
-      "old": "    return not validate.persona_card_names_nobody(sdlc_md.read_text_safe(card))",
-      "new": "    return validate.persona_card_names_nobody(sdlc_md.read_text_safe(card))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_is_not_a_declared_persona",
+      "mutant": "test: the blank-line row expects a join",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "old": "(\"## A\\n\\n{{ a\\n\\nb }}\\n\", []),",
+      "new": "(\"## A\\n\\n{{ a\\n\\nb }}\\n\", [\"A\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_wrapped_slot_is_joined_within_its_own_paragraph_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "status: a non-UTF-8 card read with a raising read",
-      "file": ".claude/skills/sdlc-studio/scripts/status.py",
-      "old": "persona_card_names_nobody(sdlc_md.read_text_safe(card))",
-      "new": "persona_card_names_nobody(card.read_text(encoding=\"utf-8\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_status_personas_template_copy_reads_its_title_alone",
+      "mutant": "test: the bold slot title expects no title warning",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "old": "b\"# **{{full_name}}**\"), True, False),",
+      "new": "b\"# **{{full_name}}**\"), False, False),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_validate_and_status_agree_on_the_title",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the stray-brace card expects Who They Are",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "old": "self.assertEqual(re.findall(r'section \"([^\"]*)\"', out), [\"End Goals\"], out)",
+      "new": "self.assertEqual(re.findall(r'section \"([^\"]*)\"', out), [\"Who They Are\"], out)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_stray_brace_in_prose_does_not_swallow_the_next_section",
       "result": "killed",
       "answer": ""
     }

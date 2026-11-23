@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 284 |
+| Open | 278 |
 | In Progress | 0 |
-| Fixed | 1101 |
+| Fixed | 1107 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -23,7 +23,7 @@
 | [BG0945](BG0945-bg0940-s-changelog-entry-says-a-page-with.md) | BG0940's changelog entry says a page with a late ruling is signed, though sign refuses until the run is re-closed | Fixed | Low | 2026-10-05 | 2026-10-05 |
 | [BG0946](BG0946-reports-index-md-last-updated-is-not-restamped.md) | reports/_index.md Last Updated is not restamped when a report is filed | Open | Low | 2026-10-05 | 2026-10-05 |
 | [BG0947](BG0947-reference-outputs-md-terminal-status-table-contradicts-sdlc.md) | reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS | Fixed | Medium | 2026-10-05 | 2026-10-05 |
-| [BG0948](BG0948-a-migrating-project-cannot-baseline-pre-existing-placeholder.md) | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined | Open | Medium | 2026-10-05 | 2026-10-05 |
+| [BG0948](BG0948-a-migrating-project-cannot-baseline-pre-existing-placeholder.md) | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined | Fixed | Medium | 2026-10-05 | 2026-10-05 |
 | [BG0949](BG0949-an-inline-ruled-or-decided-ruling-is-never.md) | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0950](BG0950-a-verdict-that-follows-critic-py-brief-s.md) | A verdict that follows `critic.py brief`'s return contract to the letter is refused by `critic.py record --from-verdict` | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0951](BG0951-critic-tier-for-reads-the-raw-difficulty-band.md) | `critic.tier_for` reads the raw difficulty band and skips every critic-role policy `route.pick` applies, so code units get a light review the routing policy says should be medium | Won't Fix | High | 2026-10-06 | 2026-10-06 |
@@ -49,7 +49,7 @@
 | [BG0971](BG0971-sprint-close-dry-run-reports-later-chain-steps.md) | sprint close --dry-run reports later chain steps in the past tense ('lessons lifted', 'summary regenerated', 'anchor refreshed') although nothing was written | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0972](BG0972-artifact-py-retitle-quotes-the-old-title-verbatim.md) | `artifact.py retitle` quotes the old title verbatim in its revision row, so a retitle made to remove an em dash or a bare identifier puts it straight back | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0973](BG0973-artifact-py-new-type-review-warns-its-acceptance.md) | artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0974](BG0974-the-filing-tools-do-not-markdown-safe-the.md) | The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0974](BG0974-the-filing-tools-do-not-markdown-safe-the.md) | The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0975](BG0975-critic-py-brief-rejoinder-derives-a-light-tier.md) | critic.py brief --rejoinder derives a light tier from the risk band even when the round it answers was taken at an explicit full tier | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0976](BG0976-the-pre-push-hook-prints-its-ssh-keepalive.md) | The pre-push hook prints its ssh keepalive warning on every push, even when the clone already carries a keepalive | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0977](BG0977-help-status-md-documents-sdlc-studio-status-brief.md) | help/status.md documents '/sdlc-studio status --brief' but status.py has no --brief, so the documented one-line summary errors | Open | Low | 2026-10-07 | 2026-10-07 |
@@ -612,11 +612,11 @@
 | [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Fixed | Medium | 2026-11-17 | 2026-11-17 |
@@ -793,13 +793,13 @@
 | [BG1715](BG1715-bg1229-did-not-converge-in-review-round-2.md) | BG1229 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
-| [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Open | Low | 2026-11-23 | 2026-11-23 |
 | [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1722](BG1722-conformance-adopt-after-takes-a-schema-v3-cutoff.md) | `conformance.adopt_after` takes a schema v3 cutoff on a schema v2 project, so the conformance lane exempts every sequential unit | Open | Low | 2026-11-23 | 2026-11-23 |
 | [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
-| [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1726](BG1726-readiness-detector-owed-reports-a-project-lens-as.md) | readiness detector-owed reports a project lens as PRD (None) and would declare a bare pack directory as the owed unit's Affects | Open | Low | 2026-11-23 | 2026-11-23 |
 
