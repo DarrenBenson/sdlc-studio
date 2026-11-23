@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-22
+**Last Updated:** 2026-11-23
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0496: Deliver CR0663 (run the commit-time suites on the gate host, as the push already does) in the next run, so a local commit does not compete…
+
+- **Added:** 2026-11-23
+- **Review-by:** 2027-02-21
+
+Deliver CR0663 (run the commit-time suites on the gate host, as the push already does) in the next run, so a local commit does not compete with the agents for the workstation.
+
+Recorded from retro RETRO0155.
+
+## L-0495: Have `critic.py brief` and `sprint.py lane brief` issue each agent its own scratch directory and name it in the brief, so no two agents…
+
+- **Added:** 2026-11-23
+- **Review-by:** 2027-02-21
+
+Have `critic.py brief` and `sprint.py lane brief` issue each agent its own scratch directory and name it in the brief, so no two agents share a state file.
+
+Recorded from retro RETRO0155.
+
+## L-0494: Serialise landings and run-state writers with a lock file (flock) held by `lane land` and `lane accept`, so an orchestrator never polls for…
+
+- **Added:** 2026-11-23
+- **Review-by:** 2027-02-21
+
+Serialise landings and run-state writers with a lock file (flock) held by `lane land` and `lane accept`, so an orchestrator never polls for another job.
+
+Recorded from retro RETRO0155.
 
 ## L-0493: Return a unit approved in a ruled round past the cap to the batch, with its carry bug moved to Fixed, so the close credits it without hand…
 

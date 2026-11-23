@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0496: Deliver CR0663 (run the commit-time suites on the gate host, as the push already does) in the next run, so a local commit does not compete…**
+- **L-0495: Have `critic.py brief` and `sprint.py lane brief` issue each agent its own scratch directory and name it in the brief, so no two agents…**
+- **L-0494: Serialise landings and run-state writers with a lock file (flock) held by `lane land` and `lane accept`, so an orchestrator never polls for…**
 - **L-0493: Return a unit approved in a ruled round past the cap to the batch, with its carry bug moved to Fixed, so the close credits it without hand…**
 - **L-0492: Land lanes that share a file in the order they were briefed, and give a lane that waits behind another landing in the same file a rebase…**
 - **L-0491: Gate the self-review: have the land's self-check judge refuse a hand-in whose mutation pass does not cover every changed hunk in the unit's…**
