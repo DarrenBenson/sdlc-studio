@@ -788,8 +788,13 @@ NOW_ATOMIC = (("verify_ac.py", "verify_story"), ("lessons.py", "write_project_fi
               ("sprint_report.py", "cmd_render"))
 
 
-#: The modules whose `open` takes the builtin's `(file, mode)` arguments. A call is read as
-#: one of them only on a name an `import` in the same file binds to it (`_open_modules`).
+#: The modules whose `open` the sweep reads as the builtin `open`, its file the first argument
+#: and its mode `mode=` or the second: `io.open` is `builtins.open` and `codecs.open` wraps it.
+#: An `open` called on a name is read so only where an `import` in the same file binds that
+#: name to one of them (`_open_modules`). Any other `open` on a receiver is read as a method, its
+#: mode `mode=` or the first argument, a mode given second unread. `gzip`, `bz2`, `lzma` and
+#: `tarfile` take `(file, mode)` too but are not listed, so `gzip.open(path, 'wt')` is not
+#: named, as TRD rule 5 says.
 _OPEN_MODULES = ("builtins", "codecs", "io")
 
 
@@ -918,7 +923,8 @@ class SharedFileWriteSweepTests(unittest.TestCase):
         and in any folder under it, in a nested function and at module level; the same call to
         a scratch path on the allowlist is not, nor is one in the tests, one through
         atomic_write, nor an `open` that truncates nothing (a read, an append, a create-only
-        `x`, an `r+` update, a mode in a name), nor `gzip.open`, read as a method."""
+        `x`, an `r+` update, a mode in a name), nor `gzip.open`, `bz2.open`, `lzma.open` or
+        `tarfile.open` given its mode second, each read as a method."""
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
             (d / "lib").mkdir()
@@ -965,7 +971,7 @@ class SharedFileWriteSweepTests(unittest.TestCase):
             (d / "with_imports.py").write_text(
                 "import io\n"
                 "import builtins, codecs\n"
-                "import gzip\n"
+                "import gzip, bz2, lzma, tarfile\n"
                 "def by_io(story):\n"
                 "    io.open(story, 'w').close()\n"
                 "def by_builtins(story):\n"
@@ -979,6 +985,12 @@ class SharedFileWriteSweepTests(unittest.TestCase):
                 "    stream.open(story, 'w').close()\n"
                 "def by_gzip(story):\n"
                 "    gzip.open(story, 'wt').close()\n"
+                "def by_bz2(story):\n"
+                "    bz2.open(story, 'wt').close()\n"
+                "def by_lzma(story):\n"
+                "    lzma.open(story, 'wt').close()\n"
+                "def by_tarfile(story):\n"
+                "    tarfile.open(story, 'w').close()\n"
                 "def untruncated(story):\n"
                 "    io.open(story, 'a').close()\n"
                 "    builtins.open(story).close()\n"
