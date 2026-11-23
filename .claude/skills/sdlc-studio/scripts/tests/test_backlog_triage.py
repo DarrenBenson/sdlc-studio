@@ -516,5 +516,56 @@ class AbandonedRequestLensTests(TriageBase):
         self.assertFalse(any("CR9006" in f["units"] for f in abandoned))
 
 
+class V3IdTokenTests(TriageBase):
+    """A v3 id (`BG-01JQK3F8`) is an artefact's name, not a word it chose: the lens drops it as it
+    drops a v2 id, and keeps any other word, however much it looks like a ULID suffix."""
+
+    TITLE = "check_links misses anchor defects in nested lists"
+
+    def _pair_score(self, root: Path, first: str, second: str) -> tuple[float, list[dict]]:
+        for cid in (first, second):
+            _unit(root, "bug", cid, title=self.TITLE, status="Open",
+                  affects="tools/check_links.py",
+                  summary="a broken anchor inside a nested list is not caught")
+        backlog = {u["id"]: u for u in backlog_triage.load_backlog(root)}
+        self.assertEqual({first, second}, set(backlog))
+        score = backlog_triage._jaccard(backlog[first]["tokens"], backlog[second]["tokens"])
+        return score, backlog_triage._duplicate_findings(list(backlog.values()), sim=0.0)
+
+    def test_a_v3_id_suffix_is_not_a_token(self) -> None:
+        v3 = self.root / "v3"
+        _w(v3 / "sdlc-studio" / ".config.yaml", "schema_version: 3\n")
+        v3_score, v3_findings = self._pair_score(v3, "BG-01JQK3F8", "BG-01JQK3G2")
+        v2_score, v2_findings = self._pair_score(self.root / "v2", "BG0001", "BG0002")
+        self.assertEqual(v2_score, v3_score, "the v3 pair scores differently from the v2 pair")
+        self.assertEqual(1.0, v3_score)
+        # The lens's own report carries the same percentage for both pairs.
+        self.assertEqual([f["detail"].split(" and are ")[1] for f in v2_findings],
+                         [f["detail"].split(" and are ")[1] for f in v3_findings])
+        for cid in ("BG-01JQK3F8", "BG-01JQK3G2"):
+            tokens = backlog_triage._tokens(f"{cid}: {self.TITLE}")
+            suffix = cid.split("-", 1)[1].lower()
+            self.assertNotIn(suffix, tokens, f"{cid}'s suffix was kept as a word")
+            self.assertEqual(backlog_triage._tokens(self.TITLE), tokens)
+
+    def test_a_non_id_word_is_kept(self) -> None:
+        # Eight characters of digits and letters, but no type prefix and dash: a word.
+        self.assertIn("sha256ab", backlog_triage._tokens("BG-01JQK3F8: pin sha256ab in the lock"))
+        self.assertIn("01jqk3f8", backlog_triage._tokens("hash 01JQK3F8 is stale"))
+        # A dashed word whose prefix is no artefact type is a word too.
+        self.assertIn("01jqk3f8", backlog_triage._tokens("ZZ-01JQK3F8 build"))
+        # Every id in the text is an id, in either shape, wherever it sits: the v3 form, the
+        # dashed v2 form a CR's H1 carries, and the plain v2 form.
+        for text in ("BG-01JQK3F8: regression of US-01JQK3G2 fixed",
+                     "CR-0001: regression of RFC-0002 fixed",
+                     "BG0001: regression of US0002 fixed",
+                     "bg0001: regression of us123 fixed"):
+            with self.subTest(text=text):
+                self.assertEqual({"regression", "fixed"}, backlog_triage._tokens(text))
+        # An id opening a file stem is blanked, and the slug after it kept.
+        self.assertEqual({"pinned", "total", "slug"},
+                         backlog_triage._tokens("pinned in BG-01JQK3F8-total-slug.md"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1087,7 +1087,8 @@ COMMON_FIELDS_FILE_KEYS: tuple[str, ...] = (
 #: prose-heavy audit finding has to use.
 FIELDS_FILE_KEYS: tuple[str, ...] = (*COMMON_FIELDS_FILE_KEYS,
                                      "mutation_run", "mutation_target", "evidence",
-                                     "lens", "profile", "audit_run", "detector_for_lens")
+                                     "lens", "profile", "audit_run", "detector_for_lens",
+                                     "distinct_from")
 
 #: A document key spelled as the repeatable flag it stands in for (`--ac`, `--option`), read as
 #: the canonical plural field. Only where the canonical key is accepted and absent: a document
@@ -1930,22 +1931,9 @@ class EscapeRefused(ValueError):
     or escape fields on a bug that was not marked escaped. Both CLIs exit 2 on it."""
 
 
-def _git_tag_exists(root: Path, name: str) -> bool:
-    """True when `name` is a tag in the project's git repository. Read-only; False without git."""
-    import subprocess  # noqa: PLC0415 - only an escaped bug asks
-    try:
-        proc = subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{name}"],
-                              cwd=str(root), capture_output=True, text=True, timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return proc.returncode == 0
-
-
-def release_resolves(root: Path | str, name: str) -> bool:
-    """True when `name` is a release this project has: a git tag, or a CHANGELOG.md heading
-    naming the version with or without its leading `v`."""
-    if _git_tag_exists(Path(root), name):
-        return True
+def changelog_names_release(root: Path | str, name: str) -> bool:
+    """True when CHANGELOG.md carries a heading naming the version, with or without its leading
+    `v`. Only words a refusal: a release is accepted by its git tag alone."""
     log = sdlc_md.read_text_safe(Path(root) / "CHANGELOG.md") or ""
     bare = re.escape(name[1:] if name[:1] in "vV" else name)
     return bool(re.search(rf"^##+\s*\[?v?{bare}\]?(\s|$)", log, re.M | re.I))
@@ -1956,9 +1944,13 @@ def check_escape(root: Path | str, type_: str, f: dict) -> dict:
     resolve. Run by both creators before an id is allocated, so a refused escape writes nothing.
 
     A bug supplying none of the three fields is returned untouched: an ordinary bug is created
-    exactly as it was. An escape must name its release (`--shipped-in`), which must be a tag or
-    release here; the unit that let it through (`--escaped-via`) is optional at filing, since
-    `escape.py trace` proposes it, but when named it must be a story or bug on disk."""
+    exactly as it was. An escape must name its release (`--shipped-in`), which must resolve to a
+    git tag through `escape.release_tag`, the resolver the trace reads by, and is stored in the
+    tag's spelling; a version only CHANGELOG.md names is refused, since the trace could never
+    read it. The unit that let it through (`--escaped-via`) is optional at filing, since
+    `escape.py trace` proposes it, but when named it must be a story or bug on disk, and a unit
+    no commit of the release names draws a note on stderr: the trace's confirm step will refuse
+    it."""
     shipped = str(f.get("shipped_in") or "").strip()
     via = str(f.get("escaped_via") or "").strip()
     if not (f.get("escaped") or shipped or via):
@@ -1972,7 +1964,15 @@ def check_escape(root: Path | str, type_: str, f: dict) -> dict:
     if not shipped:
         raise EscapeRefused("--escaped needs --shipped-in, the release the defect shipped in: "
                             "an escape with no release is a trace that points nowhere")
-    if not release_resolves(root, shipped):
+    import escape  # noqa: PLC0415 - deferred: only an escaped bug asks, and the trace owns it
+    tag = escape.release_tag(root, shipped)
+    if tag is None:
+        if changelog_names_release(root, shipped):
+            raise EscapeRefused(
+                f"--shipped-in {shipped} names a CHANGELOG.md release with no git tag behind "
+                f"it in either spelling, and the trace needs a tag: `escape.py trace` reads the "
+                f"units a release shipped from its tag, so this escape could never be traced. "
+                f"Tag the release, or name the tag it shipped under")
         raise EscapeRefused(f"--shipped-in {shipped} names no tag or release in this project "
                             f"(no git tag and no CHANGELOG.md heading of that version)")
     if via:
@@ -1981,7 +1981,13 @@ def check_escape(root: Path | str, type_: str, f: dict) -> dict:
             raise EscapeRefused(f"--escaped-via {via} names no unit on disk: name the story or "
                                 f"bug that shipped the defect, or leave it to `escape.py trace`")
         via = sdlc_md.extract_record_id(found[0].stem) or via
-    return {**f, "escaped": True, "shipped_in": shipped, "escaped_via": via}
+        shipped_units = {sdlc_md.norm_id(u) for u in escape.release_units(Path(root), tag)}
+        if sdlc_md.norm_id(via) not in shipped_units:
+            print(f"note: --escaped-via {via} is not a unit release {tag} shipped (no commit of "
+                  f"the release names it), so `escape.py trace --confirm {via}` will refuse it. "
+                  f"Name the unit that release shipped, or leave --escaped-via to the trace",
+                  file=sys.stderr)
+    return {**f, "escaped": True, "shipped_in": tag, "escaped_via": via}
 
 
 def escape_lines(f: dict) -> str:
@@ -2058,6 +2064,13 @@ def _audit_attribution_lines(f: dict) -> str:
             + (f"> **Audit-run:** {run}\n" if run else ""))
 
 
+def _distinct_from_line(f: dict) -> str:
+    """The `Distinct-from` metadata line: the artefacts the filer ruled this finding distinct
+    from, as `resolve_distinct_from` canonicalised them. Written only when a ruling was given."""
+    val = prose_value(f, "distinct_from")
+    return f"> **Distinct-from:** {val}\n" if val else ""
+
+
 def _detector_for_lens_line(f: dict) -> str:
     """The `Detector-for-lens` metadata line: this unit exists to BUILD a detector for that lens.
 
@@ -2093,10 +2106,14 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
     while it parses packs.
 
     ALL THREE OR NONE, never some - except that `profile` is DERIVED. A lens name resolves to
-    exactly one pack, so demanding the profile is asking for input the operator can get wrong;
+    exactly one profile, so demanding the profile is asking for input the operator can get wrong;
     supplied, it is cross-checked, and a lens/profile MISMATCH is refused, which all-three-or-none
     cannot catch. A filing carrying none of the three stays legal, because 923 existing findings
     carry none.
+
+    The profiles are every one `readiness.profile_names` resolves: the packs under
+    `templates/audit-profiles/` and the default `project` profile `reference-audit.md` declares,
+    so the filer and `readiness.py profile` agree on which lenses exist.
     """
     lens = prose_value(fields, "lens")
     profile = prose_value(fields, "profile")
@@ -2105,14 +2122,14 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
         return fields
     import readiness  # noqa: PLC0415 - local: the filer reads the packs, it does not own them
     skill_dir = _audit_packs_skill_dir()
-    packs = sorted(set(readiness.profile_names(skill_dir)) - set(readiness.REFERENCE_PROFILES))
+    packs = readiness.profile_names(skill_dir)
     # A profile no pack declares is refused FIRST and by name, listing what the resolver does
     # declare. It used to fall through to the "lens required" branch, which named `--audit-run` -
     # a flag the operator had not supplied - and named neither the profile nor the packs.
     if profile and profile not in packs:
         raise ValueError(
             f"no pack declares the profile {profile!r} - refusing to stamp a finding against a "
-            f"pack that resolves to nothing. Packs that exist: {', '.join(packs)}")
+            f"pack that resolves to nothing. Profiles that exist: {', '.join(packs)}")
     if not lens:
         raise ValueError(
             "--lens is required alongside --audit-run or --profile: a class is counted PER LENS "
@@ -2131,26 +2148,29 @@ def check_audit_attribution(repo_root: Path | str, fields: dict) -> dict:
         # is an expected state. Unguarded, an unrelated stub refused every attributed filing in the
         # project and named a file the operator had never mentioned. Same shape as
         # `readiness.cmd_validate_profiles`, forty lines away.
+        # The reference profile reads its section from the skill directory's
+        # `reference-audit.md`; a directory where that file is missing or not UTF-8 cannot
+        # resolve it, which is the same unreadable state as a stub pack, not a crash.
         try:
             lenses = readiness.resolve_profile(p, skill_dir)["lenses"]
-        except readiness.UnknownProfile:
+        except (readiness.UnknownProfile, OSError, UnicodeDecodeError):
             unreadable.append(p)
             continue
         if any(l["name"] == lens for l in lenses):
             owners.append(p)
     if not owners:
-        detail = f". Packs that could not be read: {', '.join(unreadable)}" if unreadable else ""
+        detail = f". Profiles that could not be read: {', '.join(unreadable)}" if unreadable else ""
         raise ValueError(
-            f"no pack declares the lens {lens!r} - refusing to stamp a finding with a lens that "
-            f"resolves to nothing. Packs that exist: {', '.join(packs)}{detail}")
+            f"no profile or pack declares the lens {lens!r} - refusing to stamp a finding with a "
+            f"lens that resolves to nothing. Profiles that exist: {', '.join(packs)}{detail}")
     if len(owners) > 1:
         # AMBIGUOUS, so refused rather than resolved alphabetically. Picking `owners[0]` made
         # supplying `--profile` and omitting it produce DIFFERENT records for the same finding,
         # from the very check that claims to be stronger than requiring all three.
         raise ValueError(
-            f"the lens {lens!r} is declared by more than one pack ({', '.join(owners)}), so the "
-            f"profile cannot be derived and the two would disagree with a supplied one. Rename the "
-            f"lens in one pack so it identifies a single one")
+            f"the lens {lens!r} is declared by more than one pack or profile "
+            f"({', '.join(owners)}), so the profile cannot be derived and the two would disagree "
+            f"with a supplied one. Rename the lens in one pack so it identifies a single one")
     if profile and profile not in owners:
         raise ValueError(
             f"the lens {lens!r} belongs to {', '.join(owners)}, not to {profile!r} - a consistent-"
@@ -2310,6 +2330,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n"f"> **Severity:** {normalise_severity(f['severity'])}\n"
                 f"{points}{_affects_line(f)}{escape_lines(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
+                f"{_distinct_from_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
@@ -2333,6 +2354,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
                 f"> **Type:** {f.get('ctype') or 'Feature'}\n"
                 f"{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
                 f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
+                f"{_distinct_from_line(f)}"
                 f"> **Date:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"{impact}"
@@ -2344,6 +2366,7 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
     return (f"# {disp_id}: {title}\n\n"
             f"> **Status:** {status or 'Draft'}\n{_size_line(f)}{_affects_line(f)}{_evidence_line(f)}"
             f"{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
+            f"{_distinct_from_line(f)}"
             f"> **Date:** {today}\n{_stamp(f)}\n"
             f"## Summary\n\n{f['summary']}\n\n"
             f"## Design Options\n\n{options}\n\n"
@@ -2386,9 +2409,10 @@ def append_index_row(repo_root: Path | str, type_: str, row_line: str) -> bool:
 def duplicate_candidates(repo_root: Path | str, title: str, fields: dict,
                          type_: str | None = None) -> list[dict]:
     """Existing artefacts a NEW finding would probably duplicate. The cheapest triage lens - a
-    duplicate is cheapest to catch at filing, where the author has the most context. It WARNS with
-    the candidate named; it never refuses, because a genuine near-miss is common and only the author
-    can tell them apart.
+    duplicate is cheapest to catch at filing, where the author has the most context. It reports the
+    candidates and refuses nothing itself: a genuine near-miss is common and only the author can
+    tell them apart, so the library filer warns, and only `refuse_duplicate`, which the filing CLI
+    runs, refuses the strongest case unless the filer rules on it.
 
     ONE detector, shared with `artifact.py new`: both entry points call
     `artifact.duplicate_candidates`, so "is this a duplicate?" cannot be answered two ways. This
@@ -2415,11 +2439,76 @@ def duplicate_candidates(repo_root: Path | str, title: str, fields: dict,
         return []
 
 
+def _ids_named(value: str) -> list[str]:
+    """The ids a `distinct_from` value names: comma- or space-separated, in the order given."""
+    return [tok for tok in re.split(r"[,\s]+", value or "") if tok]
+
+
+def resolve_distinct_from(root: Path, fields: dict) -> dict:
+    """`fields` with `distinct_from` canonicalised, or raise `ValueError` naming an id that
+    resolves to no artefact. Each id the filer ruled on must be an artefact on disk, and is
+    recorded as its file names it, so a ruling never points at nothing and no supplied text
+    reaches the metadata line."""
+    raw = prose_value(fields, "distinct_from")
+    if not raw:
+        return fields
+    ids: list[str] = []
+    for tok in _ids_named(raw):
+        found = sdlc_md.find_by_id(root, tok)
+        if not found:
+            raise ValueError(f"--distinct-from {tok} names no artefact on disk: name the existing "
+                             f"artefact this finding was ruled distinct from, as the refusal "
+                             f"named it")
+        cid = sdlc_md.extract_record_id(found[0].stem) or tok
+        if cid not in ids:
+            ids.append(cid)
+    return {**fields, "distinct_from": ", ".join(ids)}
+
+
+def refuse_duplicate(root: Path, type_: str, title: str, fields: dict) -> list[dict]:
+    """Raise `artifact.DuplicateRefused` when the finding duplicates an artefact of its type that
+    the filer has not ruled on; otherwise return the candidates it read.
+
+    A duplicate here is the lens's strongest case: a candidate `artifact.duplicate_candidates`
+    returns, so it scored at or above the lens's own bar, that shares EVERY path the filer
+    declared in `affects`. Judged on the declared paths, before `complete_affects` folds a
+    companion test in, so the test the tool adds cannot turn a full overlap into a partial one.
+    A finding declaring no path, or sharing only some, is never refused: it keeps the warning.
+    An id in `distinct_from` answers the candidate it names and no other. The filing CLI runs
+    this before an id is minted; the library filer does not, since a machine caller has no filer
+    present to rule."""
+    candidates = duplicate_candidates(root, title, fields, type_=type_)
+    import backlog_triage as bt  # noqa: PLC0415 - the lens's own path key, as artifact uses it
+    declared = {k for k in (bt._affect_key(root, x)
+                            for x in declared_affects(fields.get("affects"))) if k}
+    ruled = {sdlc_md.norm_id(x) for x in _ids_named(prose_value(fields, "distinct_from"))}
+    unanswered = [c for c in candidates
+                  if declared and declared <= set(c["shared"])
+                  and sdlc_md.norm_id(c["id"]) not in ruled]
+    if not unanswered:
+        return candidates
+    import artifact  # noqa: PLC0415 - deferred: artifact imports file_finding
+    named = "; ".join(
+        f"{c['id']} [{c['status']}]: it shares every declared Affects path "
+        f"({', '.join(c['shared'])}) and the duplicate lens scores the titles "
+        f"{c['similarity']:.2f}, at or above its bar of {artifact.DUP_SHARED_AFFECTS_SIM}"
+        for c in unanswered)
+    ids = ",".join(c["id"] for c in unanswered)
+    raise artifact.DuplicateRefused(
+        f"this {type_} duplicates {named} - read it before filing again. If this is a different "
+        f"finding, file it with --distinct-from {ids} to record that ruling on it")
+
+
 def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
-                 dry_run: bool = False, counted: bool = True) -> dict:
+                 dry_run: bool = False, counted: bool = True,
+                 refuse_duplicates: bool = False) -> dict:
     """Allocate an ID, write a structured artifact, append its index row, recompute
-    counts. Returns {id, path}, plus `duplicate_warnings` naming any open artefact the finding
-    overlaps (a warning, never a refusal). Raises ValueError on a missing required field.
+    counts. Returns {id, path}, plus `duplicate_warnings` naming any artefact the finding
+    overlaps. Raises ValueError on a missing required field.
+
+    `refuse_duplicates=True` runs `refuse_duplicate` before an id is minted, as the filing CLI
+    does; left False, as every machine caller leaves it, a duplicate is a warning only. A
+    `distinct_from` field is resolved either way and recorded as the `Distinct-from` line.
 
     `counted=False` files outside the triage session cap: neither refused by it nor counted
     against it. For a record of a review outcome (a carry at the review cap), not a new finding."""
@@ -2450,6 +2539,11 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     check_affects_resolvable(root, fields.get("affects"), type_)
     # ... and an escape whose release or unit does not resolve, by the rule `artifact new` runs.
     fields = check_escape(root, type_, fields)
+    # ... and a ruling naming an artefact that does not exist; then, for the CLI, a duplicate the
+    # filer has not ruled on, judged on the paths as declared, before any companion is folded in.
+    fields = resolve_distinct_from(root, fields)
+    declared_candidates = (refuse_duplicate(root, type_, title, fields)
+                           if refuse_duplicates else None)
     # ... and refuse a `Verify:` selector that names no test that exists, from the same seam and
     # for the same reason: writing a reference before establishing its referent is an ordering
     # mistake a machine can catch and a human reliably will not.
@@ -2509,8 +2603,11 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                 f"into work. File against the RFC, CR, epic or story the work belongs to.")
         parent = sdlc_md.norm_id(parent)
     # The cheapest triage lens, run BEFORE the id is minted: does this finding overlap an artefact
-    # already open? A warning attached to the result, never a refusal.
-    warnings = duplicate_candidates(root, title, fields, type_=type_)
+    # already filed? A warning attached to the result; the CLI's refusal ran above. The scan
+    # reads every artefact of the type, so the refusal's own scan is reused while the Affects
+    # it judged is still the Affects here, and run again only once a companion was folded in.
+    warnings = (declared_candidates if declared_candidates is not None and not added
+                else duplicate_candidates(root, title, fields, type_=type_))
     if dry_run:
         result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)
     else:
@@ -2622,7 +2719,8 @@ def cmd_file(args: argparse.Namespace) -> int:
              "detector_for_lens": getattr(args, "detector_for_lens", None),
              "escaped": getattr(args, "escaped", None) or None,
              "shipped_in": getattr(args, "shipped_in", None),
-             "escaped_via": getattr(args, "escaped_via", None)}
+             "escaped_via": getattr(args, "escaped_via", None),
+             "distinct_from": getattr(args, "distinct_from", None)}
     flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
         flags["acs"] = args.ac
@@ -2667,7 +2765,8 @@ def cmd_file(args: argparse.Namespace) -> int:
               "--fields-file document", file=sys.stderr)
         return 1
     try:
-        result = file_finding(args.root, type_, title, fields, dry_run=args.dry_run)
+        result = file_finding(args.root, type_, title, fields, dry_run=args.dry_run,
+                              refuse_duplicates=True)
     except EscapeRefused as exc:
         print(f"file refused: {exc}", file=sys.stderr)
         return 2
@@ -2784,11 +2883,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="bug: the defect escaped to production. Needs --shipped-in; writes "
                         "`Escaped: yes` and scaffolds a Root Cause section Fixed waits on")
     f.add_argument("--shipped-in", dest="shipped_in", metavar="RELEASE",
-                   help="bug: the release the escaped defect shipped in - a git tag or a "
-                        "CHANGELOG.md version; one that resolves to neither is refused")
+                   help="bug: the release the escaped defect shipped in - its git tag, with or "
+                        "without the leading v, stored as the tag is spelt. A version with no "
+                        "tag behind it is refused, since `escape.py trace` reads a release "
+                        "from its tag")
     f.add_argument("--escaped-via", dest="escaped_via", metavar="UNIT",
                    help="bug: the story or bug that let the escape through; must be on disk. "
-                        "Optional: `escape.py trace` proposes it from the release")
+                        "Optional: `escape.py trace` proposes it from the release. The trace's "
+                        "--confirm accepts only a unit the release shipped, so naming one no "
+                        "commit of the release names prints a note")
+    f.add_argument("--distinct-from", dest="distinct_from", metavar="ID[,ID]",
+                   help="the existing artefact(s) of this type you ruled this finding distinct "
+                        "from. Without it a finding sharing every declared Affects path with one "
+                        "and scoring at or above the duplicate lens's bar is refused before an "
+                        "id is minted; with it, recorded as the `Distinct-from` line. Each id "
+                        "must resolve, and answers only the duplicate it names")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--verify", action="append",
                    help="the executable check for the --ac in the SAME POSITION (repeatable, "

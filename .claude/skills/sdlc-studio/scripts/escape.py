@@ -53,16 +53,38 @@ def _git(root: Path, *args: str) -> str | None:
     return proc.stdout if proc.returncode == 0 else None
 
 
+def release_tag(root: Path | str, name: str) -> str | None:
+    """The git tag a release name means, which is the only thing a trace can read: `name` itself
+    when it tags a commit here, else the same name with its leading `v` dropped or added, so
+    the spelling a CHANGELOG.md heading uses (`6.4.0`) finds the tag behind it (`v6.4.0`).
+    None when neither spelling tags a commit.
+
+    The one resolver: `file_finding.check_escape` stores the `Shipped-in` it returns, and
+    `release_units` reads through it, so filing cannot accept a release the trace refuses."""
+    name = (name or "").strip()
+    if not name:
+        return None
+    other = name[1:] if name[0] in "vV" else f"v{name}"
+    for candidate in (name, other):
+        if _git(Path(root), "rev-parse", "-q", "--verify",
+                f"refs/tags/{candidate}^{{commit}}") is not None:
+            return candidate
+    return None
+
+
 def release_units(root: Path, release: str) -> list[str]:
     """The story and bug ids on disk that the commits of `release` name, in first-seen order.
 
-    The commits are those the tag holds and the tag before it does not (every commit it holds
-    when it is the first tag). Raises `TraceRefused` when `release` is not a tag here."""
-    if _git(root, "rev-parse", "-q", "--verify", f"refs/tags/{release}^{{commit}}") is None:
-        raise TraceRefused(f"release {release} is not a git tag in this project, so the units "
-                           f"it shipped cannot be read - nothing is proposed")
-    prev = (_git(root, "describe", "--tags", "--abbrev=0", f"{release}^") or "").strip()
-    span = f"{prev}..{release}" if prev else release
+    `release` is resolved to its tag by `release_tag`, so either spelling of a tagged version
+    is read. The commits are those the tag holds and the tag before it does not (every commit it
+    holds when it is the first tag). Raises `TraceRefused` when neither spelling is a tag here."""
+    tag = release_tag(root, release)
+    if tag is None:
+        raise TraceRefused(f"release {release} is not a git tag in this project, in either "
+                           f"spelling, so the units it shipped cannot be read - nothing is "
+                           f"proposed")
+    prev = (_git(root, "describe", "--tags", "--abbrev=0", f"{tag}^") or "").strip()
+    span = f"{prev}..{tag}" if prev else tag
     seen: list[str] = []
     for found in _UNIT_ID_RE.findall(_git(root, "log", "--format=%B", span) or ""):
         hit = sdlc_md.find_by_id(root, found)

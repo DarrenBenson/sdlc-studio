@@ -170,6 +170,67 @@ class EscapeTraceTests(unittest.TestCase):
                     self.assertNotIn("US0001", out)
                 self.assertEqual(before, _snapshot(root))
 
+    def test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced(self) -> None:
+        """The tag is v6.4.0 and CHANGELOG.md calls the release [6.4.0]. Filing by the changelog's
+        spelling stores the tag's, so the trace reads the release instead of refusing it as no
+        tag; and a record that already holds the changelog spelling is read through the same
+        resolver rather than refused."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for sub in ("stories", "bugs", "reviews"):
+                (root / "sdlc-studio" / sub).mkdir(parents=True)
+            (root / "scripts").mkdir()
+            (root / "scripts" / "a.py").write_text("x = 1\n", encoding="utf-8")
+            gitutil.git(["init", "-q"], root)
+            _commit(root, "chore: start")
+            gitutil.git(["tag", "v6.3.0"], root)
+            _story(root, "US0001", "scripts/a.py")
+            _commit(root, "feat(US0001): total the basket")
+            gitutil.git(["tag", "v6.4.0"], root)
+            (root / "CHANGELOG.md").write_text("# Changelog\n\n## [6.4.0] - 2026-11-16\n",
+                                               encoding="utf-8")
+            file_finding = _load("file_finding")
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = file_finding.main([
+                    "file", "--type", "bug", "--title", "the total is wrong",
+                    "--severity", "High", "--affects", "scripts/a.py", "--points", "2",
+                    "--summary", "the total is wrong", "--steps", "add two prices",
+                    "--fix", "carry the one", "--escaped", "--shipped-in", "6.4.0",
+                    "--format", "json", "--root", str(root)])
+            self.assertEqual(0, rc, err.getvalue())
+            filed = json.loads(out.getvalue())
+            path = Path(filed["path"])
+            lines = path.read_text(encoding="utf-8").splitlines()
+            self.assertIn("> **Shipped-in:** v6.4.0", lines)
+            rc, out, err = _cli(["trace", "--bug", filed["id"], "--root", str(root),
+                                 "--format", "json"])
+            self.assertEqual(0, rc, err)
+            got = json.loads(out)
+            self.assertEqual(["US0001"], got["units"])
+            self.assertEqual(["US0001"], [p["unit"] for p in got["proposals"]])
+            # A record written before filing resolved the spelling is traced too.
+            path.write_text(path.read_text(encoding="utf-8").replace(
+                "> **Shipped-in:** v6.4.0", "> **Shipped-in:** 6.4.0"), encoding="utf-8")
+            rc, out, err = _cli(["trace", "--bug", filed["id"], "--root", str(root),
+                                 "--format", "json"])
+            self.assertEqual(0, rc, err)
+            self.assertEqual(["US0001"], json.loads(out)["units"])
+            # The resolver itself: either spelling finds the tag, and nothing else does.
+            self.assertEqual("v6.4.0", escape.release_tag(root, "6.4.0"))
+            self.assertEqual("v6.4.0", escape.release_tag(root, "v6.4.0"))
+            self.assertEqual("v6.4.0", escape.release_tag(root, " 6.4.0 "))
+            self.assertIsNone(escape.release_tag(root, "V6.4.0"))
+            gitutil.git(["tag", "7.0.0"], root)
+            self.assertEqual("7.0.0", escape.release_tag(root, "v7.0.0"))
+            self.assertEqual("7.0.0", escape.release_tag(root, "V7.0.0"))
+            for nothing in ("", "   ", "v", "6.5.0"):
+                self.assertIsNone(escape.release_tag(root, nothing), nothing)
+            # Where both spellings are tags, the exact one is the release named.
+            gitutil.git(["tag", "6.4.0"], root)
+            self.assertEqual("6.4.0", escape.release_tag(root, "6.4.0"))
+            self.assertEqual("v6.4.0", escape.release_tag(root, "v6.4.0"))
+
 
 if __name__ == "__main__":
     unittest.main()

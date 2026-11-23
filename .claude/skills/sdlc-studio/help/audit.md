@@ -120,8 +120,11 @@ python3 "$CLAUDE_SKILL_DIR/scripts/file_finding.py" file --type bug \
 - **`--lens` and `--audit-run` go together or not at all.** A lens seen once is the lens working;
   a lens seen across two runs is a detector owed. Neither half counts alone, and a finding with
   neither stays perfectly legal.
-- **`--profile` is optional and derived**, since a lens resolves to exactly one pack. Supply it
-  only to have the pairing cross-checked: a lens/profile mismatch is refused.
+- **`--profile` is optional and derived**, since a lens resolves to exactly one profile: a pack,
+  or the default `project` profile, whose lenses (`PRD`, `TRD` and the rest) are the ones
+  `readiness.py profile --name project` lists. Supply it only to have the pairing cross-checked:
+  a lens/profile mismatch is refused, and so is a lens two profiles declare, since neither can
+  be derived.
 - **An unregistered run id is refused**, so a one-character typo cannot manufacture a second
   distinct run and with it a false detector-owed verdict. Every check runs before an id is
   minted, so a refusal costs no id.

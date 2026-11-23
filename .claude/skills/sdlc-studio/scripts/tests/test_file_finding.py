@@ -1439,6 +1439,228 @@ class DuplicateScopeParityTests(unittest.TestCase):
             self.assertIn("CR0100", [c["id"] for c in any_type])
 
 
+class DuplicateRefusalTests(unittest.TestCase):
+    """The filing CLI refuses a finding that shares every declared `Affects` path with an artefact
+    of its type and scores at or above the duplicate lens's bar, before an id is minted, unless
+    the filer rules on that artefact with `--distinct-from`. The bar is the lens's own, read from
+    `artifact`; a partial overlap, no `Affects` at all, and the library filer keep the warning."""
+
+    EXISTING = "check_links misses a broken anchor link defect in nested lists"
+    NEW = "a broken anchor link defect is not caught by check_links"
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="dup_refuse_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        _seed_index(d, "bug")
+        return d
+
+    def _existing(self, root: Path, cid: str, title: str, affects: str | None = "src/thing.py",
+                  status: str = "Open", rel: str = "bugs") -> None:
+        meta = (f"> **Status:** {status}\n> **Severity:** High\n> **Points:** 2\n"
+                if rel == "bugs" else f"> **Status:** {status}\n> **Priority:** High\n")
+        if affects:
+            meta += f"> **Affects:** {affects}\n"
+        (root / "sdlc-studio" / rel / f"{cid}-x.md").write_text(
+            f"# {cid}: {title}\n\n{meta}\n## Summary\n\n{title}\n", encoding="utf-8")
+
+    def _bug(self, root: Path, title: str, *extra: str,
+             affects: str = "src/thing.py") -> tuple[int, str, str]:
+        return _cli_file(root, "--type", "bug", "--title", title, "--severity", "high",
+                         "--affects", affects, "--points", "3", "--summary", "s",
+                         "--steps", "r", "--fix", "f", *extra)
+
+    def _snapshot(self, root: Path) -> dict[str, bytes]:
+        bugs = root / "sdlc-studio" / "bugs"
+        return {p.name: p.read_bytes() for p in sorted(bugs.iterdir())}
+
+    def test_a_full_affects_duplicate_is_refused_before_an_id_is_minted(self) -> None:
+        import artifact
+        for status in ("Open", "Fixed"):
+            for extra in ((), ("--dry-run",)):
+                with self.subTest(status=status, extra=extra):
+                    root = self._root()
+                    self._existing(root, "BG0001", self.EXISTING, status=status)
+                    cand = artifact.duplicate_candidates(root, "bug", self.NEW,
+                                                         {"affects": "src/thing.py"})
+                    self.assertEqual(["BG0001"], [c["id"] for c in cand])
+                    before = self._snapshot(root)
+                    rc, out, err = self._bug(root, self.NEW, *extra)
+                    self.assertEqual(1, rc, out + err)
+                    self.assertEqual("", out)
+                    self.assertTrue(err.startswith("file refused:"), err)
+                    for named in ("BG0001", f"[{status}]", "src/thing.py",
+                                  f"{cand[0]['similarity']:.2f}", "--distinct-from BG0001"):
+                        self.assertIn(named, err)
+                    self.assertEqual(before, self._snapshot(root), "the refusal wrote")
+
+    def test_distinct_from_files_and_records_the_ruling(self) -> None:
+        for how in ("flag", "fields-file"):
+            with self.subTest(how=how):
+                root = self._root()
+                self._existing(root, "BG0001", self.EXISTING)
+                if how == "flag":
+                    rc, out, err = self._bug(root, self.NEW, "--distinct-from", "BG0001")
+                else:
+                    doc = root / "finding.json"
+                    doc.write_text(json.dumps({"title": self.NEW, **BUG,
+                                               "distinct_from": "BG0001"}), encoding="utf-8")
+                    rc, out, err = _cli_file(root, "--type", "bug", "--fields-file", str(doc))
+                self.assertEqual(0, rc, err)
+                first = out.splitlines()[0]
+                self.assertRegex(first, r"^filed BG0002 -> .*BG0002-.*\.md$")
+                body = Path(first.split(" -> ", 1)[1]).read_text(encoding="utf-8")
+                self.assertIn("> **Distinct-from:** BG0001", body.splitlines())
+                head = body.split("\n## ", 1)[0]
+                self.assertIn("> **Distinct-from:** BG0001", head)
+        # A ruling on two artefacts is one comma-separated list, each id as its file names it.
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        self._existing(root, "BG0002", self.EXISTING, status="Fixed")
+        rc, out, err = self._bug(root, self.NEW, "--distinct-from", "bg0002, BG-0001 BG0002")
+        self.assertEqual(0, rc, err)
+        body = Path(out.splitlines()[0].split(" -> ", 1)[1]).read_text(encoding="utf-8")
+        self.assertIn("> **Distinct-from:** BG0002, BG0001", body.splitlines())
+        # Every type the filer writes carries the line in its metadata block.
+        base = {"summary": "S", "impact": "I", "acs": ["a criterion"], "steps": "s", "fix": "f",
+                "priority": "High", "severity": "High", "points": 3, "options": ["A", "B"],
+                "distinct_from": "BG0001"}
+        for type_ in ("bug", "cr", "rfc"):
+            with self.subTest(type=type_):
+                body = ff._render(type_, f"{type_.upper()}-9999", "a title", "2026-11-23", base)
+                self.assertIn("> **Distinct-from:** BG0001", body.split("\n## ", 1)[0])
+        # No ruling, no line.
+        root = self._root()
+        rc, out, err = self._bug(root, self.NEW)
+        self.assertEqual(0, rc, err)
+        body = Path(out.splitlines()[0].split(" -> ", 1)[1]).read_text(encoding="utf-8")
+        self.assertNotIn("Distinct-from", body)
+
+    def test_distinct_from_naming_another_or_no_artefact_still_refuses(self) -> None:
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        self._existing(root, "BG0002", "colour the status output green", affects="src/other.py")
+        before = self._snapshot(root)
+        rc, out, err = self._bug(root, self.NEW, "--distinct-from", "BG0002")
+        self.assertEqual(1, rc, out + err)
+        self.assertTrue(err.startswith("file refused:"), err)
+        self.assertIn("BG0001 [Open]", err)
+        self.assertIn("--distinct-from BG0001", err)
+        self.assertEqual(before, self._snapshot(root))
+        for missing in ("BG0999", "BG0001, BG0999"):
+            with self.subTest(missing=missing):
+                rc, out, err = self._bug(root, self.NEW, "--distinct-from", missing)
+                self.assertEqual(1, rc, out + err)
+                self.assertTrue(err.startswith("file refused:"), err)
+                self.assertIn("--distinct-from BG0999 names no artefact", err)
+                self.assertEqual(before, self._snapshot(root))
+
+    def test_the_refusal_reads_declared_paths_and_the_lens_bar_at_or_above(self) -> None:
+        import artifact
+        import backlog_triage as bt
+        existing = "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo"
+        at_bar = "alpha bravo charlie delta lima mike november oscar papa quebec"
+        below = "alpha bravo charlie delta lima mike november oscar papa quebec romeo"
+        ex, at, lo = bt._tokens(existing), bt._tokens(at_bar), bt._tokens(below)
+        self.assertEqual(artifact.DUP_SHARED_AFFECTS_SIM, artifact._title_overlap(ex, at))
+        self.assertLess(artifact._title_overlap(ex, lo), artifact.DUP_SHARED_AFFECTS_SIM)
+        self.assertGreaterEqual(len(ex & lo), artifact.DUP_MIN_SHARED_TOKENS)
+        root = self._root()
+        self._existing(root, "BG0001", existing)
+        rc, out, err = self._bug(root, at_bar)
+        self.assertEqual(1, rc, out + err)
+        self.assertIn("file refused:", err)
+        self.assertIn("BG0001", err)
+        rc, out, err = self._bug(root, below)
+        self.assertEqual(0, rc, err)
+        self.assertRegex(out, r"^filed BG0002 -> ")
+        self.assertNotIn("duplicate", out + err)
+        # The bar is the lens's: raised there, the title at 0.4 is no longer refused.
+        root = self._root()
+        self._existing(root, "BG0001", existing)
+        with unittest.mock.patch.object(artifact, "DUP_SHARED_AFFECTS_SIM", 0.5):
+            rc, out, err = self._bug(root, at_bar)
+        self.assertEqual(0, rc, err)
+        # ... and lowered there, the refusal names the bar it read.
+        root = self._root()
+        self._existing(root, "BG0001", existing)
+        with unittest.mock.patch.object(artifact, "DUP_SHARED_AFFECTS_SIM", 0.35):
+            rc, out, err = self._bug(root, at_bar)
+        self.assertEqual(1, rc, out + err)
+        self.assertIn("scores the titles 0.40, at or above its bar of 0.35", err)
+        # Judged on the DECLARED paths: the companion test the filer folds in does not make a
+        # full overlap partial.
+        root = self._root()
+        (root / "src" / "tests").mkdir(parents=True)
+        (root / "src" / "tests" / "test_thing.py").write_text("", encoding="utf-8")
+        self.assertEqual([("src/thing.py", "src/tests/test_thing.py")],
+                         ff.missing_companion_tests(root, "src/thing.py", "bug"))
+        self._existing(root, "BG0001", self.EXISTING)
+        rc, out, err = self._bug(root, self.NEW)
+        self.assertEqual(1, rc, out + err)
+        self.assertIn("file refused:", err)
+        self.assertIn("--distinct-from BG0001", err)
+        self.assertEqual(["BG0001-x.md"], [p.name for p in _bugs(root)])
+
+    def test_a_partial_or_absent_affects_overlap_still_only_warns(self) -> None:
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        rc, out, err = self._bug(root, self.NEW, affects="src/thing.py, src/other.py")
+        self.assertEqual(0, rc, err)
+        lines = out.splitlines()
+        self.assertRegex(lines[0], r"^filed BG0002 -> ")
+        self.assertIn("warning: possible duplicate of BG0001", lines[1])
+        # Two CRs, neither declaring an Affects, titles at the title-only bar.
+        root = self._root()
+        _seed_index(root, "cr")
+        self._existing(root, "CR0001", "Tighten the review gate for unpinned mutants",
+                       affects=None, status="Proposed", rel="change-requests")
+        rc, out, err = _cli_file(root, "--type", "cr", "--title",
+                                 "Tighten the review gate for unpinned mutants again",
+                                 "--priority", "High", "--summary", "s", "--size", "M")
+        self.assertEqual(0, rc, err)
+        lines = out.splitlines()
+        self.assertRegex(lines[0], r"^filed CR-0002 -> ")
+        self.assertIn("warning: possible duplicate of CR0001", lines[1])
+
+    def test_the_warning_reads_the_completed_affects_and_the_corpus_is_scanned_once(self) -> None:
+        """The refusal judges the declared paths; the warning, as before, the Affects the filer
+        completed. An existing bug naming only the companion test the filer folds in shares a
+        path with the completed Affects alone, so at a title score of 0.4 it is warned of and
+        not refused. Without a companion the refusal's scan is the warning's: one read."""
+        existing = "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo"
+        at_bar = "alpha bravo charlie delta lima mike november oscar papa quebec"
+        root = self._root()
+        (root / "src" / "tests").mkdir(parents=True)
+        (root / "src" / "tests" / "test_thing.py").write_text("", encoding="utf-8")
+        self._existing(root, "BG0001", existing, affects="src/tests/test_thing.py")
+        scans = []
+        real = ff.duplicate_candidates
+
+        def counted(*a, **k):
+            scans.append(a[1])
+            return real(*a, **k)
+
+        with unittest.mock.patch.object(ff, "duplicate_candidates", counted):
+            rc, out, err = self._bug(root, at_bar)
+        self.assertEqual(0, rc, err)
+        self.assertIn("warning: possible duplicate of BG0001", out)
+        self.assertIn("shares src/tests/test_thing.py", out)
+        self.assertEqual(2, len(scans))
+        scans.clear()
+        with unittest.mock.patch.object(ff, "duplicate_candidates", counted):
+            rc, out, err = self._bug(root, self.NEW, affects="src/other.py")
+        self.assertEqual(0, rc, err)
+        self.assertEqual(1, len(scans))
+
+    def test_the_library_filer_still_files_and_warns(self) -> None:
+        root = self._root()
+        self._existing(root, "BG0001", self.EXISTING)
+        res = ff.file_finding(root, "bug", self.NEW, dict(BUG))
+        self.assertEqual("BG0002", res["id"])
+        self.assertTrue(Path(res["path"]).is_file())
+        self.assertEqual(["BG0001"], [c["id"] for c in res["duplicate_warnings"]])
+        self.assertEqual(["src/thing.py"], res["duplicate_warnings"][0]["shared"])
+
 class FiledCriteriaTests(unittest.TestCase):
     """US0516/CR0458: a filed bug carried Steps to Reproduce and a Proposed Fix and NO acceptance
     criteria, so a lane picking it up had to infer the contract from a summary - and the
@@ -2507,6 +2729,135 @@ class AuditAttributionUnheldInvariantsTests(unittest.TestCase):
         self.assertEqual({"lens": LIVE_LENS, "audit_run": rid}, res["attribution_dropped"])
 
 
+class ProjectProfileLensTests(unittest.TestCase):
+    """The default audit profile, `project`, is declared in `reference-audit.md` rather than as a
+    pack, and the filer used to look its lenses up among the packs alone, so every finding of a
+    default audit was refused its attribution. It resolves through the same resolver as
+    `readiness.py profile` now, and an unknown or ambiguous lens is still refused."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="proj_lens_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        _seed_index(d, "bug")
+        return d
+
+    def _project_lenses(self) -> list[str]:
+        import readiness
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = readiness.main(["profile", "--name", "project", "--format", "json"])
+        self.assertEqual(0, rc)
+        lenses = [lens["name"] for lens in json.loads(out.getvalue())["lenses"]]
+        self.assertIn("PRD", lenses)
+        return lenses
+
+    def test_a_project_profile_lens_is_accepted_and_stamped(self) -> None:
+        root = self._root()
+        rid = _register(root)
+        doc = root / "finding.json"
+        doc.write_text(json.dumps({"title": "a requirement nobody can test", **BUG,
+                                   "lens": "PRD", "audit_run": rid}), encoding="utf-8")
+        rc, out, err = _cli_file(root, "--type", "bug", "--fields-file", str(doc))
+        self.assertEqual(0, rc, err)
+        self.assertIn("filed ", out)
+        body = _bugs(root)[0].read_text(encoding="utf-8")
+        self.assertEqual("PRD", sdlc_md.extract_field(body, "Audit-lens"))
+        self.assertEqual("project", sdlc_md.extract_field(body, "Audit-profile"))
+        self.assertEqual(rid, sdlc_md.extract_field(body, "Audit-run"))
+        # Supplied, the profile is cross-checked against the lens rather than refused unknown.
+        res = ff.file_finding(root, "bug", "a second requirement with no acceptance signal",
+                              {**BUG, "lens": "PRD", "profile": "project", "audit_run": rid})
+        body = Path(res["path"]).read_text(encoding="utf-8")
+        self.assertEqual("project", sdlc_md.extract_field(body, "Audit-profile"))
+        with self.assertRaises(ValueError) as ctx:
+            ff.file_finding(root, "bug", "x", {**BUG, "lens": "PRD", "profile": "code",
+                                               "audit_run": rid})
+        self.assertIn("belongs to project", str(ctx.exception))
+
+    def test_every_lens_the_project_profile_lists_is_accepted(self) -> None:
+        root = self._root()
+        rid = _register(root)
+        lenses = self._project_lenses()
+        for n, lens in enumerate(lenses):
+            with self.subTest(lens=lens):
+                res = ff.file_finding(root, "bug", f"finding {n} of the project audit",
+                                      {**BUG, "lens": lens, "audit_run": rid})
+                body = Path(res["path"]).read_text(encoding="utf-8")
+                self.assertEqual(lens, sdlc_md.extract_field(body, "Audit-lens"))
+                self.assertEqual("project", sdlc_md.extract_field(body, "Audit-profile"))
+        self.assertEqual(len(lenses), len(_bugs(root)))
+
+    def _skill_dir_with_a_pack_declaring(self, lens: str) -> Path:
+        """A per-test skill directory: the shipped packs, the reference that declares the project
+        profile, and one more pack whose first lens is renamed `lens`."""
+        shipped = Path(ff.__file__).resolve().parent.parent
+        skill_dir = Path(tempfile.mkdtemp(prefix="packs_"))
+        self.addCleanup(shutil.rmtree, skill_dir, ignore_errors=True)
+        packs = skill_dir / "templates" / "audit-profiles"
+        shutil.copytree(shipped / "templates" / "audit-profiles", packs)
+        shutil.copy(shipped / "reference-audit.md", skill_dir / "reference-audit.md")
+        code = (packs / "code.md").read_text(encoding="utf-8")
+        self.assertEqual(1, code.count("| correctness |"))
+        (packs / "zz-also-prd.md").write_text(code.replace("| correctness |", f"| {lens} |"),
+                                              encoding="utf-8")
+        patcher = unittest.mock.patch.dict(
+            os.environ, {ff.AUDIT_PACKS_SKILL_DIR_ENV: str(skill_dir)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return skill_dir
+
+    def test_an_unknown_lens_is_still_refused_and_an_ambiguous_one_is_not_guessed(self) -> None:
+        root = self._root()
+        rid = _register(root)
+        with self.assertRaises(ValueError) as ctx:
+            ff.file_finding(root, "bug", "x", {**BUG, "lens": "no-such-lens", "audit_run": rid})
+        msg = str(ctx.exception)
+        self.assertIn("'no-such-lens'", msg)
+        listed = msg.split("that exist: ", 1)[1].split(".")[0].split(", ")
+        self.assertIn("project", listed)
+        self.assertIn(LIVE_PROFILE, listed)
+        self.assertEqual([], _bugs(root))
+        # The project profile and a pack both declare PRD: no profile can be derived.
+        self._skill_dir_with_a_pack_declaring("PRD")
+        with self.assertRaises(ValueError) as ctx:
+            ff.file_finding(root, "bug", "x", {**BUG, "lens": "PRD", "audit_run": rid})
+        msg = str(ctx.exception)
+        self.assertIn("more than one pack", msg)
+        self.assertIn("project", msg)
+        self.assertIn("zz-also-prd", msg)
+        self.assertEqual([], _bugs(root))
+        # A project lens no pack shadows still resolves from the same skill directory.
+        res = ff.file_finding(root, "bug", "a trd that drifted from the code",
+                              {**BUG, "lens": "TRD", "audit_run": rid})
+        body = Path(res["path"]).read_text(encoding="utf-8")
+        self.assertEqual("project", sdlc_md.extract_field(body, "Audit-profile"))
+
+    def test_a_skill_directory_without_the_reference_still_resolves_the_packs(self) -> None:
+        """A skill directory whose `reference-audit.md` is missing, empty or not UTF-8 cannot
+        resolve the project profile; that is named as unreadable, never a crash, and a pack's
+        lens still files."""
+        shipped = Path(ff.__file__).resolve().parent.parent / "templates" / "audit-profiles"
+        for reference in (None, b"", b"# Audit\n\n\xff\xfe not utf-8\n"):
+            with self.subTest(reference=reference):
+                root = self._root()
+                rid = _register(root)
+                skill_dir = Path(tempfile.mkdtemp(prefix="packs_"))
+                self.addCleanup(shutil.rmtree, skill_dir, ignore_errors=True)
+                shutil.copytree(shipped, skill_dir / "templates" / "audit-profiles")
+                if reference is not None:
+                    (skill_dir / "reference-audit.md").write_bytes(reference)
+                with unittest.mock.patch.dict(os.environ,
+                                              {ff.AUDIT_PACKS_SKILL_DIR_ENV: str(skill_dir)}):
+                    res = ff.file_finding(root, "bug", "filed with the reference unreadable",
+                                          {**BUG, "lens": LIVE_LENS, "audit_run": rid})
+                    with self.assertRaises(ValueError) as ctx:
+                        ff.file_finding(root, "bug", "x",
+                                        {**BUG, "lens": "PRD", "audit_run": rid})
+                body = Path(res["path"]).read_text(encoding="utf-8")
+                self.assertEqual(LIVE_PROFILE, sdlc_md.extract_field(body, "Audit-profile"))
+                self.assertIn("could not be read: project", str(ctx.exception))
+
+
 def cost_evidence():
     """The register's directory, as the refusal must name it."""
     return _load_audit_cost().EVIDENCE
@@ -3362,6 +3713,69 @@ class ScalarForListTests(unittest.TestCase):
                 with self.assertRaises(ValueError) as caught:
                     ff.load_fields_file(doc, allowed)
                 self.assertIn("acs", str(caught.exception))
+
+
+def _cli_file(root: Path, *argv: str) -> tuple[int, str, str]:
+    """`file_finding.py file` through its own `main`, as an operator runs it."""
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = ff.main(["file", "--root", str(root), *argv])
+    return rc, out.getvalue(), err.getvalue()
+
+
+class EscapedViaOutsideTheReleaseTests(unittest.TestCase):
+    """`escape.py trace --confirm` accepts only a unit the named release shipped, so a filing that
+    names another as `--escaped-via` says so, naming the unit and the release, instead of
+    accepting it in silence."""
+
+    def _project(self, root: Path) -> None:
+        import gitutil
+        _seed_index(root, "bug")
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        gitutil.git(["init", "-q"], root)
+        gitutil.git(["commit", "-q", "--allow-empty", "-m", "chore: start"], root)
+        gitutil.git(["tag", "v0.9.0"], root)
+        (stories / "US0001-the-shipped-story.md").write_text(
+            "# US0001: the shipped story\n\n> **Status:** Done\n> **Affects:** src/thing.py\n",
+            encoding="utf-8")
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", "feat(US0001): ship the total"], root)
+        gitutil.git(["tag", "v1.0.0"], root)
+        (stories / "US0002-a-later-story.md").write_text(
+            "# US0002: a later story\n\n> **Status:** Done\n> **Affects:** src/thing.py\n",
+            encoding="utf-8")
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", "feat(US0002): round the total"], root)
+
+    def _file(self, root: Path, via: str, release: str = "v1.0.0") -> tuple[int, str, str]:
+        return _cli_file(root, "--type", "bug", "--title", f"the total is wrong via {via}",
+                         "--severity", "High", "--affects", "src/thing.py", "--points", "2",
+                         "--summary", "s", "--steps", "r", "--fix", "f", "--escaped",
+                         "--shipped-in", release, "--escaped-via", via)
+
+    def test_a_unit_the_release_did_not_ship_is_not_accepted_silently(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root)
+            # US0002 is on disk, but no commit of v1.0.0 names it: the confirm step will refuse it.
+            rc, out, err = self._file(root, "US0002")
+            self.assertEqual(0, rc, err)
+            self.assertIn("filed ", out)
+            note = [ln for ln in err.splitlines() if ln.startswith("note: --escaped-via")]
+            self.assertEqual(1, len(note), err)
+            for named in ("US0002", "release v1.0.0", "escape.py trace --confirm"):
+                self.assertIn(named, note[0])
+            # The release's own unit draws no note.
+            rc, _out, err = self._file(root, "US0001")
+            self.assertEqual(0, rc, err)
+            self.assertNotIn("--escaped-via", err)
+            # Named by the changelog spelling, the release is read as its tag for the note too,
+            # and a release that shipped no commit naming the unit draws it.
+            rc, _out, err = self._file(root, "US0001", release="0.9.0")
+            self.assertEqual(0, rc, err)
+            self.assertIn("note: --escaped-via US0001", err)
+            self.assertIn("release v0.9.0", err)
 
 
 class SeverityVocabularyTests(unittest.TestCase):

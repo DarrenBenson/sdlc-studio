@@ -114,13 +114,15 @@ class BugEscapeFieldTests(unittest.TestCase):
                     self.assertEqual(2, rc, f"{label} {argv}: {err}")
                     self.assertIn(named, err)
                     self.assertEqual([], _bug_files(root), f"{label} {argv} wrote a file")
-            with self.subTest(path=label, case="a release the changelog names"), \
+            with self.subTest(path=label, case="the changelog spelling of a tag"), \
                     tempfile.TemporaryDirectory() as d:
                 root = _project(d)
-                (root / "CHANGELOG.md").write_text("# Changelog\n\n## [2.0.0] - 2026-01-01\n",
+                (root / "CHANGELOG.md").write_text("# Changelog\n\n## [1.0.0] - 2026-01-01\n",
                                                    encoding="utf-8")
-                rc, _out, err = create(root, "--escaped", "--shipped-in", "v2.0.0")
+                rc, out, err = create(root, "--escaped", "--shipped-in", "1.0.0")
                 self.assertEqual(0, rc, err)
+                text = Path(json.loads(out)["path"]).read_text(encoding="utf-8")
+                self.assertIn("> **Shipped-in:** v1.0.0", text.splitlines())
             with self.subTest(path=label, case="a bug that did not escape"), \
                     tempfile.TemporaryDirectory() as d:
                 root = _project(d)
@@ -129,6 +131,50 @@ class BugEscapeFieldTests(unittest.TestCase):
                 text = Path(json.loads(out)["path"]).read_text(encoding="utf-8")
                 for absent in ("Escaped", "Shipped-in", "## Root Cause"):
                     self.assertNotIn(absent, text)
+
+    def test_a_changelog_heading_with_no_tag_behind_it_is_refused(self) -> None:
+        """`escape.py trace` reads a release's units from its git tag, so a version only
+        CHANGELOG.md names is an escape record nobody can trace: refused at filing, by both
+        creators, writing nothing, in either spelling. A tagged version is accepted."""
+        changelog = "# Changelog\n\n## [2.0.0] - 2026-01-01\n\n## [1.0.0] - 2025-06-01\n"
+        for label, create in (("artifact new", _new_bug), ("file_finding file", _file_bug)):
+            for shipped in ("2.0.0", "v2.0.0"):
+                with self.subTest(path=label, shipped=shipped), \
+                        tempfile.TemporaryDirectory() as d:
+                    root = _project(d)
+                    (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+                    rc, out, err = create(root, "--escaped", "--shipped-in", shipped)
+                    self.assertEqual(2, rc, out + err)
+                    self.assertEqual("", out)
+                    for named in (shipped, "CHANGELOG.md", "no git tag", "trace needs a tag"):
+                        self.assertIn(named, err)
+                    self.assertEqual([], _bug_files(root), f"{label} {shipped} wrote a file")
+            with self.subTest(path=label, case="a tag that names no commit"), \
+                    tempfile.TemporaryDirectory() as d:
+                root = _project(d)
+                (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+                gitutil.git(["tag", "v2.0.0", "HEAD^{tree}"], root)
+                rc, out, err = create(root, "--escaped", "--shipped-in", "v2.0.0")
+                self.assertEqual(2, rc, out + err)
+                self.assertIn("trace needs a tag", err)
+                self.assertEqual([], _bug_files(root))
+            for shipped in ("1.0.0", "v1.0.0"):
+                with self.subTest(path=label, shipped=shipped, case="tagged"), \
+                        tempfile.TemporaryDirectory() as d:
+                    root = _project(d)
+                    (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+                    rc, out, err = create(root, "--escaped", "--shipped-in", shipped)
+                    self.assertEqual(0, rc, err)
+                    text = Path(json.loads(out)["path"]).read_text(encoding="utf-8")
+                    self.assertIn("> **Shipped-in:** v1.0.0", text.splitlines())
+            with self.subTest(path=label, case="neither a tag nor a heading"), \
+                    tempfile.TemporaryDirectory() as d:
+                root = _project(d)
+                (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+                rc, _out, err = create(root, "--escaped", "--shipped-in", "3.0.0")
+                self.assertEqual(2, rc, err)
+                self.assertIn("names no tag or release", err)
+                self.assertNotIn("trace needs a tag", err)
 
     def test_an_escaped_bug_is_not_fixed_with_an_empty_root_cause(self) -> None:
         with tempfile.TemporaryDirectory() as d:

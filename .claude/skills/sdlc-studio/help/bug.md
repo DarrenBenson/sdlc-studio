@@ -41,10 +41,12 @@ recorded `sprint.breakdown: judgement` gets a warning here instead of a refusal,
 its plan reports instead of blocking.
 
 A defect found in production is filed with `--escaped --shipped-in <release>` and, when you
-know it, `--escaped-via <unit>`, on either creator. The release must be a git tag or a
-`CHANGELOG.md` version and the unit a story or bug on disk, or the creator exits 2 and writes
-nothing. The bug carries `Escaped: yes`, `Shipped-in` and `Escaped-via` in its header and a
-Root Cause section, and `transition.py` will not set it Fixed until that section says why the
+know it, `--escaped-via <unit>`, on either creator. The release must be a git tag, named with
+or without its leading `v` and recorded as the tag is spelt, and the unit a story or bug on
+disk, or the creator exits 2 and writes nothing; a `CHANGELOG.md` version with no tag behind it
+is refused too, because `escape.py trace` reads a release from its tag. A unit no commit of the
+release names still files, with a note that the trace's `--confirm` will refuse it. The bug
+carries `Escaped: yes`, `Shipped-in` and `Escaped-via` in its header and a Root Cause section, and `transition.py` will not set it Fixed until that section says why the
 defect got through. `escape.py trace --bug BGxxxx` proposes the units its release shipped that
 share a file with the fix, each with its recorded verdict and seat, and writes nothing;
 `--confirm <unit>` records one as `Escaped-via`, with its verdict as `Escaped-verdict`.

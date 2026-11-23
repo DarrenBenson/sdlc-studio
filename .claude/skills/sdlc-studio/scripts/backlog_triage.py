@@ -77,10 +77,21 @@ def _summary(text: str) -> str:
 _ID_TOKEN_RE = re.compile(r"^(?:us|bg|ep|cr|rfc|is|pl|ts|wf)\d{3,}$")
 
 
+def _blank_ids(text: str) -> str:
+    """`text` with every artefact id `sdlc_md.ID_SEARCH_RE` finds, in either shape, replaced by a
+    space: the v3 form (`BG-01JQK3F8`) and the dashed v2 form (`CR-0001`) as well as `BG0001`.
+    It runs before the text is lower-cased and split, because split into words such an id is a
+    prefix dropped for length and a suffix (`01jqk3f8`, `0001`) no word rule can tell from a word
+    like `sha256ab`."""
+    return sdlc_md.ID_SEARCH_RE.sub(" ", text)
+
+
 def _tokens(*parts: str) -> set[str]:
-    words = re.findall(r"[a-z0-9_]+", " ".join(parts).lower())
-    # Drop an artefact's OWN id token (it leaks in from the `US0001:` H1 prefix): two duplicates
-    # carry different ids, and counting them would drive similar wording apart.
+    words = re.findall(r"[a-z0-9_]+", _blank_ids(" ".join(parts)).lower())
+    # Drop an artefact's OWN id token (it leaks in from the `US0001:` or `BG-01JQK3F8:` H1
+    # prefix): two duplicates carry different ids, and counting them would drive similar wording
+    # apart. `_ID_TOKEN_RE` still drops the lower-case and three-digit spellings the id pattern
+    # does not read.
     return {w for w in words
             if w not in _STOP and len(w) > 2 and not _ID_TOKEN_RE.match(w)}
 

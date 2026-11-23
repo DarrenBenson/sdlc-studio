@@ -1849,8 +1849,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="bug: the defect escaped to production. Needs --shipped-in; writes "
                         "`Escaped: yes` and scaffolds a Root Cause section Fixed waits on")
     n.add_argument("--shipped-in", dest="shipped_in", metavar="RELEASE",
-                   help="bug: the release the escaped defect shipped in - a git tag or a "
-                        "CHANGELOG.md version; one that resolves to neither is refused")
+                   help="bug: the release the escaped defect shipped in - its git tag, with or "
+                        "without the leading v, stored as the tag is spelt. A version with no "
+                        "tag behind it is refused, since `escape.py trace` reads a release "
+                        "from its tag")
     n.add_argument("--escaped-via", dest="escaped_via", metavar="UNIT",
                    help="bug: the story or bug that let the escape through; must be on disk. "
                         "Optional: `escape.py trace` proposes it from the release")
