@@ -320,9 +320,12 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    half-written. A write to a temporary directory or the untracked `.local/`, or one that
    creates a file only where none exists, rewrites no shared file.
    `scripts/tests/test_confinement.py` names every `write_text` and `write_bytes` call, and
-   every `open` given a literal mode holding `w`, with the kind of its target, so a new rewrite
-   made by one of them fails there until it goes through `atomic_write`, its target is shown to
-   be scratch, untracked or new, or its script is listed here. The writers left outside the
+   every `open` given a literal mode holding `w` (read as the builtin's `(file, mode)` when it
+   is called as `open`, or as `io.open`, `builtins.open` or `codecs.open` on the module name or
+   `as` alias an `import` in its file binds, and as a method's `(mode)` on any other receiver,
+   so `gzip.open(path, 'wt')` is not named), with the kind of its target, so a new rewrite made
+   by one of them fails there until it goes through `atomic_write`, its target is shown to be
+   scratch, untracked or new, or its script is listed here. The writers left outside the
    guarantee, each with its reason:
 
    - The append-only ledgers, `critic`'s verdict log, the actuals and forecast shards and

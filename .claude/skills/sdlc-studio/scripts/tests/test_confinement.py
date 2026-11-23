@@ -788,16 +788,33 @@ NOW_ATOMIC = (("verify_ac.py", "verify_story"), ("lessons.py", "write_project_fi
               ("sprint_report.py", "cmd_render"))
 
 
-def _rewritten(call: ast.Call) -> ast.AST | None:
-    """The target `call` truncates and writes whole, or None: the receiver of a `write_text`,
-    `write_bytes` or `open` method, or the first argument of the builtin `open`, the two `open`
-    forms counted only in a literal mode holding `w`. An append, a read, a create-only `x` and
-    an `r+` update truncate nothing."""
+#: The modules whose `open` takes the builtin's `(file, mode)` arguments. A call is read as
+#: one of them only on a name an `import` in the same file binds to it (`_open_modules`).
+_OPEN_MODULES = ("builtins", "codecs", "io")
+
+
+def _open_modules(tree: ast.AST) -> frozenset[str]:
+    """The names an `import` statement anywhere in `tree` binds to a module in `_OPEN_MODULES`:
+    the module's own name, or its `as` alias. A `from` import is not read."""
+    return frozenset(alias.asname or alias.name for node in ast.walk(tree)
+                     if isinstance(node, ast.Import) for alias in node.names
+                     if alias.name in _OPEN_MODULES)
+
+
+def _rewritten(call: ast.Call, modules: frozenset[str] = frozenset()) -> ast.AST | None:
+    """The target `call` truncates and writes whole, or None: the receiver of a `write_text` or
+    `write_bytes` method; the first argument of the builtin `open` (the call itself when it has
+    none), called as `open` or on a name in `modules` (`_open_modules` of the call's file), its
+    mode the second; or the receiver of an `open` method on any other receiver, its mode the
+    first. Either `open` is counted only in a literal mode, positional or `mode=`, holding `w`.
+    An append, a read, a create-only `x` and an `r+` update truncate nothing."""
     func = call.func
     if isinstance(func, ast.Attribute) and func.attr in _CONTENT_WRITES:
         return func.value
-    builtin = isinstance(func, ast.Name) and func.id == "open"
-    if not (builtin or isinstance(func, ast.Attribute) and func.attr == "open"):
+    dotted = isinstance(func, ast.Attribute) and func.attr == "open"
+    builtin = (isinstance(func, ast.Name) and func.id == "open"
+               or dotted and isinstance(func.value, ast.Name) and func.value.id in modules)
+    if not (builtin or dotted):
         return None
     at = 1 if builtin else 0
     modes = [kw.value for kw in call.keywords if kw.arg == "mode"] + call.args[at:at + 1]
@@ -815,21 +832,22 @@ def _rewrite_sites(scripts: Path = SCRIPTS) -> dict[str, list[int]]:
     and a module-level call by `<module>`. The tests are not shipped, so `tests/` is not read."""
     sites: dict[str, list[int]] = {}
 
-    def visit(node: ast.AST, rel: str, qual: str) -> None:
+    def visit(node: ast.AST, rel: str, qual: str, modules: frozenset[str]) -> None:
         for child in ast.iter_child_nodes(node):
             inner = qual
             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 inner = f"{qual}.{child.name}" if qual else child.name
-            target = _rewritten(child) if isinstance(child, ast.Call) else None
+            target = _rewritten(child, modules) if isinstance(child, ast.Call) else None
             if target is not None:
                 key = f"{rel}::{qual or '<module>'}::{ast.unparse(target)}"
                 sites.setdefault(key, []).append(child.lineno)
-            visit(child, rel, inner)
+            visit(child, rel, inner, modules)
 
     for p in sorted(scripts.rglob("*.py")):
         rel = p.relative_to(scripts)
         if rel.parts[0] != "tests":
-            visit(ast.parse(p.read_text(encoding="utf-8")), rel.as_posix(), "")
+            tree = ast.parse(p.read_text(encoding="utf-8"))
+            visit(tree, rel.as_posix(), "", _open_modules(tree))
     return sites
 
 
@@ -859,9 +877,12 @@ def _calls(node: ast.AST) -> set[str]:
 class SharedFileWriteSweepTests(unittest.TestCase):
     """A shared file is any tracked workspace file a script rewrites whole, and a truncating
     write of one can leave it half-written. Every `write_text` and `write_bytes` site, and
-    every `open` given a literal mode holding `w`, is named here with the kind of its target, so
-    a new one fails until it is moved onto `sdlc_md.atomic_write`, its target is shown to be
-    scratch, untracked, new or a listed exception, or it is listed apart in `NOT_YET_MOVED`."""
+    every `open` given a literal mode holding `w` (as `mode=` or the builtin's second argument
+    when it is called as `open` or on a name an `import` in its file binds to a module in
+    `_OPEN_MODULES`, or a method's first on any other receiver, `gzip.open` among them), is
+    named here with the kind of its target, so a new one fails until it is moved
+    onto `sdlc_md.atomic_write`, its target is shown to be scratch, untracked, new or a listed
+    exception, or it is listed apart in `NOT_YET_MOVED`."""
 
     def test_no_tracked_workspace_file_is_rewritten_with_write_text(self) -> None:
         sites = _rewrite_sites()
@@ -890,11 +911,14 @@ class SharedFileWriteSweepTests(unittest.TestCase):
 
     def test_the_sweep_catches_a_planted_truncating_write(self) -> None:
         """A planted rewrite of a story file is named, through `write_text`, `write_bytes`
-        and each `open` form given a literal `w` mode, in a script and in any folder under it,
-        in a nested function and at module level; the same call to a scratch path on the
-        allowlist is not, nor is one in the tests, one through atomic_write, nor an `open` that
-        truncates nothing (a read, an append, a create-only `x`, an `r+` update, a mode in a
-        name)."""
+        and each `open` form given a literal `w` mode (the builtin as `open`, and as `io.open`,
+        `builtins.open`, `codecs.open` and an `as` alias where an `import` statement in the file
+        binds the module, at module level or in a function, and a method on a name, on an
+        attribute and on a Path named `io` where only a `from` import names `io`), in a script
+        and in any folder under it, in a nested function and at module level; the same call to
+        a scratch path on the allowlist is not, nor is one in the tests, one through
+        atomic_write, nor an `open` that truncates nothing (a read, an append, a create-only
+        `x`, an `r+` update, a mode in a name), nor `gzip.open`, read as a method."""
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
             (d / "lib").mkdir()
@@ -924,6 +948,8 @@ class SharedFileWriteSweepTests(unittest.TestCase):
                 "    story.open('w').close()\n"
                 "def method_keyword(story):\n"
                 "    story.open(mode='w').close()\n"
+                "def on_attribute(self):\n"
+                "    self.story.open('w').close()\n"
                 "def untruncated(story, m):\n"
                 "    open(story).close()\n"
                 "    open(story, 'a').close()\n"
@@ -933,6 +959,31 @@ class SharedFileWriteSweepTests(unittest.TestCase):
                 "    story.open().close()\n"
                 "    story.open('a').close()\n"
                 "    story.open(mode='rb').close()\n", encoding="utf-8")
+            (d / "shadow.py").write_text("from compat import io\n"
+                                         "def path_named_io(io):\n    io.open('w').close()\n",
+                                         encoding="utf-8")
+            (d / "with_imports.py").write_text(
+                "import io\n"
+                "import builtins, codecs\n"
+                "import gzip\n"
+                "def by_io(story):\n"
+                "    io.open(story, 'w').close()\n"
+                "def by_builtins(story):\n"
+                "    builtins.open(story, 'w').close()\n"
+                "def by_codecs(story):\n"
+                "    codecs.open(story, 'w', 'utf-8').close()\n"
+                "def io_keyword(story):\n"
+                "    io.open(story, mode='w').close()\n"
+                "def by_alias(story):\n"
+                "    import io as stream\n"
+                "    stream.open(story, 'w').close()\n"
+                "def by_gzip(story):\n"
+                "    gzip.open(story, 'wt').close()\n"
+                "def untruncated(story):\n"
+                "    io.open(story, 'a').close()\n"
+                "    builtins.open(story).close()\n"
+                "    codecs.open(story, 'r', 'utf-8').close()\n"
+                "    stream.open(story).close()\n", encoding="utf-8")
             (d / "lib" / "shared.py").write_text("def put(p):\n    p.write_text('x')\n",
                                                  encoding="utf-8")
             (d / "hooks" / "deep").mkdir(parents=True)
@@ -951,8 +1002,15 @@ class SharedFileWriteSweepTests(unittest.TestCase):
                 "planted.py::keyword::story (line 18)",
                 "planted.py::method::story (line 22)",
                 "planted.py::method_keyword::story (line 24)",
+                "planted.py::on_attribute::self.story (line 26)",
                 "planted.py::outer.inner::rc (line 11)",
-                "planted.py::stamp::story (line 3)"])
+                "planted.py::stamp::story (line 3)",
+                "shadow.py::path_named_io::io (line 3)",
+                "with_imports.py::by_alias::story (line 14)",
+                "with_imports.py::by_builtins::story (line 7)",
+                "with_imports.py::by_codecs::story (line 9)",
+                "with_imports.py::by_io::story (line 5)",
+                "with_imports.py::io_keyword::story (line 11)"])
             self.assertEqual(_unlisted_writes(d, allowlist, {"lib/shared.py::put::p": "x"})[1],
                              "planted.py::<module>::ROOT (line 12)",
                              "a site listed as not yet moved is not named")

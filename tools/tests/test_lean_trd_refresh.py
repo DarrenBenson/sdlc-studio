@@ -665,9 +665,10 @@ class TrdStorageTests(unittest.TestCase):
         outside, or `NOT_YET_MOVED`) left off rule 5's list of exceptions, a listed script that
         is no such writer, or an exception listed with no reason; the not-yet-moved bullet
         naming a script or function `NOT_YET_MOVED` does not, or leaving one out; the sweep's
-        sentence naming fewer call forms than it sees."""
+        sentence naming fewer call forms than it sees, or naming a set of modules whose `open`
+        it reads as the builtin other than `_OPEN_MODULES`."""
         from test_confinement import (  # noqa: PLC0415
-            NOT_YET_MOVED, OUTSIDE, SHARED_WRITE_ALLOWLIST)
+            _OPEN_MODULES, NOT_YET_MOVED, OUTSIDE, SHARED_WRITE_ALLOWLIST)
         body = _trd_body()
         rule5 = _section(body, "Script CLI contract").split("\n5. ", 1)[1].split("\n6. ", 1)[0]
         flat = " ".join(rule5.split())
@@ -699,8 +700,20 @@ class TrdStorageTests(unittest.TestCase):
         for site in NOT_YET_MOVED:
             with self.subTest(not_yet_moved=site):
                 self.assertIn(f"`{site.split('::')[1]}`", head)
-        self.assertRegex(flat, r"names every `write_text` and `write_bytes` call, and every "
-                               r"`open` given a literal mode holding `w`")
+        sweep = re.search(r"names every `write_text` and `write_bytes` call, and every `open` "
+                          r"given a literal mode holding `w` \((.*?)\), with the kind", flat)
+        self.assertIsNotNone(sweep, "the sweep's sentence says how it reads an `open`")
+        reach = sweep.group(1)
+        self.assertRegex(reach, r"^read as the builtin's `\(file, mode\)` when it is called as "
+                                r"`open`, ")
+        self.assertRegex(reach, r"on the module name or `as` alias an `import` in its file "
+                                r"binds, ")
+        self.assertRegex(reach, r", and as a method's `\(mode\)` on any other receiver, so "
+                                r"`gzip\.open\(path, 'wt'\)` is not named$")
+        named = re.findall(r"`([a-z_]+)\.open`", reach)
+        self.assertEqual(sorted(named), sorted(_OPEN_MODULES),
+                         "the sentence names each module whose `open` the sweep reads as the "
+                         "builtin, and no other")
         for script, reason in sorted(listed.items()):
             with self.subTest(script=script):
                 self.assertGreaterEqual(len(reason.split()), 5, f"{script} carries no reason")
