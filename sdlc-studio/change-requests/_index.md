@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-23
+**Last Updated:** 2026-11-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 82 |
 | Complete | 563 |
@@ -14,7 +14,7 @@
 | Deferred | 3 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **750** |
+| **Total** | **751** |
 
 ## All Changes
 
@@ -162,6 +162,7 @@
 | [CR-0748](CR0748-every-subagent-brief-the-skill-ships-carries-a.md) | Every subagent brief the skill ships carries a persona seat, not only the builder and reviewer briefs | In Progress | Medium | Feature | 2026-11-19 | EP0378 |
 | [CR-0749](CR0749-sprint-plan-names-existing-tests-outside-a-unit.md) | sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build | In Progress | Medium | Improvement | 2026-11-20 | EP0378 |
 | [CR-0750](CR0750-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Rejected | Medium | Improvement | 2026-11-23 | -- |
+| [CR-0751](CR0751-prevent-or-retire-lesson-lc-001-mutant-never.md) | Prevent or retire lesson LC-001 (mutant never applied) | Proposed | Medium | Improvement | 2026-11-24 | -- |
 
 ## Archived Releases
 

@@ -166,3 +166,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0154](RETRO0154-the-sprint-lane-transition-and-verify-scripts-lose.md) | The sprint, lane, transition and verify scripts lose 32 Medium bugs; each fix's test fails without it | 2026-11-22 | -- | -- |
 | [RETRO-0155](RETRO0155-the-review-retro-lessons-drive-report-and-verify.md) | The review, retro, lessons, drive, report and verify scripts lose 28 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
 | [RETRO-0156](RETRO0156-release-cut-filer-validate-refine-and-the-carried.md) | Release cut, filer, validate, refine and the carried units lose 25 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
+| [RETRO-0157](RETRO0157-the-last-23-medium-bugs-are-fixed-and.md) | The last 23 Medium bugs are fixed and commits test on the gate host; each fix's test fails without it | 2026-11-24 | -- | -- |
