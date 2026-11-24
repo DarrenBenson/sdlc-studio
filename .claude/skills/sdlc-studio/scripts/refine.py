@@ -29,6 +29,7 @@ except ImportError:  # invoked from inside scripts/
     from lib import risk_class, sdlc_md
 
 import artifact
+import changelog
 import file_finding
 import persona_resolve
 
@@ -335,6 +336,23 @@ def _stamp_class(story_path: Path, classes: list[str | None] | None, idx: int) -
         _insert_after_status(story_path, f"> **{risk_class.FIELD}:** {classes[idx]}")
 
 
+_AFFECTS_LINE_RE = re.compile(r"^(> \*\*Affects:\*\*[ \t]*)(\S.*?)[ \t]*$", re.MULTILINE)
+
+
+def _add_fragment_to_affects(root: Path, story_path: Path, story_id: str) -> None:
+    """End a minted story's `Affects` with its own `changelog.d/<id>.md` when the project keeps a
+    `changelog.d/` directory, so a builder who stages exactly the Affects ships the unit's fragment.
+    A story with no Affects is left without one: a lone fragment path would make it read as
+    declared. The id is only known once the story is minted, which is why this runs after it."""
+    if not (root / changelog.FRAGMENT_DIR).is_dir():
+        return
+    fragment = f"{changelog.FRAGMENT_DIR}/{story_id}.md"
+    text = story_path.read_text(encoding="utf-8")
+    new = _AFFECTS_LINE_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}, {fragment}", text, count=1)
+    if new != text:
+        sdlc_md.atomic_write(story_path, new)
+
+
 def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
                stories: list[tuple[str, int, str | None]], total: int,
                existing_children: list[str],
@@ -362,6 +380,7 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             s = artifact.new(root, "story", title, fields)
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
+            _add_fragment_to_affects(root, Path(s["path"]), s["id"])
             # Record the ORIGINATING request on the story: in a shared batch epic (refine --into)
             # the epic's stories deliver different requests, so which story delivers which request
             # must be machine-resolvable, not only in the title. A secondary traceability link -
@@ -458,6 +477,7 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             s = artifact.new(root, "story", title, fields)
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
+            _add_fragment_to_affects(root, Path(s["path"]), s["id"])
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")  # originating request
             _stamp_class(Path(s["path"]), classes, idx)
             # Fill the User Story block from the title and the request, so no `{{...}}` field

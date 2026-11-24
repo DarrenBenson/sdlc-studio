@@ -27,6 +27,10 @@
 # trailer - a guard that named the hole it was leaving, and left it. Now the behaviour
 # matches the words.
 #
+# The same lane refuses a unit's commit that stages code with no `changelog.d/<ID>.md` staged or
+# tracked, once the trailers are settled: it is one more rule of the message, and a commit runs
+# at most a fixed number of lanes, so it takes no lane of its own.
+#
 # Deliberately allowed through:
 #   - a subject naming exactly ONE id (attribution is unambiguous - nothing to disambiguate)
 #   - a merge, revert, cherry-pick, rebase replay, fixup!/squash!/amend! - git wrote or
@@ -201,6 +205,15 @@ message_lane() {
   # Affects attribute, so a commit whose ownership the declarations already state lands at its
   # first attempt; what it cannot attribute, or a Refs: line ownership denies, still refuses.
   if out="$(python3 "$script" check-commit-msg --strict --write-trailers "$msg_file" 2>&1)"; then
+    # Trailers settled: a unit's commit that stages code carries the unit's `changelog.d/<ID>.md`,
+    # staged now or tracked from an earlier commit of the unit. Only the message says which unit
+    # the commit belongs to, so the rule lives here and not in pre-commit. A shared commit's
+    # owners are its `Refs:` ids; `Changelog: none - <reason>` exempts one commit, a bare one does
+    # not; a project with no `changelog.d/` directory is never asked.
+    if ! frag="$(python3 "$repo_root/$skill/changelog.py" required --root "$repo_root" "$msg_file" 2>&1)"; then
+      printf '%s\n%s\n' "$out" "$frag"
+      return 1
+    fi
     printf '%s' "$out"
     return 0
   fi
@@ -236,8 +249,8 @@ message_lane() {
 msg_out=""
 if [ "$check_message" -eq 1 ]; then
   run "message-refs" \
-    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them; the hook writes both from the staged files' Affects, and refuses a commit no named id owns a staged file of, or a Refs: line naming a unit that owns none" \
-    "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, or declare the file in that unit's Affects, then commit again; a subject naming a single id needs no trailer" \
+    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them; the hook writes both from the staged files' Affects, and refuses a commit no named id owns a staged file of, or a Refs: line naming a unit that owns none; and a commit naming a unit that stages anything outside sdlc-studio/ and changelog.d/ also stages, or already tracks, changelog.d/<ID>.md for each id that owns it (the subject's one id, or each Refs: id of a shared commit; a Mentions: id owns none), unless a Changelog: none - <reason> trailer says why not" \
+    "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, or declare the file in that unit's Affects, then commit again; a subject naming a single id needs no trailer. For a missing fragment, stage the unit's changelog.d/<ID>.md (opening with <!-- section: Added|Changed|Fixed -->), or add the trailer Changelog: none - <reason> when the commit needs no entry" \
     -- message_lane
   msg_out="$last_run_out"
   # The trailers the script wrote are said once, here, and kept out of the attribution note below.

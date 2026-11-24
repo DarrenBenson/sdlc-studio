@@ -814,6 +814,256 @@ class DerivedTrailerTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n{scaffold}")
 
+class ChangelogFragmentRequiredTests(unittest.TestCase):
+    """BG1574: a commit that names a unit and stages code is refused until the unit's
+    `changelog.d/<ID>.md` is staged or tracked, so the paperwork rule is a gate and not a habit."""
+
+    def _fixture(self, d: str, *, keep_dir: bool = True, tracked: tuple[str, ...] = (),
+                 stage: tuple[str, ...] = (".claude/skills/x/scripts/a.py",),
+                 units: tuple[tuple[str, str], ...] = (("BG9001", ".claude/skills/x/scripts/a.py"),
+                                                      ("BG9002", "src/b.py"))) -> Path:
+        """BG9001 owns a skill script and BG9002 owns src/b.py, by their Affects; `tracked`
+        fragments are committed in the seed, and every path in `stage` is modified and staged."""
+        repo = Path(d)
+        gitutil.git(["init", "-q"], cwd=repo)
+        skill = repo / ".claude" / "skills" / "sdlc-studio"
+        skill.mkdir(parents=True)
+        (skill / "scripts").symlink_to(REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        for rid, owned in units:
+            folder = repo / "sdlc-studio" / "bugs"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"{rid}-sample.md").write_text(
+                f"# {rid}: sample\n\n> **Status:** In Progress\n> **Affects:** {owned}\n",
+                encoding="utf-8")
+            (repo / owned).parent.mkdir(parents=True, exist_ok=True)
+            (repo / owned).write_text("x = 1\n", encoding="utf-8")
+        if keep_dir:
+            (repo / "changelog.d").mkdir()
+            (repo / "changelog.d" / ".gitkeep").write_text("", encoding="utf-8")
+        for rid in tracked:
+            (repo / "changelog.d" / f"{rid}.md").write_text(
+                "<!-- section: Fixed -->\n\nA fragment.\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=repo)
+        gitutil.git(["commit", "-q", "-m", "seed"], cwd=repo)
+        for rel in stage:
+            (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            (repo / rel).write_text("x = 2\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=repo)
+        return repo
+
+    def _stage_fragment(self, repo: Path, rid: str) -> None:
+        (repo / "changelog.d" / f"{rid}.md").write_text(
+            "<!-- section: Fixed -->\n\nA fragment.\n", encoding="utf-8")
+        gitutil.git(["add", "--", f"changelog.d/{rid}.md"], cwd=repo)
+
+    def _hook(self, repo: Path, message: str):
+        msg = repo / "COMMIT_EDITMSG"
+        msg.write_text(message, encoding="utf-8")
+        r = subprocess.run(["bash", str(HOOK), str(msg)], capture_output=True, text=True,
+                           cwd=repo, env=gitutil.git_env(), timeout=120)
+        return r, r.stdout + r.stderr
+
+    def test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused(self):
+        # AC1. Must fail on: HEAD, where the same commit exits 0 with every lane green.
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d)
+            r, out = self._hook(repo, "fix(BG9001): change a script with no fragment\n")
+        self.assertNotEqual(r.returncode, 0, out)
+        flat = re.sub(r"\s+", " ", out)
+        self.assertIn("FAIL message-refs", flat)
+        self.assertIn("BG9001", flat)
+        self.assertIn("changelog.d/BG9001.md", flat)
+        # no exemption was attempted, so the refusal does not talk about one
+        self.assertNotIn("a reason", flat)
+
+    def test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes(self):
+        # AC2. Each leg is paired with a refusing control on the same fixture shape.
+        subject = "fix(BG9001): change a script\n"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d)
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, subject)
+            self.assertEqual(r.returncode, 0, out)
+            self.assertIn("ok   message-refs", out)
+        with tempfile.TemporaryDirectory() as d:
+            # a repair round: the fragment landed in the unit's earlier commit
+            repo = self._fixture(d, tracked=("BG9001",))
+            r, out = self._hook(repo, subject)
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # an untracked draft on disk is not a staged fragment
+            repo = self._fixture(d)
+            (repo / "changelog.d" / "BG9001.md").write_text(
+                "<!-- section: Fixed -->\n\nA draft.\n", encoding="utf-8")
+            r, out = self._hook(repo, subject)
+            self.assertNotEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a fragment staged for DELETION is no fragment
+            repo = self._fixture(d, tracked=("BG9001",))
+            gitutil.git(["rm", "-q", "--", "changelog.d/BG9001.md"], cwd=repo)
+            r, out = self._hook(repo, subject)
+            self.assertNotEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a paperwork commit: only files under sdlc-studio/ and changelog.d/
+            repo = self._fixture(d, stage=("sdlc-studio/bugs/BG9001-sample.md",))
+            self._stage_fragment(repo, "BG9002")
+            r, out = self._hook(repo, subject)
+            self.assertEqual(r.returncode, 0, out)
+            self.assertIn("ok   message-refs", out)
+        with tempfile.TemporaryDirectory() as d:
+            # code beside a paperwork file is still code: the paperwork does not excuse it
+            repo = self._fixture(d, stage=("sdlc-studio/bugs/BG9001-sample.md",
+                                           ".claude/skills/x/scripts/a.py"))
+            r, out = self._hook(repo, subject)
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9001.md", out)
+        with tempfile.TemporaryDirectory() as d:
+            # a merge or revert git wrote is not judged: the work was gated on its own commit
+            repo = self._fixture(d)
+            (repo / ".git" / "MERGE_HEAD").write_text("x\n", encoding="utf-8")
+            r, out = self._hook(repo, subject)
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a refusal by the message rules is answered alone, not doubled by this lane
+            repo = self._fixture(d, stage=("src/other.py",))
+            r, out = self._hook(repo, "fix(BG9001, BG9002): owns no staged file\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("FAIL message-refs", out)
+            self.assertNotIn("stages code but not", out)
+        with tempfile.TemporaryDirectory() as d:
+            # a subject naming no unit
+            repo = self._fixture(d)
+            r, out = self._hook(repo, "chore: tidy a script\n")
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a project that keeps no changelog.d/ has no fragment rule
+            repo = self._fixture(d, keep_dir=False)
+            r, out = self._hook(repo, "fix(BG9001): change a script\n")
+            self.assertEqual(r.returncode, 0, out)
+
+    def test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason(self):
+        # AC3. Must fail on: HEAD, a first-id-only read, and an exemption with no reason.
+        stage = (".claude/skills/x/scripts/a.py", "src/b.py")
+        shared = "fix(BG9001, BG9002): two units in one commit\n"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=stage)
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, shared)
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9002.md", out)
+            self.assertNotIn("changelog.d/BG9001.md", out)
+            # the other order: only the second id's fragment is staged
+            gitutil.git(["rm", "-q", "--cached", "--", "changelog.d/BG9001.md"], cwd=repo)
+            self._stage_fragment(repo, "BG9002")
+            r, out = self._hook(repo, shared)
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9001.md", out)
+            self.assertNotIn("changelog.d/BG9002.md", out)
+            # both staged
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, shared)
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a Mentions: id owns no file and needs no fragment
+            repo = self._fixture(d)
+            r, out = self._hook(repo, "fix(BG9001, BG9002): one owns the file\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9001.md", out)
+            self.assertNotIn("changelog.d/BG9002.md", out)
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, "fix(BG9001, BG9002): one owns the file\n")
+            self.assertEqual(r.returncode, 0, out)
+        for trailer, passes in (("Changelog: none - a revert of a doc typo", True),
+                                ("changelog: NONE - lower case is read the same", True),
+                                ("Changelog: none", False),
+                                ("Changelog: none -", False),
+                                ("Changelog: none -   ", False),
+                                ("Changelog: none because I said so", False)):
+            with self.subTest(trailer=trailer):
+                with tempfile.TemporaryDirectory() as d:
+                    repo = self._fixture(d)
+                    r, out = self._hook(repo, f"fix(BG9001): no fragment\n\n{trailer}\n")
+                self.assertEqual(r.returncode == 0, passes, out)
+                if not passes:
+                    self.assertIn("a reason", re.sub(r"\s+", " ", out))
+        for trailers in ("Changelog: none\nChangelog: none - the second line says why",
+                         "Changelog: none - the first line says why\nChangelog: none"):
+            with self.subTest(trailers=trailers):
+                with tempfile.TemporaryDirectory() as d:
+                    repo = self._fixture(d)
+                    r, out = self._hook(repo, f"fix(BG9001): no fragment\n\n{trailers}\n")
+                self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a word that merely begins with "none" is no exemption, and no bare-exemption hint
+            repo = self._fixture(d)
+            r, out = self._hook(repo, "fix(BG9001): x\n\nChangelog: nonetheless - but why\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertNotIn("a reason", out)
+        with tempfile.TemporaryDirectory() as d:
+            # the git scaffold (# lines) is not the message: not a trailer, and not the subject
+            repo = self._fixture(d)
+            r, out = self._hook(repo, "fix(BG9001): none\n\n# Changelog: none - scaffold\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            r, out = self._hook(repo, "# Please enter the message\n\nfix(BG9001): x\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9001.md", out)
+
+    def _check(self, root: Path, message: Path | None, text: bytes | None = None):
+        if message is not None and text is not None:
+            message.write_bytes(text)
+        script = REPO / ".claude/skills/sdlc-studio/scripts/changelog.py"
+        argv = ["python3", str(script), "required", "--root", str(root),
+                str(message if message is not None else root / "absent-message")]
+        return subprocess.run(argv, capture_output=True, text=True, cwd=root,
+                              env=gitutil.git_env(), timeout=60)
+
+    def test_the_check_itself_degrades_on_a_bad_message_and_a_broken_index(self):
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d)
+            for label, text in (("not UTF-8", b"fix(BG9001): \xff\xfe\n"), ):
+                r = self._check(repo, repo / "MSG", text)
+                self.assertEqual(r.returncode, 0, label + r.stderr)
+                self.assertIn("required skipped", r.stderr)
+            r = self._check(repo, None)                      # a missing message file
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("required skipped", r.stderr)
+            # control: the same repo and a readable message is refused
+            r = self._check(repo, repo / "MSG", b"fix(BG9001): x\n")
+            self.assertEqual(r.returncode, 1, r.stderr)
+            r = self._check(repo, repo / "MSG", b"")         # an empty message names no unit
+            self.assertEqual(r.returncode, 0, r.stderr)
+        with tempfile.TemporaryDirectory() as d:
+            # no repository at all: git cannot answer, which is refused and named, not passed
+            (Path(d) / "changelog.d").mkdir()
+            r = self._check(Path(d), Path(d) / "MSG", b"fix(BG9001): x\n")
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn("required refused", r.stderr)
+            # control: a message naming no unit never asks git, so it passes where that cannot
+            r = self._check(Path(d), Path(d) / "MSG", b"chore: tidy\n")
+            self.assertEqual(r.returncode, 0, r.stderr)
+        with tempfile.TemporaryDirectory() as d:
+            # a project that keeps no changelog.d/ is never asked, even with code staged
+            repo = self._fixture(d, keep_dir=False)
+            r = self._check(repo, repo / "MSG", b"fix(BG9001): x\n")
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_a_version_three_id_is_read_from_the_subject(self):
+        # control for the id grammar: a schema 3 id names its fragment as the hook reads it
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d)
+            r = self._check(repo, repo / "MSG", b"fix(BG-01JQK3F8): x\n")
+            self.assertEqual(r.returncode, 1, r.stderr)
+            self.assertIn("changelog.d/BG-01JQK3F8.md", r.stderr)
+            # either spelling of the fragment's name satisfies the id
+            for name in ("BG-01JQK3F8", "BG01JQK3F8"):
+                (repo / "changelog.d" / f"{name}.md").write_text(
+                    "<!-- section: Fixed -->\n\nA fragment.\n", encoding="utf-8")
+                gitutil.git(["add", "--", f"changelog.d/{name}.md"], cwd=repo)
+                r = self._check(repo, repo / "MSG", b"fix(BG-01JQK3F8): x\n")
+                self.assertEqual(r.returncode, 0, name + r.stderr)
+                gitutil.git(["rm", "-q", "--cached", "--", f"changelog.d/{name}.md"], cwd=repo)
+
+
 class HookInvocationHermeticityTests(unittest.TestCase):
     """BG0595 AC4/AC5. No test may invoke the hook against the repository under development."""
 

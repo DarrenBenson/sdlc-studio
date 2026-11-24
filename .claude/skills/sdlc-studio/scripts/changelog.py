@@ -22,6 +22,10 @@ every fragment `compose` would refuse, with compose's own message, and `shape --
 the index blobs a commit will record. Compose stops at the first bad fragment, correctly, since
 a partial fold is worse than none; that makes the release cut the costliest place to learn of
 the drift, and the commit that wrote the fragment the cheapest.
+
+`required` is the same rule applied one step earlier still: the commit-msg hook asks it whether
+a commit that names a unit and stages code also stages (or already tracks) that unit's fragment,
+since only the message says which unit the commit belongs to.
 """
 from __future__ import annotations
 
@@ -47,6 +51,16 @@ _MARKER = re.compile(r"^<!--\s*section:\s*([A-Za-z]+)\s*-->\s*$")
 # governs the canonical bare vocabulary, not an author's annotated section title.
 _RELEASE_H = re.compile(r"^## (.+?)[ \t]*$")
 _SUBSECTION_H = re.compile(r"^### ([A-Za-z]+)[ \t]*$")
+
+
+# A unit id in a commit subject: the judged types, a v2 sequential id or a v3 short ULID.
+_UNIT_ID = re.compile(r"\b((?:US|BG|CR)(?:-[0-9A-HJKMNP-TV-Z]{8,}|-?\d{4,}))\b")
+_REFS_LINE = re.compile(r"^[ \t]*Refs:[ \t]*(.+)$", re.MULTILINE | re.IGNORECASE)
+# `Changelog: none - <reason>`: the one exemption, and it must say why.
+_EXEMPT_LINE = re.compile(r"^[ \t]*Changelog:[ \t]*none\b(.*)$", re.MULTILINE | re.IGNORECASE)
+_EXEMPT_REASON = re.compile(r"^[ \t]+-[ \t]+\S")
+# Paths that are paperwork, not shipped behaviour: they never ask for a fragment.
+_PAPERWORK_ROOTS = ("sdlc-studio/", f"{FRAGMENT_DIR}/")
 
 
 class FragmentError(ValueError):
@@ -127,6 +141,91 @@ def _staged_fragments(root: Path) -> list[tuple[str, str]]:
         except UnicodeDecodeError as exc:
             raise StagedReadError(f"the staged blob of {rel} is not UTF-8 text") from exc
     return out
+
+
+def _git_lines(root: Path, args: list[str]) -> list[str]:
+    """The NUL-separated paths a git call prints, raising StagedReadError when git fails."""
+    try:
+        cp = subprocess.run(["git", "-c", "core.quotepath=false", *args], cwd=str(root),
+                            capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise StagedReadError(f"git could not read the index: {exc}") from exc
+    if cp.returncode != 0:
+        raise StagedReadError(f"git could not read the index (rc {cp.returncode}): "
+                              f"{_first_line(cp.stderr)}")
+    return [r for r in cp.stdout.decode("utf-8", "replace").split("\0") if r]
+
+
+def _message_lines(message: str) -> list[str]:
+    """The message as git records it: the `#` scaffold lines are dropped."""
+    return [ln for ln in message.splitlines() if not ln.startswith("#")]
+
+
+def owning_ids(message: str) -> list[str]:
+    """The unit ids a commit message owns the staged code of, normalised and sorted.
+
+    A subject naming one unit gives that unit the commit. A subject naming several leaves the
+    attribution to the `Refs:` trailers (the hook writes them from the staged files' `Affects`
+    before this runs), and an id only a `Mentions:` trailer names owns nothing. A subject naming
+    no unit owns nothing."""
+    lines = _message_lines(message)
+    subject = next((ln for ln in lines if ln.strip()), "")
+    named = {sdlc_md.norm_id(i) for i in _UNIT_ID.findall(subject)}
+    if len(named) <= 1:
+        return sorted(named)
+    refs = {sdlc_md.norm_id(i) for m in _REFS_LINE.finditer("\n".join(lines))
+            for i in _UNIT_ID.findall(m.group(1))}
+    return sorted(refs & named)
+
+
+def fragment_names(unit_id: str) -> list[str]:
+    """The fragment paths that satisfy a normalised unit id, the one a refusal names first. A
+    sequential id (`BG1574`) has one; a schema 3 id has the dashed spelling its artefacts use
+    (`BG-01JQK3F8`) and the dashless one `sdlc_md.norm_id` gives."""
+    names = [f"{FRAGMENT_DIR}/{unit_id}.md"]
+    if not unit_id[2:].isdigit():
+        names.insert(0, f"{FRAGMENT_DIR}/{unit_id[:2]}-{unit_id[2:]}.md")
+    return names
+
+
+def _exemption(message: str) -> tuple[bool, bool]:
+    """(a `Changelog: none` trailer is present, it carries a reason after ` - `)."""
+    found = reasoned = False
+    for m in _EXEMPT_LINE.finditer("\n".join(_message_lines(message))):
+        found = True
+        reasoned = reasoned or bool(_EXEMPT_REASON.match(m.group(1)))
+    return found, reasoned
+
+
+def required(root, message: str) -> list[str]:
+    """The refusals for a commit that owns code but not its fragment; empty when it passes.
+
+    Applies only where the project keeps a `changelog.d/` directory. A commit passes when no unit
+    owns it, when everything it stages is paperwork (under `sdlc-studio/` or `changelog.d/`), when
+    each owning unit's `changelog.d/<ID>.md` is in the index (staged, or tracked and not staged
+    for deletion), or under a `Changelog: none - <reason>` trailer. A `Changelog: none` with no
+    reason exempts nothing. Raises StagedReadError when git cannot answer."""
+    root = Path(root)
+    if not (root / FRAGMENT_DIR).is_dir():
+        return []
+    ids = owning_ids(message)
+    if not ids:
+        return []
+    staged = _git_lines(root, ["diff", "--cached", "--name-only", "-z", "--"])
+    if all(p.startswith(_PAPERWORK_ROOTS) for p in staged):
+        return []
+    indexed = set(_git_lines(root, ["ls-files", "-z", "--", f"{FRAGMENT_DIR}/*.md"]))
+    missing = [i for i in ids if not indexed.intersection(fragment_names(i))]
+    if not missing:
+        return []
+    found, reasoned = _exemption(message)
+    if reasoned:
+        return []
+    faults = [f"{i}: the commit stages code but not {fragment_names(i)[0]}" for i in missing]
+    if found:
+        faults.append("`Changelog: none` exempts nothing without a reason: write "
+                      "`Changelog: none - <why this commit needs no fragment>`")
+    return faults
 
 
 def shape(root, *, staged: bool = False) -> tuple[int, list[str]]:
@@ -427,7 +526,10 @@ def build_parser() -> argparse.ArgumentParser:
     sh.add_argument("--staged", action="store_true",
                     help="judge the fragments this commit adds, modifies or renames, read from "
                          "the index (never the working tree; deletions are not judged)")
-    for p in (c, k, s, sh):
+    rq = sub.add_parser("required", help="refuse a commit message that owns staged code but not "
+                        "its unit's fragment; exit 1 on a refusal, 2 when git cannot answer")
+    rq.add_argument("message_file", help="the commit message file git hands the commit-msg hook")
+    for p in (c, k, s, sh, rq):
         p.add_argument("--root", default=".", help="Repo root (default: .)")
     # Uniform family grammar: `--root` valid before OR after the verb, with the
     # per-subcommand copies re-pointed to SUPPRESS so a value given first is not
@@ -451,6 +553,21 @@ def main(argv=None) -> int:
             return 1
         print("[Unreleased] headings are well-formed")
         return 0
+    if args.cmd == "required":
+        try:
+            message = Path(args.message_file).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            # a message nobody can read is not this check's to refuse; the hook has its own rule
+            print(f"required skipped: cannot read the message ({exc})", file=sys.stderr)
+            return 0
+        try:
+            faults = required(args.root, message)
+        except StagedReadError as exc:
+            print(f"required refused: {exc}", file=sys.stderr)
+            return 2
+        for f in faults:
+            print(f, file=sys.stderr)
+        return 1 if faults else 0
     if args.cmd == "shape":
         where = "staged" if args.staged else "pending"
         try:

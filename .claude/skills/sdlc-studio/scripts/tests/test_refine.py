@@ -503,6 +503,67 @@ class AffectsRequiredAtRefineTests(unittest.TestCase):
             self.assertIn("no Affects", err.getvalue())       # ... but never quietly
 
 
+class FragmentInAffectsAtRefineTests(unittest.TestCase):
+    """BG1574: a minted story's Affects ends with its own `changelog.d/<id>.md` where the project
+    keeps a `changelog.d/` directory, so the builder who stages exactly the Affects ships the
+    fragment the commit-msg hook asks for."""
+
+    def _affects(self, root: Path, sid: str) -> list[str]:
+        body = sdlc_md.find_by_id(root, sid)[0].read_text(encoding="utf-8")
+        return sdlc_md.affects_files(body)
+
+    def test_each_minted_story_ends_with_its_own_fragment_path(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["it works"])
+            (root / "changelog.d").mkdir()
+            res = refine.refine(root, "CR0001", "The epic",
+                                [("A", 2, None), ("B", 3, "src/CR0001.py")],
+                                skip_personas=True)
+            self.assertEqual(len(res["stories"]), 2)
+            for sid in res["stories"]:
+                files = self._affects(root, sid)
+                self.assertEqual(files[-1], f"changelog.d/{sid}.md", files)
+                self.assertEqual(files.count(f"changelog.d/{sid}.md"), 1, files)
+                self.assertEqual(files[0], "src/CR0001.py", files)   # the declared path is kept
+
+    def test_the_into_and_add_paths_add_the_fragment_too(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["first"])
+            _cr(root, "CR0002", ["second"])
+            (root / "changelog.d").mkdir()
+            epic = refine.refine(root, "CR0001", "Batch", [("A", 2, None)],
+                                 skip_personas=True)["epic"]
+            into = refine.refine(root, "CR0002", None, [("C", 2, None)], into_epic=epic,
+                                 skip_personas=True)
+            added = refine.refine_add(root, "CR0001", "A further epic", [("D", 2, None)])
+            for sid in into["stories"] + added["stories"]:
+                self.assertEqual(self._affects(root, sid)[-1], f"changelog.d/{sid}.md")
+
+    def test_a_project_with_no_changelog_dir_gets_no_fragment_path(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["it works"])
+            res = refine.refine(root, "CR0001", "The epic", [("A", 2, None)], skip_personas=True)
+            self.assertEqual(self._affects(root, res["stories"][0]), ["src/CR0001.py"])
+
+    def test_a_story_with_no_affects_is_not_given_a_bare_fragment_path(self) -> None:
+        # The recorded opt-out mints a story with no Affects; a fragment alone would make it read
+        # as declared and plannable.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr_no_affects(root)
+            (root / "changelog.d").mkdir()
+            (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+            with contextlib.redirect_stderr(io.StringIO()):
+                res = refine.refine(root, "CR0001", "The epic", [("A", 2, None)],
+                                    skip_personas=True)
+            self.assertEqual(self._affects(root, res["stories"][0]), [])
+
+
 class RiskClassAtRefineTests(unittest.TestCase):
     """The class refine derives from the component map, as its result reports it."""
 
