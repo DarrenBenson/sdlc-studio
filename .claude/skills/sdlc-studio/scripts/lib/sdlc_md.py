@@ -55,7 +55,10 @@ ID_SEARCH_RE = re.compile(
 # stamps. `AC\d+` matched none of those, and the parser does not report what it declines - the
 # criterion was simply absent from the block list, so `verify_ac run` reported `ac=5` over six
 # criteria and the sixth was verified by nothing. Silent, and in the direction that flatters.
-AC_HEADING_RE = re.compile(r"^###\s+(AC\d+[a-z]?)(?:(?::\s*|\s+)(.*))?$")
+#: A criterion heading: the id, then a `: title`, or a parenthesised tag such as `(DEFERRED)` and
+#: nothing after it. Prose that merely starts with an id (`### AC1 - a plan row`, `### AC5 and AC6
+#: were withdrawn`) is not a criterion.
+AC_HEADING_RE = re.compile(r"^###\s+(AC\d+[a-z]?)(?:(?::\s*|\s+(?=\([^)]*\)$))(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
 # checkbox form `- [ ] **AC1** text` (house template) — the compact inline style
 # many stories use instead of a heading per criterion. Same letter suffix, same reason.

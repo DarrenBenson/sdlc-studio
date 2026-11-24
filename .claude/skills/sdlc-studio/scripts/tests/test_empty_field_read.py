@@ -32,6 +32,9 @@ class EmptyFieldReadTests(unittest.TestCase):
 
     def test_the_first_occurrence_of_a_name_wins_whatever_its_case(self):
         self.assertEqual(sdlc_md.metadata_fields("> **Next:** a\n> **next:** b\n"), {"next": "a"})
+        # ...whichever case comes first
+        self.assertEqual(sdlc_md.metadata_fields("> **next:** a\n> **Next:** b\n"), {"next": "a"})
+        self.assertEqual(sdlc_md.metadata_fields("> **next:**\n> **Next:** b\n"), {})
         # an empty first occurrence is not filled by a later one spelt in another case
         self.assertEqual(sdlc_md.metadata_fields("> **Next:**\n> **next:** b\n"), {})
 

@@ -455,7 +455,12 @@ class TwoPrimaryCastTests(unittest.TestCase):
         for rows in (["`src/`", "`./src/app/`"], ["`src/app`", "`src/`"]):
             code, out = run(rows)
             self.assertEqual(code, 1, (rows, out))
-            self.assertIn("same Interface", out)
+            self.assertIn("same Interface (src):", out)  # named by the outer path
+        # only the overlapping Primaries are named, not every card in the cast
+        code, out = run(["`src/`", "`src/app/`", "`tools/`"])
+        self.assertEqual(code, 1, out)
+        self.assertIn("(src): card0.md, card1.md", out)
+        self.assertNotIn("card2.md", out)
         # identical prose without a code span is still the same interface
         code, out = run(["The Operator Console", "the operator console"])
         self.assertEqual(code, 1, out)
