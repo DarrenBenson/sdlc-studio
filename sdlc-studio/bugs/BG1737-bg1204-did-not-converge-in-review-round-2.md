@@ -1,6 +1,6 @@
 # BG1737: BG1204 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, changelog.d/BG1204.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,16 +27,22 @@ Fix each finding above, then deliver BG1204 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1204 AC1, as narrowed on 2026-11-24, passes: Given a run with a Claude main-thread session, an opencode session stamped includes_subagents True, and a delegated record tagged to the opencode harness, when `_run_tokens_actual` and the page's Tokens figure (both over every session's stamps) are read, then the tagged record is not added and an untagged record still is. Fails on: the whole delegated total is added because `includes_subagents` is an all() over the meters, so the opencode session's delegated spend counts twice.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** BG1204 AC2 still passes: Given a delegated record recorded with a harness, when `record_delegated_tokens` writes it, then the record carries that harness and `delegated_total` can exclude it by harness. Fails on: `record_delegated_tokens` has no harness field, so records cannot be split by harness.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_record_carries_its_harness
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** BG1204 AC3 still passes: Given a mixed run whose delegated records are all untagged, when the total is read, then they are added as before. Fails on: a fix that stops adding untagged records understates a Claude-only fan-out.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_untagged_records_are_added_as_before
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC5** BG1204 AC4, as re-ruled on 2026-11-24, passes: Given `sprint.py lane return` recording a lane run's usage under any harness (`claude`, `codex`, `opencode`), when the delegated record is written, then it carries no harness and the run's total adds it, because no shipped reader counts a lane worktree's session. Fails on: the call site tagging the lane's harness, which `subagent_readers` then drops.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC6** BG1204 AC5 passes: Given `retro.py` recording a delegated total with `--delegated-tokens 300 --delegated-harness opencode` in a run whose opencode session's reading holds its subagents, when the run's total is read (`_run_tokens_actual`, the page's Tokens figure and retro's accuracy total), then the 300 is not added; the same record without `--delegated-harness` is added as before; a `--delegated-harness` naming no known harness is refused with nothing recorded; and help/sprint.md names the flag beside `--delegated-tokens`. Fails on: no shipped command writing a harness-tagged record, so AC1's exclusion is reachable only through the Python API and the double count in this bug's title still happens (round three's qa probe: a 300-token record beside such a session read 4900 at HEAD and at base).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_delegated_total_recorded_with_its_harness_is_not_added_twice
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC7** BG1204 AC6 passes: Given the same run, when retro's accuracy total is read from one capture (`accuracy --tokens-from-harness`), then a record tagged to a harness is left out only when that capture is that harness's own reading and holds its subagents, and the basis then says adding it would count that spend twice; under a capture of another harness (a Claude close beside an opencode-tagged record) the record is added, since that figure does not read the tagged harness's session, and no sentence says it is already counted. Fails on: a Claude capture of 4,000 leaving an opencode-tagged 300 out, so the retro states a figure that holds that spend nowhere, and the basis calling it counted twice (round five's qa probe).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_capture_of_another_harness_adds_a_tagged_record
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

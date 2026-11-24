@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 93 |
+| Open | 92 |
 | In Progress | 0 |
-| Fixed | 1177 |
+| Fixed | 1179 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1740** |
+| **Total** | **1741** |
 
 ## All Bugs
 
@@ -279,7 +279,7 @@
 | [BG1201](BG1201-us0989-s-cursor-usage-reader-takes-its-variable.md) | US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
 | [BG1202](BG1202-us0989-s-cursor-reader-leaves-two-guards-unpinned.md) | US0989's Cursor reader leaves two guards unpinned and names an empty usage for a malformed answer | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
 | [BG1203](BG1203-us0991-ac3-s-verify-line-cannot-fail-on.md) | US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
-| [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Fixed | Low | 2026-11-04 | 2026-11-04 |
 | [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1206](BG1206-bg1116-s-pins-key-on-literal-wording-the.md) | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
 | [BG1207](BG1207-bg1197-s-harness-scrub-lives-in-the-root.md) | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
@@ -812,10 +812,11 @@
 | [BG1734](BG1734-bg1548-did-not-converge-in-review-round-2.md) | BG1548 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
 | [BG1735](BG1735-bg1574-did-not-converge-in-review-round-2.md) | BG1574 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
 | [BG1736](BG1736-the-commit-msg-attribution-note-advises-a-schema.md) | The commit-msg attribution note advises a schema 3 id by its dashless key | Fixed | Low | 2026-11-24 | 2026-11-24 |
-| [BG1737](BG1737-bg1204-did-not-converge-in-review-round-2.md) | BG1204 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-24 | 2026-11-24 |
+| [BG1737](BG1737-bg1204-did-not-converge-in-review-round-2.md) | BG1204 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
 | [BG1738](BG1738-a-claude-only-run-whose-sessions-all-hold.md) | A Claude-only run whose sessions all hold their subagents drops a claude -p lane run's delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1739](BG1739-critic-py-record-refuses-a-finding-whose-bare.md) | critic.py record refuses a finding whose bare URL is followed by an escaped semicolon | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1740](BG1740-reference-review-md-lists-the-optional-claim-surfaces.md) | reference-review.md lists the optional claim surfaces without the declared pages | Open | Low | 2026-11-24 | 2026-11-24 |
+| [BG1741](BG1741-the-retro-judges-a-run-whole-from-another.md) | The retro judges a run whole from another harness's session when the closing session has no closing stamp, and drops a supplied delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
 
 ## Archived Releases
 
