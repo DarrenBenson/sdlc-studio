@@ -1,6 +1,6 @@
 # Persona Index
 
-**Last updated:** 2026-11-09
+**Last updated:** 2026-11-24
 
 Goal-directed design personas for sdlc-studio itself (the Cooper model, RFC0017). The registry covers
 two interfaces, one Primary each (D0379): the shipped skill, and this repository's own tooling, which
@@ -16,8 +16,10 @@ review seats that critique artefacts are a separate concern (RFC0016), linked un
 - [Rowan Achterberg](rowan-achterberg-skill-maintainer.md) - maintainer of this repository; Primary for
   the repository-tooling interface (this repository's `tools/`, `.githooks/` and `.github/`, and the
   forward-port to the installed copy), which does not ship. A story minted with no persona names
-  him when its Affects, test modules and changelog fragments set aside, lie wholly under those three
-  paths (US1080). Listed second, he is never the fallback: every other unnamed mint names Abena.
+  him when its Affects, test modules and changelog fragments set aside, leave at least one path and
+  lie wholly under those three paths (US1080). Listed second, he is never the fallback: every other
+  unnamed mint names Abena. A unit whose only paths are test modules and fragments has none left to
+  judge, so it names her too.
 
 ## Secondary (served, never at either Primary's expense)
 
@@ -68,3 +70,4 @@ the design target and is not maintained; this registry is.
 | 2026-11-01 | Claude Opus 5.5 (US1083) | History put in date order and the missing 2026-07-29 row added; Last updated added; the review seats linked; Rowan's line says when an unnamed mint names him (US1080); the Primary and Secondary headings read for two Primaries |
 | 2026-11-09 | Claude Opus 5.5 (US1146) | Abena Osei added as the shipped skill's Primary on the operator's pick (D0436), listed first so an unnamed mint names her; Maya Okafor moves to Secondary and is now less well served on her End goal 3, driving a whole batch to done autonomously (D0443 narrowed D0436's list to that one); Rowan's card and line, and Trevor's Boundaries, name Abena as the shipped skill's Primary |
 | 2026-11-09 | Claude Opus 5.5 (US1147) | Graham Doyle added as Served, the change approver (D0437); Trevor Hale narrowed to a GUI-first operator, non-technical staff running the tool and a human approval on every change (D0436) |
+| 2026-11-24 | Dani Okafor (BG1151) | Rowan's line says a mint names him only when at least one path remains once the test modules and fragments are set aside |

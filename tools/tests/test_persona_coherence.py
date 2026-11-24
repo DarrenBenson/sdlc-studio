@@ -424,6 +424,53 @@ class TwoPrimaryCastTests(unittest.TestCase):
         self.assertNotIn("Interface", run.stdout + run.stderr,
                          "validate personas warns about the Primaries' interfaces")
 
+    def test_validate_reports_two_primaries_with_overlapping_declared_paths(self) -> None:
+        """Mutants: the Interface cells compared as text, not as the paths they declare; only
+        an equal path counted, not a nested one; a template slot read as a declared path."""
+        sections = "".join(f"## {s}\n\nx\n\n" for s in (
+            "Who They Are", "End Goals", "Experience Goals", "Behaviours & Context",
+            "Frustrations", "Scenario"))
+
+        def run(rows: list[str]) -> tuple[int, str]:
+            home = Path(tempfile.mkdtemp(prefix="bg1151-"))
+            try:
+                pdir = home / "sdlc-studio" / "personas"
+                pdir.mkdir(parents=True)
+                for n, row in enumerate(rows):
+                    (pdir / f"card{n}.md").write_text(
+                        f"# Card {n}\n\n## Quick Reference\n\n| Attribute | Value |\n"
+                        f"| --- | --- |\n| **Cast role** | Primary |\n| **Interface** | {row} |\n\n"
+                        + sections, encoding="utf-8")
+                made = subprocess.run([sys.executable, str(SCRIPTS / "validate.py"), "--root",
+                                       str(home), "personas"], capture_output=True, text=True)
+                return made.returncode, made.stdout + made.stderr
+            finally:
+                shutil.rmtree(home, ignore_errors=True)
+
+        # the same path, different prose
+        code, out = run(["the shipped skill, `src/`", "a maintainer's tree: `src/`"])
+        self.assertEqual(code, 1, out)
+        self.assertIn("same Interface", out)
+        # a path nested under the other's, written either way round and with ./ and a slash
+        for rows in (["`src/`", "`./src/app/`"], ["`src/app`", "`src/`"]):
+            code, out = run(rows)
+            self.assertEqual(code, 1, (rows, out))
+            self.assertIn("same Interface", out)
+        # identical prose without a code span is still the same interface
+        code, out = run(["The Operator Console", "the operator console"])
+        self.assertEqual(code, 1, out)
+        # positive controls: distinct paths (one only a name prefix of the other) and distinct
+        # prose are no overlap, and two template slots declare nothing to overlap
+        for rows in (["`src/`", "`srcs/`"], ["`tools/`", "`src/`"], ["a console", "a phone"],
+                     ["`a/`", "banana"]):
+            code, out = run(rows)
+            self.assertEqual(code, 0, (rows, out))
+            self.assertNotIn("same Interface", out)
+        slot = "{{optional - paths in backticks (`src/`, `bin/run`)}}"
+        code, out = run([slot, slot])
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("same Interface", out)
+
     def test_an_unnamed_mint_still_defaults_to_the_shipped_skills_primary(self) -> None:
         """AC2, through the shipped CLI. Mutant: the tooling Primary listed first under
         `## Primary`, which makes every unnamed mint whose Affects picks no interface his

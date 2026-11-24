@@ -55,7 +55,7 @@ ID_SEARCH_RE = re.compile(
 # stamps. `AC\d+` matched none of those, and the parser does not report what it declines - the
 # criterion was simply absent from the block list, so `verify_ac run` reported `ac=5` over six
 # criteria and the sixth was verified by nothing. Silent, and in the direction that flatters.
-AC_HEADING_RE = re.compile(r"^###\s+(AC\d+[a-z]?)(?::\s*(.*))?$")
+AC_HEADING_RE = re.compile(r"^###\s+(AC\d+[a-z]?)(?:(?::\s*|\s+)(.*))?$")
 # Acceptance-criterion bold bullet: `- **AC1:** text` / `* **AC1** text` / a
 # checkbox form `- [ ] **AC1** text` (house template) — the compact inline style
 # many stories use instead of a heading per criterion. Same letter suffix, same reason.
@@ -1192,25 +1192,28 @@ def extract_field(text: str, name: str) -> str | None:
     `> **Status:** Done · **Epic:** EP0088 · **Points:** 3`. The field is anchored
     to a line start (optional `>`) or a `·` separator, so a `**Name:**` mentioned
     in prose is not matched; the value is captured up to the next `·`, the next
-    `**Field:**`, or end of line, so a field never swallows the ones after it.
+    `**Field:**`, or end of line, so a field never swallows the ones after it. A field with
+    nothing after its name on its line is empty and reads as None, never as the next line.
     """
     m = re.search(
-        rf"{_FIELD_ANCHOR}\*\*{re.escape(name)}:\*\*\s*(.+?)\s*{_FIELD_VALUE_END}",
+        rf"{_FIELD_ANCHOR}\*\*{re.escape(name)}:\*\*[^\S\n]*(.*?)\s*{_FIELD_VALUE_END}",
         text, re.M)
-    return m.group(1) if m else None
+    return (m.group(1) or None) if m else None
 
 
 def metadata_fields(text: str) -> dict[str, str]:
     """Every `**Name:** value` field in `text`, keyed by its lower-cased name, each valued as
     `extract_field` reads it, so every field on an inline `·` run gets its own value rather
-    than the first swallowing the rest. The first occurrence of a name wins. A field whose
-    line holds nothing after its name has no value and is left out, where `extract_field`
-    would read on into the next line."""
+    than the first swallowing the rest. The first occurrence of a name wins, even when it is
+    empty: a field whose line holds nothing after its name has no value and is left out, as
+    `extract_field` reads it as None, and a later occurrence does not fill it."""
     out: dict[str, str] = {}
+    seen: set[str] = set()
     for m in _FIELD_NAME_RE.finditer(text):
         name = m.group(1).strip()
-        if name.lower() in out or not text[m.end():].split("\n", 1)[0].strip():
+        if name.lower() in seen:
             continue
+        seen.add(name.lower())
         value = (extract_field(text, name) or "").strip()
         if value:
             out[name.lower()] = value
@@ -2075,16 +2078,22 @@ def iter_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
     if _CORPUS_CACHE is None or trust_names:
         yield from _walk_artifact_files(type_, repo_root, trust_names)
         return
-    key = ("files", type_, os.path.abspath(repo_root))
+    root_abs = Path(os.path.abspath(repo_root))
+    key = ("files", type_, str(root_abs))
     rows = _CORPUS_CACHE.get(key)
     if rows is None:
-        rows = _CORPUS_CACHE[key] = list(_walk_artifact_files(type_, repo_root, frozenset()))
+        # walked from the absolute root and kept RELATIVE to it, so the memo holds no spelling
+        # of the root: each caller below gets its own back, never the first walk's
+        rows = _CORPUS_CACHE[key] = [
+            (p.relative_to(root_abs), text)
+            for p, text in _walk_artifact_files(type_, root_abs, frozenset())]
         # the walk read each file once - hand that text to `read_text_safe` for the rest
         # of the sweep, so a census followed by an advisory reads the corpus once, not twice
         for p, text in rows:
             if text is not None:
-                _CORPUS_CACHE.setdefault(("text", os.path.abspath(str(p))), text)
-    yield from rows
+                _CORPUS_CACHE.setdefault(("text", str(root_abs / p)), text)
+    for p, text in rows:
+        yield Path(repo_root) / p, text
 
 
 def _walk_artifact_files(type_: str, repo_root: Path, trust_names=frozenset()):
@@ -2370,8 +2379,9 @@ def _citation_defect(item: str, own: str, repo_root) -> str:
     return ""
 
 
-#: `None`, `None - <why>`, `n/a`: the template's way of saying there are no questions.
-_DECLARES_NONE_RE = re.compile(r"^(none|n/?a)\b", re.IGNORECASE)
+#: `None`, `None - <why>`, `n/a`, each optionally after a leading hyphen, en dash or em dash:
+#: the template's way of saying there are no questions.
+_DECLARES_NONE_RE = re.compile(r"^(?:[-\u2013\u2014]\s*)?(none|n/?a)\b", re.IGNORECASE)
 
 #: A ruling recorded on the item itself, in the forms this corpus actually uses. The two colon
 #: forms end at the colon: a word boundary after it would need a word character next, so the
@@ -2790,10 +2800,11 @@ def resolve_author(name: str, atype: str, repo_root) -> bool:
 # One reader, so every command that needs a design target derives it from the registry
 # instead of restating a list that drifts.
 
-#: The roles the registry declares, in the order the index states them.
-PERSONA_ROLES = ("primary", "secondary", "negative")
-#: A role heading: `## Primary (the design target)`, `### Negative`, ...
-_PERSONA_ROLE_RE = re.compile(r"^#{2,}\s*(primary|secondary|negative)\b", re.I)
+#: The cast roles the persona guide declares, which the registry reads under their own names.
+PERSONA_ROLES = ("primary", "secondary", "supplemental", "negative", "customer", "served")
+#: A role heading: `## Primary (the design target)`, `### Negative`, ... The role is the heading's
+#: first word, so a parenthesis after it (`## Secondary (served, ...)`) names no role.
+_PERSONA_ROLE_RE = re.compile(r"^#{2,}\s*(" + "|".join(PERSONA_ROLES) + r")\b", re.I)
 
 
 class PersonaEntry(NamedTuple):
@@ -2863,8 +2874,9 @@ def _persona_bullet(line: str) -> tuple[str, str | None] | None:
 
 
 def persona_registry(repo_root) -> PersonaRegistry:
-    """Parse `sdlc-studio/personas/index.md` into its declared Primary / Secondary / Negative
-    personas with their card paths.
+    """Parse `sdlc-studio/personas/index.md` into its declared personas, under each cast role
+    in `PERSONA_ROLES`, with their card paths. A bullet under any other heading (Review seats,
+    Revision History) registers nobody.
 
     NEVER returns a bare empty result for a registry it could not read: an absent, unreadable or
     heading-less index comes back `available=False` with a `reason` the caller reports, so
@@ -2915,7 +2927,7 @@ def persona_registry(repo_root) -> PersonaRegistry:
 
 
 #: A card's `| **Interface** | ... |` Quick Reference row: the interface a Primary is FOR.
-_INTERFACE_ROW_RE = re.compile(r"^\|\s*\*\*Interface\*\*\s*\|([^|\n]*)\|", re.M | re.I)
+_INTERFACE_ROW_RE = re.compile(r"^\|\s*\*\*Interface\*\*\s*\|((?:[^|\n\\]|\\.)*)\|", re.M | re.I)
 #: A path an Interface row declares: a code span holding no whitespace.
 _INTERFACE_PATH_RE = re.compile(r"`([^`\s]+)`")
 
@@ -2925,9 +2937,10 @@ def persona_interface_paths(card) -> tuple[str, ...] | None:
 
     A path is a code span in the row with no whitespace in it, so the prose around the spans is
     never read as a path: `this repository's `tools/`, `.githooks/` and `.github/`, and the
-    forward-port` declares three. A leading `./` and a trailing `/` are dropped. None when the
-    card has no Interface row or cannot be read; an empty tuple for a row with no code span.
-    Read-only."""
+    forward-port` declares three. A leading `./` and a trailing `/` are dropped. An escaped
+    pipe (`\\|`) does not end the row. None when the card has no Interface row or cannot be
+    read; an empty tuple for a row with no code span, or one still holding the template's
+    `{{...}}` slot, whose example spans are not declarations. Read-only."""
     try:
         text = Path(card).read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -2935,6 +2948,8 @@ def persona_interface_paths(card) -> tuple[str, ...] | None:
     row = _INTERFACE_ROW_RE.search(text)
     if row is None:
         return None
+    if "{{" in row.group(1):
+        return ()
     out: list[str] = []
     for span in _INTERFACE_PATH_RE.findall(row.group(1)):
         path = span.removeprefix("./").rstrip("/")

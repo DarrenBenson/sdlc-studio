@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -3457,6 +3458,53 @@ class BugCriteriaTests(unittest.TestCase):
                 rc, said = self._plan(repo, status)
                 self.assertNotIn("none carries an executable `Verify:`", said)
                 self.assertEqual(0, rc, said)
+
+class InterfacePrimaryTests(unittest.TestCase):
+    """`_interface_primary`: a story minted with no persona names the Primary whose declared
+    interface paths hold its Affects."""
+
+    def _registry(self, shipped_row: str, tooling_row: str, name_a="Aba Shipped",
+                  name_b="Rob Tooling"):
+        d = Path(tempfile.mkdtemp(prefix="iface_primary_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        entries = []
+        for name, row in ((name_a, shipped_row), (name_b, tooling_row)):
+            card = d / (name.split()[0].lower() + ".md")
+            card.write_text("# Card\n\n| Attribute | Value |\n| --- | --- |\n"
+                            f"| **Interface** | {row} |\n", encoding="utf-8")
+            entries.append(sdlc_md.PersonaEntry(name, "primary", str(card)))
+        return sdlc_md.PersonaRegistry(str(d / "index.md"), True, None, tuple(entries))
+
+    def _named(self, reg, affects) -> str:
+        with contextlib.redirect_stderr(io.StringIO()):
+            return artifact._interface_primary(reg, affects)
+
+    def test_a_dot_slash_path_matches_on_both_sides(self):
+        # a card spelling its path `./tools/` and an Affects spelling it without, then the reverse
+        reg = self._registry("`src/`", "`./tools/`")
+        self.assertEqual(self._named(reg, "tools/x.py"), "Rob Tooling")
+        self.assertEqual(self._named(reg, "./tools/x.py"), "Rob Tooling")
+        # positive control: a path under neither interface falls to the first Primary listed
+        self.assertEqual(self._named(reg, "./docs/x.md"), "Aba Shipped")
+        reg = self._registry("`./src/`", "`tools/`", "Aba Shipped", "Rob Tooling")
+        self.assertEqual(self._named(reg, "./tools/x.py"), "Rob Tooling")
+
+    def test_a_card_with_the_template_slot_is_named_in_the_warning_and_owns_nothing(self):
+        slot = "{{optional - its paths in backticks (`src/`, `bin/run`)}}"
+        reg = self._registry("`tools/`", slot)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            named = artifact._interface_primary(reg, "src/app.py")
+        self.assertEqual(named, "Aba Shipped")
+        self.assertIn("Rob Tooling", err.getvalue())
+        self.assertIn("no interface paths are declared", err.getvalue())
+        # positive control: with both rows filled there is no warning
+        reg = self._registry("`tools/`", "`src/`")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(artifact._interface_primary(reg, "src/app.py"), "Rob Tooling")
+        self.assertEqual(err.getvalue(), "")
+
 
 if __name__ == "__main__":
     unittest.main()

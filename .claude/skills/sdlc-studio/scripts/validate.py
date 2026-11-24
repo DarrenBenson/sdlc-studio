@@ -1393,6 +1393,19 @@ def read_card(path: Path, severity: str) -> tuple[str, dict | None]:
     return text.replace("\r\n", "\n").replace("\r", "\n"), finding
 
 
+def _shared_interface(a: tuple, b: tuple) -> list[str]:
+    """What two Primaries' declared Interfaces have in common: each is `("paths", (...))` or, for
+    a cell declaring no path, `("text", <cell>)`. Paths share a path that is equal or nested
+    under the other's (named by the outer one); texts share their text; a paths declaration and
+    a text one share nothing."""
+    if a[0] != b[0]:
+        return []
+    if a[0] == "text":
+        return [a[1]] if a[1] == b[1] else []
+    return sorted({min(x, y, key=len) for x in a[1] for y in b[1]
+                   if x == y or x.startswith(y + "/") or y.startswith(x + "/")})
+
+
 def check_personas(root: Path) -> list[dict]:
     """Cast-role-aware well-formedness check for goal-directed personas.
 
@@ -1467,9 +1480,12 @@ def check_personas(root: Path) -> list[dict]:
         if role == "primary":
             im = re.search(r"\|\s*\*\*Interface\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
             # an Interface cell still holding the template's slot declares no Interface, as a
-            # Cast role cell holding one declares no role
-            primaries.append((p, im.group(1).strip().casefold()
-                              if im and not _unfilled(im.group(1)) else None))
+            # Cast role cell holding one declares no role. A cell is compared by the paths it
+            # declares; one declaring no path is compared by its text.
+            cell = im.group(1).strip().casefold() if im and not _unfilled(im.group(1)) else None
+            paths = sdlc_md.persona_interface_paths(p) if cell else None
+            primaries.append((p, ("paths", tuple(paths)) if paths
+                              else ("text", cell) if cell else None))
 
     # Cooper: exactly one Primary per interface - two Primaries means two interfaces.
     # A multi-Primary cast is a warning (the project may genuinely have two interfaces);
@@ -1477,9 +1493,16 @@ def check_personas(root: Path) -> list[dict]:
     # and the one place this check errors.
     if len(primaries) > 1:
         declared = [(p, i) for p, i in primaries if i]
-        shared = {i for _, i in declared if sum(1 for _, j in declared if j == i) > 1}
+        shared: set[str] = set()
+        overlapping: set = set()
+        for n, (p, a) in enumerate(declared):
+            for q, b in declared[n + 1:]:
+                common = _shared_interface(a, b)
+                if common:
+                    shared.update(common)
+                    overlapping.update((p, q))
         if shared:
-            names = ", ".join(p.name for p, i in declared if i in shared)
+            names = ", ".join(p.name for p, _ in declared if p in overlapping)
             out.append({"severity": "error", "rule": "persona-one-primary", "file": str(pdir),
                         "message": f"two Primary personas declare the same Interface "
                                    f"({', '.join(sorted(shared))}): {names} - one Primary "

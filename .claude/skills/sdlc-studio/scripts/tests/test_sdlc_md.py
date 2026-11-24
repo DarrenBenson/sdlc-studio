@@ -11,6 +11,7 @@ import io
 import json
 import subprocess
 import sys
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -1186,6 +1187,114 @@ class PersonaRegistryTests(unittest.TestCase):
         self.assertEqual(empty.entries, ())
         self.assertIsNone(empty.primary)
         self.assertNotEqual(absent.available, empty.available)
+
+
+
+    SERVED_INDEX = (
+        "# Persona Index\n\n"
+        "## Primary (the design target)\n\n- [Maya Okafor](maya-okafor-founder-engineer.md) - a\n\n"
+        "## Secondary (served, never at the Primary's expense)\n\n"
+        "- [Jonah Reyes](jonah-reyes-team-lead.md) - b\n\n"
+        "## Supplemental (fully covered by the Primary)\n\n- Sam Supplemental - c\n\n"
+        "## Customer (buys, never uses)\n\n- **Cass Customer** - d\n\n"
+        "## Served (affected by the product without using it)\n\n"
+        "- [Graham Doyle](graham-doyle-change-approver.md) - e\n\n"
+        "## Negative (deliberately not designed for)\n\n"
+        "- [Trevor Hale](trevor-hale-enterprise-pm.md) - f\n\n"
+        "## Review seats\n\n- [Engineering](seats/engineering.md)\n\n"
+        "## Revision History\n\n- not a persona\n"
+    )
+
+    def test_a_served_entry_is_returned_beside_the_three_roles(self):
+        index = ("# Persona Index\n\n## Primary\n\n- [Maya Okafor](maya-okafor-founder-engineer.md) - a\n\n"
+                 "## Secondary\n\n- [Jonah Reyes](jonah-reyes-team-lead.md) - b\n\n"
+                 "## Served (affected by the product without using it)\n\n"
+                 "- [Graham Doyle](graham-doyle-change-approver.md) - e\n\n"
+                 "## Negative\n\n- [Trevor Hale](trevor-hale-enterprise-pm.md) - f\n")
+        ws = self._workspace(index)
+        (ws / "sdlc-studio" / "personas" / "graham-doyle-change-approver.md").write_text(
+            "# Graham\n", encoding="utf-8")
+        reg = sdlc_md.persona_registry(ws)
+        self.assertTrue(reg.available, reg.reason)
+        self.assertEqual([(e.name, e.role) for e in reg.entries],
+                         [("Maya Okafor", "primary"), ("Jonah Reyes", "secondary"),
+                          ("Graham Doyle", "served"), ("Trevor Hale", "negative")])
+        served = reg.by_role("served")
+        self.assertEqual([e.name for e in served], ["Graham Doyle"])
+        self.assertTrue(Path(served[0].card).is_file(), served[0].card)
+        self.assertEqual(reg.find("graham doyle").role, "served")
+
+    def test_every_declared_cast_role_is_read_and_a_parenthesis_names_none(self):
+        reg = sdlc_md.persona_registry(self._workspace(self.SERVED_INDEX))
+        self.assertTrue(reg.available, reg.reason)
+        self.assertEqual([(e.name, e.role) for e in reg.entries],
+                         [("Maya Okafor", "primary"), ("Jonah Reyes", "secondary"),
+                          ("Sam Supplemental", "supplemental"), ("Cass Customer", "customer"),
+                          ("Graham Doyle", "served"), ("Trevor Hale", "negative")])
+        self.assertEqual(set(sdlc_md.PERSONA_ROLES),
+                         {"primary", "secondary", "supplemental", "customer", "served",
+                          "negative"})
+        # the `(served, ...)` in the Secondary heading names no role, and the Review seats and
+        # Revision History bullets register nobody
+        self.assertEqual([e.name for e in reg.by_role("secondary")], ["Jonah Reyes"])
+        self.assertNotIn("Engineering", reg.names)
+        self.assertNotIn("not a persona", reg.names)
+        # a heading that only starts like a role word names no role
+        odd = sdlc_md.persona_registry(self._workspace(
+            "# I\n\n## Primary\n\n- A One - x\n\n## Servedly\n\n- B Two - y\n\n"
+            "## Customers' notes\n\n- C Three - z\n"))
+        self.assertEqual([(e.name, e.role) for e in odd.entries], [("A One", "primary")])
+        # a role word later in a heading is no role either
+        later = sdlc_md.persona_registry(self._workspace(
+            "# I\n\n## Primary\n\n- A One - x\n\n## Notes on the Primary persona\n\n- B Two - y\n"))
+        self.assertEqual([e.name for e in later.entries], ["A One"])
+        self.assertEqual([e.name for e in later.by_role("primary")], ["A One"])
+
+
+class PersonaInterfacePathsTests(unittest.TestCase):
+    """The paths a persona card's Interface row declares."""
+
+    def _card(self, row: str | None) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="persona_iface_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        body = "# Card\n\n| Attribute | Value |\n| --- | --- |\n| **Cast role** | Primary |\n"
+        if row is not None:
+            body += f"| **Interface** | {row} |\n"
+        (d / "card.md").write_text(body + "\nafter\n", encoding="utf-8")
+        return d / "card.md"
+
+    def test_a_row_with_the_template_slot_declares_no_interface(self):
+        slot = ("{{optional - the interface this persona is Primary FOR, its repository paths "
+                "in backticks (`src/`, `bin/run`); declare it when the cast has more than one "
+                "Primary}}")
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card(slot)), ())
+        # a slot beside a real span is still an unfilled row: nothing in it is declared
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card("`tools/` {{more}}")), ())
+        # positive controls: the same spans without the slot are read; no row is None
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card("`src/`, `bin/run`")),
+                         ("src", "bin/run"))
+        self.assertIsNone(sdlc_md.persona_interface_paths(self._card(None)))
+
+    def test_an_escaped_pipe_does_not_end_the_interface_row(self):
+        card = self._card("`tools/` \\| `.githooks/` and `.github/`")
+        self.assertEqual(sdlc_md.persona_interface_paths(card),
+                         ("tools", ".githooks", ".github"))
+        # positive control: an unescaped pipe still ends the cell
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card("`tools/` | `ignored/`")),
+                         ("tools",))
+
+    def test_a_leading_dot_slash_and_a_trailing_slash_are_dropped(self):
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card("`./bin/run`, `./src/`")),
+                         ("bin/run", "src"))
+        self.assertEqual(sdlc_md.persona_interface_paths(self._card("`src/` `./src`")), ("src",))
+
+    def test_an_unreadable_card_is_none(self):
+        self.assertIsNone(sdlc_md.persona_interface_paths(Path("/nonexistent/card.md")))
+        bad = self._card("`x/`")
+        bad.write_bytes(b"\xff\xfe\x00bad")
+        self.assertIsNone(sdlc_md.persona_interface_paths(bad))
+        bad.write_bytes(b"")
+        self.assertIsNone(sdlc_md.persona_interface_paths(bad))
 
 
 class RootResolverTests(unittest.TestCase):
