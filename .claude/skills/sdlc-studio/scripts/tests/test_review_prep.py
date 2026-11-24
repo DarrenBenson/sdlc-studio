@@ -627,6 +627,9 @@ class CloseIndexRowTests(unittest.TestCase):
             spec = importlib.util.spec_from_file_location(
                 "reconcile", Path(review_prep.__file__).parent / "reconcile.py")
             rec = importlib.util.module_from_spec(spec)
+            swap = mock.patch.dict(sys.modules)
+            swap.start()
+            self.addCleanup(swap.stop)
             sys.modules["reconcile"] = rec
             spec.loader.exec_module(rec)
             original = rec.apply_meta
