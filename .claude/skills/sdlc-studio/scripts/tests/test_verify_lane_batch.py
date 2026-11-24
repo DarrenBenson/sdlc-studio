@@ -234,6 +234,30 @@ class VerifyLaneBatchTests(unittest.TestCase):
                              text=True, check=False, timeout=60).stdout
         self.assertRegex(re.sub(r"\s+", " ", out), named)
 
+    def test_a_ceiling_timeout_is_recorded_without_its_own_run(self) -> None:
+        """AC2. MUTANT: `_record_red` running a batched timeout again for the record. The
+        node would spawn for a ceiling's length to record the same `timeout`, and the lane's
+        log would show a `spawn` beside the batch entries. With the red-detail file set, the
+        slow node is answered by the batch alone and the file holds one block for it."""
+        _workspace(self.root, {"tests/test_t.py": [("test_slow", 2, True, False),
+                                                   ("test_fast", 0, True, False)]})
+        detail = self.root / "detail.txt"
+        with mock.patch.dict(os.environ, _env(**{gate.VERIFY_BATCH_TIMEOUT_ENV: "120",
+                                                 verify_ac.RED_DETAIL_ENV: str(detail)}),
+                             clear=True):
+            res = gate._verify_acs(str(self.root), timeout=1, batch=True)
+        self.assertEqual(1, res["count"], res["detail"])
+        self.assertEqual([("test_fast", "batch"), ("test_slow", "batch")],
+                         sorted((name, where) for name, _, where in _ran(self.root)),
+                         "the slow node was spawned on its own for the record")
+        text = detail.read_text(encoding="utf-8")
+        self.assertEqual(1, text.count("red: US9101::AC1"), text)
+        self.assertNotIn("US9102", text, "the fast test is the positive control")
+        self.assertIn("exit 124 after", text)
+        self.assertIn("timeout - the batch recorded", text)
+        self.assertNotIn("its own run, for this record", text,
+                         "no second run happened, so none is claimed")
+
 
 class BatchPhaseTests(unittest.TestCase):
     """The phases' edges the criteria do not reach."""
@@ -382,6 +406,57 @@ class ProjectConfigurationTests(unittest.TestCase):
         self.assertIn("US9101::AC1", batched["detail"], "the deselected test reads red")
         self.assertIn("batch resolved 3 of 3 pytest verifier(s)", batched["detail"])
 
+    #: How long a test waits for the batch's parallel phase to report before judging its answer.
+    PHASE_DEADLINE = 120.0
+
+    def _batch_once_reported(self, nodes: list[str], *, deadline: float | None = None):
+        """The batch's result once its phases have reported: a result that names a reason (a
+        phase that exited with no report, as one starved of cores can) is asked for again until
+        `deadline` seconds pass, and a phase that never reports then fails the test with the
+        batch's whole reason, not a clipped one."""
+        end = time.monotonic() + (self.PHASE_DEADLINE if deadline is None else deadline)
+        while True:
+            cache = verify_ac.pytest_batch_cache(self.root, 60, nodes, batch_timeout=120)
+            if not cache.reason:
+                return cache
+            if time.monotonic() >= end:
+                self.fail(f"no phase reported before the deadline; the batch's reason: "
+                          f"{cache.reason}")
+            time.sleep(0.5)
+
+    @unittest.skipUnless(HAS_XDIST, "the split is given pytest-xdist")
+    def test_a_serial_only_mark_is_judged_once_a_slow_parallel_phase_has_reported(self) -> None:
+        """BG1514 AC2. The parallel phase's first run exits 1 with no report, as one slowed by
+        load does; the batch is asked again, and judged once the phase has reported, with the
+        serial phase run over the marked file. A phase that never reports fails with its whole
+        reason, the phase's own error line included. MUTANTS: judge the first answer (the
+        reason is non-empty); retry past the deadline, or never; clip the reason."""
+        nodes = _workspace(self.root, {"tests/test_h.py": [("test_plain", 0, True, False),
+                                                           ("test_marked", 0, True, True)]})
+        (self.root / "conftest.py").write_text(
+            "import os\nimport pytest\n\n\ndef pytest_configure(config):\n"
+            "    flag = os.path.join(os.path.dirname(__file__), 'first-phase-done')\n"
+            "    never = os.environ.get('NEVER_REPORTS')\n"
+            "    if os.environ.get('PYTEST_XDIST_WORKER') or (os.path.exists(flag) and not never):\n"
+            "        return\n"
+            "    open(flag, 'w').close()\n"
+            "    pytest.exit('error: the phase was starved of cores', returncode=1)\n",
+            encoding="utf-8")
+        with mock.patch.dict(os.environ, _env(), clear=True):
+            cache = self._batch_once_reported(nodes)
+        self.assertEqual(("", ("parallel", "serial_only")), (cache.reason, cache.phases))
+        self.assertEqual({"test_plain": True, "test_marked": True},
+                         {n.rsplit("::", 1)[1]: ok for n, ok in cache.items()})
+        started = time.monotonic()
+        with mock.patch.dict(os.environ, _env(NEVER_REPORTS="1"), clear=True):
+            with self.assertRaises(AssertionError) as caught:
+                self._batch_once_reported(nodes, deadline=1.5)
+        message = str(caught.exception)
+        self.assertGreaterEqual(time.monotonic() - started, 1.5, "the wait ended before its deadline")
+        self.assertIn("the parallel phase exited 1 with no usable report", message)
+        self.assertIn("error: the phase was starved of cores", message,
+                      "the phase's own error line is missing from the failure")
+
     @unittest.skipUnless(HAS_XDIST, "the split is given pytest-xdist")
     def test_a_serial_only_mark_from_a_hook_runs_in_the_serial_phase(self) -> None:
         """MUTANTS: the serial phase run over the files whose text names the marker, so a test a
@@ -413,7 +488,7 @@ class ProjectConfigurationTests(unittest.TestCase):
         _stories(self.root, nodes)
         env = _env(PYTHONPATH=f"{self.root}{os.pathsep}{decoy}")
         with mock.patch.dict(os.environ, env, clear=True):
-            cache = verify_ac.pytest_batch_cache(self.root, 60, nodes, batch_timeout=120)
+            cache = self._batch_once_reported(nodes)
             ran = {name: worker for name, worker, _ in _ran(self.root)}
             batched = gate._verify_acs(str(self.root), timeout=60, batch=True)
             alone = gate._verify_acs(str(self.root), timeout=60, batch=False)

@@ -2765,7 +2765,7 @@ def _resolve_pytest_node(verifier: str, nodes: dict[str, bool],
     seconds = sum(getattr(nodes, "durations", {}).get(n, 0.0) for n in cases)
     ceiling = getattr(nodes, "ceiling", None)
     if cases and ceiling is not None and seconds > ceiling:
-        return VerifierResult(False, "pytest", 124, "",
+        return VerifierResult(False, "pytest", BATCH_TIMEOUT_EXIT, "",
                               f"timeout - the batch recorded {seconds:.1f}s for {target}, past "
                               f"the {ceiling:g}s per-verifier ceiling its own run is held to",
                               int(seconds * 1000))
@@ -2900,6 +2900,10 @@ def _run_timeout(flag: int | None) -> int:
     return budget if budget > 0 else DEFAULT_TIMEOUT
 
 
+#: The exit a batch's answer carries for a criterion over its per-verifier ceiling.
+BATCH_TIMEOUT_EXIT = 124
+
+
 def _record_red(story_path: Path, text: str, ac: str, verifier: str, result: VerifierResult,
                 rerun=None, why: str = "") -> None:
     """Append criterion `ac`'s red to the file `RED_DETAIL_ENV` names: its `<record>::<AC>` id
@@ -2910,7 +2914,9 @@ def _record_red(story_path: Path, text: str, ac: str, verifier: str, result: Ver
     Nothing is written when the variable is unset, or when the unit's status claims no
     completion, which the release gate reads as unbuilt rather than red. A red a batch answered
     carries no output of its own, so `rerun` runs the verifier alone for the record, and the
-    record names the batch's answer above it; the verdict stays the batch's. A file that cannot
+    record names the batch's answer above it; the verdict stays the batch's. A batch's timeout
+    (exit 124) is the exception: its own run would last a ceiling to record the same word, so
+    the batch's answer is recorded as it is and the verifier is not run. A file that cannot
     be opened is named on stderr and the verdict stands. Each block is a
     single write to a file opened for appending, which keeps the gate's concurrent workers from
     splitting one another's blocks on a local filesystem."""
@@ -2920,7 +2926,7 @@ def _record_red(story_path: Path, text: str, ac: str, verifier: str, result: Ver
     import gate  # noqa: PLC0415 - the release gate's own reading of a completion claim
     if not gate._claims_completion(sdlc_md.extract_field(text, "Status")):
         return
-    if rerun is not None:
+    if rerun is not None and result.exit_code != BATCH_TIMEOUT_EXIT:
         why = f"the batch answered: {result.stderr.strip()}; its own run, for this record:"
         result = rerun()
     rec = sdlc_md.extract_record_id(Path(story_path).stem) or Path(story_path).stem

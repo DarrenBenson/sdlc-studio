@@ -59,6 +59,11 @@ RELEASE_GATE = textwrap.dedent('''
                              capture_output=True, text=True)
         record["verifier"] = {"rc": ran.returncode, "skipped": "skipped=1" in ran.stderr}
     Path(os.environ["STUB_GATE_LOG"]).open("a").write(json.dumps(record) + "\\n")
+    if Path("orphan").exists():
+        # a process the gate leaves behind, outside its session, still holding its output
+        orphan = subprocess.Popen(["sleep", "15"], start_new_session=True)
+        Path(os.environ["STUB_GATE_LOG"]).with_name("orphan.pid").write_text(str(orphan.pid))
+    print("  stub-stderr-line", file=sys.stderr)
     print(f"  [{'FAIL' if verdict else 'PASS'}] stub-release STUBBED")
     raise SystemExit(verdict)
 ''')
@@ -262,6 +267,79 @@ class RemoteReleaseGateTests(unittest.TestCase):
         self.assertNotEqual(fx.head(), green)
         self.assertEqual(json.loads(fx.marker.read_text(encoding="utf-8")), {"commit": green},
                          "the green does not name exactly the commit the host passed")
+
+    def _boundary(self, commit: str) -> subprocess.CompletedProcess:
+        """`remote-gate.sh push --commit <commit> --boundary push`, from the clone."""
+        return subprocess.run(["bash", "tools/remote-gate.sh", "push", "--commit", commit,
+                               "--boundary", "push"], cwd=self.fx.clone,
+                              env=self.fx.env(STUB_SSH_FAIL=""), capture_output=True, text=True,
+                              timeout=300)
+
+    def test_the_log_a_refusal_names_is_kept_until_the_next_run(self) -> None:
+        """BG1514 AC3. A refused boundary run names its full log, and that file exists at the
+        named path, holds the gate's whole output, outlives the run's own cleanup, and is
+        replaced only by the next boundary run for the clone. MUTANTS: name a path nothing wrote
+        (as the gate's own log is, for a lane that is not the suite); write the log inside the
+        run's directory, which the cleanup removes; keep the first run's log through the next."""
+        fx = self.fx
+        red = fx.commit("a refused candidate", verdict="1\n")
+        r = self._boundary(red)
+        self.assertEqual(r.returncode, 1, r.stderr)
+        named = [ln for ln in r.stderr.splitlines() if "the full log is on" in ln]
+        self.assertEqual(1, len(named), r.stderr)
+        path = Path(named[0].rsplit(" at ", 1)[1])
+        self.assertTrue(path.is_absolute(), named[0])
+        self.assertTrue(path.is_relative_to(fx.host_home), f"{path} is not on the host")
+        self.assertTrue(path.is_file(), f"the refusal names {path}, which does not exist")
+        kept = path.read_text(encoding="utf-8")
+        self.assertIn("stub-release STUBBED", kept, "the log does not hold the gate's output")
+        self.assertIn("FAIL", kept)
+        self.assertIn("stub-stderr-line", kept, "the gate's stderr is not in the log")
+        self.assertEqual([], list((fx.host_home / "sdlc-gate" / "runs").iterdir()),
+                         "the run's own directory outlived its cleanup")
+        self.assertEqual(kept, path.read_text(encoding="utf-8"), "the log changed after the run")
+        green = fx.commit("a green candidate", verdict="0\n")
+        r = self._boundary(green)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("the full log is on", r.stderr, "a green run names a log")
+        replaced = path.read_text(encoding="utf-8")
+        self.assertIn("PASS", replaced)
+        self.assertNotIn("FAIL", replaced, "the first run's log outlived the next boundary run")
+        # A release run is no boundary run: its refusal names no log and leaves the kept one alone.
+        refused = fx.commit("a refused release", verdict="1\n")
+        r = fx.release(refused)
+        self.assertEqual(r.returncode, 1, r.stderr)
+        self.assertNotIn("the full log is on", r.stderr)
+        self.assertEqual(replaced, path.read_text(encoding="utf-8"),
+                         "a release run replaced the boundary log")
+
+    def test_a_process_the_gate_orphans_cannot_hold_the_run_open(self) -> None:
+        """BG1514 AC3. The gate leaves a process behind that holds its output for 15 s: the run
+        waits for the copy to the log for a bounded 5 s and then ends, with that process still
+        alive and the log whole. MUTANTS: no wait at all (the run ends at once); no bound (the
+        run lasts as long as the orphan)."""
+        import time  # noqa: PLC0415
+        fx = self.fx
+        red = fx.commit("a refused candidate that leaves a process behind", verdict="1\n",
+                        orphan="1\n")
+        started = time.monotonic()
+        r = self._boundary(red)
+        took = time.monotonic() - started
+        pid_file = fx.tmp / "orphan.pid"
+        self.assertTrue(pid_file.is_file(), r.stderr)
+        pid = int(pid_file.read_text(encoding="utf-8"))
+        try:
+            self.assertEqual(r.returncode, 1, r.stderr)
+            os.kill(pid, 0)         # raises when the process is gone: the run outlasted it
+            self.assertGreaterEqual(took, 4.0, "the run did not wait for the copy to the log")
+            named = [ln for ln in r.stderr.splitlines() if "the full log is on" in ln]
+            log = Path(named[0].rsplit(" at ", 1)[1]).read_text(encoding="utf-8")
+            self.assertIn("[FAIL] stub-release STUBBED", log)
+        finally:
+            try:
+                os.kill(pid, 9)
+            except ProcessLookupError:
+                pass
 
     def test_the_host_and_local_routes_agree_on_boundary_only_verifiers(self) -> None:
         """AC4. Mutants: the host exports SDLC_STUDIO_BOUNDARY_SUITE=1 for the release gate while

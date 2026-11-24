@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -506,6 +507,101 @@ class ScrubSiteSweepTests(unittest.TestCase):
         buried = [v for v in visited if "agent-x" in v]
         self.assertEqual(buried, [],
                          f"the walk descended into an excluded directory: {buried}")
+
+
+class HarnessScrubTests(unittest.TestCase):
+    """The runner clears the agent harness variables the token meter reads, as the root
+    conftest does for pytest (BG1310). A shell that exports `CURSOR_AGENT=1` made the Cursor meter
+    read a Claude transcript fixture's session, so the meter modules passed under pytest and
+    failed through `tools/skill-tests.sh`."""
+
+    SKILL = ".claude/skills/sdlc-studio/scripts"
+    BEGIN, END = "# --- harness scrub: begin", "# --- harness scrub: end"
+    #: A fast meter-reaching module that is red under `CURSOR_AGENT=1` when nothing clears it.
+    METER_MODULE = f"{SKILL}/tests/test_lean_report_meter_zero_delegated.py"
+
+    @staticmethod
+    def _names() -> list[str]:
+        """What the meter says a harness is signalled or named by, read in a fresh interpreter."""
+        out = subprocess.run(
+            [sys.executable, "-c", "from lib import token_meters; "
+             "print('\\n'.join(token_meters.selection_variables()))"],
+            cwd=REPO / HarnessScrubTests.SKILL, capture_output=True, text=True, check=True,
+            env={**os.environ, "PYTHONPATH": str(REPO / HarnessScrubTests.SKILL)})
+        return out.stdout.split()
+
+    def _block(self) -> str:
+        """The scrub as the script declares it, between its two marker lines."""
+        text = SCRIPT.read_text(encoding="utf-8")
+        start, end = text.index(self.BEGIN), text.index(self.END)
+        return text[start:end]
+
+    def test_a_meter_module_passes_through_the_runner_with_cursor_agent_set(self) -> None:
+        """AC1. The control runs the same module straight under unittest with the variable set:
+        it fails, so the pass through the runner is the scrub's doing."""
+        names = set(self._names())
+        env = {k: v for k, v in os.environ.items()
+               if k not in names and not k.startswith(("SDLC_TEST_", "PYTEST_"))}
+        env["CURSOR_AGENT"] = "1"
+        tests = REPO / self.SKILL / "tests"
+        module = Path(self.METER_MODULE).stem
+        bare = subprocess.run([sys.executable, "-m", "unittest", module], cwd=tests,
+                              env={**env, "PYTHONPATH": str(tests)}, capture_output=True,
+                              text=True, timeout=300, check=False)
+        self.assertNotEqual(0, bare.returncode,
+                            "the module passes with CURSOR_AGENT set, so it proves nothing")
+        via = subprocess.run(["bash", str(SCRIPT), self.SKILL, self.METER_MODULE], cwd=REPO,
+                             env=env, capture_output=True, text=True, timeout=300, check=False)
+        self.assertEqual(0, via.returncode, via.stdout + via.stderr)
+
+    def test_the_runner_clears_every_selection_variable_and_nothing_else(self) -> None:
+        """AC2. The scrub block, run with every name set beside `CLAUDECODE=1` and a variable
+        the fixtures own, leaves the child none of the names and the fixture's variable."""
+        names = self._names()
+        self.assertIn("CLAUDECODE", names, names)
+        env = {**os.environ, **{n: "1" for n in names}, "FIXTURE_OWNED_VARIABLE": "kept"}
+        proc = subprocess.run(
+            ["bash", "-c", f"skill={self.SKILL}\n{self._block()}\nexec /usr/bin/env"],
+            cwd=REPO, env=env, capture_output=True, text=True, check=True)
+        seen = {line.split("=", 1)[0] for line in proc.stdout.splitlines() if "=" in line}
+        self.assertEqual([], sorted(seen & set(names)), "a selection variable reached the child")
+        self.assertIn("FIXTURE_OWNED_VARIABLE", seen, "the scrub cleared a variable it does not own")
+
+    def test_the_runner_and_the_conftest_clear_the_same_names_from_one_helper(self) -> None:
+        """AC3. Both read `token_meters.selection_variables()`, and neither carries a name list
+        of its own: the conftest's reading equals the runner's, and the runner's block names no
+        harness variable."""
+        import importlib.util  # noqa: PLC0415
+        spec = importlib.util.spec_from_file_location("root_conftest", REPO / "conftest.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        names = self._names()
+        self.assertEqual(names, module.harness_variables())
+        self.assertIn("selection_variables()", self._block())
+        self.assertIn("selection_variables()",
+                      (REPO / "conftest.py").read_text(encoding="utf-8"))
+        for name in names:
+            self.assertNotIn(name, self._block(), f"the runner hand-writes {name}")
+
+    def test_a_scrub_that_cannot_read_the_helper_stops_the_run(self) -> None:
+        """A skill directory whose `token_meters` will not import is no empty list: the runner
+        refuses, naming it. A directory with no `lib/token_meters.py` has none to scrub."""
+        with tempfile.TemporaryDirectory() as d:
+            skill = Path(d)
+            (skill / "lib").mkdir()
+            (skill / "lib" / "token_meters.py").write_text("raise ImportError('broken')\n",
+                                                           encoding="utf-8")
+            run = subprocess.run(
+                ["bash", "-c", f"skill={skill}\n{self._block()}\necho reached"], cwd=REPO,
+                capture_output=True, text=True, check=False)
+            self.assertNotEqual(0, run.returncode)
+            self.assertNotIn("reached", run.stdout)
+            self.assertIn("token_meters", run.stderr)
+            (skill / "lib" / "token_meters.py").unlink()
+            ok = subprocess.run(
+                ["bash", "-c", f"skill={skill}\n{self._block()}\necho reached"], cwd=REPO,
+                capture_output=True, text=True, check=False)
+            self.assertEqual((0, "reached\n"), (ok.returncode, ok.stdout), ok.stderr)
 
 
 if __name__ == "__main__":

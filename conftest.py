@@ -28,6 +28,13 @@ OpenCode chose that harness for tests whose fixture is a Claude transcript, and 
 later is cleared without an edit here, and puts back what it cleared after the test. A test that
 sets one in `setUp` or its body keeps it; one set in `setUpClass` or `setUpModule` is cleared.
 
+The session also records no red detail (BG1731). CI's corpus-verify step exports
+`SDLC_VERIFY_RED_DETAIL`, the file `verify_ac` appends each red Done criterion's output to, in the
+environment that starts the tests too, so every fixture story a test verified wrote its red there:
+129 of one run's 131 blocks were fixtures', burying the two real ones, and each batched red's rerun
+spawned a test a second time. Every session, a worker included, unsets it in `pytest_configure`
+and `pytest_unconfigure` puts it back; a test that sets it for itself keeps it.
+
 The session also gets a private home (BG1249). A meter's step-3 probe looks for a harness's store
 under `HOME` and the XDG directories, so a session that kept the operator's opened the live
 `~/.codex`, `~/.copilot` and `~/.local/share/opencode` stores, and a reviewer's mutant that wrote
@@ -60,6 +67,7 @@ OWNER_VAR = "SDLC_TEST_TMPDIR"
 _owned = None   # (private dir, TMPDIR before, marker before, tempfile.tempdir before)
 _git_config_before = None   # the GIT_CONFIG_* variables this session set, as they were
 _home_before = None   # each variable `_move_home` set or unset, as it was
+_red_detail_before = None   # (RED_DETAIL_VAR as it was,) while this session has it unset
 _refused = None   # the `.gitconfig` the seed found already there; its directory is not removed
 
 #: Each variable the owning session points under the private directory, and where.
@@ -69,6 +77,8 @@ PRIVATE_HOME = {"HOME": "home", "XDG_DATA_HOME": "home/.local/share",
 #: The harness homes that name a store outright, wherever `HOME` is; the session unsets them.
 HARNESS_HOMES = ("CODEX_HOME", "COPILOT_HOME", "CLAUDE_CONFIG_DIR", "OPENCODE_DB")
 USER_BASE_VAR = "PYTHONUSERBASE"
+#: The file `verify_ac` appends each red criterion's output to; no session carries it.
+RED_DETAIL_VAR = "SDLC_VERIFY_RED_DETAIL"
 #: The private home's `.gitconfig`: an identity for a fixture commit that sets none.
 TEST_IDENTITY = "[user]\n\tname = sdlc-studio tests\n\temail = tests@sdlc-studio.invalid\n"
 
@@ -163,9 +173,17 @@ def _move_home(private):
     _seed_identity(Path(private, PRIVATE_HOME["HOME"], ".gitconfig"))
 
 
+def _unset_red_detail():
+    """Unset `RED_DETAIL_VAR` for the session, remembering what it held."""
+    global _red_detail_before
+    if RED_DETAIL_VAR in os.environ:
+        _red_detail_before = (os.environ.pop(RED_DETAIL_VAR),)
+
+
 def pytest_configure(config):
     global _owned
     _turn_git_maintenance_off()
+    _unset_red_detail()
     current = os.environ.get("TMPDIR")
     if current and os.environ.get(OWNER_VAR) == current:
         tempfile.tempdir = current      # tempfile may have cached another directory before this ran
@@ -178,7 +196,10 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
-    global _owned, _git_config_before, _home_before, _refused
+    global _owned, _git_config_before, _home_before, _refused, _red_detail_before
+    if _red_detail_before is not None:
+        os.environ[RED_DETAIL_VAR] = _red_detail_before[0]
+        _red_detail_before = None
     _restore(_git_config_before or {})
     _git_config_before = None
     _restore(_home_before or {})

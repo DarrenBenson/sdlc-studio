@@ -351,11 +351,20 @@ import tempfile
 _mkstemp, _unlink, _count = tempfile.mkstemp, os.unlink, itertools.count()
 
 
+WAIT_THEN_TOUCH = 'while kill -0 "$0" 2>/dev/null; do sleep 0.05; done; sleep 1; touch "$1"'
+
+
 def mkstemp(*args, **kwargs):
     if kwargs.get("prefix") == "mutation_run_":
         shared = os.environ["US0892_SHARED"]
-        subprocess.run(["touch", os.path.join(shared, f"mutation_run_sibling_{next(_count)}.log")],
-                       check=True)
+        path = os.path.join(shared, f"mutation_run_sibling_{next(_count)}.log")
+        if os.environ.get("US0892_LATE"):
+            # a sibling that starts late: it writes a second after this run has ended
+            subprocess.Popen(["sh", "-c", WAIT_THEN_TOUCH, str(os.getpid()), path],
+                             start_new_session=True, stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL)
+        else:
+            subprocess.run(["touch", path], check=True)
     return _mkstemp(*args, **kwargs)
 
 
@@ -467,27 +476,49 @@ class SchedulingTests(unittest.TestCase):
         self.assertEqual(1, got["count"], got)
         self.assertIn("unrecognized arguments: --no-such-option-us0892", got["detail"])
 
+    #: How long the leak check's test waits for its sibling's writes before judging them absent.
+    SIBLING_DEADLINE = 60.0
+
+    @staticmethod
+    def _siblings_written(shared: Path, count: int, deadline: float, clock=time.monotonic,
+                          sleep=time.sleep) -> list[Path]:
+        """The sibling's files in `shared`, waited for until `count` of them exist or `deadline`
+        seconds pass: the write is the event the test judges, and a sibling process on a loaded
+        host can write after the run it accompanied has ended."""
+        end = clock() + deadline
+        while True:
+            found = sorted(shared.glob("mutation_run_sibling_*"))
+            if len(found) >= count or clock() >= end:
+                return found
+            sleep(0.1)
+
+    def _leak_check(self, d: str, *, leak: bool, late: bool = False):
+        """Run the leak check beside the sibling plugin; return the process, its output, the
+        sibling files present when it ended and the shared directory."""
+        import importlib.util  # noqa: PLC0415
+        if importlib.util.find_spec("pytest") is None:
+            self.skipTest("pytest is not installed")
+        shared, plugins = Path(d) / "tmp", Path(d) / "plugins"
+        shared.mkdir()
+        _write(plugins, "us0892_sibling.py", SIBLING_PLUGIN)
+        extra = {**({"US0892_LEAK": "1"} if leak else {}), **({"US0892_LATE": "1"} if late else {})}
+        env = _pytest_env(TMPDIR=str(shared), US0892_SHARED=str(shared),
+                          PYTHONPATH=str(plugins), **extra)
+        proc = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+             "-p", "no:xdist", "-p", "us0892_sibling", str(REPO / LEAK_CHECK)],
+            cwd=d, capture_output=True, text=True, env=env, timeout=300)
+        return proc, proc.stdout + proc.stderr, len(list(shared.glob("mutation_run_sibling_*"))), shared
+
     def test_a_sibling_temp_file_cannot_redden_the_leak_check(self) -> None:
         """AC2. The leak check runs while a sibling process drops `mutation_run_*` files into the
         shared temp directory, and passes; the control makes the run leak its own sink, and the
         check still catches it. MUTANTS: count the shared temp directory again (the siblings
         redden it); count a private directory the sink never lands in (the control passes)."""
-        import importlib.util  # noqa: PLC0415
-        if importlib.util.find_spec("pytest") is None:
-            self.skipTest("pytest is not installed")
         for leak in (False, True):
             with self.subTest(leak=leak), tempfile.TemporaryDirectory() as d:
-                shared, plugins = Path(d) / "tmp", Path(d) / "plugins"
-                shared.mkdir()
-                _write(plugins, "us0892_sibling.py", SIBLING_PLUGIN)
-                env = _pytest_env(TMPDIR=str(shared), US0892_SHARED=str(shared),
-                                  PYTHONPATH=str(plugins), **({"US0892_LEAK": "1"} if leak else {}))
-                proc = subprocess.run(
-                    [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
-                     "-p", "no:xdist", "-p", "us0892_sibling", str(REPO / LEAK_CHECK)],
-                    cwd=d, capture_output=True, text=True, env=env, timeout=300)
-                out = proc.stdout + proc.stderr
-                siblings = list(shared.glob("mutation_run_sibling_*"))
+                proc, out, _, shared = self._leak_check(d, leak=leak)
+                siblings = self._siblings_written(shared, 5, self.SIBLING_DEADLINE)
                 self.assertEqual(5, len(siblings),
                                  f"the sibling never wrote, so a pass proves nothing:\n{out}")
                 if leak:
@@ -495,6 +526,39 @@ class SchedulingTests(unittest.TestCase):
                     self.assertIn("a failed run left its sink behind", out)
                 else:
                     self.assertEqual(0, proc.returncode, out)
+
+    def test_the_leak_check_waits_for_a_sibling_that_writes_late(self) -> None:
+        """BG1514 AC1. The sibling writes a second after the run has ended, as one does when the
+        module-alone lane has loaded every worker: when the run returns fewer than five files
+        exist, and the test waits for the rest and passes. MUTANT: judge the files at the moment
+        the run returns, which reads the late sibling as one that never wrote."""
+        with tempfile.TemporaryDirectory() as d:
+            proc, out, at_return, shared = self._leak_check(d, leak=False, late=True)
+            self.assertLess(at_return, 5, "the sibling was not late, so waiting is unproven")
+            self.assertEqual(0, proc.returncode, out)
+            self.assertEqual(5, len(self._siblings_written(shared, 5, self.SIBLING_DEADLINE)), out)
+
+    def test_the_wait_for_a_sibling_is_bounded(self) -> None:
+        """BG1514 AC1. Run on a clock the test owns: a sibling that never writes ends the wait
+        once the deadline has passed, with what exists, and the wait stops at once when the count
+        is reached. MUTANTS: no deadline (the loop never ends); return before the deadline; ignore
+        the count (the wait runs to the deadline though the files are there)."""
+        now = [0.0]
+
+        def sleep(seconds: float) -> None:
+            now[0] += seconds
+            self.assertLess(now[0], 100, "the wait has no deadline")
+
+        with tempfile.TemporaryDirectory() as d:
+            shared = Path(d)
+            self.assertEqual([], self._siblings_written(shared, 5, 30, lambda: now[0], sleep))
+            self.assertGreaterEqual(now[0], 30, "the wait ended before its deadline")
+            self.assertLess(now[0], 31)
+            for i in range(5):
+                (shared / f"mutation_run_sibling_{i}.log").write_text("")
+            now[0] = 0.0
+            self.assertEqual(5, len(self._siblings_written(shared, 5, 30, lambda: now[0], sleep)))
+            self.assertEqual(0.0, now[0], "the wait slept though the files were there")
 
 
 #: Four tests, each recording that it ran: two the commit leaves to the push, in each phase.

@@ -75,6 +75,24 @@ export "GIT_CONFIG_KEY_$git_cfg_n=maintenance.auto" "GIT_CONFIG_VALUE_$git_cfg_n
 skill="${1:-.claude/skills/sdlc-studio/scripts}"
 shift 2>/dev/null || true
 
+# --- harness scrub: begin
+# The agent harness the caller runs in is not the tests' (BG1310). The token meter chooses the store
+# it reads from the variables that name or signal a harness, so a shell run inside Cursor
+# made the Cursor meter read a Claude transcript fixture, and the meter modules passed under pytest
+# and failed here. The names are read from the helper the root conftest.py clears them by,
+# `token_meters.selection_variables()`, so a harness added to the meter is cleared by both runners;
+# no list is written here. A skill directory with no `lib/token_meters.py` has none to clear, and
+# one whose helper cannot be read stops the run rather than clearing nothing.
+if [ -f "$skill/lib/token_meters.py" ]; then
+  harness_names="$(PYTHONPATH="$skill" python3 -c \
+    'from lib import token_meters; print("\n".join(token_meters.selection_variables()))')" \
+    || { echo "skill-tests: cannot read the harness variables from $skill/lib/token_meters.py" >&2; exit 1; }
+  while IFS= read -r harness_name; do
+    [ -n "$harness_name" ] && unset -v "$harness_name"
+  done <<< "$harness_names"
+fi
+# --- harness scrub: end
+
 # Optional SELECTION: the test module paths the pre-commit gate resolved from the changed
 # surface. Absent means run everything, because a missing list is an unanswered question and
 # never an answer of "nothing to run" - the same contract `changed_paths` keeps.

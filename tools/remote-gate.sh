@@ -356,7 +356,7 @@ cmd_remote() {
   # never shares or removes the first one's tree.
   run_dir="$base/runs/$run"
   mkdir "$run_dir" || die "run $run already has a directory on $here"
-  wt="$run_dir/tree" gate_pid="" lock_pid="" watch_pid=""
+  wt="$run_dir/tree" gate_pid="" lock_pid="" watch_pid="" tee_pid=""
   cleanup() {
     [ -n "$watch_pid" ] && kill "$watch_pid" 2>/dev/null
     [ -n "$lock_pid" ] && kill "$lock_pid" 2>/dev/null
@@ -428,20 +428,25 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   cd "$wt" || die "cannot enter $wt"
   # What runs: the boundary gate, with --suite the commit's own run-suite.sh (US1078), or with
   # --release the commit's own release gate (US1114), its output all on the pusher's stderr.
-  local what="the $boundary boundary gate" job_log="at $state/boundary-suite-last.log"
+  # A boundary run's whole output is kept in $state/boundary-last.log, outside the run's directory
+  # that the cleanup removes, and truncated only by the next boundary run for this clone (BG1514).
+  # The log the gate writes itself, boundary-suite-last.log, is the full suite's alone, so a lane
+  # that is not the suite left a refusal naming a file nobody wrote.
+  local keep_log="$state/boundary-last.log"
+  local what="the $boundary boundary gate" job_log="at $keep_log"
   local doing="judging $commit at --boundary $boundary"
   local -a job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary")
   if [ -n "$suite" ]; then
-    what="the $suite suite" job_log="under $state/suite-logs, named above"
+    what="the $suite suite" job_log="under $state/suite-logs, named above" keep_log=""
     doing="running the $suite suite on $commit"
     job=(bash tools/run-suite.sh "$suite")
     export SDLC_GATE_LOCAL=1          # the suite runs HERE: never sent on to a host of its own
   elif [ -n "$release" ]; then
-    what="the release gate" job_log="" doing="judging $commit with gate.py --release"
+    what="the release gate" job_log="" keep_log="" doing="judging $commit with gate.py --release"
     job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --release)
   # With --test, a commit's selection: the named modules alone, as the commit hook runs them.
   elif [ "${#tests[@]}" -gt 0 ]; then
-    what="the selected test modules" job_log=""
+    what="the selected test modules" job_log="" keep_log=""
     doing="running ${#tests[@]} selected test module(s) on $commit"
     job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --root . --run-tests "${tests[@]}")
     export SDLC_GATE_LOCAL=1          # the selection runs HERE: never sent on to a host of its own
@@ -485,14 +490,34 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
     export SDLC_STUDIO_BOUNDARY_SUITE=1
   fi
   local t0=$SECONDS rc
-  setsid python3 -c 'import os, signal, sys
+  local launcher='import os, signal, sys
 for sig in (signal.SIGINT, signal.SIGQUIT, signal.SIGPIPE, signal.SIGXFSZ):
     signal.signal(sig, signal.SIG_DFL)
-os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
+os.execvp(sys.argv[1], sys.argv[1:])'
+  if [ -n "$keep_log" ]; then
+    # The output goes through a named pipe to a tee that copies it to the kept log, so the pusher
+    # still sees it as it is written and the log is whole whatever the gate prints.
+    local out_fifo="$run_dir/gate-output"
+    mkfifo "$out_fifo" || die "cannot make $out_fifo on $here"
+    tee -- "$keep_log" < "$out_fifo" &
+    tee_pid=$!
+    setsid python3 -c "$launcher" "${job[@]}" > "$out_fifo" 2>&1 &
+  else
+    setsid python3 -c "$launcher" "${job[@]}" &
+  fi
   gate_pid=$!
   wait "$gate_pid"
   rc=$?
   gate_pid=""
+  if [ -n "$tee_pid" ]; then
+    # The tee ends when the last writer closes the pipe; a process the gate orphaned may hold it
+    # open, so the wait is bounded.
+    local waited
+    for waited in $(seq 50); do kill -0 "$tee_pid" 2>/dev/null || break; sleep 0.1; done
+    kill "$tee_pid" 2>/dev/null
+    wait "$tee_pid" 2>/dev/null
+    tee_pid=""
+  fi
   echo "remote gate: exit $rc after $((SECONDS - t0))s"
   [ "$rc" -ne 0 ] && [ -n "$job_log" ] && echo "remote gate: the full log is on $here $job_log"
   # A suite run, a selection or a release gate is green or red and nothing else: its own exit 4
