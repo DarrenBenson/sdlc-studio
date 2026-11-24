@@ -26,11 +26,11 @@ Have the test match the row by its install target or a label set, then relabel t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given the README install table with its Copilot row labelled `GitHub Copilot`, when `test_install_copilot_global` and `test_readme_front_door` run, then both pass, matching the row by label set (`Copilot` or `GitHub Copilot`) or by its `copilot` target. Fails on: the install test's `^\|\s*Copilot\s*\|` regex and `TABLE_ROWS` failing on the label alone (reproduced by reading both pins at HEAD).
+- [ ] **AC1** Control, passes today and must stay green: given the README Copilot row relabelled `GitHub Copilot`, when `test_install_copilot_global` and `test_readme_front_door` run, then both still pass, matching the row by label set (`Copilot` or `GitHub Copilot`) or by its `copilot` target. Fails on: a relabel that leaves either existing pin matching only the short label (no failure today, as README line 95 still reads Copilot).
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_docs_do_not_call_copilot_repo_scoped
-- [ ] **AC2** Given README.md, when its install table is read, then the Copilot row's first cell is `GitHub Copilot`, the name docs/harnesses.md uses. Fails on: the row reading `| Copilot |` (README.md line 95).
-  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_harness_table_is_alphabetical_with_a_verification_command
-- [ ] **AC3** Given a report whose Cost model figure reads `NOT MEASURED`, when the evidence page row is built, then the models cell does not name `NOT MEASURED` as a model. Fails on: a mutant dropping `NOT_MEASURED` from `_NO_MODEL` (sprint_report.py line 6821) surviving every test.
+- [ ] **AC2** Given README.md, when its install table is read, then the Copilot row's first cell is `GitHub Copilot`, the name docs/harnesses.md uses. Fails on: the row's first cell reading Copilot today (README line 95). The test is new.
+  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_copilot_row_is_labelled_github_copilot
+- [ ] **AC3** Pin on behaviour that is already correct, so it cannot fail before the fix: given a report whose Cost model figure reads `NOT MEASURED`, when the evidence page row is built, then the models cell names no model. Fails on: a mutant dropping `NOT_MEASURED` from `_NO_MODEL` (sprint_report.py line 6821), which no test kills today; the test is new.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_a_not_measured_model_figure_names_no_model
 
 ## Revision History
@@ -39,3 +39,4 @@ Have the test match the row by its install target or a label set, then relabel t
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at HEAD (README line 95 reads Copilot, pinned by the install test regex and TABLE_ROWS); sprint_report.py added to Affects for the NOT MEASURED mutant; the front-door test's looser checks the Summary lists are left to a separate filing, not this unit's criteria |
+| 2026-11-24 | Sam Eriksson (qa) | Re-groomed on goal review: both old Verify tests passed today, so AC2 now names a new test failing on the short label, AC1 is stated as a control that stays green, and AC3 as a pin on behaviour already correct; Points stay 2 (README, one new test, one new test, relabel of two pins) |
