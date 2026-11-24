@@ -163,9 +163,9 @@ def _landed_since(brief: Path, started_at) -> bool:
 def _approved(root: Path, unit: str, brief: Path) -> bool | None:
     """Whether the latest live verdict against this brief's fingerprint is an APPROVE; None
     when no verdict is recorded against it. The fingerprint leaves out the reviewer line a
-    repair's brief opens with (`lanes.saved_brief_fingerprint`)."""
+    repair's brief opens with (`critic.saved_brief_fingerprint`)."""
     import critic  # noqa: PLC0415 - sibling script that owns the verdict ledger
-    fp = lanes.saved_brief_fingerprint(brief.read_text(encoding="utf-8", errors="replace"))
+    fp = critic.saved_brief_fingerprint(brief.read_text(encoding="utf-8", errors="replace"))
     rows = [r for r in critic.unit_review_rounds(root, unit) if r.get("brief") == fp]
     if not rows:
         return None

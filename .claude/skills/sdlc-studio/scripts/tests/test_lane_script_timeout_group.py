@@ -1,8 +1,9 @@
-"""BG1677: lane land's bound on a sibling script stops what the script started.
+"""BG1677: lane accept's bound on a sibling script stops what the script started.
 
-`lanes._script` runs `critic.py record`, `verify_ac.py run`, `transition.py set` and the other
-sibling scripts under a bound. `subprocess.run` killed only the script at that bound, so a child it
-had started (the tests `verify_ac.py run` runs, say) ran on after the land said it was stopped.
+`lanes._script`, which `sprint lane accept` runs, runs `critic.py record`, `verify_ac.py run`,
+`transition.py set` and `sprint.py lane return` under a bound. `subprocess.run` killed only the
+script at that bound, so a child it had started (the tests `verify_ac.py run` runs, say) ran on
+after the accept said it was stopped.
 Each case points `lanes.SCRIPTS` at a throwaway directory holding a stub script that starts a
 long-lived child, so the bound, the group kill and the captured output are read on a script the
 case wrote.

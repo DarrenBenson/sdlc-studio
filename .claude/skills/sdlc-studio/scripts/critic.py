@@ -170,6 +170,21 @@ def brief_fingerprint(brief_text: str) -> str:
     return hashlib.sha256(normalised.encode("utf-8")).hexdigest()[:12]
 
 
+#: What a repair's saved QA brief opens with (`sprint lane land` writes it): the reviewer whose
+#: REJECT the repair answers, then a blank line. `record` refuses a round-two verdict from any
+#: other reviewer. It is no part of the brief a seat was given, so no fingerprint covers it.
+REVIEWER_LINE = "RESUME REVIEWER: "
+_REVIEWER_LINE_RE = re.compile(r"\A" + re.escape(REVIEWER_LINE) + r"[^\n]*\n\n")
+
+
+def saved_brief_fingerprint(text: str) -> str:
+    """`brief_fingerprint` of a saved QA brief as the brief was printed: without the reviewer
+    line a repair's landing put at its head. The one function `record --brief-file`,
+    `lanes._brief_of` and `resume_brief._approved` hash a saved brief through, so each files and
+    reads a verdict against the same value."""
+    return brief_fingerprint(_REVIEWER_LINE_RE.sub("", text, count=1))
+
+
 #: The section `critic.py brief` prints after the return contract, naming the file the reviewer
 #: writes its block to. Its last three lines are the path and the two header lines the file
 #: opens with; the strip below matches from the mark through the BRIEF line. The mark is not
@@ -6060,7 +6075,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         # whole file recorded a value no footer printed. A first-round brief is hashed whole,
         # as its footer is.
         brief = (rejoinder_fingerprint(saved) if _REJOINDER_MARK in saved
-                 else brief_fingerprint(saved))
+                 else saved_brief_fingerprint(saved))
     # The origin axis asks what THIS UNIT'S DIFF did - regression, new, or already true of the
     # tree, decided against the base ref.
     if unclassified := unclassified_findings(args.issues):

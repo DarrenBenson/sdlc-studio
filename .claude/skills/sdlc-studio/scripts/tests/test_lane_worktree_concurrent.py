@@ -153,6 +153,29 @@ class LaneWorktreeConcurrentTests(unittest.TestCase):
         self.assertIn("was still held after", str(caught.exception))
         self.assertFalse((self.root / lanes.RUN_WORKTREES / "lane-us0101").exists())
 
+    def test_a_linked_worktree_root_locks_in_the_main_checkouts_common_dir(self) -> None:
+        """From a linked worktree the git dir is `.git/worktrees/<name>` and the root's `.git`
+        is a file; the lock is still the one file in the common dir, so lanes started from the
+        main checkout and from a linked one exclude each other. Mutants: `--git-dir` for
+        `--git-common-dir`; the root's own `.git`."""
+        linked = Path(self._tmp.name) / "linked"
+        gitutil.git(["worktree", "add", "-q", "-b", "linked-root", str(linked)], self.root)
+        made = lanes._lane_worktree(linked.resolve(), "US0101")
+        self.assertTrue(made.is_dir())
+        self.assertTrue(self.lock.is_file(), "the lock is not in the main checkout's common dir")
+        stray = [p for p in (self.root / ".git" / "worktrees").rglob(lanes.WORKTREE_LOCK)]
+        self.assertEqual([], stray, "a lock was made in the linked worktree's own git dir")
+        self.assertTrue((linked / ".git").is_file())
+        # a lane started from the linked root waits on the lock another process holds there
+        holder = subprocess.Popen(
+            [sys.executable, "-c", HOLDER.format(hold=1.0), str(self.lock)],
+            stdout=subprocess.PIPE, text=True)
+        self.addCleanup(holder.kill)
+        self.assertEqual("held", holder.stdout.readline().strip())
+        began = time.monotonic()
+        lanes._lane_worktree(linked.resolve(), "US0102")
+        self.assertGreaterEqual(time.monotonic() - began, 0.5)
+
     def test_a_lock_file_that_cannot_be_opened_refuses_the_add(self) -> None:
         self.lock.mkdir()
         with self.assertRaises(lanes.LandError) as caught:

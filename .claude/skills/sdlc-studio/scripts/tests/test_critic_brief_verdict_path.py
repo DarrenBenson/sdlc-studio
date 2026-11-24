@@ -151,6 +151,31 @@ class BriefVerdictPathTests(unittest.TestCase):
                 self.assertEqual(fp, critic.read_verdicts(root)[-1]["brief"], rec.stderr)
                 self.assertNotIn("changed since", rec.stderr)
 
+    def test_a_saved_repair_brief_is_recorded_and_read_against_the_printed_fingerprint(self) -> None:
+        """A repair's saved brief opens with the reviewer line the landing wrote. Recording with
+        `--brief-file` on it, and the resume brief's reading of it, both use the fingerprint the
+        brief printed. Mutant: `--brief-file` hashing the file whole (the row carries a value no
+        brief printed and the lane reads as rejected). Control: the plain saved brief."""
+        from lib import resume_brief  # noqa: PLC0415 - only this case reads a lane's state
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as elsewhere:
+            root, cwd = Path(d), Path(elsewhere)
+            _project(root)
+            printed = _brief(cwd, root)
+            fp = _fingerprint(printed.stderr)
+            for name, text in (("plain", printed.stdout),
+                               ("repair", f"{critic.REVIEWER_LINE}qa-seat - resume them\n\n"
+                                          + printed.stdout)):
+                with self.subTest(name):
+                    saved = cwd / f"{name}.txt"
+                    saved.write_text(text, encoding="utf-8")
+                    _record(cwd, root, ["record", "--unit", UNIT, "--verdict", "REJECT",
+                                        "--issues", "[new] a finding (src/widget.py:2)",
+                                        "--brief-file", str(saved), "--tier",
+                                        critic.tier_for(root, UNIT)])
+                    self.assertEqual(fp, critic.read_verdicts(root)[-1]["brief"])
+                    self.assertIs(False, resume_brief._approved(root, UNIT, saved))
+            self.assertEqual(fp, critic.saved_brief_fingerprint(printed.stdout))
+
     def test_a_rejoinder_never_names_an_earlier_rounds_file(self) -> None:
         """AC3. Mutant: a path derived from the unit and seat alone, so the second reviewer
         overwrites the first one's file in place."""

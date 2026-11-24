@@ -302,7 +302,7 @@ class RepairBriefApprovalTests(unittest.TestCase):
 
 def lanes_line() -> str:
     """The line a repair's landing puts at the head of its brief."""
-    return f"{resume_brief.lanes.REVIEWER_LINE}qa-seat - resume them"
+    return f"{critic.REVIEWER_LINE}qa-seat - resume them"
 
 
 def _row(text: str, uid: str) -> str:

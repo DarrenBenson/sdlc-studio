@@ -479,10 +479,12 @@ class LaneRunTests(_LaneCase):
             rc, out = self._run("codex", "--worktree", str(wt))
         self.assertEqual(0, rc, out)
         self.assertEqual(["src/lane notes.py", "src/plain.py"], sorted(self._record()["staged"]))
+        self.assertIn("staged: src/lane notes.py, src/plain.py", out)
         quiet = self._worktree("wt-none")
         rc, out = self._run("codex", "--worktree", str(quiet))
         self.assertEqual(0, rc, out)
         self.assertEqual([], self._record()["staged"])
+        self.assertIn("staged: nothing", out)
 
     # -- AC3 --------------------------------------------------------------------------------
     def test_a_failed_or_silent_cli_leaves_the_lane_unmetered(self) -> None:

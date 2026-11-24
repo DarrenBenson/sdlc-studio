@@ -104,8 +104,8 @@ class LaneLandReplayTests(base._LaneFixture):
         self.assertIn(base.BRANCH, self._branches())
         self.assertEqual([], base.critic.read_self_checks(self.root))
 
-    """BG1695: a conflicting path is read from a NUL-separated listing, so one holding a space is
-    named once, as git names it, by both refusals."""
+    # BG1695: a conflicting path is read from a NUL-separated listing, so one holding a space is
+    # named once, as git names it, by both refusals.
 
     def _moved_main(self, rel: str) -> str:
         """Main moves `rel` after the lane branched; its head."""

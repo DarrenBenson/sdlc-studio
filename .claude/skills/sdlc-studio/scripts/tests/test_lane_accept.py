@@ -23,6 +23,7 @@ import io
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -500,13 +501,34 @@ class LaneAcceptTests(unittest.TestCase):
                 return subprocess.CompletedProcess([script, *args], 1, "", "refused: stubbed\n")
             return real(root, script, *args, **kw)
 
-        rc, out, err = self._accept(GREEN, APPROVE, stub=refusing)
+        run_state.open_run(self.root, batch=[GREEN])
+        flags = ["--tokens", "1200", "--minutes", "3", "--proof", "unit=pinned"]
+        rc, out, err = self._accept(GREEN, APPROVE, *flags, stub=refusing)
         self.assertEqual(rc, 1, out + err)
         self.assertEqual(_status(self.root, GREEN), "Review")
         self.assertIn("refused: stubbed", err)
-        self.assertIn(f"`transition.py set --id {GREEN} --status Done`, then "
-                      f"`sprint.py lane return --units {GREEN}`", err)
+        hinted = re.search(r"then `sprint\.py (lane return [^`]*)` to clear its lane", err)
+        self.assertIsNotNone(hinted, err)
+        self.assertIn(f"`transition.py set --id {GREEN} --status Done`, then `sprint.py lane return"
+                      f" --units {GREEN}", err)
+        # the hinted command is the return the accept would have run, flags and all
+        self.assertEqual(shlex.split(hinted.group(1)),
+                         ["lane", "return", "--units", GREEN, "--claimed",
+                          "Done on an independent APPROVE (round 1)", "--timeout", "300",
+                          "--tokens", "1200", "--minutes", "3.0", "--proof", "unit=pinned"])
         self.assertNotIn("sprint.py lane", self._scripts()[-1])
+        # followed by hand after the hand transition, it records the builder's price
+        path = next((self.root / "sdlc-studio").glob(f"*/{GREEN}-lane.md"))
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            "> **Status:** Review", "> **Status:** Done"), encoding="utf-8")
+        out2, err2 = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out2), contextlib.redirect_stderr(err2):
+            rc = sprint.main([*shlex.split(hinted.group(1)), "--root", str(self.root)])
+        self.assertEqual(rc, 0, out2.getvalue() + err2.getvalue())
+        rows = [r for r in run_state.read(self.root).get(run_state.DELEGATED) or []
+                if r.get("unit") == GREEN]
+        self.assertEqual([1200], [r.get("tokens") for r in rows])
+        # control: an allowed move prints no such advice
         rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder")
         self.assertEqual(rc, 0, out + err)
         self.assertNotIn("then `sprint.py lane return --units", err)

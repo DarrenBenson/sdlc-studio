@@ -108,6 +108,7 @@ import contextlib
 import json
 import os
 import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -523,17 +524,11 @@ def report_hand_in_name(unit: str) -> str:
     return f"{sdlc_md.norm_id(unit)}-mutation-edits.json"
 
 
-#: What a repair's saved QA brief opens with: the reviewer whose REJECT the repair answers, then a
-#: blank line. `critic.py record` refuses a round-two verdict from any other reviewer.
-REVIEWER_LINE = "RESUME REVIEWER: "
-_REVIEWER_LINE_RE = re.compile(r"\A" + re.escape(REVIEWER_LINE) + r"[^\n]*\n\n")
-
-
 def saved_brief_fingerprint(text: str) -> str:
-    """The fingerprint of a saved QA brief as `critic.py brief` noted it: `critic.brief_fingerprint`
-    of the text without the reviewer line a repair's landing put at its head."""
+    """The fingerprint of a saved QA brief as `critic.py brief` noted it, hashed by
+    `critic.saved_brief_fingerprint` as `critic.py record --brief-file` hashes it."""
     import critic  # noqa: PLC0415 - sibling; only a brief reader needs it
-    return critic.brief_fingerprint(_REVIEWER_LINE_RE.sub("", text, count=1))
+    return critic.saved_brief_fingerprint(text)
 
 
 def _reviewer_line(root_top: Path, unit: str) -> str | None:
@@ -549,9 +544,9 @@ def _reviewer_line(root_top: Path, unit: str) -> str | None:
     who = str(row.get("reviewer") or "").strip()
     if not who:
         return None
-    return (f"{REVIEWER_LINE}{who} - this repair answers {who}'s REJECT: resume {who} for round "
-            f"two rather than spawning a new reviewer, since a round-two verdict from any other "
-            f"reviewer is refused at record")
+    return (f"{critic.REVIEWER_LINE}{who} - this repair answers {who}'s REJECT: resume {who} "
+            f"for round two rather than spawning a new reviewer, since a round-two verdict from "
+            f"any other reviewer is refused at record")
 
 
 def _building_seat(root_top: Path, unit: str) -> str | None:
@@ -632,9 +627,10 @@ LAND_RECORD = "{name}.land.json"
 #: the one message a landing of several worktrees commits with, kept with the first's hand-in
 LANDING_MSG = "landing-msg.txt"
 _SUBJECT = re.compile(r"^(?P<head>[\w-]+)\((?P<scope>[^)]*)\)(?P<rest>!?: .*)$")
-#: the trailers a landing's commit message gathers into its one trailer block: a last paragraph of
-#: any other `Key: value` lines is body text, as `Note: keep this` is
-_TRAILER = re.compile(r"^(?:Refs|Mentions): \S", re.I)
+#: the trailers a landing's commit message gathers into its one trailer block: the ids it names
+#: and the attribution lines a commit ends with. A last paragraph holding any other `Key: value`
+#: line is body text, as `Note: keep this` is.
+_TRAILER = re.compile(r"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \S", re.I)
 #: the steps that work in a worktree, so a resume of any of them needs it in place
 _IN_WORKTREE = ("commit", "rebase", "fast-forward")
 
@@ -716,8 +712,8 @@ def _combined_message(lanes_: list[_Lane]) -> str:
     subject, its scope naming every landed unit it did not; each message's body in the order the
     worktrees were named, the later ones led by their own subject; then the trailers they carry,
     once each, and a `Refs:` trailer for each landed unit that none of them refs. A message's last
-    paragraph is its trailers only when every line is a `Refs:` or `Mentions:` line; any other
-    last paragraph stays in its body."""
+    paragraph is its trailers only when every line is a `Refs:`, `Mentions:`, `Co-Authored-By:`,
+    `Claude-Session:` or `Signed-off-by:` line; any other last paragraph stays in its body."""
     subject, body, trailers = "", [], []
     for n, lane in enumerate(lanes_):
         paras = _paragraphs((lane.keep / COMMIT_MSG).read_text(encoding="utf-8"))
@@ -1202,7 +1198,15 @@ def _resume(root: Path, worktrees: list[Path], units: list[str], author: str | N
         raise LandError(f"{none}: no land record at {where.relative_to(root_top)}", 2)
     if all(step in record["completed"] for step in LAND_STEPS):
         raise LandError(f"{none}: its landing completed, at {record.get('commit')}", 2)
-    if record.get("worktrees") != names or sorted(record.get("units") or []) != sorted(units):
+    # a record written before `land` spelled each unit as its artefact does keeps the spelling it
+    # was given; it is read as the artefact's, so what the resume writes is named for it
+    record["units"] = [sdlc_md.display_id(root_top, u) for u in record.get("units") or []]
+    record["owners"] = {sdlc_md.display_id(root_top, u): owner
+                        for u, owner in (record.get("owners") or {}).items()}
+    record["briefed"] = [sdlc_md.display_id(root_top, u) for u in record.get("briefed") or []]
+    if record.get("worktrees") != names or \
+            sorted(sdlc_md.norm_id(u) for u in record["units"]) != \
+            sorted(sdlc_md.norm_id(u) for u in units):
         raise LandError(f"the landing stopped at {where.relative_to(root_top)} was of "
                         f"{', '.join(record.get('worktrees') or [])} for "
                         f"{', '.join(record.get('units') or [])}: resume it as it was begun", 2)
@@ -1393,6 +1397,15 @@ def _blocking(verdict_text: str) -> list[str]:
             if re.match(r"\s*BLOCKING\s*:", item, re.I)]
 
 
+def _return_argv(unit: str, target: str, rnd: str, timeout: int,
+                 passthrough: list[str]) -> list[str]:
+    """The `sprint.py` argv of the `lane return` an APPROVE's `lane accept` finishes with, the
+    flags it was given included; the refusal of the move names the same one."""
+    return ["lane", "return", "--units", unit, "--claimed",
+            f"{target} on an independent APPROVE (round {rnd})", "--timeout", str(timeout),
+            *passthrough]
+
+
 def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | None,
             terminal: dict[str, str], timeout: int, passthrough: list[str]) -> int:
     import critic  # noqa: PLC0415 - sibling; only accept needs it
@@ -1465,16 +1478,15 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
         return 1
     moved = _script(root, "transition.py", "set", "--id", unit, "--status", target)
     if moved.returncode:
+        finish = _return_argv(unit, target, rnd, timeout, passthrough)
         _say(f"{unit}: NOT moved to {target}: `transition.py set` exited {moved.returncode}:"
              f"\n{_tail(moved.stderr + moved.stdout)}\nThe verdict is recorded and the criteria "
              f"are green: once the move is possible, run `transition.py set --id {unit} --status "
-             f"{target}`, then `sprint.py lane return --units {unit}` to clear its lane",
-             err=True)
+             f"{target}`, then `sprint.py {shlex.join(finish)}` to clear its lane, as this "
+             f"command would have", err=True)
         return 1
     _say(f"{unit}: moved to {target}")
-    back = _script(root, "sprint.py", "lane", "return", "--units", unit, "--claimed",
-                   f"{target} on an independent APPROVE (round {rnd})", "--timeout",
-                   str(timeout), *passthrough)
+    back = _script(root, "sprint.py", *_return_argv(unit, target, rnd, timeout, passthrough))
     if back.stdout.strip():
         _say(back.stdout.rstrip())
     if back.stderr.strip():

@@ -744,6 +744,62 @@ class LaneLandTests(_LaneFixture):
         record = next((self.root / LANE / "landed").glob("*.land.json"))
         self.assertEqual([A], json.loads(record.read_text(encoding="utf-8"))["units"])
 
+    def _resumed_from_an_old_spelling(self, spelling: str, unit: str = A,
+                                      briefed: bool = False) -> subprocess.CompletedProcess:
+        """A landing the hook refused, its record rewritten to spell the unit as the base wrote
+        it (`us0101`, or `unit` lower-cased), then resumed under `spelling` with the hook
+        cleared. With `briefed`, the record also says the unit was briefed, and a brief it
+        wrote is in place."""
+        self._stage("src/a.py", "A = 2\n")
+        self._stage("src/refuse.py", "X = 1\n")
+        self._hand_in(units=(unit,))
+        r = self._land(unit)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        path = self.root / lanes.LANDED / lanes.LAND_RECORD.format(name=self.wt.name)
+        record = json.loads(path.read_text(encoding="utf-8"))
+        old = unit.lower()
+        record["units"] = [old]
+        record["owners"] = {old: self.wt.name}
+        record["briefed"] = [old] if briefed else []
+        if briefed:
+            _write(self.root, f"{lanes.BRIEFS}/{unit}-qa.txt", "the brief it wrote\n")
+        path.write_text(json.dumps(record), encoding="utf-8")
+        (self.root.parent / "hooks" / "pre-commit").write_text(
+            f'#!/bin/sh\ngit rev-parse --show-toplevel >> "{self.log}"\nexit 0\n', encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "land", "--resume", "--worktree",
+             str(self.wt), "--units", spelling, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+
+    def test_a_landing_recorded_under_another_spelling_resumes_by_either(self) -> None:
+        """BG1296: `--resume` compares units by `sdlc_md.norm_id`, so a record written before
+        `land` normalised `--units` is taken up by either spelling, and its brief is named for
+        the artefact's spelling. Control: a record for another unit is still refused."""
+        for spelling in (A.lower(), A):
+            with self.subTest(spelling=spelling):
+                self.tearDown()
+                self.setUp()
+                r = self._resumed_from_an_old_spelling(spelling)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                names = sorted(p.name for p in (self.root / lanes.BRIEFS).iterdir())
+                self.assertEqual([f"{A}-qa.txt"], names)
+                self.assertEqual([A], [row["unit"] for row in critic.read_self_checks(self.root)])
+        self.tearDown()
+        self.setUp()
+        r = self._resumed_from_an_old_spelling(B)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("resume it as it was begun", r.stderr)
+
+    def test_a_resume_keeps_the_brief_a_record_spelt_otherwise_says_was_written(self) -> None:
+        """BG1296: the record's `briefed` list is read in the artefact's spelling, so a unit it
+        names as briefed under the base's spelling is not briefed again."""
+        r = self._resumed_from_an_old_spelling(A, briefed=True)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("the brief it wrote\n",
+                         (self.root / lanes.BRIEFS / f"{A}-qa.txt").read_text(encoding="utf-8"))
+        self.assertTrue(all(p.name.startswith(A) for p in (self.root / lanes.BRIEFS).iterdir()))
+
     def test_an_unknown_unit_id_is_kept_as_given(self) -> None:
         """A unit no artefact carries keeps the spelling it was given: the canonical form is read
         from the artefact, never guessed."""
@@ -780,6 +836,32 @@ class LaneLandTests(_LaneFixture):
                           f"Refs: {B}"], trailers.splitlines())
         self.assertNotIn("Refs:", body)
         self.assertNotIn("Mentions:", body.lower())
+
+    def test_attribution_trailers_reach_the_trailer_block_once_each(self) -> None:
+        """BG1616: the `Co-Authored-By:` and `Claude-Session:` lines each message ends with are
+        gathered once into the closing block, where `git interpret-trailers` reads them."""
+        end = "\n\nCo-Authored-By: Someone <s@example.invalid>\nClaude-Session: https://x/1\n"
+        joined = self._joined(f"feat({A}): a\n\nBody of a.{end}",
+                              f"feat({B}): b\n\nBody of b.{end}Signed-off-by: T <t@t.invalid>\n")
+        self.assertEqual(1, joined.count("Co-Authored-By:"))
+        self.assertEqual(1, joined.count("Claude-Session:"))
+        body, _, trailers = joined.strip().rpartition("\n\n")
+        self.assertNotIn("Co-Authored-By", body)
+        self.assertNotIn("Signed-off-by", body)
+        run = subprocess.run(["git", "interpret-trailers", "--parse"], input=joined, text=True,
+                             capture_output=True, env=self._env(), check=True)
+        self.assertEqual(["Co-Authored-By: Someone <s@example.invalid>",
+                          "Claude-Session: https://x/1", "Signed-off-by: T <t@t.invalid>",
+                          f"Refs: {A}", f"Refs: {B}"], run.stdout.splitlines())
+
+    def test_a_last_paragraph_mixing_a_note_and_a_trailer_stays_in_the_body(self) -> None:
+        """BG1616: the every-line rule. One known trailer line does not make `Note: keep this`
+        above it a trailer."""
+        joined = self._joined(f"feat({A}): a\n\nBody.\n\nNote: keep this\nRefs: {A}\n",
+                              f"feat({B}): b\n\nBody of b.\n")
+        body, _, trailers = joined.strip().rpartition("\n\n")
+        self.assertIn(f"Note: keep this\nRefs: {A}", body)
+        self.assertEqual(f"Refs: {A}\nRefs: {B}", trailers)
 
     def test_naming_a_worktree_with_commits_ahead_first_lands_it(self) -> None:
         """BG1616: the refusal of a later worktree holding commits ahead of main advises naming
@@ -893,12 +975,12 @@ class LaneLandTests(_LaneFixture):
         else: the same words further in are the brief's own, and a line with no blank line after
         it is not the landing's."""
         body = "You are the qa review seat.\n\nreview the diff\n"
-        line = f"{lanes.REVIEWER_LINE}someone - resume them\n\n"
+        line = f"{critic.REVIEWER_LINE}someone - resume them\n\n"
         self.assertEqual(critic.brief_fingerprint(body), lanes.saved_brief_fingerprint(line + body))
         self.assertEqual(critic.brief_fingerprint(body), lanes.saved_brief_fingerprint(body))
         inside = body + line
         self.assertEqual(critic.brief_fingerprint(inside), lanes.saved_brief_fingerprint(inside))
-        run_on = f"{lanes.REVIEWER_LINE}someone - resume them\n{body}"
+        run_on = f"{critic.REVIEWER_LINE}someone - resume them\n{body}"
         self.assertEqual(critic.brief_fingerprint(run_on), lanes.saved_brief_fingerprint(run_on))
 
     def test_a_first_round_brief_carries_no_reviewer_line(self) -> None:
