@@ -1,6 +1,6 @@
 # BG1398: The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py, changelog.d/BG1398.md
@@ -30,10 +30,13 @@ After the text briefs, when more than one unit is briefed, print one line statin
 
 - [ ] **AC1** Given an open run whose batch holds two Ready units of 1 and 5 points, when `sprint lane brief --units` names both, then the output states the lane's total once, after both briefs, as 128 tool calls over 2 units (38 + 90). Fails on: two per-unit `Budget:` lines and no total.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_multi_unit_brief_states_the_lane_total_once
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same run, when `sprint lane brief --units` names one unit, then no lane-total line is printed and the brief still carries exactly one `Budget: N tool calls` line. Fails on: a mutant printing a total for a lane of one unit, which repeats its budget as a second figure.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_single_unit_brief_states_no_separate_total
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a two-unit lane in which one unit declares no Points, when the brief is printed, then the total line says no lane total is derived and names that unit, and states no number. Fails on: no statement at all, or a mutant summing only the sized unit and understating the lane.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_an_unsized_unit_leaves_the_lane_total_underived
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

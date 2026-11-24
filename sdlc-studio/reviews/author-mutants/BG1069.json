@@ -1,0 +1,52 @@
+{
+  "unit": "BG1069",
+  "digest": "0e8eff9f8fb1c54b at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1069-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every live round read, as before",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if phase == \"delivery\":\n        state = run_state.read(repo_root) or {}",
+      "new": "    if False:\n        state = run_state.read(repo_root) or {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the seats read over every live round",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "seat_verdicts(repo_root, unit, phase, rows))",
+      "new": "seat_verdicts(repo_root, unit, phase))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the open run's base unread",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "state if state.get(\"outcome\") == run_state.RUNNING else None)",
+      "new": "None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a closed run's base read",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "state if state.get(\"outcome\") == run_state.RUNNING else None)",
+      "new": "state)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rows given ignored by the seat reader",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "for row in (unit_review_rounds(repo_root, unit, phase) if rows is None else rows):",
+      "new": "for row in unit_review_rounds(repo_root, unit, phase):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1562: archive.py builds its output path from an unvalidated release label and can write outside the workspace
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/archive.py, .claude/skills/sdlc-studio/scripts/tests/test_archive.py, changelog.d/BG1562.md
@@ -30,10 +30,13 @@ Validate the release label before any path is built: accept only a single path s
 
 - [ ] **AC1** Given a fixture workspace with one terminal row in the live story index, when `archive.py archive` runs with a `--release` label made of parent-directory segments, then it exits non-zero with a message naming the label, creates no file or directory inside or outside the workspace, and leaves the live index byte-identical. Fails on: exit 0, `escaped/story.md` written above the workspace and the row removed from the live table (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_label_with_parent_segments_is_refused_and_nothing_is_written
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same fixture, when the label holds a path separator, is absolute, or is a bare dot or double-dot, then each is refused the same way with nothing written. Fails on: a traversal that survives by a spelling the first check missed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given the same fixture, when the label is a plain single segment such as r2.5, then the row is archived under the type's archive folder and the census still counts it. Fails on: the validation refusing a legitimate release label.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_plain_label_still_archives
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

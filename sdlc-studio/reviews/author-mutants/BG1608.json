@@ -1,0 +1,43 @@
+{
+  "unit": "BG1608",
+  "digest": "88279ee3adb66f4f at 376d7b53be65",
+  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1608-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the brief issued over a goal of any length",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if refusal := goal_length_refusal(getattr(args, \"goal\", None),\n",
+      "new": "        if refusal := goal_length_refusal(None,\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::GoalLengthAtReviewTests::test_the_brief_refuses_a_goal_over_twenty_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a first round written over a goal of any length",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if refusal := goal_length_refusal(goal, \"goal-review record refused\", \"Nothing is written.\"):\n",
+      "new": "    if refusal := goal_length_refusal(goal if getattr(args, \"amend_from\", None) else None, \"goal-review record refused\", \"Nothing is written.\"):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::GoalLengthAtReviewTests::test_a_first_round_record_refuses_a_goal_over_twenty_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a long amendment written",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if refusal := goal_length_refusal(goal, \"goal-review record refused\", \"Nothing is written.\"):\n",
+      "new": "    if refusal := goal_length_refusal(None, \"goal-review record refused\", \"Nothing is written.\"):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OpenRunGoalAmendTests::test_an_amended_goal_over_twenty_words_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refused brief exits 0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"goal-review brief refused\", \"No brief is issued.\"):\n            print(refusal, file=sys.stderr)\n            return 2\n",
+      "new": "\"goal-review brief refused\", \"No brief is issued.\"):\n            print(refusal, file=sys.stderr)\n            return 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::GoalLengthAtReviewTests::test_the_brief_refuses_a_goal_over_twenty_words",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

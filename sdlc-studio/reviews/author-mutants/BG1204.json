@@ -1,122 +1,50 @@
 {
   "unit": "BG1204",
-  "digest": "6a44589c31b96758 at 3ca0174cc3d4",
-  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1204-mutation-edits.json",
+  "digest": "4e4fecef9643866e at 0de7cc652b09",
+  "report": "sdlc-studio/.local/lane/landed/agent-a0004ccb58a8cd4e9/BG1204-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "a record tagged to a subagent-reading harness is added",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        if r.get(HARNESS) in read_by:\n            continue\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the harness stored untrimmed",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        entry[HARNESS] = harness.strip()",
-      "new": "        entry[HARNESS] = harness",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_record_carries_its_harness",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a blank harness stored",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    if isinstance(harness, str) and harness.strip():",
-      "new": "    if isinstance(harness, str):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_record_carries_its_harness",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "harness never stored",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        entry[HARNESS] = harness.strip()",
-      "new": "        pass",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_record_carries_its_harness",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every meter named a subagent reader",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "if m.get(\"includes_subagents\")}",
-      "new": "if True}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the estimate adds every record",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "    readers = run_state.subagent_readers(run_tokens)\n    delegated = run_state.delegated_total(state, readers)",
-      "new": "    readers = set()\n    delegated = run_state.delegated_total(state, readers)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the agent count includes the tagged record",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "if isinstance(r, dict) and r.get(run_state.HARNESS) not in readers])",
-      "new": "if isinstance(r, dict)])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "untagged records dropped from the estimate",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "    delegated = run_state.delegated_total(state, readers)\n    if (not delegated",
-      "new": "    delegated = 0\n    if (not delegated",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_untagged_records_are_added_as_before",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the page total adds the tagged record",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "run_state.delegated_total(state, run_state.subagent_readers(total))), state_rel),",
-      "new": "run_state.delegated_total(state)), state_rel),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_page_total_leaves_the_tagged_record_out_too",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the retro adds the tagged record",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    supplied = 0 if whole else run_state.delegated_total(state, readers)",
-      "new": "    supplied = 0 if whole else run_state.delegated_total(state)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the retro counts the tagged record as supplied",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    delegated = run_state.delegated_records(state, readers)",
-      "new": "    delegated = run_state.delegated_records(state)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_record_tagged_to_a_subagent_reading_harness_is_not_added",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the retro leaves the tagged record out of a whole run's count",
-      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
-      "old": "    readers = set() if whole else run_state.subagent_readers(stamped)",
-      "new": "    readers = run_state.subagent_readers(stamped)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_run_whose_every_reading_holds_its_agents_counts_the_tagged_record_as_supplied",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the lane-run return passes no harness",
+      "mutant": "M1 tag every harness, claude included (the round-one call site)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                harness=reading[\"harness\"]),",
-      "new": "                ),",
+      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
+      "new": "harness=reading[\"harness\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 invert the Claude test: tag only claude",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
+      "new": "harness=None if reading[\"harness\"] != run_state.CLAUDE else reading[\"harness\"]),",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 tag no harness at all",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
+      "new": "harness=None),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 the untagged harness named as another than claude",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
+      "new": "harness=None if reading[\"harness\"] == run_state.CURSOR else reading[\"harness\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 test: the mixed run's Claude closing stamp holds no subagents, so Claude is no subagent reader and the premise goes",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py",
+      "old": "{\"tokens\": 5000, \"source\": claude, \"subagents\": True, \"at\": \"2026-09-23T01:00:00Z\",",
+      "new": "{\"tokens\": 5000, \"source\": claude, \"at\": \"2026-09-23T01:00:00Z\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
       "result": "killed",
       "answer": ""
     }

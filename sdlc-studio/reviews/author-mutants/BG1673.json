@@ -1,0 +1,43 @@
+{
+  "unit": "BG1673",
+  "digest": "dab7ae0467f17fd2 at 376d7b53be65",
+  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1673-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "partial read as unclear",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if first in _VERDICT_PARTIAL:\n        return \"partial\"\n",
+      "new": "    if first in _VERDICT_PARTIAL:\n        return \"unclear\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_partial_reads_as_its_own_polarity",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "partial read as a no",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if first in _VERDICT_PARTIAL:\n        return \"partial\"\n",
+      "new": "    if first in _VERDICT_PARTIAL:\n        return \"no\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_a_whole_goal_partial_is_not_an_objection",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a partial clause reaches the panel as missed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            verdict = {\"yes\": \"achieved\", \"partial\": \"partial\"}.get(polarity, \"missed\")\n",
+      "new": "            verdict = {\"yes\": \"achieved\"}.get(polarity, \"missed\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_a_clause_answered_partial_reaches_the_panel_as_partial",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "partly not read as a hedge",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "_VERDICT_PARTIAL = frozenset({\"partial\", \"partly\", \"partially\"})\n",
+      "new": "_VERDICT_PARTIAL = frozenset({\"partial\"})\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_partial_reads_as_its_own_polarity",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

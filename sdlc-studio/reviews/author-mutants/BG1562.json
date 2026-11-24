@@ -1,86 +1,104 @@
 {
   "unit": "BG1562",
-  "digest": "d94df5d70e7ebaf2 at b34879706b54",
-  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1562-mutation-edits.json",
+  "digest": "e1f36d86427c7a2b at 6634d486946b",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab0ca488b543bf85c/BG1562-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no check call",
+      "mutant": "the empty-label check dropped",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "    _check_release_label(release)\n",
-      "new": "",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bare `.` check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\"..\",) or any(c in release for c in \"/\\\\\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bare `..` check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\",) or any(c in release for c in \"/\\\\\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the `/` separator check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"\\\\\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the `/` separator check dropped, parent segments",
+      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"\\\\\\0\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_label_with_parent_segments_is_refused_and_nothing_is_written",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "empty allowed",
+      "mutant": "the backslash check dropped",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "bad = (not release or release in",
-      "new": "bad = (release in",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\0\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "dot allowed",
+      "mutant": "the NUL check dropped",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "release in (\".\", \"..\")",
-      "new": "release in (\"..\",)",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "dotdot allowed",
+      "mutant": "any separator becomes all separators",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "release in (\".\", \"..\")",
-      "new": "release in (\".\",)",
+      "old": "    bad = (not release or release in (\".\", \"..\") or any(c in release for c in \"/\\\\\\0\")",
+      "new": "    bad = (not release or release in (\".\", \"..\") or all(c in release for c in \"/\\\\\\0\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "slash allowed",
+      "mutant": "the drive-form check dropped",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "any(c in release for c in \"/\\\\\\0\")",
-      "new": "any(c in release for c in \"\\\\\\0\")",
+      "old": "           or bool(PureWindowsPath(release).drive))",
+      "new": "           or False)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "backslash allowed",
+      "mutant": "the refusal never raised",
       "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "any(c in release for c in \"/\\\\\\0\")",
-      "new": "any(c in release for c in \"/\\0\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "nul allowed",
-      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "any(c in release for c in \"/\\\\\\0\")",
-      "new": "any(c in release for c in \"/\\\\\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "drive allowed",
-      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "or bool(PureWindowsPath(release).drive))",
-      "new": "or False)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "check never raises",
-      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
-      "old": "    if bad:\n        raise ValueError(",
-      "new": "    if False:\n        raise ValueError(",
+      "old": "    if bad:",
+      "new": "    if False:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_label_with_parent_segments_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every label refused",
+      "file": ".claude/skills/sdlc-studio/scripts/archive.py",
+      "old": "    if bad:",
+      "new": "    if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_plain_label_still_archives",
       "result": "killed",
       "answer": ""
     }

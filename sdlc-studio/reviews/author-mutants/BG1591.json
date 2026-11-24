@@ -1,0 +1,34 @@
+{
+  "unit": "BG1591",
+  "digest": "8deb0dc0b979c5c1 at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1591-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the list copied, the pages omitted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
+      "new": "surfaces = [f\"the {required[0]}\", *CLAIM_SURFACES, *required[1:]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the fragments before the prose surfaces",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
+      "new": "surfaces = [f\"the {required[0]}\", *required[1:], *optional]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a fragment named twice",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
+      "new": "surfaces = [f\"the {required[0]}\", *optional, *required]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

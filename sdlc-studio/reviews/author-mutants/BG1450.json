@@ -1,0 +1,25 @@
+{
+  "unit": "BG1450",
+  "digest": "f1ad55151163e757 at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1450-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the contract states no code-span rule",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "A code span must not begin or end with whitespace: markdownlint's MD038 refuses it,",
+      "new": "A code span is quoted as it is: markdownlint refuses some,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_code_span_warning.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rule names no lint",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "markdownlint's MD038 refuses it,\n        so the record does.",
+      "new": "markdownlint refuses it,\n        so the record does.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_brief_code_span_warning.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

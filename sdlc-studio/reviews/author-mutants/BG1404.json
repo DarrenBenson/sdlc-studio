@@ -1,0 +1,25 @@
+{
+  "unit": "BG1404",
+  "digest": "d2ddbd2b3e2ecdad at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1404-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the refusal names no escape",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "write \\\\; to keep a semicolon inside one finding",
+      "new": "write it again",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal says nothing of the semicolon",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "  An unescaped ';' can end a finding, and the text after it, carrying no tag of ",
+      "new": "  The text after it, carrying no tag of ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

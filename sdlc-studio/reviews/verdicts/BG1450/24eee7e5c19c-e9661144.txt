@@ -1,0 +1,6 @@
+UNIT: BG1450
+BRIEF: 24eee7e5c19c-e9661144
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1-AC2 pass (`verify_ac.py run --id BG1450 --dry-run`: pass=2) and `test_brief_code_span_warning.py` passes in a detached worktree at f4078d109\; the rule sits in the one return contract every brief ends on, so the full, light and rejoinder briefs carry it. Claims checked by execution through `critic.py record --from-verdict` and markdownlint under `.markdownlint.json`: a span with a space on its leading edge only, or its trailing edge only, or a tab on its trailing edge, is refused by the record and reported as MD038, and a span with no edge whitespace records and lints clean. A span padded by one space on both edges records and lints clean, which is CommonMark's own stripping (its content then has no edge whitespace), so the contract's rule is stricter than the gate and following it is never refused. The changelog fragment matches the shipped text.

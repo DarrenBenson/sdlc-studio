@@ -1,6 +1,6 @@
 # BG1404: critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused
 
-> **Status:** Open
+> **Status:** Fixed
 > **Ruling:** D0536 (operator, 2026-11-19): narrowed - keep the fail-closed split at a bare semicolon (BG1032); the fix is only that critic.py record's refusal names the \; escape. Re-groom the criteria to that before planning.
 > **Severity:** Low
 > **Points:** 1
@@ -28,10 +28,13 @@ Keep the split. Add one line to the origin refusal in `cmd_record` saying that a
 
 - [ ] **AC1** Given `--issues "[new] a; b"`, when `critic.py record` runs, then it exits 2, writes no ledger row, and its refusal names `\;` as the way to keep a semicolon inside one finding. Fails on: the refusal names only the three origin tags, never the escape.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py::IssuesSemicolonTests::test_the_origin_refusal_names_the_escape
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a verdict file whose ISSUES line is `[new] a; b`, when `critic.py record --from-verdict <file>` runs, then it exits 2, writes no row, and the refusal names `\;`. Fails on: the same refusal without the escape, on the entry point reviewers use.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py::IssuesSemicolonTests::test_the_from_verdict_refusal_names_the_escape
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given `--issues "[new] a\; b"`, when `critic.py record` runs, then it records one finding that reads back as `a; b`. Fails on: a fix that changes the split or the escape instead of the message, against D0536 (this guard holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py::IssuesSemicolonTests::test_an_escaped_semicolon_keeps_one_finding
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

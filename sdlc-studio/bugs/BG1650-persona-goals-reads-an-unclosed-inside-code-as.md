@@ -1,6 +1,6 @@
 # BG1650: persona_goals reads an unclosed <!-- inside code as a comment that hides a card's End goals, and attaches a nested Verify to whichever goal came last
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/persona_goals.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py, changelog.d/BG1650.md
@@ -25,10 +25,13 @@ Track fence and code-span state before opening a comment; attach a nested line o
 
 - [ ] **AC1** Given a card with a fenced html block holding `<!--` above `## End Goals` with goals 1 and 2 below, when `persona_goals.end_goals` reads it, then both goals are returned; an inline code span holding `<!--` likewise hides nothing. Fails on: `end_goals` returning `[]` because the comment scan ignores fences and spans (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_an_unclosed_comment_opener_in_code_hides_no_goal
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given goal 2 followed by a `Notes:` paragraph with an indented `- **Verify:** npm test`, when `end_goals` reads it, then goal 2 has no Verify and the nested line attaches to no goal. Fails on: goal 2 taking the Verify of a later note (reproduced at HEAD: `verify='npm test'`).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a goal with two nested Verify lines, when the card is validated, then `persona-goal-verify` warns of the second, named by card and goal number, and `reference-persona.md`'s rule table says so. Fails on: the second Verify silently replacing the first (reproduced at HEAD: `verify='b'`).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

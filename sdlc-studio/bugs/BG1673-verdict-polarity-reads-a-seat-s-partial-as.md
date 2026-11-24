@@ -1,6 +1,6 @@
 # BG1673: verdict_polarity reads a seat's 'partial' as unclear, so a goal clause every seat answered partial reads UNANSWERED at the close
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py, changelog.d/BG1673.md
@@ -27,12 +27,16 @@ Give `verdict_polarity` a third polarity, `partial`, for an answer whose first w
 
 - [ ] **AC1** Given the answers `partial - two cards lack a lens`, `Partly` and `partially, see notes`, when `sprint.verdict_polarity` reads each, then it returns `partial`, while `yes`, `no - not at the stated appetite` and `maybe later` still read `yes`, `no` and `unclear`. Fails on: every partial answer read as `unclear`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_partial_reads_as_its_own_polarity
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a goal-review round whose three seats answer clause A `partial - <reason>`, clause B `yes` and clause C `no`, and one seat answers clause D `maybe`, when `sprint._recorded_clause_verdicts` reads the four clauses, then A is `partial` for each seat, B `achieved`, C `missed`, and D absent. Fails on: clause A absent, so the panel reads it UNANSWERED.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_a_clause_answered_partial_reaches_the_panel_as_partial
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a run whose goal has that clause A and a round answering it partial, when `sprint.close_goal_judgement` runs, then the panel line reports A as `partial` and does not print `UNANSWERED` for it. Fails on: `UNANSWERED (3 seat(s) silent): <clause A>` at the close.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_the_close_reports_a_partial_clause_not_unanswered
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given a whole-goal seat verdict whose achievable answer is `partial - the appetite is tight`, when `sprint.goal_review_status` reads it, then the seat is not listed in `objections`. Fails on: a mutant mapping partial to `no`, which turns a hedge into an objection on the plan.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_clause_verdict.py::PartialClauseVerdictTests::test_a_whole_goal_partial_is_not_an_objection
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

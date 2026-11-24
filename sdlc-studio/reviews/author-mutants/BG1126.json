@@ -1,0 +1,43 @@
+{
+  "unit": "BG1126",
+  "digest": "ba492588a0cee1c4 at 376d7b53be65",
+  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1126-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "a seat's amendment moves no open run's goal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            try:\n                moves_run = _run_goal_to_amend(root, amend_from)\n",
+      "new": "            try:\n                moves_run = _run_goal_to_amend(root, amend_from) if not req else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_moves_the_goal_the_close_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a seat's amendment recorded as the operator's",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        asked = {\"requesting_seat\": req} if req else {\"requested_by\": \"operator\"}\n",
+      "new": "        asked = {\"requested_by\": \"operator\"}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_moves_the_goal_the_close_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an operator's amendment recorded as a seat's",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        asked = {\"requesting_seat\": req} if req else {\"requested_by\": \"operator\"}\n",
+      "new": "        asked = {\"requesting_seat\": req}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OpenRunGoalAmendTests::test_an_operator_amendment_moves_the_goal_the_close_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an amendment that moved no run says nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    elif change_type == \"amendment\":\n        print(f\"no open run's goal is",
+      "new": "    elif False:\n        print(f\"no open run's goal is",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_leaves_another_or_a_closed_run_alone",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

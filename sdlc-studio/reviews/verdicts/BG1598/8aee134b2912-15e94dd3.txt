@@ -1,0 +1,6 @@
+UNIT: BG1598
+BRIEF: 8aee134b2912-15e94dd3
+VERDICT: APPROVE
+ISSUES: [pre-existing] docs/INSTALL.md:112 still labels its table row `Copilot`. It is outside this unit's Affects, and no open bug covers it
+BLOCKING: none
+RULINGS: Round-one finding "The fragment claims more tolerance than the pins have": CLOSED. The repair changes only changelog.d/BG1598.md, and each of its claims is TRUE by execution in a throwaway worktree at 0de7cc652. With the base README (row `| Copilot |` in its old place), and again with today's row relabelled `Copilot` where it stands, `test_install_copilot_global` passes and test_readme_front_door fails exactly `test_the_harness_table_is_alphabetical_with_a_verification_command` and `test_the_copilot_row_is_labelled_github_copilot`. So the install pin takes either label and both front-door pins take only `GitHub Copilot`. The new test finds the row by its `copilot` target (test_readme_front_door.py:406). The NOT MEASURED sentence is unchanged and was verified in round one. verify_ac --dry-run: ac=3 pass=3. The author's T1 to T4 replay killed.

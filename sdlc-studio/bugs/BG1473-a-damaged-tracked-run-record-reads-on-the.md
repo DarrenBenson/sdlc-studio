@@ -1,6 +1,6 @@
 # BG1473: A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG1473.md
@@ -30,10 +30,13 @@ Have `signed_record` return a distinct damaged state, and have the brief and the
 
 - [ ] **AC1** Given a signed run whose listed learning is live, and its tracked record then corrupted so it no longer parses, when the seat is briefed, then the brief says the run's record is unreadable and names its path, and the learning is not carried. Fails on: the damaged record reading as awaits its run's signature.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a learning whose run's record is readable and unsigned, or absent, when the seat is briefed, then it still reads as awaiting its run's signature and names no damage. Fails on: the damaged state reported for a record that is only unsigned or absent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_an_unsigned_or_absent_record_still_awaits_its_signature
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a tracked run record whose bytes are not UTF-8, when `read_tracked` or `signed_record` reads it, then `RunStateError` (or the unreadable state) names its path, with no traceback. Fails on: `read_tracked` catches OSError and JSONDecodeError only, so `UnicodeDecodeError` escapes (reproduced at HEAD cecc9dfe7: both `read_tracked` and `signed_record` raise it).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::TrackedRecordTests::test_a_non_utf8_record_is_named_as_unreadable
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

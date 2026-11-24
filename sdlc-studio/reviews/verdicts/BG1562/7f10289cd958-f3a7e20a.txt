@@ -1,0 +1,6 @@
+UNIT: BG1562
+BRIEF: 7f10289cd958-f3a7e20a
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, repair 6634d4869 (prose only, archive.py docstring and changelog.d/BG1562.md). CLOSED: "the changelog's before-the-fix example is false by execution" - every before-the-fix sentence now holds when run at the base ref 3994fa770 in a throwaway fixture: `../../x` wrote `sdlc-studio/x/story.md`, `../../../escaped` wrote `escaped/story.md` at the project root, `../../../../escaped` wrote it above the root, each exiting 0 and rewriting the live index, while `a/b` and `/abs` nested the sub-index under `archive/`, `.` and the empty label wrote `archive/story.md`, and a NUL label raised before any write. CLOSED: "the `_check_release_label` docstring (archive.py:67-71) says a bare" - the docstring (archive.py:66-76) now says only `..` segments climb out, that a bare `.` or empty label names no release folder, and that a NUL byte is no legal path character, all TRUE by the same probes. The code and tests are unchanged since round one: test_archive.py passes in full (23 passed) and verify_ac dry-run is 3/3.

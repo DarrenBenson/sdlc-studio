@@ -1,0 +1,106 @@
+{
+  "unit": "BG1698",
+  "digest": "3161567157b58c12 at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1698-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "a REJECT read as a discharge",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if str(verdict or \"\").upper() != APPROVE:\n        return None\n    uid",
+      "new": "    if False:\n        return None\n    uid",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no rejoin at all",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not bug:\n        return None\n    why",
+      "new": "    if True:\n        return None\n    why",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a closed run's state written",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if state.get(\"outcome\") != run_state.RUNNING or run_state.batch_holds(state, uid):",
+      "new": "if run_state.batch_holds(state, uid):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a later run holding the unit given a duplicate add",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if state.get(\"outcome\") != run_state.RUNNING or run_state.batch_holds(state, uid):",
+      "new": "if state.get(\"outcome\") != run_state.RUNNING:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the drop's unit id unread",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                and sdlc_md.norm_id(str(change.get(\"id\") or \"\")) == uid):\n            bug = _carry_bug(repo_root, change.get(\"reason\"))\n    if not bug:",
+      "new": "                ):\n            bug = _carry_bug(repo_root, change.get(\"reason\"))\n    if not bug:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the first carry kept past a later hand drop",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            bug = _carry_bug(repo_root, change.get(\"reason\"))\n    if not bug:",
+      "new": "            bug = bug or _carry_bug(repo_root, change.get(\"reason\"))\n    if not bug:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the ruling left out of the add's reason",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                                                   if ruling else \"\")",
+      "new": "                                                   if False else \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a failed add raised after the row",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except (run_state.RunStateError, OSError) as exc:\n        return (f\"  WARNING",
+      "new": "    except OSError as exc:\n        return (f\"  WARNING",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the record prints no rejoin",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if rejoined:\n            print(rejoined)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the library writer prints no rejoin",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "for notice in (carried_notice(unit, bug) if bug else None, rejoined):",
+      "new": "for notice in (carried_notice(unit, bug) if bug else None,):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no rejoin at all, read on the signed page",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not bug:\n        return None\n    why",
+      "new": "    if True:\n        return None\n    why",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py::SignedRunEndToEndTests::test_the_signed_page_names_every_ruling_carry_and_override",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1323: The commit-msg hook misses git's scissors line under a non-default `core.commentChar`, the multi-id rule still reads trailers below it, and `_ledger_rows` and BG1264's fragment say an edited ledger row owns nothing
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG1323.md
@@ -27,10 +27,13 @@ Read the comment character from git config in `_scissors_cut`, apply the cut bef
 
 - [ ] **AC1** Given a clone with `core.commentChar` set to `;`, when the commit-msg hook runs on a verbose message naming two ids, then the hook reads nothing below git's scissors line and writes its trailers above it. Fails on: `_SCISSORS_RE` (`^# -+ >8 -+$`) never matching `; ---- >8 ----`: `_scissors_cut` returned the line count, i.e. no cut (reproduced at HEAD).
   - **Verify:** pytest tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_the_scissors_line_is_found_under_a_non_default_comment_character
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a verbose message whose subject names two ids and whose diff below the scissors line carries a `Refs:` diff context line naming both, when `check_commit_message` judges it, then it warns that the ids lack a trailer. Fails on: `check_commit_message` reading the whole message, so a trailer in git's diff satisfies the rule (reproduced at HEAD: returns `(0, None)`).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a commit editing one existing `critic-verdicts.md` row and leaving another untouched, when `_ledger_rows` is read, then the edited row's unit owns the ledger and the untouched row's unit does not, and its docstring says an added or edited row owns. Fails on: the docstring saying only an added row counts while an edited row (a `+` line in the -U0 diff) owns.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::RefsTrailerAttributionTests::test_an_edited_ledger_row_owns_and_an_untouched_one_does_not
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1736: The commit-msg attribution note advises a schema 3 id by its dashless key
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG1736.md
@@ -27,8 +27,10 @@ Print each id in the note as its own artefact spells it, the way BG1574's repair
 
 - [ ] **AC1** Given a fixture project whose `BG-01JQK3F8` record declares `src/v3.py` in its Affects, when `src/v3.py` is staged with the message `fix(BG9002): b`, then `unnamed_unit_attribution`'s note advises `Refs: BG-01JQK3F8`, the id spelt as its artefact spells it. Fails on: the note ending `Refs: BG01JQK3F8`, a spelling no artefact carries.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_spells_a_schema_3_id_dashed
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same fixture with a sequential id (BG0042) owning the staged file, when the note is built, then it still advises `Refs: BG0042`. Fails on: a fix that re-spells every id and changes the sequential form.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_keeps_a_sequential_id_unchanged
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

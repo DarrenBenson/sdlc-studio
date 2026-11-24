@@ -33,8 +33,8 @@ Tag each delegated record with the session or harness it was spent under, and ad
 
 - [ ] **AC3** Given a mixed run whose delegated records are all untagged, when the total is read, then they are added as before. Fails on: a fix that stops adding untagged records understates a Claude-only fan-out.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_untagged_records_are_added_as_before
-- [ ] **AC4** Given `sprint.py lane return` recording a lane run's usage from a harness other than Claude Code, when the delegated record is written, then it carries that harness (the lane run's `reading['harness']`), so AC1's exclusion reaches a real record rather than one only a test constructs. Fails on: the lane-run return call site passing no harness, so every recorded delegated total is untagged.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness
+- [ ] **AC4** Given `sprint.py lane return` recording a lane run's usage under any harness (`claude`, `codex`, `opencode`), when the delegated record is written, then it carries no harness and the run's total adds it, because no shipped reader counts a lane worktree's session: a `claude -p` lane is its own session, the Codex reader leaves threads under the lane worktrees out, and the OpenCode reader matches only the repository root's own directory. Fails on: the call site tagging the lane's harness, which `subagent_readers` then drops, so the lane's spend is counted nowhere (round two's qa probe: a `codex` lane run of 1000 tokens read 4600 where the base read 5600).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged
 
 ## Impact
 
@@ -47,3 +47,4 @@ A mixed-harness run can overstate its tokens.
 | 2026-11-04 | claude | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: re-read at HEAD (the addition is in sprint_report and retro, not run_state); ACs name a harness tag and its tests; 3 pts |
 | 2026-11-24 | orchestrator | AC4 and sprint.py added: the RS builder found no caller passes the harness tag; the lane-run return in sprint.py already holds the harness, so it passes it there (one call site; lane SP replays over it) |
+| 2026-11-24 | orchestrator (delegate under D0545) | AC4 re-ruled: a lane run's delegated record carries no harness under any harness, since no shipped reader counts a lane worktree's session (meter_codex leaves `RUN_WORKTREES` out; meter_opencode `_dirs` matches the repository root only; a `claude -p` lane is its own session). The first AC4, which this orchestrator added in the build, tagged non-Claude lane runs and lost their spend (round-two qa, carried as BG1737) |

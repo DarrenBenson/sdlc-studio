@@ -1,6 +1,6 @@
 # BG1608: goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1608.md
@@ -28,8 +28,10 @@ Apply `goal_length_refusal` in `goal-review brief` (when a goal is given) and in
 
 - [ ] **AC1** Given a project ready to brief, when `goal-review brief --goal <21 words> --seat qa` runs, then it exits 2 with the goal-length refusal and prints no brief on stdout; the same command with a 20-word goal (the control) exits 0 with the brief. Fails on: rc 0 with a brief for a goal the plan will refuse.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::GoalLengthAtReviewTests::test_the_brief_refuses_a_goal_over_twenty_words
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given no goal-review round recorded, when a first-round `goal-review record` names a 21-word goal, by `--goal` and again by a `--fields-file` goal, then each exits 2 with the goal-length refusal and goal-review.json is not written; a 20-word goal (the control) is recorded. Fails on: rc 0 with the round written, so the seats judge wording the plan can never take.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::GoalLengthAtReviewTests::test_a_first_round_record_refuses_a_goal_over_twenty_words
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,32 +1,32 @@
 {
   "unit": "BG1736",
-  "digest": "0ec5959483063111 at b34879706b54",
-  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1736-mutation-edits.json",
+  "digest": "1b4ef2ec7ea108af at 6634d486946b",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab0ca488b543bf85c/BG1736-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "note id unspelt",
+      "mutant": "reviewer's mutant: the named-file note keeps the comparison key",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it",
-      "new": "shown = rid",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_spells_a_schema_3_id_dashed",
+      "old": "        shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it",
+      "new": "        shown = sdlc_md.display_id(root, rid) if why == \"declared-affects\" else rid",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_named_file_note_spells_a_schema_3_id_dashed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "how id unspelt",
+      "mutant": "named-file reason text dropped",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "else f\"only {sdlc_md.display_id(root, rid)} declares in its Affects\")",
-      "new": "else f\"only {rid} declares in its Affects\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_spells_a_schema_3_id_dashed",
+      "old": "        how = (\"carry its id in their own filenames\" if why == \"named-file\"",
+      "new": "        how = (\"carry it\" if why == \"named-file\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_named_file_note_spells_a_schema_3_id_dashed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "sequential respelt",
+      "mutant": "the remedy prints the comparison key",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it",
-      "new": "shown = rid[:2] + \"-\" + rid[2:]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_keeps_a_sequential_id_unchanged",
+      "old": "f\"`Refs: {shown}` so the attribution is stated rather than guessed.\")})",
+      "new": "f\"`Refs: {rid}` so the attribution is stated rather than guessed.\")})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_named_file_note_spells_a_schema_3_id_dashed",
       "result": "killed",
       "answer": ""
     }

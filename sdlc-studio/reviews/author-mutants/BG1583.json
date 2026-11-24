@@ -1,0 +1,43 @@
+{
+  "unit": "BG1583",
+  "digest": "4cadfb7500b3a0c8 at 376d7b53be65",
+  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1583-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "this checkout's closed run returned whatever report is named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if held_open and state.get(\"report\") and (\n            not report_id\n            or sdlc_md.norm_id(report_id) == sdlc_md.norm_id(str(state.get(\"report\")))):\n        return state, \"\", False\n",
+      "new": "    if held_open and state.get(\"report\"):\n        return state, \"\", False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py::RunOpenAcrossCheckoutsTests::test_sign_seals_the_named_waiting_run_while_a_later_run_awaits_too",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the named page compared for inequality",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            or sdlc_md.norm_id(report_id) == sdlc_md.norm_id(str(state.get(\"report\")))):\n",
+      "new": "            or sdlc_md.norm_id(report_id) != sdlc_md.norm_id(str(state.get(\"report\")))):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py::RunOpenAcrossCheckoutsTests::test_sign_seals_the_named_waiting_run_while_a_later_run_awaits_too",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refused take-up leaves the open run set aside",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        except run_state.RunStateError as exc:\n            run_state.put_back(root, beside)\n            print(f\"sign REFUSED: {exc}\", file=sys.stderr)\n",
+      "new": "        except run_state.RunStateError as exc:\n            print(f\"sign REFUSED: {exc}\", file=sys.stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py::RunOpenAcrossCheckoutsTests::test_a_refused_take_up_puts_the_open_run_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a sign naming no page reads this checkout's run as not its own",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            not report_id\n            or sdlc_md.norm_id(report_id)",
+      "new": "            False\n            or sdlc_md.norm_id(report_id)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py::RunOpenAcrossCheckoutsTests::test_sign_seals_the_named_waiting_run_while_a_later_run_awaits_too",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

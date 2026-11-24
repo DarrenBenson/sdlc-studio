@@ -1,0 +1,6 @@
+UNIT: BG1736
+BRIEF: b758a13bd91f-7a83ec43
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, repair 6634d4869 (a test only, no code change). CLOSED: "the repair's named-file branch is unpinned" - test_the_named_file_note_spells_a_schema_3_id_dashed stages `sdlc-studio/bugs/BG-01JQK3F8-sample.md` and asserts the named-file note says "message never names BG-01JQK3F8." and advises `Refs: BG-01JQK3F8`, with no dashless key anywhere in it. My round-one survivor, the named-file branch keeping the comparison key, is now red on that test, applied once and restored. test_engagement_floor.py and test_commit_msg_hook.py pass in full (169 passed), and verify_ac dry-run is 2/2. The same commit's widened scissors subtests in CommitMsgCheckTests are BG1323's and were judged there.

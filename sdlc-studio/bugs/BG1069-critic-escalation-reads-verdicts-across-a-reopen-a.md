@@ -1,6 +1,6 @@
 # BG1069: critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -27,10 +27,13 @@ Build `escalation_notice`'s rounds and seat verdicts from the current delivery's
 
 - [ ] **AC1** Given a unit whose previous delivery closed on seat A's APPROVE, when seat B's REJECT is recorded through `critic.py record` as round 1 of the new delivery, then no escalation is printed. Fails on: `ESCALATED for the operator - <unit>: the panel split: B rejected while A approved`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py::ReopenEscalationTests::test_a_reject_after_a_reopen_is_judged_against_the_new_delivery_only
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a unit whose earlier delivery recorded seat A's REJECT then APPROVE, and an open run holding it, when seat B's REJECT is recorded as round 1 of the run's delivery, then no escalation is printed. Fails on: the closed delivery's REJECT is counted and `the panel rejected this unit twice (2 REJECTs)` is printed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py::ReopenEscalationTests::test_a_closed_deliverys_reject_is_not_counted_in_a_new_run
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given two REJECTs by one seat within one delivery, when the second is recorded, then the escalation `the panel rejected this unit twice` is still printed. Fails on: a fix that stops counting the current delivery's REJECTs too (this guard holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_reopen_escalation.py::ReopenEscalationTests::test_two_rejects_in_one_delivery_still_escalate
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

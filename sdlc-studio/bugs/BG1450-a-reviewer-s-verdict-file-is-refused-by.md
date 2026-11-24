@@ -1,6 +1,6 @@
 # BG1450: A reviewer's verdict file is refused by critic.py record over one code span with a leading space, and the review brief does not warn
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_brief_code_span_warning.py, changelog.d/BG1450.md
@@ -27,8 +27,10 @@ Add one sentence to `_RETURN_CONTRACT`: a code span in ISSUES, BLOCKING or RULIN
 
 - [ ] **AC1** Given a full-tier first-round brief from `critic.py brief`, when a reviewer reads its return contract, then the contract states that a code span must not begin or end with whitespace. Fails on: the contract says nothing about a code span's edges.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_code_span_warning.py::BriefCodeSpanWarningTests::test_the_return_contract_states_the_code_span_rule
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a light-tier brief and a `--rejoinder` brief for the same unit, when a reviewer reads each return contract, then each states the same code-span rule. Fails on: neither says anything about it, and a fix placed in one tier's section only leaves the other silent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_brief_code_span_warning.py::BriefCodeSpanWarningTests::test_every_brief_kind_states_the_code_span_rule
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

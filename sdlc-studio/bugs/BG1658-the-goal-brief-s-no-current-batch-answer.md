@@ -1,6 +1,6 @@
 # BG1658: The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py, changelog.d/BG1658.md
@@ -27,10 +27,13 @@ Name `--brief-worklist` in the answer and pin it with a test that runs the named
 
 - [ ] **AC1** Given a project with no current plan, when `goal-review brief` answers `NO CURRENT BATCH TO BRIEF`, then the command the answer names, run as written with a worklist file in place of `<file>`, exits 0 and prints a brief. Fails on: the answer naming `--worklist`, which argparse refuses as an unrecognised argument.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_stale_plan_answer_names_a_command_that_runs
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the fixture's worklist and goal, when `goal-review brief --seat qa` runs, then the first line of its output is `You are the qa review seat. Read and adopt the charter at`, and the unframed brief (the control) does not open with it. Fails on: a mutant appending the framing after the body surviving every test.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_a_framed_brief_opens_with_its_seat
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a project with no plan written and no worklist, when `goal-review brief --seat security` names a seat no card fills, then it exits 2 naming the roster, prints nothing on stdout and writes no plan; `--seat qa` there (the control) gives the NO CURRENT BATCH answer with exit 0. Fails on: a mutant resolving the card after the stale-plan check, which answers the unknown seat with exit 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_with_no_plan_is_refused
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

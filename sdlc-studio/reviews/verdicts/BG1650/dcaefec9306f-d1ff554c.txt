@@ -1,0 +1,6 @@
+UNIT: BG1650
+BRIEF: dcaefec9306f-d1ff554c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, repair 6634d4869. CLOSED: "the multi-backtick half of `_CODE_SPAN_RE` (persona_goals.py:51) is unpinned" - five near-miss cards now pin the pattern, the first of them the double-backtick card from round one, and each of four pattern mutants applied once is red: my round-one survivor, the single-backtick pattern (4 red), a closer of any length (3 red), an opener allowed to start inside a run (2 red) and an opener run allowed to be cut short (2 red). Each card's expected goals 1 and 3 is CommonMark's reading, since a backtick run with no closer of its own length opens no span. CLOSED: "the second-Verify warning misreads an empty first Verify" - through `validate.py personas` on a fixture card whose goal 2 carries an empty Verify line and then `pytest c.py`, the warning now reads "only its first Verify line is, and it names no check", and a second, empty Verify line is named as such. Restoring the old quoting of an empty first Verify turns the new assertions red. Claim inventory: the new pattern comment and the changelog's span and empty-Verify sentences are TRUE by those runs. The 11 test modules that name persona_goals, end_goals, persona_cards or the goal rules pass in full (109 passed), and verify_ac dry-run is 3/3.

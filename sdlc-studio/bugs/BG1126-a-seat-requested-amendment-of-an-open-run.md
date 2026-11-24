@@ -1,6 +1,6 @@
 # BG1126: A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal'
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1126.md
@@ -28,10 +28,13 @@ Apply US1096's open-run move to a seat-requested amendment too, with the same gu
 
 - [ ] **AC1** Given a run opened on goal G with every seat's verdict recorded on G, when `goal-review record --goal G2 --amend-from G --requesting-seat qa` runs, then the run state's `sprint_goal` is G2, its `sprint_goal_amendments` entry records G to G2 with the qa seat as the requester (not `operator`), and `close_goal_judgement` judges G2 and not G. Fails on: the run state left on G, so the close judges the wording the amendment replaced.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_moves_the_goal_the_close_judges
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same run after its goal verdict is recorded, when a seat-requested amendment of G is recorded, then it exits 2 naming that verdict and neither goal-review.json nor run-state.json changes. Fails on: rc 0 with a round recorded on G2 while the run's judged goal stays G.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_after_the_goal_verdict_is_refused
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given an open run whose goal is G and a seat-requested amendment from another reviewed goal, or a closed run on G, when the amendment is recorded, then run-state.json is byte for byte unchanged. Fails on: a mutant moving the run's goal to whatever `--amend-from` names, or moving a closed run's goal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::SeatAmendOpenRunTests::test_a_seat_requested_amendment_leaves_another_or_a_closed_run_alone
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

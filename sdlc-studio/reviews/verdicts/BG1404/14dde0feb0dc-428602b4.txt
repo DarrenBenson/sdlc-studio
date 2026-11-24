@@ -1,0 +1,6 @@
+UNIT: BG1404
+BRIEF: 14dde0feb0dc-428602b4
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1-AC3 pass (`verify_ac.py run --id BG1404 --dry-run`: pass=3) and `test_issues_semicolon.py` passes in a detached worktree at f4078d109. The unit's only code hunk is the refusal text in `cmd_record` (`critic.py:5964-5966`), and `unclassified_findings` is its only caller, so the flag and `--from-verdict` reach the same text. Claims TRUE by execution: the refusal prints the escape with one backslash, an unescaped semicolon can end a finding, the escaped form records one finding that reads back with a plain semicolon, and the split and the escape are untouched by the diff. Mutation: dropping the escape sentence was killed. Rewriting the parenthesised example to wrong advice (the escape removed from it) survives, but AC1's pinned sentence names the escape and AC3 pins the behaviour the example states, so I count it as unpinned illustration, not a defect.

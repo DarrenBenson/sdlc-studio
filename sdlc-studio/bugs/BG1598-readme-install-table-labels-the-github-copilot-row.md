@@ -1,6 +1,6 @@
 # BG1598: README install table labels the GitHub Copilot row 'Copilot' because test_install_copilot_global.py pins that exact label, so the README and docs/harnesses.md name the harness differently
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_install_copilot_global.py, tools/tests/test_readme_front_door.py, README.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py, changelog.d/BG1598.md
@@ -28,10 +28,13 @@ Have the test match the row by its install target or a label set, then relabel t
 
 - [ ] **AC1** Control, passes today and must stay green: given the README Copilot row relabelled `GitHub Copilot`, when `test_install_copilot_global` and `test_readme_front_door` run, then both still pass, matching the row by label set (`Copilot` or `GitHub Copilot`) or by its `copilot` target. Fails on: a relabel that leaves either existing pin matching only the short label (no failure today, as README line 95 still reads Copilot).
   - **Verify:** pytest tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_docs_do_not_call_copilot_repo_scoped
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given README.md, when its install table is read, then the Copilot row's first cell is `GitHub Copilot`, the name docs/harnesses.md uses. Fails on: the row's first cell reading Copilot today (README line 95). The test is new.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_copilot_row_is_labelled_github_copilot
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Pin on behaviour that is already correct, so it cannot fail before the fix: given a report whose Cost model figure reads `NOT MEASURED`, when the evidence page row is built, then the models cell names no model. Fails on: a mutant dropping `NOT_MEASURED` from `_NO_MODEL` (sprint_report.py line 6821), which no test kills today; the test is new.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_a_not_measured_model_figure_names_no_model
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

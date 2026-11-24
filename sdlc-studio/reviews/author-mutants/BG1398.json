@@ -1,0 +1,70 @@
+{
+  "unit": "BG1398",
+  "digest": "d44ea30be6edd4f5 at 376d7b53be65",
+  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1398-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no total printed after the briefs",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if total := lane_total_line(dispatch[\"briefs\"]):\n                print(total)\n",
+      "new": "            if total := lane_total_line(dispatch[\"briefs\"]):\n                pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_multi_unit_brief_states_the_lane_total_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a total printed for a lane of one unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if len(briefs) < 2:\n        return \"\"\n    budgets =",
+      "new": "    if len(briefs) < 1:\n        return \"\"\n    budgets =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_single_unit_brief_states_no_separate_total",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unsized unit summed over the sized ones",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    unsized = [uid for uid, calls in budgets if calls is None]\n    if unsized:\n",
+      "new": "    budgets = [(uid, calls) for uid, calls in budgets if calls is not None]\n    unsized = []\n    if unsized:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_an_unsized_unit_leaves_the_lane_total_underived",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the singular wording for several unsized units",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        verb, them = (\"declares\", \"it\") if len(unsized) == 1 else (\"declare\", \"them\")\n",
+      "new": "        verb, them = (\"declares\", \"it\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_an_unsized_unit_leaves_the_lane_total_underived",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the plural wording for one unsized unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        verb, them = (\"declares\", \"it\") if len(unsized) == 1 else (\"declare\", \"them\")\n",
+      "new": "        verb, them = (\"declare\", \"them\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_an_unsized_unit_leaves_the_lane_total_underived",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the largest budget stated as the total",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return (f\"Lane total: {sum(calls for _uid, calls in budgets)} tool calls over \"\n",
+      "new": "    return (f\"Lane total: {max(calls for _uid, calls in budgets)} tool calls over \"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_multi_unit_brief_states_the_lane_total_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the total in the per-unit Budget form",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return (f\"Lane total: {sum(calls for _uid, calls in budgets)} tool calls over \"\n",
+      "new": "    return (f\"Lane total: Budget: {sum(calls for _uid, calls in budgets)} tool calls over \"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_total_budget.py::LaneTotalBudgetTests::test_a_multi_unit_brief_states_the_lane_total_once",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

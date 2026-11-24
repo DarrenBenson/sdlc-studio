@@ -1,0 +1,97 @@
+{
+  "unit": "BG1121",
+  "digest": "05f2a939887beaf2 at f4078d109b20",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1121-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the hunk view never consulted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "for view in (_own_change_digest, _hunk_view_digest):",
+      "new": "for view in (_own_change_digest,):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the author's own commits taken out too",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        for sha, another in touched.get(member, []):\n            if another:",
+      "new": "        for sha, another in touched.get(member, []):\n            if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another unit's commit read as its own after-state",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_rev_blob(root, f\"{sha}^\", member))\n        return data",
+      "new": "_rev_blob(root, sha, member))\n        return data",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a file another unit added read as present",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if now == after:\n        return before\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the absent-side guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if None in (now, after, before):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a conflicted take-out read as clean",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if done is None or done.returncode != 0:",
+      "new": "if done is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "git unable to merge read as no change",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if done is None or done.returncode != 0:",
+      "new": "if done is not None and done.returncode != 0:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a merge with content of its own taken apart",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if any(_merge_resolutions(root, base, affects).values()):\n            return None\n        return _view_digest(root, affects, touched, own)",
+      "new": "        return _view_digest(root, affects, touched, own)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable walk read as no commit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    touched = _commit_walk(root, base, affects, uid) if affects else None\n    if touched is None:\n        return None\n\n    def own(member: str) -> bytes | None:\n        path = root / member\n        data",
+      "new": "    touched = (_commit_walk(root, base, affects, uid) if affects else None) or {}\n    if touched is None:\n        return None\n\n    def own(member: str) -> bytes | None:\n        path = root / member\n        data",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the walk from HEAD's whole history",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"--format=%x00%H %s\", f\"{start}..HEAD\", \"--\", *affects)",
+      "new": "\"--format=%x00%H %s\", \"HEAD\", \"--\", *affects)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

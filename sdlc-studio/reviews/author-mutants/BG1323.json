@@ -1,86 +1,77 @@
 {
   "unit": "BG1323",
-  "digest": "a98b53dfd6423171 at b34879706b54",
-  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1323-mutation-edits.json",
+  "digest": "298037c041a3a28c at 6634d486946b",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab0ca488b543bf85c/BG1323-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "scissors hash only",
+      "mutant": "scissors prefix back to punctuation only",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "r\"^[^\\w\\s]+ -+ >8 -+$\"",
-      "new": "r\"^# -+ >8 -+$\"",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^[^\\w\\s]+ -+ >8 -+$\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "check reads whole body",
+      "mutant": "scissors prefix back to punctuation only, through a real git commit -v",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    body = _strip_comments(authored)\n    subject = _subject_line(authored)\n    # Compare",
-      "new": "    body = _strip_comments(message)\n    subject = _subject_line(authored)\n    # Compare",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^[^\\w\\s]+ -+ >8 -+$\")",
+      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_a_verbose_commit_under_a_word_comment_character_lands_with_its_trailers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scissors prefix one character only",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^\\S -+ >8 -+$\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "check reads whole subject",
+      "mutant": "scissors prefix takes a space",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    body = _strip_comments(authored)\n    subject = _subject_line(authored)\n    # Compare",
-      "new": "    body = _strip_comments(authored)\n    subject = _subject_line(message)\n    # Compare",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_subject_below_the_scissors_is_not_the_subject",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^.+ -+ >8 -+$\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "note reads whole refs",
+      "mutant": "scissors line not anchored at its end",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    authored = _authored(message)\n    body = _strip_comments(authored)\n    declared =",
-      "new": "    authored = _authored(message)\n    body = _strip_comments(message)\n    declared =",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_does_not_silence_an_unnamed_unit_note",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "note reads whole subject",
+      "mutant": "scissors prefix fixed to #",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "ID_SEARCH_RE.findall(_subject_line(authored))",
-      "new": "ID_SEARCH_RE.findall(_subject_line(message))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_subject_below_the_scissors_is_not_the_subject",
+      "old": "_SCISSORS_RE = re.compile(r\"^\\S+ -+ >8 -+$\")",
+      "new": "_SCISSORS_RE = re.compile(r\"^# -+ >8 -+$\")",
+      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_a_verbose_commit_under_a_word_comment_character_lands_with_its_trailers",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "trailers marker hash only",
+      "mutant": "with no scissors line the scaffolding is read as ;",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "mark = tail[0].split(\" \", 1)[0] if tail else \"#\"",
-      "new": "mark = \"#\"",
-      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_the_scissors_line_is_found_under_a_non_default_comment_character",
+      "old": "    mark = tail[0].split(\" \", 1)[0] if tail else \"#\"",
+      "new": "    mark = tail[0].split(\" \", 1)[0] if tail else \";\"",
+      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_a_plain_commit_under_another_comment_character_closes_on_its_trailers",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "marker without tail guard",
+      "mutant": "the scissors line's own character ignored",
       "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "mark = tail[0].split(\" \", 1)[0] if tail else \"#\"",
-      "new": "mark = tail[0].split(\" \", 1)[0]",
-      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_owning_ids_get_refs_written_and_the_commit_lands",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "derive reads whole message",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "    authored = _authored(message)\n    body = _strip_comments(authored)\n    written: dict",
-      "new": "    authored = message\n    body = _strip_comments(authored)\n    written: dict",
-      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_a_verbose_diff_below_the_scissors_is_neither_read_nor_written_into",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "ledger edit ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
-      "old": "_ADDED_ROW_RE = re.compile(r\"^\\+\\|\\s*([^|]+?)\\s*\\|\")",
-      "new": "_ADDED_ROW_RE = re.compile(r\"^\\+\\+\\|\\s*([^|]+?)\\s*\\|\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::RefsTrailerAttributionTests::test_an_edited_ledger_row_owns_and_an_untouched_one_does_not",
+      "old": "    mark = tail[0].split(\" \", 1)[0] if tail else \"#\"",
+      "new": "    mark = \"#\"",
+      "test": "tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_a_verbose_commit_under_a_word_comment_character_lands_with_its_trailers",
       "result": "killed",
       "answer": ""
     }
