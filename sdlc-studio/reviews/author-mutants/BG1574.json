@@ -1,0 +1,295 @@
+{
+  "unit": "BG1574",
+  "digest": "5621579c48c2209e at 780bd29359ab",
+  "report": "sdlc-studio/.local/lane/landed/agent-af28c37ac535142ee/BG1574-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "single-id subject read as shared",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if len(named) <= 1:",
+      "new": "if len(named) < 1:",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mentions id owns a fragment",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "return sorted(refs & named)",
+      "new": "return sorted(named)",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refs read from nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "return sorted(refs & named)",
+      "new": "return sorted(named & set())",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exemption reason optional",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "r\"^[ \\t]+-[ \\t]+\\S\"",
+      "new": "r\"^[ \\t]+-[ \\t]*\"",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exemption last line wins",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "reasoned = reasoned or bool(",
+      "new": "reasoned = bool(",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exemption first line wins",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "reasoned = reasoned or bool(",
+      "new": "reasoned = reasoned and bool(",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any paperwork excuses the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if all(p.startswith(_PAPERWORK_ROOTS) for p in staged):",
+      "new": "if any(p.startswith(_PAPERWORK_ROOTS) for p in staged):",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sdlc-studio not paperwork",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "_PAPERWORK_ROOTS = (\"sdlc-studio/\", f\"{FRAGMENT_DIR}/\")",
+      "new": "_PAPERWORK_ROOTS = (f\"{FRAGMENT_DIR}/\",)",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "changelog.d not paperwork",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "_PAPERWORK_ROOTS = (\"sdlc-studio/\", f\"{FRAGMENT_DIR}/\")",
+      "new": "_PAPERWORK_ROOTS = (\"sdlc-studio/\",)",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fragment presence inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if not indexed.intersection(fragment_names(i))]",
+      "new": "if indexed.intersection(fragment_names(i))]",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index read limited to nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "f\"{FRAGMENT_DIR}/*.md\"]))",
+      "new": "f\"{FRAGMENT_DIR}/NONE.md\"]))",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal exits 0",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "return 1 if faults else 0",
+      "new": "return 0",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bare-exemption hint inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "    if found:\n        faults.append",
+      "new": "    if not found:\n        faults.append",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scaffold lines read as message",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if not ln.startswith(\"#\")]",
+      "new": "if True]",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none word boundary dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "none\\b(.*)$\"",
+      "new": "none(.*)$\"",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable message refused",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "print(f\"required skipped: cannot read the message ({exc})\", file=sys.stderr)\n            return 0",
+      "new": "print(f\"required skipped: cannot read the message ({exc})\", file=sys.stderr)\n            return 1",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_the_check_itself_degrades_on_a_bad_message_and_a_broken_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "git failure passes",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "print(f\"required refused: {exc}\", file=sys.stderr)\n            return 2",
+      "new": "print(f\"required refused: {exc}\", file=sys.stderr)\n            return 0",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_the_check_itself_degrades_on_a_bad_message_and_a_broken_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no changelog dir still asked",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if not (root / FRAGMENT_DIR).is_dir():\n        return []",
+      "new": "if False:\n        return []",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_the_check_itself_degrades_on_a_bad_message_and_a_broken_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no unit still asked",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "    if not ids:\n        return []\n",
+      "new": "    if False:\n        return []\n",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_the_check_itself_degrades_on_a_bad_message_and_a_broken_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v3 dashed name not accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "names.insert(0, ",
+      "new": "names.append(",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_version_three_id_is_read_from_the_subject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v3 gets no dashed name",
+      "file": ".claude/skills/sdlc-studio/scripts/changelog.py",
+      "old": "if not unit_id[2:].isdigit():",
+      "new": "if False:",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_version_three_id_is_read_from_the_subject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine adds no fragment (apply)",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "            story_ids.append(s[\"id\"])\n            _add_fragment_to_affects(root, Path(s[\"path\"]), s[\"id\"])\n            # Record",
+      "new": "            story_ids.append(s[\"id\"])\n            # Record",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine adds no fragment (into)",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "            story_ids.append(s[\"id\"])\n            _add_fragment_to_affects(root, Path(s[\"path\"]), s[\"id\"])\n            _insert_after_status",
+      "new": "            story_ids.append(s[\"id\"])\n            _insert_after_status",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine ignores changelog dir",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if not (root / changelog.FRAGMENT_DIR).is_dir():\n        return",
+      "new": "    if False:\n        return",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine fragment given to an empty Affects",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "(\\S.*?)[ \\t]*$\", re.MULTILINE)",
+      "new": "(.*?)[ \\t]*$\", re.MULTILINE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "survived",
+      "answer": "Equivalent: artifact.new writes no Affects line for a story with no Affects (probe: a lenient-mode story carries no line containing the word Affects), so the regex never meets an empty value and the non-space requirement cannot change a minted story."
+    },
+    {
+      "mutant": "refine fragment names the wrong id",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "fragment = f\"{changelog.FRAGMENT_DIR}/{story_id}.md\"",
+      "new": "fragment = f\"{changelog.FRAGMENT_DIR}/{story_id[:-1]}.md\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine fragment replaces the Affects",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "f\"{m.group(1)}{m.group(2)}, {fragment}\"",
+      "new": "f\"{m.group(1)}{fragment}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refine fragment written but not saved",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    if new != text:\n        sdlc_md.atomic_write(story_path, new)",
+      "new": "    if False:\n        sdlc_md.atomic_write(story_path, new)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook runs another verb",
+      "file": ".githooks/commit-msg",
+      "old": "changelog.py\" required --root",
+      "new": "changelog.py\" check --root",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook reads no message",
+      "file": ".githooks/commit-msg",
+      "old": "\"$repo_root\" \"$msg_file\" 2>&1)\"; then\n      printf",
+      "new": "\"$repo_root\" /dev/null 2>&1)\"; then\n      printf",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook ignores the fragment refusal",
+      "file": ".githooks/commit-msg",
+      "old": "printf '%s\\n%s\\n' \"$out\" \"$frag\"\n      return 1",
+      "new": "printf '%s\\n%s\\n' \"$out\" \"$frag\"\n      return 0",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook drops the faults from the refusal",
+      "file": ".githooks/commit-msg",
+      "old": "printf '%s\\n%s\\n' \"$out\" \"$frag\"",
+      "new": "printf '%s\\n%s\\n' \"$out\" \"\"",
+      "test": "tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 83 |
-| Complete | 562 |
+| In Progress | 82 |
+| Complete | 563 |
 | Rejected | 36 |
 | Deferred | 3 |
 | Superseded | 66 |
@@ -74,7 +74,7 @@
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Complete | High | Improvement | 2026-11-04 | EP0298 |
 | [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | Complete | High | Feature | 2026-11-04 | EP0274 |
-| [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | In Progress | High | Feature | 2026-11-05 | EP0325 |
+| [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Complete | High | Feature | 2026-11-05 | EP0325 |
 | [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Rejected | Medium | Improvement | 2026-11-05 | -- |
 | [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | Complete | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | Complete | High | Feature | 2026-11-06 | EP0299 |

@@ -1,0 +1,6 @@
+UNIT: US1191
+BRIEF: 0309a5002f7f-679fd49e
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED the round-one finding that the hook had no cap on a silent host\: the bound now lives in remote-gate (connect 10s, staged keepalive about 60s, then exit 3 and the hook's local fallback), so a commit is bounded by the local run plus that limit plus the 60s lock wait\; a busy or unreachable or silent host never yields a pass\; tools/remote-gate.sh and .githooks/commit-msg are unchanged since e68d0a2ae and the brief fingerprint is still 0309a5002f7f\; both suites pass (10 tests).

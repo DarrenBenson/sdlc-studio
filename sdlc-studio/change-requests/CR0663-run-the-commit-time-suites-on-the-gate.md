@@ -1,6 +1,6 @@
 # CR-0663: Run the commit-time suites on the gate host, as the push already does
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0325
 > **Priority:** High
 > **Type:** Feature

@@ -1,6 +1,6 @@
 # BG0967: The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py, changelog.d/BG0967.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py
@@ -43,12 +43,16 @@ A dozen-line `_steps_safe` doing exactly this, in a throwaway copy at HEAD, pass
 
 - [ ] **AC1** Given a Steps value its author did not fence, each of: BG0967's one-line `python3 -c "import sys; from lib import sdlc_md; print(sdlc_md.__name__)"`; that program over lines inside double quotes; a `python3 - <<'EOF'` heredoc; a backslash-continued `python3 -c`; `export A_B=1` then `echo my_var`; a heredoc under a numbered item with an unindented body; and the three prose lines `Run git status && check the users' list`, `Then read Bob's note on my_x`, `and the my_y value`; when each is filed through `file_finding.py file`, then its Steps to Reproduce section is the value byte for byte, and each of the four `python3` commands, copied out of that section and run from the scripts folder, prints `lib.sdlc_md`. Fails on: HEAD, which wraps the `python3` commands in a `text` fence, back-ticks `A_B` and `my_var` inside their commands, pulls `Then read Bob's note on my_x` into the first line's fence, and files the item's heredoc under a `<!-- -->` marker with three spaces added to its first line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsAsWrittenTests
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given BG0967's one-line command, the heredoc, and `export A_B=1` then `echo my_var`, when each is created through `artifact.py new`, `artifact.py new --template full`, `artifact.py batch` and `file_finding.py file --type cr` (whose Steps section the lander adds), then each Steps to Reproduce section is the value byte for byte. Fails on: HEAD, which fences the two `python3` commands and back-ticks `A_B` and `my_var` on all four paths.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsAsWrittenEveryCreatorTests
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given an author's `markdown` fence holding a `Status` declaration line, a `Depends on` declaration line and `plain my_line`; a blockquoted `Waived` declaration followed by `yes && true`; a list item whose `printf` argument holds a middle dot and then a `Verified` declaration; and an author's backtick fence and tilde fence each left open; when each is filed through `file_finding.py file`, then every line is kept byte for byte save that each declaration's bold markers are escaped, `extract_field` reads Status as `Open` and reads no Waived, Verified or Depends on field, and an open fence is closed on its own marker after the value, so `verify_ac.py run --id <the bug> --dry-run` still parses the bug's criterion. Fails on: nothing at HEAD, which holds all of this; it fails on a fix that drops the guard or the fence close along with the classifier, which reopens round one's injection finding.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsGuardTests
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given the prose `Read the __init__ module, my_file.md and https://example.com/a_b` as both the Steps and the Summary, when filed through `file_finding.py file`, then the Steps to Reproduce section is that text byte for byte while the Summary has `__init__`, `my_file.md` and the URL each in a code span: the filer adds no backtick to the Steps, and every other prose field keeps `_prose_safe`. Fails on: HEAD, which back-ticks all three in the Steps.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py::StepsProseTests
+  - **Verified:** yes (2026-11-24)
 
 ## Triage
 

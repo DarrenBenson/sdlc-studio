@@ -1,0 +1,70 @@
+{
+  "unit": "BG1310",
+  "digest": "6d27d315b9affd2e at 6ef5a39bed63",
+  "report": "sdlc-studio/.local/lane/landed/agent-ada505f30d6fd507e/BG1310-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "runner clears nothing",
+      "file": "tools/skill-tests.sh",
+      "old": "[ -n \"$harness_name\" ] && unset -v \"$harness_name\"",
+      "new": ": \"$harness_name\"",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_clears_every_selection_variable_and_nothing_else",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "runner clears only the first name",
+      "file": "tools/skill-tests.sh",
+      "old": "selection_variables()))')\"",
+      "new": "selection_variables()[:1]))')\"",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_clears_every_selection_variable_and_nothing_else",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "runner clears the fixtures variables too",
+      "file": "tools/skill-tests.sh",
+      "old": "    [ -n \"$harness_name\" ] && unset -v \"$harness_name\"\n  done <<< \"$harness_names\"",
+      "new": "    [ -n \"$harness_name\" ] && unset -v \"$harness_name\"\n  done <<< \"$harness_names\"\n  unset -v FIXTURE_OWNED_VARIABLE",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_clears_every_selection_variable_and_nothing_else",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable helper no longer stops the run",
+      "file": "tools/skill-tests.sh",
+      "old": ">&2; exit 1; }",
+      "new": ">&2; }",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_a_scrub_that_cannot_read_the_helper_stops_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scrub runs without a helper file",
+      "file": "tools/skill-tests.sh",
+      "old": "if [ -f \"$skill/lib/token_meters.py\" ]; then",
+      "new": "if true; then",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_a_scrub_that_cannot_read_the_helper_stops_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "conftest names no harness variable",
+      "file": "conftest.py",
+      "old": "    return meters.selection_variables()",
+      "new": "    return []",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_and_the_conftest_clear_the_same_names_from_one_helper",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "runner hand-writes a list",
+      "file": "tools/skill-tests.sh",
+      "old": "    [ -n \"$harness_name\" ] && unset -v \"$harness_name\"\n  done <<< \"$harness_names\"",
+      "new": "    [ -n \"$harness_name\" ] && unset -v \"$harness_name\"\n  done <<< \"$harness_names\"\n  unset -v CURSOR_AGENT",
+      "test": "tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_and_the_conftest_clear_the_same_names_from_one_helper",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

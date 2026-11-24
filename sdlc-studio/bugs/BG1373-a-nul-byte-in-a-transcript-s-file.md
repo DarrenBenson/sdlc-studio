@@ -1,6 +1,6 @@
 # BG1373: A NUL byte in a transcript's file path makes critic.py record refuse the unit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py, changelog.d/BG1373.md
@@ -42,10 +42,13 @@ goes on to the next record.
 
 - [ ] **AC1** Given a transcript whose recording context's only Edit names `src/unit.py` with a NUL appended, when `critic.py record` records US0001's verdict, then it exits 0, the row is written, and the row is independent (the NUL record is skipped). Fails on: HEAD (measured: exit 2, `lstat: embedded null character in path`, no row).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_in_a_transcript_is_skipped
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same NUL Edit followed by a clean Edit of `src/unit.py` before the brief, when the verdict is recorded, then the row's Source carries `self-review:src/unit.py`. Fails on: a fix that abandons the transcript, or the whole check, at the first path it cannot resolve.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_does_not_hide_a_later_edit_of_the_unit
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a Write whose `file_path` is the verdict path with a NUL appended, before the context's real write of the verdict, when the verdict is recorded, then it exits 0 and the writer is found from the real write. Fails on: HEAD's `_names` (measured: the same refusal, no row).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_nul_path_beside_the_verdict_write_is_skipped
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

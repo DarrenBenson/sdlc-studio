@@ -1,0 +1,133 @@
+{
+  "unit": "BG1548",
+  "digest": "6775fdb59a9e10cd at d830f925779e",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1c7efae84caa4135/BG1548-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "Accepted status test inverted to any status",
+      "file": "tools/lint_corpus.py",
+      "old": "status.group(1) != \"Accepted\"",
+      "new": "status.group(1) == \"Accepted\"",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status guard removed",
+      "file": "tools/lint_corpus.py",
+      "old": "if not status or status.group(1) != \"Accepted\":\n            continue\n",
+      "new": "",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending compare made case-sensitive",
+      "file": "tools/lint_corpus.py",
+      "old": "value.lower().startswith(\"pending\")",
+      "new": "value.startswith(\"pending\")",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty outcome counts as filled",
+      "file": "tools/lint_corpus.py",
+      "old": "if value and not value.lower()",
+      "new": "if not value.lower()",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder outcome counts as filled",
+      "file": "tools/lint_corpus.py",
+      "old": " and \"{{\" not in value",
+      "new": "",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending anywhere in the outcome counts",
+      "file": "tools/lint_corpus.py",
+      "old": "value.lower().startswith(\"pending\")",
+      "new": "\"pending\" in value.lower()",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section not bounded by the next heading",
+      "file": "tools/lint_corpus.py",
+      "old": "section = tail[:end.start()] if end else tail",
+      "new": "section = tail",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rfc path not required",
+      "file": "tools/lint_corpus.py",
+      "old": "if not _RFC_PATH_RE.search(rel):\n            continue\n",
+      "new": "",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable file raises instead of skipping",
+      "file": "tools/lint_corpus.py",
+      "old": "except (OSError, UnicodeDecodeError):",
+      "new": "except OSError:",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_a_non_utf8_or_non_rfc_file_is_not_a_finding_and_not_a_crash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no outcome line is reported pending",
+      "file": "tools/lint_corpus.py",
+      "old": "        if not outcome:\n            continue\n",
+      "new": "        if not outcome:\n            outcome = re.search('$', section)\n",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "line number off by one",
+      "file": "tools/lint_corpus.py",
+      "old": "heading.end() + outcome.start()) + 1",
+      "new": "heading.end() + outcome.start()) + 2",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "analyse drops the rfc findings",
+      "file": "tools/lint_corpus.py",
+      "old": "    current = [*lint_files(files, cwd=root, config=config, linter=linter),\n               *accepted_rfc_decision_findings(root, files)]\n",
+      "new": "    current = lint_files(files, cwd=root, config=config, linter=linter)\n",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "baseline drops the rfc findings",
+      "file": "tools/lint_corpus.py",
+      "old": "        return [*lint_files(files, cwd=base, config=config.resolve(), linter=linter),\n                *accepted_rfc_decision_findings(base, files)]",
+      "new": "        return lint_files(files, cwd=base, config=config.resolve(), linter=linter)",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the proposed control accepted",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "\"RFC0002-proposed-pending\": _rfc(\"0002\", \"Proposed\", PENDING)",
+      "new": "\"RFC0002-proposed-pending\": _rfc(\"0002\", \"Accepted\", PENDING)",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

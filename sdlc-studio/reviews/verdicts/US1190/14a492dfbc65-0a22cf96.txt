@@ -1,0 +1,6 @@
+UNIT: US1190
+BRIEF: 14a492dfbc65-0a22cf96
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED the round-one finding that remote-gate gave the connection no bound\: every ssh now carries ConnectTimeout=10 (remote-gate.sh default_ssh), a staged call under the default transport gives up a silent link after 15 x 4 = 60s and a dropped link maps to exit 3 (the 255 check after the ssh wait), never a pass or a red\; a push keeps 60 x 10 and a configured gateSsh keeps its own bounds\; test_a_silent_host_is_bounded_and_is_not_a_verdict reads the constants and every logged ssh call's options (it cannot simulate a silent link\, so the bound is pinned by option text) and both test files pass (10 tests)\; no new defect found in the repair.

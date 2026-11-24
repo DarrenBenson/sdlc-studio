@@ -1,0 +1,97 @@
+{
+  "unit": "BG1731",
+  "digest": "5b18ea2115fe6f77 at 6ef5a39bed63",
+  "report": "sdlc-studio/.local/lane/landed/agent-ada505f30d6fd507e/BG1731-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "rerun again for a batch timeout",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "if rerun is not None and result.exit_code != BATCH_TIMEOUT_EXIT:",
+      "new": "if rerun is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_a_ceiling_timeout_is_recorded_without_its_own_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "timeout exit constant changed",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "BATCH_TIMEOUT_EXIT = 124",
+      "new": "BATCH_TIMEOUT_EXIT = 123",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_a_ceiling_timeout_is_recorded_without_its_own_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rerun dropped for every batch answer",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "if rerun is not None and result.exit_code != BATCH_TIMEOUT_EXIT:",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rerun only when exit is the timeout",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "result.exit_code != BATCH_TIMEOUT_EXIT:",
+      "new": "result.exit_code == BATCH_TIMEOUT_EXIT:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "conftest never unsets the variable",
+      "file": "conftest.py",
+      "old": "    _turn_git_maintenance_off()\n    _unset_red_detail()\n",
+      "new": "    _turn_git_maintenance_off()\n",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_a_session_started_with_the_red_detail_file_set_sees_it_unset",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "conftest unsets only when absent",
+      "file": "conftest.py",
+      "old": "    if RED_DETAIL_VAR in os.environ:\n        _red_detail_before",
+      "new": "    if RED_DETAIL_VAR not in os.environ:\n        _red_detail_before",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_a_session_started_with_the_red_detail_file_set_sees_it_unset",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "conftest does not put the variable back",
+      "file": "conftest.py",
+      "old": "        os.environ[RED_DETAIL_VAR] = _red_detail_before[0]\n",
+      "new": "        pass\n",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_the_variable_is_put_back_when_the_session_ends",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "conftest puts back a wrong value",
+      "file": "conftest.py",
+      "old": "os.environ[RED_DETAIL_VAR] = _red_detail_before[0]",
+      "new": "os.environ[RED_DETAIL_VAR] = ''",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_the_variable_is_put_back_when_the_session_ends",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the nested session does not load the root conftest",
+      "file": "tools/tests/test_conftest_env.py",
+      "old": "[sys.executable, \"-m\", \"pytest\", \"-q\", \"-s\", \"-p\", \"conftest\", \"-p\",\n             \"no:cacheprovider\", \"-o\", \"addopts=\", str(probe)],",
+      "new": "[sys.executable, \"-m\", \"pytest\", \"-q\", \"-s\", \"-p\",\n             \"no:cacheprovider\", \"-o\", \"addopts=\", str(probe)],",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_a_session_started_with_the_red_detail_file_set_sees_it_unset",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the control loads the conftest too",
+      "file": "tools/tests/test_conftest_env.py",
+      "old": "[sys.executable, \"-m\", \"pytest\", \"-q\", \"-s\", \"-p\", \"no:cacheprovider\", \"-o\",\n                 \"addopts=\", str(probe)]",
+      "new": "[sys.executable, \"-m\", \"pytest\", \"-q\", \"-s\", \"-p\", \"conftest\", \"-p\", \"no:cacheprovider\", \"-o\",\n                 \"addopts=\", str(probe)]",
+      "test": "tools/tests/test_conftest_env.py::RedDetailTests::test_the_probe_reports_the_variable_when_the_conftest_is_not_loaded",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

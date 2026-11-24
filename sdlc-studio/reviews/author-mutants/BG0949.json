@@ -1,0 +1,115 @@
+{
+  "unit": "BG0949",
+  "digest": "4faa1754a9bbd4d2 at d830f925779e",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1c7efae84caa4135/BG0949-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "trailing word boundary put back after the colon forms",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "|\\b(?:ruled|decided):\",",
+      "new": "|\\b(?:ruled|decided):\\b\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_colon_forms",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "leading boundary dropped from the colon forms",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "|\\b(?:ruled|decided):\",",
+      "new": "|(?:ruled|decided):\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "leading boundary dropped from the prose forms",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "r\"\\b(?:ruled by|settled in|resolved by)\\b",
+      "new": "r\"(?:ruled by|settled in|resolved by)\\b",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailing boundary dropped from the prose forms",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "|resolved by)\\b|",
+      "new": "|resolved by)|",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ruled by alternative removed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:ruled by|settled in|resolved by)",
+      "new": "(?:settled in|resolved by)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settled in alternative removed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:ruled by|settled in|resolved by)",
+      "new": "(?:ruled by|resolved by)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolved by alternative removed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:ruled by|settled in|resolved by)",
+      "new": "(?:ruled by|settled in)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_every_alternative",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ruled colon form removed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:ruled|decided):",
+      "new": "(?:decided):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_colon_forms",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decided colon form removed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:ruled|decided):",
+      "new": "(?:ruled):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_colon_forms",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "case-insensitivity dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "decided):\",\n                        re.IGNORECASE)",
+      "new": "decided):\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_colon_forms",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the destination check skipped for a ruling with a verb",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "            if defect:\n                offending.append(defect)\n            continue",
+      "new": "            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_destination_still_held",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the no-ruling control item accepted (control mutated)",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py",
+      "old": "self.assertTrue(_open(\"- [x] Cache? - maybe later\"))",
+      "new": "self.assertTrue(_open(\"- [x] Cache? - ruled: later\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py::InlineRulingFormTests::test_colon_forms",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+UNIT: BG1310
+BRIEF: 3ad97e4d0b1c-6fd7a890
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged on BG1310's own edits only: the harness scrub in `tools/skill-tests.sh`, `HarnessScrubTests` and the changelog. Its declared `conftest.py` carries no BG1310 edit since the base, only BG1731's red-detail lines, judged in that unit. `verify_ac.py run --id BG1310 --dry-run --timeout 300` at 6ef5a39be: 3 of 3 pass. Hand-recorded mutant in BG1310-mutants.json (the unset replaced by a no-op): HOLDS, replayed in a detached worktree, AC1's test and AC2's test both fail (2 failed, 2 passed), and the unmutated control is 4 passed. Reviewer mutant: the unset loop moved into a pipeline subshell, so nothing reaches the runner's own shell, is killed by the same two tests. AC1's test carries its own positive control (the module run bare under unittest with `CURSOR_AGENT=1` must fail), so its green is the scrub's doing. Claim inventory: the changelog, the script comment and the test docstrings are TRUE against the code, and `conftest.harness_variables()` returns `token_meters.selection_variables()`, which AC3's test reads in both. The test census passes for the new class, apart from an importability failure on two lint-corpus modules that need `node_modules`, absent in a fresh worktree and unrelated to this diff.

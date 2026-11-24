@@ -1,6 +1,6 @@
 # BG1731: US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py, conftest.py, tools/tests/test_conftest_env.py, changelog.d/BG1731.md
@@ -40,13 +40,17 @@ test that runs the lane with the variable set to a scratch file.
 
 - [ ] **AC1** Given `SDLC_VERIFY_RED_DETAIL` set to a scratch file, as the corpus-verify step sets it, when US1112 AC4's test runs, then it passes. Fails on: HEAD, where the lane logs `('test_slow', 'spawn')` beside the two batch entries (measured locally on Python 3.14.8, the CI failure's exact diff).
   - **Verify:** shell f="$(mktemp)"; SDLC_VERIFY_RED_DETAIL="$f" python3 -m pytest -q -p no:cacheprovider .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_a_batched_node_over_the_per_verifier_ceiling_reads_red; rc=$?; rm -f "$f"; exit $rc
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a lane run with `SDLC_VERIFY_RED_DETAIL` set to a scratch file and a batched node over its per-verifier ceiling, then the node is never spawned on its own, and the file records it once as `red: US9101::AC1` with the batch's timeout answer and exit 124. This is the root cause found: `_record_red`'s rerun for the record, active only when the variable is set. Fails on: HEAD's rerun, which spawns the node again for a ceiling's length to record `timeout`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_a_ceiling_timeout_is_recorded_without_its_own_run
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a red the batch answered by a failing test, with the variable set, then it is still run alone and its own output (`rerun-marker`) is recorded under the batch's answer. Fails on: a fix that drops the rerun for every batch answer, undoing BG1578.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_verify_red_detail.py::CorpusVerifyRedDetailTests::test_a_red_the_batch_answered_is_run_alone_for_its_output
+  - **Verified:** yes (2026-11-24)
 
 - [ ] **AC4** Given `SDLC_VERIFY_RED_DETAIL` set to a file in the environment that starts the test session, as CI's corpus-verify step sets it, when a test verifies a Done fixture story whose criterion is red, then nothing is written to that file: the repository's `conftest.py` unsets the variable for the session as it unsets the harness homes, so only the corpus lane's own reds reach the record. Fails on: HEAD, where fixture stories wrote 129 of the 131 red blocks in run 45196238545's red-detail file (US0001 46 times, US9101 15, US0002 14), burying US0253::AC2 and US1112::AC4.
   - **Verify:** shell f="$(mktemp)"; SDLC_VERIFY_RED_DETAIL="$f" python3 -m pytest -q -p no:cacheprovider .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py tools/tests/test_conftest_env.py; rc=$?; test "$rc" -eq 0 && test ! -s "$f"; r=$?; rm -f "$f"; exit $r
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

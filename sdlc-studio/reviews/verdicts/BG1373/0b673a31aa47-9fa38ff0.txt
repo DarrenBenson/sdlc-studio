@@ -1,0 +1,6 @@
+UNIT: BG1373
+BRIEF: 0b673a31aa47-9fa38ff0
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: round-one finding "test_a_path_under_a_loop_of_links_costs_only_itself never reaches the guard" CLOSED\: on Python 3.10.21 the test passes with the guard intact and fails with RuntimeError dropped from the except clause\; the repair is a test-only change of one path and adds no defect\; all 12 tests in the module pass on 3.10\; the patched-resolve test remains for newer Pythons.

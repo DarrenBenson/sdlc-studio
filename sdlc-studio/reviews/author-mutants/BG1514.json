@@ -1,0 +1,151 @@
+{
+  "unit": "BG1514",
+  "digest": "6f13b1dd4f7a0b04 at 6ef5a39bed63",
+  "report": "sdlc-studio/.local/lane/landed/agent-ada505f30d6fd507e/BG1514-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "tee copies to nowhere",
+      "file": "tools/remote-gate.sh",
+      "old": "tee -- \"$keep_log\" < \"$out_fifo\" &",
+      "new": "tee -- /dev/null < \"$out_fifo\" &",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "log kept inside the run directory",
+      "file": "tools/remote-gate.sh",
+      "old": "local keep_log=\"$state/boundary-last.log\"",
+      "new": "local keep_log=\"$run_dir/boundary-last.log\"",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal names the gate-written log",
+      "file": "tools/remote-gate.sh",
+      "old": "job_log=\"at $keep_log\"",
+      "new": "job_log=\"at $state/boundary-suite-last.log\"",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release run keeps a boundary log",
+      "file": "tools/remote-gate.sh",
+      "old": "what=\"the release gate\" job_log=\"\" keep_log=\"\" doing",
+      "new": "what=\"the release gate\" job_log=\"\" doing",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tee waited on zero times",
+      "file": "tools/remote-gate.sh",
+      "old": "for waited in $(seq 50)",
+      "new": "for waited in $(seq 0)",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_a_process_the_gate_orphans_cannot_hold_the_run_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "log written without the tee when kept",
+      "file": "tools/remote-gate.sh",
+      "old": "    setsid python3 -c \"$launcher\" \"${job[@]}\" > \"$out_fifo\" 2>&1 &",
+      "new": "    setsid python3 -c \"$launcher\" \"${job[@]}\" > \"$out_fifo\" &",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "leak test judges at return",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "            self.assertEqual(5, len(self._siblings_written(shared, 5, self.SIBLING_DEADLINE)), out)",
+      "new": "            self.assertEqual(5, at_return, out)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_leak_check_waits_for_a_sibling_that_writes_late",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sibling wait returns at once",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "            if len(found) >= count or clock() >= end:",
+      "new": "            if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_wait_for_a_sibling_is_bounded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sibling wait ignores count",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "            if len(found) >= count or clock() >= end:",
+      "new": "            if clock() >= end:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_wait_for_a_sibling_is_bounded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sibling wait ends at once on deadline arithmetic",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "        end = clock() + deadline\n",
+      "new": "        end = clock()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_wait_for_a_sibling_is_bounded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "late sibling is not late",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "        if os.environ.get(\"US0892_LATE\"):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_leak_check_waits_for_a_sibling_that_writes_late",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch judged on its first answer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py",
+      "old": "            if not cache.reason:\n                return cache\n",
+      "new": "            return cache\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::ProjectConfigurationTests::test_a_serial_only_mark_is_judged_once_a_slow_parallel_phase_has_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch reason clipped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py",
+      "old": "f\"{cache.reason}\")",
+      "new": "f\"{cache.reason[:40]}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::ProjectConfigurationTests::test_a_serial_only_mark_is_judged_once_a_slow_parallel_phase_has_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the copy wait has no bound",
+      "file": "tools/remote-gate.sh",
+      "old": "for waited in $(seq 50)",
+      "new": "for waited in $(seq 2000)",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_a_process_the_gate_orphans_cannot_hold_the_run_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the tee is not killed after the wait",
+      "file": "tools/remote-gate.sh",
+      "old": "    kill \"$tee_pid\" 2>/dev/null\n    wait \"$tee_pid\" 2>/dev/null\n    tee_pid=\"\"",
+      "new": "    wait \"$tee_pid\" 2>/dev/null\n    tee_pid=\"\"",
+      "test": "tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_a_process_the_gate_orphans_cannot_hold_the_run_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sibling wait returns ten seconds early",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py",
+      "old": "            if len(found) >= count or clock() >= end:",
+      "new": "            if len(found) >= count or clock() >= end - 10:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_wait_for_a_sibling_is_bounded",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

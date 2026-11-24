@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 62 |
+| Draft | 61 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 7 |
-| Done | 275 |
+| Done | 276 |
 | Superseded | 34 |
 | **Total** | **378** |
 
@@ -75,7 +75,7 @@
 | [EP0322](EP0322-a-delegated-total-for-an-agent-the-meter.md) | A delegated total for an agent the meter cannot see is added to the run's spend, whatever else the session ran | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0323](EP0323-a-planned-unit-s-affects-or-criterion-is.md) | A planned unit's Affects or criterion is amended in flight by a command that records why | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0324](EP0324-a-lesson-s-revalidated-citations-are-checked-against.md) | A lesson's Revalidated citations are checked against the tree and re-anchored when code moves | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0325](EP0325-a-commit-s-selected-test-suites-run-on.md) | A commit's selected test suites run on the gate host when one is named, as the push gate does | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0325](EP0325-a-commit-s-selected-test-suites-run-on.md) | A commit's selected test suites run on the gate host when one is named, as the push gate does | Done | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0326](EP0326-a-sprint-drives-each-unit-s-lane-to.md) | A sprint drives each unit's lane to its paperwork and wakes the model only for judgement | In Progress | 7 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0327](EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md) | Authors and reviewers run one shipped mutation runner and the self-check records its report | In Progress | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0328](EP0328-every-change-to-the-verifier-core-runs-a.md) | Every change to the verifier core runs a kit of the hostile runtimes consuming projects have | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |

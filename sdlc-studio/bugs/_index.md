@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 258 |
+| Open | 253 |
 | In Progress | 0 |
-| Fixed | 1134 |
+| Fixed | 1139 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -24,7 +24,7 @@
 | [BG0946](BG0946-reports-index-md-last-updated-is-not-restamped.md) | reports/_index.md Last Updated is not restamped when a report is filed | Open | Low | 2026-10-05 | 2026-10-05 |
 | [BG0947](BG0947-reference-outputs-md-terminal-status-table-contradicts-sdlc.md) | reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS | Fixed | Medium | 2026-10-05 | 2026-10-05 |
 | [BG0948](BG0948-a-migrating-project-cannot-baseline-pre-existing-placeholder.md) | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined | Fixed | Medium | 2026-10-05 | 2026-10-05 |
-| [BG0949](BG0949-an-inline-ruled-or-decided-ruling-is-never.md) | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0949](BG0949-an-inline-ruled-or-decided-ruling-is-never.md) | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0950](BG0950-a-verdict-that-follows-critic-py-brief-s.md) | A verdict that follows `critic.py brief`'s return contract to the letter is refused by `critic.py record --from-verdict` | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0951](BG0951-critic-tier-for-reads-the-raw-difficulty-band.md) | `critic.tier_for` reads the raw difficulty band and skips every critic-role policy `route.pick` applies, so code units get a light review the routing policy says should be medium | Won't Fix | High | 2026-10-06 | 2026-10-06 |
 | [BG0952](BG0952-an-open-questions-item-declaring-none-after-a.md) | An Open Questions item declaring None after a dash is read as unanswered - `_DECLARES_NONE_RE` does not allow a leading dash | Open | Low | 2026-10-06 | 2026-10-06 |
@@ -42,7 +42,7 @@
 | [BG0964](BG0964-help-refine-md-never-mentions-into-so-a.md) | help/refine.md never mentions `--into`, so a story added to an already-refined epic is made with `artifact.py new` and carries no Delivers link | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0966](BG0966-review-prep-persona-usage-calls-a-persona-unused.md) | review_prep persona_usage calls a persona unused unless its file's H1 appears verbatim in prd.md - stories, CRs and consult logs are never read | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0967](BG0967-the-finding-filer-backtick-wraps-identifiers-inside-steps.md) | The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0967](BG0967-the-finding-filer-backtick-wraps-identifiers-inside-steps.md) | The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0968](BG0968-ci-runs-tools-tests-in-the-same-step.md) | CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0969](BG0969-sprint-close-file-and-close-silently-drops-a.md) | sprint close --file-and-close silently drops a supplied --goal-verdict, then refuses because the goal is unjudged - a hard blocker it cannot file | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0970](BG0970-critic-py-brief-says-nothing-when-the-unit.md) | `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them | Fixed | Medium | 2026-10-07 | 2026-10-07 |
@@ -385,7 +385,7 @@
 | [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1309](BG1309-a-cursor-composer-or-grok-session-in-fast.md) | A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard | Open | Low | 2026-11-09 | 2026-11-09 |
-| [BG1310](BG1310-tools-skill-tests-sh-the-unittest-runner-npm.md) | `tools/skill-tests.sh`, the unittest runner `npm test` uses, loads no conftest, so the harness-variable scrub BG1197 added never runs there and the meter tests fail under a Cursor session | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1310](BG1310-tools-skill-tests-sh-the-unittest-runner-npm.md) | `tools/skill-tests.sh`, the unittest runner `npm test` uses, loads no conftest, so the harness-variable scrub BG1197 added never runs there and the meter tests fail under a Cursor session | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1311](BG1311-sprint-py-lane-land-removes-the-builder-s.md) | `sprint.py lane land` removes the builder's worktree, so the builder cannot be resumed for a repair after a REJECT and a fresh builder must re-read the unit from cold | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1312](BG1312-the-resume-brief-s-known-issues-scan-matches.md) | The resume brief's known-issues scan matches only a `Raised-in-batch` stamp naming the run id, so a brief written mid-run says no known issues while findings filed during the run are open | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1313](BG1313-the-resume-brief-has-three-edges-its-tests.md) | The resume brief has three edges its tests do not pin: a batch listed out of plan order, a `-qa.none` landing marker read as in flight, and a Sprint Goal holding a newline that breaks `parse` | Open | Low | 2026-11-09 | 2026-11-09 |
@@ -448,7 +448,7 @@
 | [BG1370](BG1370-a-later-rewrite-of-a-verdict-file-is.md) | A later rewrite of a verdict file is attributed to the reviewer when its last write was an Edit | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Fixed | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1374](BG1374-the-report-s-prices-table-prints-a-price.md) | The report's Prices table prints a price source URL bare in the Markdown twin, so a filed report fails markdownlint MD034 and its close paperwork cannot be committed | Fixed | High | 2026-11-12 | 2026-11-12 |
 | [BG1375](BG1375-us1015-s-run-state-floor-and-its-write.md) | US1015's run-state floor and its Write, MultiEdit, NotebookEdit, Read and Bash evidence cases have no tests | Won't Fix | Low | 2026-11-12 | 2026-11-12 |
 | [BG1376](BG1376-us1015-s-brief-bound-counts-any-round-s.md) | US1015's brief bound counts any round's issued path, not the round being recorded | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -806,7 +806,7 @@
 | [BG1728](BG1728-bg1552-did-not-converge-in-review-round-2.md) | BG1552 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1729](BG1729-us1326-did-not-converge-in-review-round-2.md) | US1326 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1730](BG1730-unittest-discovery-over-tools-tests-crashes-on-a.md) | unittest discovery over tools/tests crashes on a test module name the skill's tests also use, so US0253 AC2 reads red | Fixed | Low | 2026-11-23 | 2026-11-23 |
-| [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1733](BG1733-transition-py-drops-a-status-decoration-such-as.md) | transition.py drops a status decoration such as '(partially superseded)' on every move | Open | Low | 2026-11-23 | 2026-11-23 |
 

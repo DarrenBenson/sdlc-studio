@@ -1,6 +1,6 @@
 # BG0949: An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG0949.md
@@ -36,10 +36,13 @@ Drop the trailing `\b` for the colon forms - e.g. `\b(?:ruled by|settled in|reso
 
 - [ ] **AC1** `- [x] <q> - ruled: <answer>` and `- [x] <q> - decided: <answer>` (a space after the colon, any case, bold or plain) are accepted by `unresolved_questions`, shown by a test
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py -k colon_forms
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** A test pins each `_RULING_RE` alternative written the way prose writes it, so a boundary regression on any one of them goes red
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py -k every_alternative
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** A ruling that names a destination is still held to that destination (the BG0456 guard keeps passing)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ruling_inline_forms.py -k destination_still_held
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 
