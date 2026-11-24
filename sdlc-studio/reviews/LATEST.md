@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M84Z8Z closed running.** 25 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M84Z8Z closed goal-reached.** 25 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 

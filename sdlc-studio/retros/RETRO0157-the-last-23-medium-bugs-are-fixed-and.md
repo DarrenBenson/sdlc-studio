@@ -84,13 +84,7 @@ BG1733 is Low (a status decoration dropped by `transition.py set`) and changes n
 
 **0 of 27 unit(s) measured; 27 of 27 forecast at plan time.**
 
-**Priced cost: 80,904,696 priced input-equivalent tokens**, 1,264,136 per point over 64 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $187.89, $2.94 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 7,770 x1
-- output: 2,497,230 x5
-- cache write 5m: 10,251,996 x1.25
-- cache write 1h: 993,865 x2
-- cache read: 536,080,506 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 214,857** (13,750,861 tokens over 64 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
