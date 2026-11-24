@@ -571,10 +571,17 @@ def render(d: dict, render_name: str) -> list[str]:
                         "are signed)"))
     if d.get("unreadable"):
         one = d["unreadable"] == 1
+        paths = ", ".join(d.get("damaged") or [])
+        # The record, its run and what to restore follow the paths; the pronoun follows the
+        # learnings, as several may share one damaged record.
         lines.append(f"  ({d['unreadable']} approved {'learning' if one else 'learnings'} not "
-                     f"carried: the run record at {', '.join(d.get('damaged') or [])} is "
-                     f"unreadable, so whether {'its' if one else 'their'} run is signed is "
-                     f"not known; restore it from git)")
+                     f"carried: " + (
+                         f"the run records at {paths} are unreadable, so whether their runs "
+                         f"are signed is not known; restore them from git)"
+                         if len(d.get("damaged") or []) > 1 else
+                         f"the run record at {paths} is unreadable, so whether "
+                         f"{'its' if one else 'their'} run is signed is not known; restore it "
+                         f"from git)"))
     if d.get("unlisted"):
         one = d["unlisted"] == 1
         lines.append(f"  ({d['unlisted']} approved {'learning' if one else 'learnings'} no "
@@ -623,7 +630,11 @@ def standing(root: Path | str, entry: dict, records: dict | None = None) -> str:
 def pending_listing(root: Path | str, *, today: str | None = None) -> list[dict]:
     """Every approved learning, across every memory file, that is not yet live and could go
     live at the next signature, whatever wrote it: within its horizon, not struck or retired,
-    and `standing` unlisted or unsigned. Each as `{id, title, persona, approved_by, addresses}`.
+    and `standing` unlisted, unsigned or unreadable. A learning whose run's record cannot be
+    read is listed as one whose run is unsigned is, so the next signature judges it rather
+    than the damage holding it back until someone restores the record; one the operator
+    struck reads `struck` by its own Struck field and is not listed. Each as
+    `{id, title, persona, approved_by, addresses}`.
     Raises StoreError on a memory file that cannot be read: a listing that skipped it would
     let its learnings go live unlisted."""
     root = Path(root)
@@ -638,7 +649,7 @@ def pending_listing(root: Path | str, *, today: str | None = None) -> list[dict]
             horizon = lessons.horizon_of(e, days)
             if horizon is None or horizon < today:
                 continue
-            if standing(root, e, records) in ("unlisted", "unsigned"):
+            if standing(root, e, records) in ("unlisted", "unsigned", "unreadable"):
                 out.append({"id": e["id"], "title": e["title"], "persona": f.get("persona", ""),
                             "approved_by": f.get("approved-by", ""),
                             "addresses": f.get("addresses", "")})

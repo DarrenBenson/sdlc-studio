@@ -1429,6 +1429,57 @@ class DelegatedHarnessTests(unittest.TestCase):
         self.assertEqual(0, run_state.delegated_total(
             run_state.read(str(self.root)), {"opencode"}))
 
+    def test_a_claude_code_lane_run_is_added_in_a_mixed_run(self) -> None:
+        """A `claude -p` lane run is a session of its own, in its own worktree, which no Claude
+        reading of the run holds, so the lane-run return leaves its record untagged and a mixed
+        run still adds it: Claude's stamps hold their own subagents and a Cursor session's do
+        not, so Claude is the run's one subagent reader. MUTANT: the call site tags every
+        harness, `claude` included, and the 1000 tokens drop out of the Estimates row, the page
+        Tokens figure and the retro total."""
+        import argparse
+
+        import retro
+        import sprint
+        import sprint_report
+        from lib import lanes
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        comps = {"input": 900, "output": 100, "cache_write_5m": 0, "cache_write_1h": 0,
+                 "cache_read": 0}
+        reading = {"tokens": 1000, "components": comps, "model": "claude-sonnet-4-5",
+                   "harness": "claude", "source": "/lane/claude.json", "priced": 0}
+        with mock.patch.object(lanes, "run_readings", return_value=[(reading, None)]):
+            sprint._lane_run_totals(
+                self.root, argparse.Namespace(tokens=None, agent=None),
+                [{"unit": "BG0001", "outcome": "delivered"}])
+        [record] = run_state.read(str(self.root))[run_state.DELEGATED]
+        self.assertNotIn("harness", record, "a Claude Code lane run is tagged")
+        self.assertEqual("lane-run-claude", record["agent"])
+        claude = "/c/s.jsonl"
+        state = {**run_state.read(str(self.root)), run_state.TOKEN_STAMPS: [
+            {"tokens": 1000, "source": claude, "subagents": True, "at": "2026-09-23T00:00:00Z",
+             "kind": "open"},
+            {"tokens": 5000, "source": claude, "subagents": True, "at": "2026-09-23T01:00:00Z",
+             "kind": "report"},
+            {"tokens": 100, "source": "cu:1", "harness": "cursor", "basis": "cursor usage",
+             "at": "2026-09-23T00:00:00Z", "kind": "open"},
+            {"tokens": 700, "source": "cu:1", "harness": "cursor", "basis": "cursor usage",
+             "at": "2026-09-23T01:00:00Z", "kind": "report"}]}
+        total = run_state.run_token_total(state)
+        self.assertEqual({"claude"}, run_state.subagent_readers(total),
+                         "premise: Claude is the mixed run's one subagent reader")
+        self.assertEqual((4600 + 1000, 1), sprint_report._run_tokens_actual(state, total))
+        section = sprint_report._cost_section(state, "state", total)
+        self.assertEqual(5600, section["figures"]["tokens_total"]["value"])
+        held = {**state, run_state.TOKEN_BASELINE: {"tokens": 1000, "source": claude}}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": claude, "basis": "b", "includes_subagents": True}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual(1000, got["delegated_tokens"])
+        self.assertEqual(1, got["delegated_records"])
+
     def test_a_run_whose_every_reading_holds_its_agents_counts_the_tagged_record_as_supplied(
             self) -> None:
         """The retro says how many delegated totals it did not add: over a run whose readings

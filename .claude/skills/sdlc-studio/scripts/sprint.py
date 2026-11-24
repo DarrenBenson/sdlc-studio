@@ -9883,7 +9883,10 @@ def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) 
                 root, reading["tokens"], agent=f"lane-run-{reading['harness']}",
                 note=f"sprint lane run return ({res['outcome']})", unit=res["unit"],
                 reading=reading, provenance=lanes.HARNESS_OUTPUT,
-                harness=reading["harness"]),
+                # A Claude Code lane run is a `claude -p` session of its own, which no Claude
+                # reading of the run holds, so it stays untagged: a mixed run whose Claude
+                # readings hold their own subagents still adds it.
+                harness=None if reading["harness"] == run_state.CLAUDE else reading["harness"]),
             unreadable,
             f"{res['unit']}'s lane run usage could not be recorded (the run state is "
             f"unreadable), so its cost will not reach the page")

@@ -265,9 +265,54 @@ class StrikeLearningTests(unittest.TestCase):
         (root / rel).write_text("[]x", encoding="utf-8")
         brief = _brief(root, "qa")
         self.assertIn("2 approved learnings not carried", brief)
-        self.assertIn("so whether their run is signed is not known", brief)
+        self.assertIn(f"the run record at {rel} is unreadable, so whether their run is signed "
+                      f"is not known; restore it from git", brief)
         self.assertEqual(1, brief.count(rel))
         self.assertNotIn(extra, brief)
+
+    def test_several_damaged_records_are_named_in_the_plural(self) -> None:
+        """The line follows the number of damaged records, not only of learnings. MUTANTS: the
+        record, its verb, its run and the `it` to restore left singular over two paths; one
+        path read as several."""
+        root = self.root
+        extra = _learning(root, "qa", "A second qa lesson", PRODUCT)
+        _close(root)
+        rc, out, err = _sign(root)
+        self.assertEqual(0, rc, out + err)
+        other = "RUN-STRIKE0002"
+        _live("persona_memory").set_field(root, extra, "Listed-in", other)
+        rels = [f"sdlc-studio/reports/runs/{r}.json" for r in (RUN, other)]
+        for rel in rels:
+            (root / rel).write_text("{not json", encoding="utf-8")
+        brief = _brief(root, "qa")
+        self.assertIn(f"(2 approved learnings not carried: the run records at {rels[0]}, "
+                      f"{rels[1]} are unreadable, so whether their runs are signed is not "
+                      f"known; restore them from git)", brief)
+        self.assertNotIn(extra, brief)
+
+    def test_a_damaged_records_learning_is_listed_again_unless_struck(self) -> None:
+        """The close lists a learning whose run's record cannot be read, as it lists one whose
+        run is unsigned, so the next signature judges it rather than the damage holding it
+        back for good; one the operator struck reads struck by its own field and is not
+        listed. MUTANT: `unreadable` left out of the listing's standings, so the learning is
+        never listed again."""
+        root = self.root
+        _close(root)
+        rc, out, err = _sign(root, "--strike", self.product, "--strike-reason", "too broad")
+        self.assertEqual(0, rc, out + err)
+        pm = _live("persona_memory")
+        self.assertEqual([], [r["id"] for r in pm.pending_listing(root)],
+                         "premise: one learning live, one struck")
+        (root / "sdlc-studio" / "reports" / "runs" / f"{RUN}.json").write_text(
+            "{not json", encoding="utf-8")
+        self.assertEqual([self.qa], [r["id"] for r in pm.pending_listing(root)])
+        later = "RUN-STRIKE0002"
+        _write(root, "sdlc-studio/.local/run-state.json", json.dumps(
+            {**_live("sprint").run_state.read(root), "run_id": later, "outcome": "running"}))
+        _close_lists(root)
+        self.assertEqual(later, _fields(root, self.qa)["listed-in"],
+                         "the next close does not list it under its own run")
+        self.assertEqual(RUN, _fields(root, self.product)["listed-in"])
 
     def test_a_run_sealed_without_a_signature_holds_its_learning(self) -> None:
         """A run its close filed and listed, then sealed with no signature, as a `sprint
