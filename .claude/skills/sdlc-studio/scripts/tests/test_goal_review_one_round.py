@@ -3,7 +3,9 @@
 An amendment carried only the requesting seat's verdict forward, so every other seat was
 reported as owing a verdict on the reworded goal. It now carries every seat's verdict unless
 that seat asked to re-review, and an operator's amendment of an OPEN run's goal moves the goal
-the close judges. Every case runs the shipped CLI in a
+the close judges. BG1126: a seat-requested amendment moves it too, recording the seat. BG1608:
+the goal-length limit binds `goal-review brief --goal` and a first-round record, not only an
+amendment. Every case runs the shipped CLI in a
 temporary project; the fixtures are built once and copied per case.
 """
 from __future__ import annotations
@@ -372,6 +374,111 @@ class OpenRunGoalAmendTests(_Copies):
         twenty = " ".join(["word"] * sprint.GOAL_WORD_LIMIT)
         _ok(self._amend(root, twenty))
         self.assertEqual(twenty, sprint.run_state.read(root)["sprint_goal"])
+
+
+class SeatAmendOpenRunTests(_Copies):
+    """BG1126: an amendment a seat requested moves an OPEN run's goal as an operator's does."""
+
+    def _amend(self, root: Path, goal: str, frm: str = G) -> subprocess.CompletedProcess:
+        return _record(root, "--goal", goal, "--amend-from", frm, "--requesting-seat", "qa")
+
+    def test_a_seat_requested_amendment_moves_the_goal_the_close_judges(self) -> None:
+        """AC1. MUTANTS: the move kept to the operator's amendment (the run left on G); the
+        ledger entry naming the operator as the requester."""
+        root = self._copy("run")
+        self.assertEqual(G, sprint.run_state.read(root)["sprint_goal"])
+        out = _ok(self._amend(root, G2))
+        self.assertIn(f"the close now judges \"{G2}\", amended from \"{G}\"", out)
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        self.assertEqual("qa", latest["requesting_seat"])
+        state = sprint.run_state.read(root)
+        self.assertEqual(G2, state["sprint_goal"])
+        amended = state["sprint_goal_amendments"][-1]
+        self.assertEqual((G, G2, "qa"), (amended["from"], amended["to"],
+                                         amended["requesting_seat"]))
+        self.assertNotIn("requested_by", amended)
+        judged = "\n".join(sprint.close_goal_judgement(root, {**state, "author": "builder"}))
+        self.assertIn(G2, judged)
+        self.assertNotIn(G, judged)
+
+    def test_a_seat_requested_amendment_after_the_goal_verdict_is_refused(self) -> None:
+        """AC2. MUTANT: the verdict guard kept to the operator's amendment, so the round is
+        recorded on G2 while the run's judged goal stays G."""
+        root = self._copy("run")
+        _ok(_cli(root, "sprint.py", "goal-verdict", "--verdict", "partial",
+                 "--note", "the parser shipped, its docs did not"))
+        review_before = _bytes(_local(root, "goal-review.json"))
+        run_before = _bytes(_local(root, "run-state.json"))
+        r = self._amend(root, G2)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("goal verdict is already recorded (partial: the parser shipped", r.stderr)
+        self.assertEqual(review_before, _bytes(_local(root, "goal-review.json")))
+        self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
+
+    def test_a_seat_requested_amendment_leaves_another_or_a_closed_run_alone(self) -> None:
+        """AC3. MUTANTS: the run's goal moved to whatever `--amend-from` names; a closed run's
+        goal moved."""
+        root = self._copy("run")
+        other = "ship the linter to users"
+        _ok(_record(root, "--goal", other, "--seat", "qa|yes|done|yes"))
+        run_before = _bytes(_local(root, "run-state.json"))
+        out = _ok(self._amend(root, "ship the formatter to users", frm=other))
+        self.assertIn(f"no open run's goal is \"{other}\", so no run's goal moved", out)
+        self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
+        root = self._copy("run")
+        sprint.run_state.close_run(root, sprint.run_state.STOPPED)
+        run_before = _bytes(_local(root, "run-state.json"))
+        out = _ok(self._amend(root, G2))
+        self.assertIn(f"no open run's goal is \"{G}\", so no run's goal moved", out)
+        self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
+
+
+class GoalLengthAtReviewTests(_Copies):
+    """BG1608: a goal over the limit is refused before any seat reads or judges it."""
+
+    @staticmethod
+    def _words(n: int) -> str:
+        return " ".join(["word"] * n)
+
+    def test_the_brief_refuses_a_goal_over_twenty_words(self) -> None:
+        """AC1. MUTANTS: no length check on the brief; the check after the brief is printed;
+        the limit read as exclusive, so the twenty-word control is refused."""
+        root = self._copy("base")
+        worklist = root / "worklist.txt"
+        worklist.write_text("US0001\n", encoding="utf-8")
+        brief = ("goal-review", "brief", "--brief-worklist", str(worklist), "--seat", "qa")
+        r = _cli(root, "sprint.py", *brief, "--goal", self._words(sprint.GOAL_WORD_LIMIT + 1))
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("", r.stdout)
+        self.assertIn(f"goal-review brief refused: the Sprint Goal is 21 words and the limit is "
+                      f"{sprint.GOAL_WORD_LIMIT}", r.stderr)
+        twenty = self._words(sprint.GOAL_WORD_LIMIT)
+        r = _cli(root, "sprint.py", *brief, "--goal", twenty)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertTrue(r.stdout.startswith("You are the qa review seat."), r.stdout)
+        self.assertIn(f"Sprint Goal: {twenty}", r.stdout)
+
+    def test_a_first_round_record_refuses_a_goal_over_twenty_words(self) -> None:
+        """AC2. MUTANTS: the length check kept to the amendment path; the goal from
+        `--fields-file` not checked; the round written before the refusal."""
+        root = self._copy("base")
+        review = _local(root, "goal-review.json")
+        self.assertIsNone(_bytes(review))
+        long_goal = self._words(sprint.GOAL_WORD_LIMIT + 1)
+        fields = root / "fields.json"
+        fields.write_text(json.dumps({"goal": long_goal, "seats": [
+            {"seat": "qa", "achievable": "yes", "done_means": "done",
+             "one_increment": "yes"}]}), encoding="utf-8")
+        for label, argv in (("--goal", ("--goal", long_goal, "--seat", "qa|yes|done|yes")),
+                            ("--fields-file", ("--fields-file", str(fields)))):
+            with self.subTest(label):
+                r = _record(root, *argv)
+                self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+                self.assertIn("goal-review record refused: the Sprint Goal is 21 words", r.stderr)
+                self.assertIsNone(_bytes(review), "the refused round was written")
+        twenty = self._words(sprint.GOAL_WORD_LIMIT)
+        _ok(_record(root, "--goal", twenty, "--seat", "qa|yes|done|yes"))
+        self.assertEqual(twenty, sprint.goal_review_rounds(sprint.goal_review(root))[-1]["goal"])
 
 
 if __name__ == "__main__":

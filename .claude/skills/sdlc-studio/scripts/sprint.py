@@ -3314,6 +3314,18 @@ def lane_repair_scope(root: Path | str, unit: str) -> dict | None:
     return {"unit": unit, "refusal": refusal, "reject": reject} if refusal or reject else None
 
 
+def _lane_restore_worktree(root: Path | str, unit: str) -> str:
+    """`lanes.restore_for_repair`'s line for a repair of `unit`; a land record it cannot read
+    (a damaged one, or a root git cannot answer for) is named in the line, never raised, so the
+    repair brief is printed whatever the record holds."""
+    from lib import lanes  # noqa: PLC0415 - only a repair brief needs it
+    try:
+        return lanes.restore_for_repair(root, unit)
+    except (lanes.LandError, OSError, LookupError, TypeError, ValueError, AttributeError) as exc:
+        return (f"no worktree was recreated for {unit}'s repair: its land record could not be "
+                f"read ({type(exc).__name__}: {exc})")
+
+
 def lane_repair_text(scope: dict) -> str:
     """The repair section `lane brief --repair` prints after the unit's brief: the landing's
     refusal and the REJECT's findings, each quoted byte for byte from the file named beside it,
@@ -3490,6 +3502,26 @@ def _lane_budget_line(uid: str, points: int | None) -> str:
     unit = "point" if points == 1 else "points"
     return (f"  Budget: {budget} tool calls ({LANE_CALLS_FIXED} + {points} {unit} x "
             f"{LANE_CALLS_PER_POINT} per point); {rule}.")
+
+
+def lane_total_line(briefs: list[dict]) -> str:
+    """The lane's total call budget, stated once after the briefs of a lane of more than one
+    unit: the sum of the per-unit budgets (`lane_call_budget` of each unit's Points), the unit
+    count and each unit's share. When any briefed unit declares no Points, no total is derived:
+    the line names those units and states no figure, since a sum of the sized units alone would
+    understate the lane. "" for a brief of one unit, whose own `Budget:` line is the lane's. It
+    never takes the per-unit `Budget: N tool calls` form, so a count of those lines is unchanged."""
+    if len(briefs) < 2:
+        return ""
+    budgets = [(b["id"], lane_call_budget(b.get("points"))) for b in briefs]
+    unsized = [uid for uid, calls in budgets if calls is None]
+    if unsized:
+        verb, them = ("declares", "it") if len(unsized) == 1 else ("declare", "them")
+        return (f"Lane total: NONE DERIVED - {', '.join(unsized)} {verb} no Points, so no lane "
+                f"total follows; size {them} before building {them}.")
+    shares = " + ".join(str(calls) for _uid, calls in budgets)
+    return (f"Lane total: {sum(calls for _uid, calls in budgets)} tool calls over "
+            f"{len(budgets)} units ({shares}), the sum of the per-unit budgets above.")
 
 
 def lane_home_isolated(text: str) -> bool:
@@ -3849,15 +3881,21 @@ def _norm_goal(goal: str | None) -> str:
 # "no - not at the stated appetite" reads as `no` and keeps its note.
 _VERDICT_YES = frozenset({"yes", "y", "true", "achievable", "ok", "agreed", "affirmative"})
 _VERDICT_NO = frozenset({"no", "n", "never", "false", "unachievable", "not", "negative"})
+# A seat's hedge, as the goal-review prompts ask for it: neither yes nor no, so it is no
+# objection to the plan, and on a clause it reaches the panel as `partial`.
+_VERDICT_PARTIAL = frozenset({"partial", "partly", "partially"})
 
 
 def verdict_polarity(value: str | None) -> str:
-    """`yes`, `no` or `unclear` for a seat's achievable / one-increment answer."""
+    """`yes`, `no`, `partial` or `unclear` for a seat's achievable / one-increment answer, or
+    its answer on one clause, read from the answer's first word."""
     first = re.split(r"[\s,.;:|/-]+", str(value or "").strip().lower(), maxsplit=1)[0]
     if first in _VERDICT_YES:
         return "yes"
     if first in _VERDICT_NO:
         return "no"
+    if first in _VERDICT_PARTIAL:
+        return "partial"
     return "unclear"
 
 
@@ -7263,7 +7301,7 @@ def _filed_retro(root, state) -> str | None:
     return str(page.get("retro_id") or "").strip() or None
 
 
-def _seal_units(root, state) -> int:
+def _seal_units(root, state, moved: list | None = None) -> int:
     """SEAL's per-unit half: each batch unit to its terminal status, and no per-unit row.
 
     The operator signs ONCE, for the run (`_write_the_signature`). What that signature cannot
@@ -7272,7 +7310,8 @@ def _seal_units(root, state) -> int:
     one already terminal included, BEFORE anything moves: an unreviewed unit leaves every unit
     where it stood and the run open, and a unit moved by hand does not walk round the bar. A
     terminal gate that refuses stops the walk at that unit; a re-run resumes, skipping the units
-    already terminal, whose review stands.
+    already terminal, whose review stands. Each unit this walk moves is appended to `moved`,
+    when one is passed, after its transition lands; a unit already terminal or carried is not.
     """
     import artifact  # noqa: PLC0415
     import transition  # noqa: PLC0415
@@ -7328,6 +7367,8 @@ def _seal_units(root, state) -> int:
             print(f"sign STOPPED at {unit}: {terminal} transition refused - {exc}",
                   file=sys.stderr)
             return 1
+        if moved is not None:
+            moved.append(unit)
         print(f"sign: {unit} -> {terminal}")
     unfanned = _batch_unfanned_units(root, batch)
     if unfanned:
@@ -9615,6 +9656,12 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
             print(f"WARNING --agent {agent} was not priced: {reading['reason']}, so "
                   f"{whose} no priced cost", file=sys.stderr)
             reading = None
+        elif reading.get(run_state.ELSEWHERE):
+            # Found outside the lane repository's own folder of the harness's store: a builder
+            # spawned from a session in another project. Said on stderr, so `--format json`
+            # stays one document.
+            print(f"--agent {agent} was read from another project's transcripts, in "
+                  f"{reading[run_state.ELSEWHERE]}", file=sys.stderr)
     shares = None
     if reading is not None and tokens is None and len(results) == 1 and not land:
         kept = _lane_landed_share(root, results[0]["unit"], reading)
@@ -10120,7 +10167,9 @@ def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
     It does not carry a second polarity mapping. `verdict_polarity` is the one reading of a
     seat's answer; the local copy here mapped everything that was not yes to `partial`, so a
     seat answering NO - the strongest signal a review can give - was recorded as a partial
-    success while `verdict_polarity` sat unused two hundred lines above.
+    success while `verdict_polarity` sat unused two hundred lines above. Its polarity maps
+    straight across: yes to `achieved`, partial to `partial`, no to `missed`; an unclear answer
+    is no verdict and leaves the clause unanswered.
     """
     data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
     rounds = data.get("rounds") if isinstance(data, dict) else None
@@ -10137,22 +10186,28 @@ def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
             polarity = verdict_polarity(answer)
             if polarity == "unclear":
                 continue      # an unclear answer is not a verdict; the clause stays unanswered
-            verdict = "achieved" if polarity == "yes" else "missed"
+            verdict = {"yes": "achieved", "partial": "partial"}.get(polarity, "missed")
             out.setdefault(clause, {})[str(seat.get("seat"))] = verdict
     return out or None
 
 
 def _open_defects(root) -> list[dict]:
-    """Every open bug, as `judge_defects_against_goal` reads them."""
+    """Every open bug (Open or In Progress), as `judge_defects_against_goal` reads them: its id,
+    title and Severity as `priority`, and `falsifies`, the text of its header's `Falsifies`
+    field, where that field is present and not empty, so the bug is judged on the clause basis
+    it declares."""
     out: list[dict] = []
     for path in sdlc_md.artifact_files("bug", Path(root)):
         text = sdlc_md.read_text_safe(path)
         status = (sdlc_md.extract_field(text, "Status") or "").strip().lower()
         if status not in ("open", "in progress"):
             continue
-        out.append({"id": sdlc_md.extract_record_id(path.stem),
-                    "title": sdlc_md.extract_h1_title(text) or path.stem,
-                    "priority": (sdlc_md.extract_field(text, "Severity") or "").strip()})
+        defect = {"id": sdlc_md.extract_record_id(path.stem),
+                  "title": sdlc_md.extract_h1_title(text) or path.stem,
+                  "priority": (sdlc_md.extract_field(text, "Severity") or "").strip()}
+        if falsifies := (sdlc_md.extract_field(text, "Falsifies") or "").strip():
+            defect["falsifies"] = falsifies
+        out.append(defect)
     return out
 
 
@@ -10595,6 +10650,10 @@ def cmd_lane(args: argparse.Namespace) -> int:
             start_lane(b)
             if repairs is not None:
                 b["repair"] = repairs.get(sdlc_md.norm_id(b["id"]))
+            # A repair, `--repair` or not, gets back the worktree `lane land` removed, so the
+            # builder that built the unit can be resumed where it worked.
+            if (b.get("repair") if repairs is not None else lane_repair_scope(root, b["id"])):
+                b["worktree"] = _lane_restore_worktree(root, b["id"])
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -10602,7 +10661,14 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 print(lane_brief_text(brief))
                 if brief.get("repair"):
                     print(lane_repair_text(brief["repair"]))
+                if brief.get("worktree"):
+                    # Set apart by a blank line, so the repair's BLOCKING findings end where
+                    # they did and the line is never read as one of them.
+                    print("")
+                    print(brief["worktree"])
                 print("")
+            if total := lane_total_line(dispatch["briefs"]):
+                print(total)
             for ref in dispatch["refused"]:
                 print(f"REFUSED {ref['refusal']}", file=sys.stderr)
         return 2 if dispatch["refused"] else 0
@@ -10902,16 +10968,21 @@ def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[di
     """`(state, refusal, take_up)`: the run state `sign` judges, and whether it must be taken up
     as this checkout's live state before the seal is written.
 
-    This checkout's own state whenever it holds a run open - one it closed, or one it reopened,
-    whose report the reopen cleared - and that run is never taken up from a record, which would
-    still name the page the reopen broke. Otherwise the tracked record awaiting a signature
-    (the one naming `report_id`, or the only one when none is named), judged as it stands and
+    This checkout's own state whenever it holds a run it closed and the report named is that
+    run's own, or none is named; this checkout's run is never taken up from a record, which
+    after a reopen would still name the page the reopen broke. Otherwise, as for a run held
+    open and not closed, or reopened with its report cleared, the tracked record awaiting a
+    signature on `report_id` (or the only one when none is named), judged as it stands and
     taken up only once every check has passed, so a refused sign writes nothing. A different
-    run this checkout holds open is never discarded: it is set aside while the waiting run is
-    sealed and put back byte for byte (`run_state.set_aside_open`)."""
+    run this checkout holds open, closed on another page or not, is never discarded: it is set
+    aside while the waiting run is sealed and put back byte for byte
+    (`run_state.set_aside_open`). With no such record, this checkout's state is returned and
+    `sign` refuses the named page as not this run's."""
     held = state.get("run_id")
     held_open = state.get("outcome") == run_state.RUNNING
-    if held_open and state.get("report"):
+    if held_open and state.get("report") and (
+            not report_id
+            or sdlc_md.norm_id(report_id) == sdlc_md.norm_id(str(state.get("report")))):
         return state, "", False
     try:
         waiting = run_state.awaiting_signature(root)
@@ -12007,8 +12078,9 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if stop_ship:
         print(f"sign: sealing over {len(stop_ship)} STOP-SHIP known issue(s), listed first on "
               f"{report_id}, on {args.principal}'s decision")
+    moved: list[str] = []   # the units the seal moves, each a `Refs:` trailer for the commit
     try:
-        rc = _seal_units(root, state)
+        rc = _seal_units(root, state, moved)
         if rc != 0:
             return rc
         _cascade_after_signature(root, state, list(state.get("batch") or []),
@@ -12047,6 +12119,12 @@ def cmd_sign(args: argparse.Namespace) -> int:
           f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
                             if signature.get("fingerprint") else "")
           + (f", delegated under {decision}" if decision else ""))
+    if moved:
+        # The paperwork commit stages each moved unit's file; naming them as trailers states the
+        # attribution the commit-msg hook would otherwise flag once per unit.
+        print("sign: name the units this seal moved in the paperwork commit, one trailer each:")
+        for unit in moved:
+            print(f"Refs: {unit}")
     return 0
 
 
@@ -12260,10 +12338,11 @@ GOAL_WORD_LIMIT = 20
 
 def goal_length_refusal(goal: str | None, refusing: str = "plan refused",
                         unwritten: str = "Nothing is written and no run is opened.") -> str | None:
-    """The refusal for a goal over the word limit, or None. Binds a goal being AUTHORED (the
-    plan, or an amendment's new wording); a run already under way is never refused over the
-    goal it recorded. A word carries a letter or digit, so a spaced hyphen is punctuation, not
-    a word."""
+    """The refusal for a goal over the word limit, or None. Binds a goal being AUTHORED or put
+    to the seats (the plan, `goal-review brief --goal` and every `goal-review record`, an
+    amendment's new wording among them); a run already under way is never refused over the goal
+    it recorded. A word carries a letter or digit, so a spaced hyphen is punctuation, not a
+    word."""
     words = sum(1 for tok in (goal or "").split() if any(c.isalnum() for c in tok))
     if words <= GOAL_WORD_LIMIT:
         return None
@@ -13775,9 +13854,9 @@ def _seat_brief_body(root: Path, worklist: str | None, goal: str | None) -> tupl
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
-                f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
-                f"here, because a brief describing the wrong batch cannot be told from a right one."
-                ), False
+                f"(`goal-review brief --brief-worklist <file>`); the previous run's plan is not "
+                f"rendered here, because a brief describing the wrong batch cannot be told from a "
+                f"right one."), False
     goal = _brief_goal(root, goal, plan)
     if isinstance(live.get("batch"), list):
         # The batch under review is the live run's: `batch add` after `plan --write` grows it,
@@ -13883,6 +13962,11 @@ def cmd_goal_review(args) -> int:
                   f"{', '.join(repr(s) for s in seats)}); run the brief once for each seat",
                   file=sys.stderr)
             return 2
+        # A goal no plan can take is refused before any seat reads it.
+        if refusal := goal_length_refusal(getattr(args, "goal", None),
+                                          "goal-review brief refused", "No brief is issued."):
+            print(refusal, file=sys.stderr)
+            return 2
         # The CLI's --goal reaches the brief. It never did, which is the whole of BG0381:
         # the flag was accepted, documented and silently discarded.
         import persona_resolve  # noqa: PLC0415 - sibling; its refusal names the seat roster
@@ -13931,6 +14015,12 @@ def cmd_goal_review(args) -> int:
         print("goal-review record refused: --goal must name the Sprint Goal the seats "
               "reviewed - a verdict with no goal attached reviews nothing", file=sys.stderr)
         return 2
+    # Every round's goal, from --goal or --fields-file, a first round's and an amendment's new
+    # wording alike, is held to the plan's limit before anything is written, so no seat judges
+    # wording the plan can never take.
+    if refusal := goal_length_refusal(goal, "goal-review record refused", "Nothing is written."):
+        print(refusal, file=sys.stderr)
+        return 2
     try:
         seats = [_parse_seat_verdict(s) for s in (args.seat or [])]
         listed = from_file.get("seats") or []
@@ -13962,12 +14052,6 @@ def cmd_goal_review(args) -> int:
         return 2
     if amend_from:
         change_type = "material" if args.material else "amendment"
-        # The new wording is AUTHORED here, so it is held to the plan's limit before anything
-        # is written.
-        if refusal := goal_length_refusal(goal, "goal-review record refused",
-                                          "Nothing is written."):
-            print(refusal, file=sys.stderr)
-            return 2
         prior = next((r for r in reversed(prior_rounds)
                       if _norm_goal(r.get("goal")) == _norm_goal(amend_from)), None)
         if prior is None:
@@ -13996,12 +14080,12 @@ def cmd_goal_review(args) -> int:
                 role = str(s.get("seat") or "").strip()
                 if role not in fresh_roles and s.get("rereview") != "yes":
                     carried.append({**s, "carried_from": amend_from})
-            if by_operator:
-                try:
-                    moves_run = _run_goal_to_amend(root, amend_from)
-                except (run_state.RunStateError, ValueError) as exc:
-                    print(f"goal-review record refused: {exc}", file=sys.stderr)
-                    return 2
+            # The operator's amendment and a seat's alike move an OPEN run's goal.
+            try:
+                moves_run = _run_goal_to_amend(root, amend_from)
+            except (run_state.RunStateError, ValueError) as exc:
+                print(f"goal-review record refused: {exc}", file=sys.stderr)
+                return 2
     elif args.material:
         print("goal-review record refused: --material declares a change FROM a prior goal - pass "
               "--amend-from with it (a material change of nothing is just a new goal)",
@@ -14058,23 +14142,25 @@ def cmd_goal_review(args) -> int:
     print(f"recorded {len(seats)} seat verdict(s) on \"{goal}\" (round {len(rounds)})"
           f"{carried_note}{tail} -> {path}")
     if moves_run is not None:
+        # The requester as the round records it: a seat by its role, apart from the operator.
+        asked = {"requesting_seat": req} if req else {"requested_by": "operator"}
         state = run_state.update(root, sprint_goal=goal, sprint_goal_amendments=[
             *(moves_run.get("sprint_goal_amendments") or []),
-            {"from": moves_run.get("sprint_goal"), "to": goal, "requested_by": "operator",
+            {"from": moves_run.get("sprint_goal"), "to": goal, **asked,
              "at": rnd["reviewed_at"]}])
         print(f"run {state.get('run_id')}: the close now judges \"{goal}\", amended from "
               f"\"{moves_run.get('sprint_goal')}\"; the plan keeps the goal as planned "
               f"-> {run_state.path(root)}")
-    elif by_operator:
+    elif change_type == "amendment":
         print(f"no open run's goal is \"{amend_from}\", so no run's goal moved")
     return 0
 
 
 def _run_goal_to_amend(root: Path, amend_from: str) -> dict | None:
-    """The open run's state when `amend_from` is its goal - the run an operator's amendment
-    moves - or None, when no run is open or its goal is another wording. Raises ValueError once
-    the run's goal verdict is recorded: that verdict judged the wording, so moving it now would
-    leave the close judging a goal nobody judged."""
+    """The open run's state when `amend_from` is its goal - the run an amendment moves, the
+    operator's or a seat's - or None, when no run is open or its goal is another wording.
+    Raises ValueError once the run's goal verdict is recorded: that verdict judged the wording,
+    so moving it now would leave the close judging a goal nobody judged."""
     state = run_state.read(root)
     if not (state.get("run_id") and state.get("outcome") == run_state.RUNNING
             and not state.get("ended_at")):

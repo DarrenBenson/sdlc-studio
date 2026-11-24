@@ -60,11 +60,14 @@ is left in place, and a unit whose self-check or brief is refused is named while
 briefed.
 
 Every landing keeps a land record, `landed/<worktree>.land.json` for the first worktree named:
-its worktrees and units, the steps of `LAND_STEPS` it completed, the step it stopped at, the
-units it briefed and, once the root's branch moved, the commit. `--resume` runs only the steps
-the record does not name as completed: the hand-in it kept is read, never emptied or copied
-again, a unit already briefed keeps its brief, and a worktree the removal step took away is
-not looked for. A resume with no record, or with one whose landing completed, is refused.
+its worktrees, their paths and branches, and units, the steps of `LAND_STEPS` it completed, the
+step it stopped at, the units it briefed and, once the root's branch moved, the commit.
+`--resume` runs only the steps the record does not name as completed: the hand-in it kept is
+read, never emptied or copied again, a unit already briefed keeps its brief, and a worktree the
+removal step took away is not looked for. A resume with no record, or with one whose landing
+completed, is refused. A repair's `sprint lane brief` reads the record to recreate the worktree
+the removal step took away (`restore_for_repair`), so the builder that built the unit can be
+resumed where it worked.
 
 Exit 2 is a refusal before anything was committed, 1 a landing that stopped part way or a unit
 whose self-check or brief was not written, 0 a landed lane with every unit briefed, priced or
@@ -777,6 +780,61 @@ def _read_record(path: Path) -> dict | None:
     return None
 
 
+def _worktrees(root_top: Path) -> set[tuple[str, str]]:
+    """Each worktree of the root's repository on a branch, as (its path, its branch)."""
+    out, path = set(), None
+    for line in _git(root_top, "worktree", "list", "--porcelain").stdout.splitlines():
+        if line.startswith("worktree "):
+            path = line.removeprefix("worktree ")
+        elif line.startswith("branch refs/heads/") and path is not None:
+            out.add((path, line.removeprefix("branch refs/heads/")))
+    return out
+
+
+def restore_for_repair(root: Path | str, unit: str) -> str:
+    """Recreate, for a repair of `unit`, the worktree its landing removed: at the path it was
+    built in, on the branch it was built on, at the landed commit, so the builder that built it
+    can be resumed there. The record read is the newest land record naming the unit. Returns
+    the line saying what was done, or why no worktree was recreated: no land record names the
+    unit, its landing did not remove the worktree or recorded no commit, the record names no
+    branch (a landing recorded before branches were), the path is occupied, or git would not
+    add the worktree there. Nothing is overwritten: an occupied path is left as it is, and a
+    branch that already exists is not moved. The same worktree already in place on its branch
+    is said to be, so a second brief of the repair, or of another unit of the same lane, is not
+    read as a failure."""
+    root_top = _top(Path(root), "the root")
+    uid = sdlc_md.norm_id(unit)
+    none = f"no worktree was recreated for {unit}'s repair"
+    found = []
+    for f in (root_top / LANDED).glob(LAND_RECORD.format(name="*")):
+        rec = _read_record(f)
+        if rec and uid in {sdlc_md.norm_id(u) for u in rec.get("units") or []}:
+            found.append((f.stat().st_mtime, f.name, rec))
+    if not found:
+        return f"{none}: no land record under {LANDED.as_posix()} names it"
+    rec = max(found)[2]
+    names = rec["worktrees"]
+    owner = next((name for u, name in (rec.get("owners") or {}).items()
+                  if sdlc_md.norm_id(u) == uid), None)
+    at = names.index(owner) if owner in names else 0
+    path, branches, commit = Path(rec["paths"][at]), rec.get("branches") or [], rec.get("commit")
+    branch = branches[at] if branches else None
+    if "remove" not in rec["completed"] or not commit:
+        return f"{none}: its landing did not remove {path}, or recorded no landed commit"
+    if not branch:
+        return (f"{none}: its land record names no branch for {path} (a landing recorded "
+                f"before branches were), so it is not recreated on a guessed one")
+    if path.exists():
+        if (str(path), branch) in _worktrees(root_top):
+            return f"the worktree {path} is already in place on {branch}; it was not recreated"
+        return f"{none}: {path} is occupied, and nothing there is overwritten"
+    added = _git(root_top, "worktree", "add", "-q", "-b", branch, str(path), commit)
+    if added.returncode:
+        return f"{none}: git could not add {path} on {branch}: {_tail(added.stderr)}"
+    return (f"recreated the worktree {path} on {branch} at {commit[:12]}, the landed commit, so "
+            f"the builder that built {unit} can be resumed there")
+
+
 def _landed_affects_in(root_top: Path, lanes_: list[_Lane], unit: str, scratch: Path) -> Path:
     """The checkout holding the copy of `unit`'s own file whose Affects the landing records
     the self-check against: the root, which step 6 reads once the landing is done, unless a
@@ -1046,6 +1104,7 @@ def _land(root: Path, worktrees: list[Path], units: list[str], author: str | Non
     _keep_hand_ins(root_top, lanes_)
     names = [lane.name for lane in lanes_]
     record = {"worktrees": names, "paths": [str(lane.top) for lane in lanes_], "units": units,
+              "branches": [lane.branch for lane in lanes_],
               "owners": {unit: lane.name for lane in lanes_ for unit in lane.units},
               "author": author, "commit": None, "briefed": [], "completed": ["hand-in"],
               "landing": f"the landing of {', '.join(names)} begun "

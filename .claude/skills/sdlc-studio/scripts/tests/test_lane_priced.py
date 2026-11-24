@@ -5,11 +5,17 @@ Every case drives the command (`sprint.main(["lane", "return", ...])`) over US10
 harness store (`test_meter_reads_true`), and reads the record the command wrote or the page
 `build_report` derives from it. The expected prices are formed from the fixture's own weight
 table, typed in that module and nowhere in the code under test.
+
+BG1513's cases read a throwaway HOME's harness projects store, with `SDLC_STUDIO_TRANSCRIPTS`
+unset: a builder spawned from another project's session files its transcript under that
+project's folder, which `lane return --agent` searches after the lane repository's own.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import sys
 import unittest
 import unittest.mock
@@ -211,6 +217,137 @@ class LanePricedTests(meter._Case):
         self.assertFalse(check["valid"], "the rule moves no figure on this fixture")
         self.assertTrue(check["changes"], check)
         self.assertEqual([], check["edited"], "INVALIDATED, not an edited page")
+
+    # -- BG1513: the harness projects store of a throwaway HOME, read with no transcripts
+    # folder named, so the lane repository's own folder and every other project's are searched.
+
+    OTHER = "-work-project-a"
+
+    def _store(self):
+        """An open run, then HOME moved to a temporary one whose projects store is returned,
+        with `SDLC_STUDIO_TRANSCRIPTS` unset: `(the workspace, the store, the repo's slug)`."""
+        ws = self.workspace()
+        ws.open()
+        home = self.tmp / "home"
+        env = unittest.mock.patch.dict(os.environ, {
+            "HOME": str(home), "XDG_CONFIG_HOME": str(home / ".config"),
+            "XDG_DATA_HOME": str(home / ".local" / "share"), "GIT_CONFIG_GLOBAL": os.devnull})
+        env.start()
+        self.addCleanup(env.stop)
+        os.environ.pop(self.rs.TRANSCRIPTS_ENV, None)
+        projects = home / ".claude" / "projects"
+        projects.mkdir(parents=True)
+        return ws, projects, self.rs.harness_project_slug(ws.root)
+
+    @staticmethod
+    def _built(folder: Path, agent: str = "b7") -> meter._Transcripts:
+        """A session in `folder` whose subagent `agent` built the lane (X and Y)."""
+        tx = meter._Transcripts(folder)
+        tx.main_says("msg_main_1", meter.MAIN_1)
+        _says(tx, agent, f"msg_{agent}_x", BUILD_X, early_output=BUILD_X_EARLY_OUTPUT)
+        _says(tx, agent, f"msg_{agent}_y", BUILD_Y)
+        return tx
+
+    def _priced(self, ws) -> dict:
+        [rec] = [r for r in ws.state().get(self.rs.DELEGATED) or [] if r.get("unit") == "US0101"]
+        return rec
+
+    def test_an_agent_spawned_from_another_project_s_session_is_priced(self) -> None:
+        """AC1. The builder's transcript lies only under project A's folder. MUTANTS: the
+        search kept to the lane repository's own folder (unpriced, warned); the directory read
+        left unnamed."""
+        ws, projects, _slug = self._store()
+        other = self._built(projects / self.OTHER)
+        rc, out = ws.lane("return", "--units", "US0101", "--agent", "b7")
+        self.assertEqual(0, rc, out)
+        self.assertNotIn("WARNING", out)
+        rec = self._priced(ws)
+        parts = meter._sum(BUILD_X, BUILD_Y)
+        self.assertEqual(parts, rec["components"])
+        self.assertEqual(meter._priced(parts), rec["priced"])
+        self.assertEqual(str(other.subagents / "agent-b7.jsonl"), rec["transcript"])
+        self.assertIn(f"--agent b7 was read from another project's transcripts, in "
+                      f"{other.subagents}", out)
+
+    def test_the_lane_repository_s_own_transcript_wins_over_another_project_s(self) -> None:
+        """AC2. Agent b7 has a transcript under the lane repository's own folder and another,
+        of different usage, under project A's. MUTANT: the wider search read first."""
+        ws, projects, slug = self._store()
+        own = meter._Transcripts(projects / slug)
+        own.main_says("msg_main_1", meter.MAIN_1)
+        _says(own, "b7", "msg_b7_z", REPAIR_Z)
+        self._built(projects / self.OTHER)
+        rc, out = ws.lane("return", "--units", "US0101", "--agent", "b7")
+        self.assertEqual(0, rc, out)
+        rec = self._priced(ws)
+        self.assertEqual(str(own.subagents / "agent-b7.jsonl"), rec["transcript"])
+        self.assertEqual(meter._priced(meter._sum(REPAIR_Z)), rec["priced"])
+        self.assertNotIn("another project", out)
+
+    def test_an_unknown_agent_names_every_directory_searched(self) -> None:
+        """AC3. No folder holds agent-nosuch.jsonl: the warning names the agent, the lane
+        repository's own directory and project A's, and no priced cost is recorded. MUTANTS:
+        only the repository's own directory named; a missing agent priced as nought."""
+        ws, projects, slug = self._store()
+        own = meter._Transcripts(projects / slug)
+        own.main_says("msg_main_1", meter.MAIN_1)
+        self._built(projects / self.OTHER)
+        (projects / "notes.txt").write_text("a stray file, not a project folder\n",
+                                             encoding="utf-8")
+        rc, out = ws.lane("return", "--units", "US0101", "--agent", "nosuch")
+        self.assertEqual(0, rc, out)
+        self.assertIn("WARNING --agent nosuch was not priced: agent 'nosuch'", out)
+        self.assertIn(str(own.subagents), out)
+        self.assertIn(str(projects / self.OTHER), out)
+        self.assertEqual(1, out.count(str(projects / slug)),
+                         "the repository's own folder was searched again as another project's")
+        self.assertNotIn("notes.txt", out)
+        self.assertEqual([], [r for r in ws.state().get(self.rs.DELEGATED) or []
+                              if r.get("unit") == "US0101"])
+        with self.subTest("the repository's own folder holds no session either"):
+            for f in (projects / slug).glob("*.jsonl"):
+                f.unlink()
+            rc, out = ws.lane("return", "--units", "US0101", "--agent", "nosuch")
+            self.assertEqual(0, rc, out)
+            self.assertIn(f"{projects / slug}, which holds no session transcript", out)
+            self.assertIn(str(projects / self.OTHER), out)
+        with self.subTest("the store itself is absent"):
+            shutil.rmtree(projects)
+            rc, out = ws.lane("return", "--units", "US0101", "--agent", "nosuch")
+            self.assertEqual(0, rc, out)
+            self.assertIn(f"no session transcript (*.jsonl) in {projects / slug}, so agent "
+                          f"'nosuch' has no subagents directory", out)
+
+    def test_the_newest_of_two_foreign_transcripts_is_read(self) -> None:
+        """Two other projects' folders each hold an `agent-b7.jsonl`: the newer is read.
+        MUTANT: the oldest match read."""
+        _ws, projects, _slug = self._store()
+        old = self._built(projects / "-work-project-a")
+        new = meter._Transcripts(projects / "-work-project-b")
+        new.main_says("msg_main_1", meter.MAIN_1)
+        _says(new, "b7", "msg_b7_z", REPAIR_Z)
+        os.utime(old.subagents / "agent-b7.jsonl", (1_800_000_000, 1_800_000_000))
+        os.utime(new.subagents / "agent-b7.jsonl", (1_900_000_000, 1_900_000_000))
+        got = self.rs.agent_transcript_tokens(_ws.root, "b7")
+        self.assertEqual(str(new.subagents / "agent-b7.jsonl"), got["source"])
+        self.assertEqual(str(new.subagents), got[self.rs.ELSEWHERE])
+        self.assertEqual(meter._priced(meter._sum(REPAIR_Z)), got["priced"])
+
+    def test_a_named_transcripts_folder_is_the_only_one_read(self) -> None:
+        """`SDLC_STUDIO_TRANSCRIPTS` names the one folder read: another project's `agent-b7`
+        is not priced, and no other folder is named. MUTANTS: the named folder searched past;
+        an id that is not a plain name looked for in other projects' folders."""
+        ws, projects, slug = self._store()
+        own = meter._Transcripts(projects / slug)
+        own.main_says("msg_main_1", meter.MAIN_1)
+        self._built(projects / self.OTHER)
+        named = {self.rs.TRANSCRIPTS_ENV: str(projects / slug)}
+        got = self.rs.agent_transcript_tokens(ws.root, "b7", env=named)
+        self.assertIsNone(got["priced"])
+        self.assertNotIn(str(projects / self.OTHER), got["reason"])
+        stray = self.rs.agent_transcript_tokens(ws.root, "../b7")
+        self.assertIsNone(stray["priced"])
+        self.assertNotIn(str(projects / self.OTHER), stray["reason"])
 
 
 if __name__ == "__main__":

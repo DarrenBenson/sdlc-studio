@@ -163,6 +163,9 @@ APPORTIONED = "apportioned"
 #: installs. The default is Claude Code's layout: one directory per project (the absolute path
 #: with `/` replaced by `-`), one JSONL file per session.
 TRANSCRIPTS_ENV = "SDLC_STUDIO_TRANSCRIPTS"
+#: The key `agent_transcript_tokens` sets on a reading taken from another project's folder in the
+#: harness's projects store: the subagents directory it was read from.
+ELSEWHERE = "read_elsewhere"
 
 #: The model marker for a session whose usage records name more than one model. Kept in step
 #: with `retro.MODEL_MIXED` (the same string) so a mixed harness capture and a mixed per-unit
@@ -1054,6 +1057,33 @@ def _harness_transcript_dir(repo_root: Path | str) -> Path:
     return max(hits)[1] if hits else d
 
 
+def store_folders(repo_root: Path | str) -> list[Path]:
+    """The folders of the harness's projects store (`~/.claude/projects`) a session's
+    transcripts are looked for in: the lane repository's own (`_harness_transcript_dir`) first,
+    then every other project's folder in the store, by name. A builder or reviewer spawned from
+    a session started in another project files its transcript under that project's folder, not
+    the lane repository's. A store that is absent or cannot be listed adds no other folder."""
+    own = _harness_transcript_dir(repo_root)
+    projects = Path.home() / ".claude" / "projects"
+    try:
+        others = sorted(f for f in projects.iterdir() if f.is_dir() and f != own)
+    except OSError:
+        others = []
+    return [own, *others]
+
+
+def _agent_elsewhere(folders: list[Path], agent_id: str) -> Path | None:
+    """The newest `agent-<agent_id>.jsonl` in any session's subagents directory of `folders`,
+    or None when none holds one."""
+    hits = []
+    for folder in folders:
+        for f in folder.glob(f"*/{SUBAGENTS_DIR}/agent-{agent_id}.jsonl"):
+            with contextlib.suppress(OSError):
+                if f.is_file():
+                    hits.append((f.stat().st_mtime, str(f), f))
+    return max(hits)[2] if hits else None
+
+
 def price(components: dict) -> int:
     """`components` priced in input-equivalent tokens from `TOKEN_WEIGHTS`, read now."""
     return round(sum(int(components.get(c) or 0) * TOKEN_WEIGHTS[c] for c in TOKEN_COMPONENTS))
@@ -1412,24 +1442,41 @@ def agent_transcript_tokens(repo_root: Path | str, agent_id: str,
     session's subagents directory (the session `claude_tokens` reads), each message counted once
     and each component priced from `TOKEN_WEIGHTS` (`_aggregate`).
 
+    With no transcripts folder named (`transcripts_dir`, `TRANSCRIPTS_ENV`), a builder spawned
+    from a session in another project is found there: when the lane repository's own folder
+    holds no such transcript, every other project's folder in the store (`store_folders`) is
+    searched, each session's subagents directory, and the newest match is read; the reading
+    then carries `ELSEWHERE`, that subagents directory.
+
     Returns {"tokens", "priced", "components", "source"}, or {"priced": None, "reason",
-    "searched"} when no reading can be had: `searched` is the directory looked in, and `reason`
-    names the agent id and that directory. An id that is not a plain name (letters, digits, `_`
-    and `-`) names no transcript, so no path is built from it."""
+    "searched"} when no reading can be had: `searched` is the directory looked in under the
+    lane repository's own folder, and `reason` names the agent id, that directory and every
+    other project's folder searched. An id that is not a plain name (letters, digits, `_` and
+    `-`) names no transcript, so no path is built from it and no other folder is searched."""
     env = os.environ if env is None else env
-    d = Path(transcripts_dir or env.get(TRANSCRIPTS_ENV) or _harness_transcript_dir(repo_root))
+    pinned = transcripts_dir or env.get(TRANSCRIPTS_ENV)
+    d = Path(pinned or _harness_transcript_dir(repo_root))
     main = _newest_transcript(d) if d.is_dir() else None
-    if main is None:
+    plain = bool(re.fullmatch(r"[A-Za-z0-9_-]+", agent_id or ""))
+    others = [] if pinned or not plain else store_folders(repo_root)[1:]
+    folder = main.parent / main.stem / SUBAGENTS_DIR if main is not None else None
+    path = folder / f"agent-{agent_id}.jsonl" if folder is not None and plain else None
+    elsewhere = None
+    if (path is None or not path.is_file()) and others:
+        elsewhere = _agent_elsewhere(others, agent_id)
+    if elsewhere is not None:
+        path, folder = elsewhere, elsewhere.parent
+    elif main is None and not others:
         return {"priced": None, "searched": str(d),
                 "reason": f"no session transcript (*.jsonl) in {d}, so agent {agent_id!r} has "
                           f"no subagents directory to be read from"}
-    folder = main.parent / main.stem / SUBAGENTS_DIR
-    plain = bool(re.fullmatch(r"[A-Za-z0-9_-]+", agent_id or ""))
-    path = folder / f"agent-{agent_id}.jsonl" if plain else None
-    if path is None or not path.is_file():
-        return {"priced": None, "searched": str(folder),
+    elif path is None or not path.is_file():
+        own = folder if folder is not None else f"{d}, which holds no session transcript (*.jsonl)"
+        also = (f", nor in a session of another project's folder searched "
+                f"({', '.join(map(str, others))})" if others else "")
+        return {"priced": None, "searched": str(folder if folder is not None else d),
                 "reason": f"agent {agent_id!r} has no transcript agent-{agent_id}.jsonl in "
-                          f"{folder}"}
+                          f"{own}{also}"}
     records: list = []
     try:
         _file_records(path, "subagents", records)
@@ -1439,7 +1486,7 @@ def agent_transcript_tokens(repo_root: Path | str, agent_id: str,
                 "reason": f"agent {agent_id!r}'s transcript in {folder} gives no reading: {exc}"}
     return {"tokens": agg["tokens"], "priced": agg["priced"],
             "components": dict(agg["components"]), BY_MODEL: agg[BY_MODEL],
-            "source": str(path)}
+            "source": str(path), **({ELSEWHERE: str(folder)} if elsewhere is not None else {})}
 
 
 def _reading(agg: dict, src: Path, note: str | None) -> dict:

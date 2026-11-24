@@ -8,6 +8,9 @@ are real enough for `critic.py self-check record` and `critic.py brief --seat qa
 `review.author_self_check: block`, so a brief is only written when the self-check recorded on
 main matches what landed. One case stubs the critic, for a brief refusal no real unit provokes
 within one landing.
+
+BG1311: a repair's `sprint.py lane brief` recreates the worktree a landing removed, at the path
+the unit was built in, on its branch at the landed commit, and says why when it cannot.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/lanes.py
 from __future__ import annotations
@@ -17,6 +20,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -763,6 +767,137 @@ class LaneLandTests(_LaneFixture):
         self.assertEqual(0, self._hook_runs_in_the_worktree(), "an empty change was committed")
         self.assertEqual(moved, _git(self.root, "rev-parse", "HEAD"))
         self.assertFalse(self.wt.exists(), "the worktree was not removed")
+
+    # -- a repair brief recreates the landed worktree (BG1311) -----------------------------
+
+    def _landed_and_rejected(self) -> str:
+        """Unit A built in `lane-us0101`, landed (its worktree removed), a run open on it and a
+        REJECT recorded: the landed commit."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertFalse(self.wt.exists(), "premise: the landing removed the worktree")
+        transcripts = Path(self._tmp.name) / "transcripts"
+        transcripts.mkdir(exist_ok=True)
+        with unittest.mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts)}):
+            run_state.open_run(self.root, batch=[A], goal="g")
+        rec = subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "critic.py"), "record", "--unit", A,
+             "--verdict", "reject", "--issues", "[new] a is wrong", "--reviewer", "Sam (qa)",
+             "--author", "builder (engineering)", "--root", str(self.root)],
+            capture_output=True, text=True, timeout=300, env=self._env(), check=False)
+        self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
+        return _git(self.root, "rev-parse", "HEAD")
+
+    def _brief_repair(self) -> subprocess.CompletedProcess:
+        env = {**self._env(), run_state.TRANSCRIPTS_ENV: str(Path(self._tmp.name) / "transcripts")}
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "brief", "--units", A,
+             "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=env,
+            check=False)
+
+    def test_a_repair_brief_recreates_the_landed_worktree_at_its_path(self) -> None:
+        """BG1311 AC1. MUTANTS: nothing recreated (the path gone, so the builder cannot be
+        resumed); the worktree added off the landed commit, or detached from its branch; a
+        second brief of the same repair failing on the worktree the first recreated; the line
+        run on from the BLOCKING findings, so it reads as one of them; an older
+        land record naming the unit read before the newest; the record's first worktree taken
+        for the unit's own when another of the lane's worktrees owns it."""
+        landed = self._landed_and_rejected()
+        landed_dir = self.root / LANE / "landed"
+        record = next(landed_dir.glob("*.land.json"))
+        data = json.loads(record.read_text(encoding="utf-8"))
+        decoy = Path(self._tmp.name).resolve() / "lane-decoy"
+        for key, value in (("worktrees", "lane-decoy"), ("paths", str(decoy)),
+                           ("branches", "lane-decoy")):
+            data[key] = [value, *data[key]]
+        record.write_text(json.dumps(data), encoding="utf-8")
+        older = Path(self._tmp.name).resolve() / "lane-older"
+        (landed_dir / "lane-older.land.json").write_text(json.dumps(
+            {**data, "worktrees": ["lane-older"], "paths": [str(older)],
+             "branches": ["lane-older"], "owners": {A: "lane-older"}}), encoding="utf-8")
+        os.utime(landed_dir / "lane-older.land.json", (1_000_000_000, 1_000_000_000))
+        r = self._brief_repair()
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"Unit: {A}", r.stdout)
+        self.assertIn(f"recreated the worktree {self.wt} on {BRANCH} at {landed[:12]}", r.stdout)
+        self.assertIn(f"\n\nrecreated the worktree {self.wt}", r.stdout,
+                      "the line is not set apart from the repair's BLOCKING findings")
+        self.assertTrue(self.wt.is_dir(), "no worktree at the path the unit was built in")
+        self.assertEqual(landed, _git(self.wt, "rev-parse", "HEAD"))
+        self.assertEqual(BRANCH, _git(self.wt, "symbolic-ref", "--short", "HEAD"))
+        self.assertEqual("", _git(self.wt, "status", "--porcelain"))
+        self.assertFalse(decoy.exists() or older.exists(), "another worktree was recreated")
+        again = self._brief_repair()
+        self.assertEqual(0, again.returncode, again.stdout + again.stderr)
+        self.assertIn(f"the worktree {self.wt} is already in place on {BRANCH}", again.stdout)
+        self.assertEqual(landed, _git(self.wt, "rev-parse", "HEAD"))
+
+    def test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints(self) -> None:
+        """BG1311 AC2. Each case prints the brief, exits 0 and names why no worktree was
+        recreated, and nothing is overwritten. MUTANTS: an occupied path written over; a
+        missing record, a record of a landing that removed nothing or named no branch, or a
+        branch git will not add read as a worktree to recreate, or failing the brief."""
+        self._landed_and_rejected()
+        record = next((self.root / LANE / "landed").glob("*.land.json"))
+        kept = record.read_text(encoding="utf-8")
+
+        def says(why: str) -> subprocess.CompletedProcess:
+            r = self._brief_repair()
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertIn(f"Unit: {A}", r.stdout)
+            self.assertIn(f"no worktree was recreated for {A}'s repair: {why}", r.stdout)
+            return r
+
+        with self.subTest("the path is occupied"):
+            _write(self.wt, "keep.txt", "not a worktree\n")
+            says(f"{self.wt} is occupied, and nothing there is overwritten")
+            self.assertEqual(["keep.txt"], sorted(p.name for p in self.wt.iterdir()))
+            shutil.rmtree(self.wt)
+        with self.subTest("a worktree of another branch is at the path"):
+            gitutil.git(["worktree", "add", "-q", "-b", "other", str(self.wt), "main"], self.root)
+            says(f"{self.wt} is occupied, and nothing there is overwritten")
+            self.assertEqual("other", _git(self.wt, "symbolic-ref", "--short", "HEAD"))
+            gitutil.git(["worktree", "remove", str(self.wt)], self.root)
+        with self.subTest("the land record is damaged"):
+            data = json.loads(kept)
+            data.pop("paths")
+            record.write_text(json.dumps(data), encoding="utf-8")
+            says("its land record could not be read (KeyError: 'paths')")
+            self.assertFalse(self.wt.exists())
+        with self.subTest("no land record names the unit"):
+            record.unlink()
+            says(f"no land record under {LANE}/landed names it")
+            self.assertFalse(self.wt.exists())
+        with self.subTest("the landing removed no worktree"):
+            data = json.loads(kept)
+            data["completed"] = [c for c in data["completed"] if c != "remove"]
+            record.write_text(json.dumps(data), encoding="utf-8")
+            says(f"its landing did not remove {self.wt}")
+            self.assertFalse(self.wt.exists())
+        with self.subTest("the record names no branch"):
+            data = json.loads(kept)
+            data.pop("branches")
+            record.write_text(json.dumps(data), encoding="utf-8")
+            says(f"its land record names no branch for {self.wt}")
+            self.assertFalse(self.wt.exists())
+        with self.subTest("git will not add the branch"):
+            record.write_text(kept, encoding="utf-8")
+            gitutil.git(["branch", BRANCH, "main"], self.root)
+            r = says(f"git could not add {self.wt} on {BRANCH}")
+            self.assertIn("already exists", r.stdout)
+            self.assertFalse(self.wt.exists())
+
+    def test_the_runbook_says_a_repair_brief_recreates_the_worktree(self) -> None:
+        """BG1311 AC3: the landing rows say `lane land` removes the worktree and a repair's
+        `lane brief` recreates it at the same path."""
+        rows = (SCRIPTS.parent / "reference-sprint-toolchain.md").read_text(encoding="utf-8")
+        land = next(ln for ln in rows.splitlines() if ln.startswith("| Land a builder's"))
+        repair = next(ln for ln in rows.splitlines() if ln.startswith("| Repair a refused"))
+        self.assertIn("removes the worktree", land)
+        self.assertIn("recreates the worktree `lane land` removed, at the same path", repair)
 
     # -- a schema-3 unit, named as written (BG1303) ---------------------------------------
 

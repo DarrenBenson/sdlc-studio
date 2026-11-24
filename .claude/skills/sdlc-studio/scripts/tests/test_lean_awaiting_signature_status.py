@@ -10,6 +10,7 @@ move to Review.
 AC1 drives the close's reader in a throwaway workspace. AC2 reads the shipped loop doc.
 
 US1290 AC4 runs `status.py` over tracked run records awaiting their signatures beside an open run.
+BG1583 AC4 reads `status.awaiting_signature_lines` over a tracked record that cannot be parsed.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 # test-census-subject: .claude/skills/sdlc-studio/scripts/status.py
@@ -148,6 +149,31 @@ class AwaitingSignatureStatusTests(unittest.TestCase):
             self.assertFalse([ln for ln in lines if "RUN-OPEN0003" in ln or "RUN-SIGNED01" in ln],
                              lines)
             self.assertEqual([], status(Path(none)))
+
+    def test_an_unreadable_record_is_named_not_read_as_none(self) -> None:
+        """BG1583 AC4, US1290's third guard. A tracked run record that cannot be parsed reads
+        as one `Awaiting signature: UNREADABLE` line naming the record, never as no run
+        waiting; a readable record awaiting its page (the control) reads as its sign command.
+        MUTANT: `awaiting_signature_lines` returning `[]` for the unreadable record."""
+        import status  # noqa: PLC0415 - the reader under test, imported where it is judged
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            runs = root / "sdlc-studio" / "reports" / "runs"
+            runs.mkdir(parents=True)
+            (runs / "RUN-WAIT0001.json").write_text(
+                json.dumps({"schema": 1, "run_id": "RUN-WAIT0001", "outcome": "running",
+                            "report": "RPT0001"}), encoding="utf-8")
+            self.assertEqual(['Awaiting signature: RUN-WAIT0001 on RPT0001 - sprint.py sign '
+                              '--report RPT0001 --principal "<the operator who signs>"'],
+                             status.awaiting_signature_lines(root))
+            (runs / "RUN-WAIT0002.json").write_text('{"run_id": "RUN-WAIT0002", ',
+                                                    encoding="utf-8")
+            lines = status.awaiting_signature_lines(root)
+            self.assertEqual(1, len(lines), lines)
+            self.assertTrue(lines[0].startswith("Awaiting signature: UNREADABLE"), lines)
+            self.assertIn("RUN-WAIT0002.json", lines[0])
+            self.assertIn("this is not the same as none", lines[0])
 
     def test_the_loop_moves_a_built_unit_to_review(self) -> None:
         """AC2. MUTANT: the rc.1 and HEAD Build step, which never names the move to Review."""

@@ -711,6 +711,91 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertEqual(before, (self.closer / RECORD).read_bytes())
         self.assertIn("records more reopens than this copy", err.getvalue())
 
+    # --- BG1583: the waiting run named, a later closed run beside it, and US1290's guards ---
+
+    def test_sign_seals_the_named_waiting_run_while_a_later_run_awaits_too(self) -> None:
+        """BG1583 AC1. Run A awaits RPT0001 in its tracked record; a later run B, opened by
+        `sprint plan --write` in the same checkout, is closed on its own page, RPT0002 (the
+        close's stamp of its report on the live state stands in for B's close, whose pre-flight
+        this fixture does not meet). Signing A's page seals A and leaves B's live state byte for
+        byte as it was. MUTANTS: this checkout's closed run returned whatever report is named
+        (the refusal sends the signer to B's page); B taken up or sealed instead of A; B's state
+        not put back."""
+        self._close()
+        self._open_later(self.closer)
+        signing.run_state.update(self.closer, report="RPT0002")
+        live = self.closer / "sdlc-studio" / ".local" / "run-state.json"
+        b_state = self._live(self.closer)
+        later = b_state.get("report")
+        self.assertTrue(later and later != REPORT, f"B recorded no report of its own: {b_state}")
+        self.assertNotEqual(RUN, b_state["run_id"])
+        b_bytes = live.read_bytes()
+        # A sign naming no page judges this checkout's own run, never the record beside it.
+        self.assertEqual((b_state, "", False),
+                         signing.sprint._committed_run_to_sign(self.closer, b_state, None))
+        rc, out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(0, rc, out + err)
+        self.assertNotIn("is not this run's report", err)
+        record = self._record(self.closer)
+        self.assertEqual("goal-reached", record["outcome"])
+        self.assertEqual(REPORT, record["signature"]["report"])
+        self.assertEqual(b_bytes, live.read_bytes(), "B's live state changed")
+        self.assertEqual(("running", later), (self._live(self.closer)["outcome"],
+                                              self._live(self.closer)["report"]))
+        # The control: a page no record awaits is still refused naming this run's own page.
+        rc, out, err = signing._sign(self.closer, "RPT0077")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn(f"RPT0077 is not this run's report - {b_state['run_id']} records {later}",
+                      err)
+        self.assertEqual(b_bytes, live.read_bytes(), "a refused sign changed B's live state")
+
+    def test_an_overlapping_plan_never_archives_a_run_awaiting_its_signature(self) -> None:
+        """BG1583 AC2, US1290's first guard. MUTANT: `batch is not None` in place of
+        `_disjoint(state, batch)` in `open_run`'s archive branch, so a re-plan over the waiting
+        run's own unit archives it and mints a new id. The control: a disjoint batch archives
+        it and opens a new run."""
+        self._close()
+        archive = self.closer / "sdlc-studio" / ".local" / "run-archive"
+        listed = sorted(p.name for p in archive.glob("*")) if archive.is_dir() else []
+        story = self.closer / "sdlc-studio" / "stories" / "US0101-widget.md"
+        story.write_text(story.read_text(encoding="utf-8").replace(
+            "> **Status:** Review", "> **Status:** Ready"), encoding="utf-8")
+        rc, out, err = self._plan(self.closer)
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(RUN, self._live(self.closer).get("run_id"),
+                         "an overlapping plan replaced the run awaiting its signature")
+        self.assertEqual(listed, sorted(p.name for p in archive.glob("*"))
+                         if archive.is_dir() else [], "an overlapping plan archived the run")
+        story.write_text(story.read_text(encoding="utf-8").replace(
+            "> **Status:** Ready", "> **Status:** Review"), encoding="utf-8")
+        self._ready(self.closer, "US0102")
+        rc, out, err = self._plan(self.closer)
+        self.assertEqual(0, rc, out + err)
+        opened = self._live(self.closer)
+        self.assertNotEqual(RUN, opened.get("run_id"), "a disjoint plan opened no new run")
+        self.assertEqual(["US0102"], opened.get("batch"))
+        self.assertTrue((archive / f"{RUN}.json").is_file(), "the disjoint plan archived nothing")
+
+    def test_a_refused_take_up_puts_the_open_run_back(self) -> None:
+        """BG1583 AC3, US1290's second guard. MUTANT: the refused take-up branch dropping
+        `run_state.put_back(root, beside)`, which leaves the open run's state deleted. The
+        control: the same sign with the take-up unstubbed seals and keeps the open run."""
+        self._close()
+        live, opened, opened_bytes = self._open_later(self.closer)
+
+        def refuse(*_a, **_k):
+            raise signing.run_state.RunStateError("the run state is locked by another writer")
+
+        with unittest.mock.patch.object(signing.sprint.run_state, "adopt_tracked", refuse):
+            rc, out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("sign REFUSED: the run state is locked by another writer", err)
+        self.assertTrue(live.is_file(), "the refused take-up deleted the open run's state")
+        self.assertEqual(opened_bytes, live.read_bytes(), "the refused take-up changed it")
+        self.assertEqual(("running", None), (self._record(self.closer)["outcome"],
+                                             self._record(self.closer).get("signature")))
+        self._sign_sealed(self.closer, live, opened, opened_bytes)
+
 
 if __name__ == "__main__":
     unittest.main()

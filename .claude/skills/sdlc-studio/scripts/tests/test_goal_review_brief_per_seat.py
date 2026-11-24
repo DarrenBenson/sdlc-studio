@@ -6,12 +6,16 @@ printed; and the unframed brief ends by naming the review seats and the form tha
 
 Driven through `sprint.main`, the shipped entry point, in throwaway trees built on the goal-trace
 fixture.
+
+BG1658: the no-current-batch answer names a command that runs, a seat's brief opens with its
+framing, and an unknown seat is refused before the stale-plan check, with no plan written.
 """
 from __future__ import annotations
 
 import contextlib
 import io
 import re
+import shlex
 import sys
 import tempfile
 import unittest
@@ -165,6 +169,63 @@ class GoalReviewSeatBriefTests(unittest.TestCase):
                     self.assertEqual(rc, 2, out)
                     self.assertEqual(out, "")
                     self.assertIn("one role per brief", err)
+
+    @staticmethod
+    def _bare(root: Path, *argv: str) -> tuple[int, str, str]:
+        """`goal-review brief` with only `argv`: no worklist and no goal unless named."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["goal-review", "brief", *argv, "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_the_stale_plan_answer_names_a_command_that_runs(self) -> None:
+        """BG1658 AC1. The answer's command, run as written with the fixture's worklist in
+        place of `<file>`, exits 0 with a brief. MUTANT: the answer naming `--worklist`, which
+        argparse refuses as an unrecognised argument."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            rc, out, err = self._bare(root)
+            self.assertEqual(0, rc, err)
+            self.assertTrue(out.startswith("NO CURRENT BATCH TO BRIEF: "), out)
+            named = re.search(r"`(sprint\.py )?(goal-review brief [^`]*)`", out)
+            self.assertIsNotNone(named, out)
+            argv = shlex.split(named.group(2).replace("<file>", str(root / "worklist.txt")))
+            rc, brief, err = self._bare(root, *argv[2:])
+        self.assertEqual(0, rc, err)
+        self.assertNotIn("NO CURRENT BATCH", brief)
+        self.assertRegex(brief, r"(?m)^Batch: 1 unit\(s\), ")
+
+    def test_a_framed_brief_opens_with_its_seat(self) -> None:
+        """BG1658 AC2. MUTANT: the seat framing appended after the body, not opening it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            rc, framed, err = _brief(root, "--seat", "qa")
+            _rc, unframed, _err = _brief(root)
+        self.assertEqual(0, rc, err)
+        opening = "You are the qa review seat. Read and adopt the charter at"
+        self.assertEqual(opening, framed.splitlines()[0])
+        self.assertFalse(unframed.startswith("You are the"), unframed.splitlines()[0])
+
+    def test_an_unknown_seat_with_no_plan_is_refused(self) -> None:
+        """BG1658 AC3. No plan written and no worklist: a seat no card fills is refused naming
+        the roster, nothing on stdout and no plan written; `--seat qa` there gets the
+        no-current-batch answer. MUTANT: the card resolved after the stale-plan check."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            plan = root / "sdlc-studio" / ".local" / "sprint-plan.json"
+            self.assertFalse(plan.exists())
+            rc, out, err = self._bare(root, "--seat", "security")
+            self.assertEqual(2, rc, out)
+            self.assertEqual("", out)
+            self.assertIn("'security'", err)
+            self.assertIn("(seats: engineering, qa, product, sre)", err)
+            self.assertFalse(plan.exists(), "the refused brief wrote a plan")
+            rc, out, err = self._bare(root, "--seat", "qa")
+            self.assertEqual(0, rc, err)
+            self.assertTrue(out.startswith("NO CURRENT BATCH TO BRIEF: "), out)
 
 
 if __name__ == "__main__":

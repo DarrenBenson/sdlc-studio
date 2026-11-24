@@ -10,8 +10,11 @@ There is one reader per harness. Claude Code's comes first; every other harness 
 `SDLC_STUDIO_HARNESS` wins outright. Claude Code keeps a session's main thread at
 `<transcripts>/<session>.jsonl` and each subagent's at
 `<transcripts>/<session>/subagents/agent-<id>.jsonl`; the session is the one
-`CLAUDE_CODE_SESSION_ID` names, and the folder is the meter's (`SDLC_STUDIO_TRANSCRIPTS`, else
-the harness's project folder for this repo). No transcript is taken as the writer for being
+`CLAUDE_CODE_SESSION_ID` names, and the folder is `SDLC_STUDIO_TRANSCRIPTS` when set, the only
+one read; else the first folder of the harness's projects store holding the session, this
+repo's own first (`run_state.store_folders`), so a reviewer spawned from a session started in
+another project is read from that project's folder, which the note then names. No transcript
+is taken as the writer for being
 the newest (the newest is the main thread's, running the record); a context is named only for
 a write its transcript holds.
 
@@ -125,6 +128,14 @@ def _claude(repo_root: Path, path: Path, data: bytes, env: Mapping) -> dict:
         said = "is not set" if not session else f"is {session!r}, not a plain session id"
         return _unknown([], f"{SESSION_ENV} {said}, so no session's transcripts are read")
     folder, contexts = _contexts(repo_root, session, env)
+    got = _judged(path, data, session, folder, contexts)
+    if not env.get(run_state.TRANSCRIPTS_ENV) and folder != run_state.store_folders(repo_root)[0]:
+        got["note"] += f" (read from another project's folder, {folder})"
+    return got
+
+
+def _judged(path: Path, data: bytes, session: str, folder: Path, contexts: list) -> dict:
+    """`_claude`'s answer over the session's contexts read from `folder`."""
     tokens = [f"{SESSION}:{session}"]
     if not contexts[0][1].is_file() and len(contexts) == 1:
         return _unknown(tokens, f"session {session} has no transcript in {folder}")
@@ -168,9 +179,14 @@ def _claude(repo_root: Path, path: Path, data: bytes, env: Mapping) -> dict:
 
 def _contexts(repo_root: Path, session: str, env: Mapping) -> tuple[Path, list]:
     """The transcripts folder and the session's contexts in it, as (name, transcript) pairs:
-    the main thread's first, then each subagent's, by name."""
-    folder = Path(env.get(run_state.TRANSCRIPTS_ENV)
-                  or run_state._harness_transcript_dir(repo_root))
+    the main thread's first, then each subagent's, by name. The folder is
+    `SDLC_STUDIO_TRANSCRIPTS` when set; else the first of `run_state.store_folders`, this
+    repo's own first, holding the session's main thread or its subagents directory; else this
+    repo's own, which holds neither."""
+    pinned = env.get(run_state.TRANSCRIPTS_ENV)
+    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)
+    folder = next((f for f in folders if (f / f"{session}.jsonl").is_file()
+                   or (f / session / run_state.SUBAGENTS_DIR).is_dir()), folders[0])
     sub = folder / session / run_state.SUBAGENTS_DIR
     return folder, [(MAIN, folder / f"{session}.jsonl")] + [
         (_AGENT_PREFIX + f.stem[len(_AGENT_PREFIX):], f)

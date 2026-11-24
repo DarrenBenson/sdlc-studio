@@ -331,8 +331,10 @@ Distinct from this ordering consult, the **Sprint Goal seat read advises**: seat
 goal is achievable by this batch, what done means for it, and whether it reads as one increment,
 and `sprint plan` prints what they said beside the plan as advice. An objection never refuses the
 plan and there is no override flag; a goal no seat read is recorded as not read, never approved.
-The goal itself is one sentence of 20 words or fewer, and a longer one is refused. The rounds
-accumulate: a reworded goal keeps the earlier round on the record, and the latest is read.
+The goal itself is one sentence of 20 words or fewer; a longer one is refused, nothing printed
+or written, by `sprint plan`, `goal-review brief --goal` and every `goal-review record` (its goal
+from `--goal` or `--fields-file`). The rounds accumulate: a reworded goal keeps the earlier
+round on the record, and the latest is read.
 
 **Amend vs material.** One round is the default. Record a reworded goal with
 `--amend-from "<prior goal>"` and who asked: `--requesting-seat <role>`, or
@@ -342,15 +344,13 @@ of exactly yes or no; a note that itself ends in `|yes` or `|no` therefore goes 
 `--fields-file`), and `sprint plan` names each seat still owing a verdict. The plan reads the
 rounds on one wording together, back to the amendment that introduced it, so each owing seat
 records its own verdict alone, and a seat's newer verdict replaces only its own. Only the
-requesting seat's
-carried objection is answered by the amendment; the operator answers none. An operator's
-amendment of an OPEN run's goal moves the goal the close judges, the run state records the
-wording it replaced, and the plan keeps the goal as planned; once the run's goal verdict is
-recorded it is refused. An amended goal over 20 words is refused, and nothing is written. A change
-too large to be an improvement is declared `--material` instead: nothing carries forward, every
-seat owes a verdict, and it may be recorded before any seat has read it. The amendment/material
-call cannot be made mechanically, so the operator declares it and the declaration is recorded on
-the round.
+requesting seat's carried objection is answered by the amendment; the operator answers none. An
+amendment of an OPEN run's goal, a requesting seat's or the operator's, moves the goal the close
+judges, the run state records the wording it replaced and who asked, and the plan keeps the goal
+as planned; once the run's goal verdict is recorded it is refused. A change too large to be an
+improvement is declared `--material` instead: nothing carries forward, every seat owes a verdict,
+and it may be recorded before any seat has read it. The amendment/material call cannot be made
+mechanically, so the operator declares it and the declaration is recorded on the round.
 
 **Seat brief.** `sprint.py goal-review brief` emits the context a seat is given before it judges -
 composed deterministically from the plan and run state: the batch, the grooming state the first

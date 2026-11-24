@@ -1833,9 +1833,10 @@ def judge_defects_against_goal(defects: list[dict], clauses: list[str],
                                repo_root: Path | str | None = None) -> dict:
     """Which open defects BLOCK the goal claim or a release, and which can be left.
 
-    `{blocking, leavable}`. A defect blocks when it falsifies a goal clause - it names one, or
-    an explicit `falsifies` says so - with `basis` `clause`, or when its priority is one a
-    release cannot carry, with `basis` `priority`. Everything else is LEAVABLE and recorded with
+    `{blocking, leavable}`. A defect blocks with `basis` `clause` when it carries an explicit
+    `falsifies` (the close reads a bug file's `Falsifies` field into it): the goal clause that
+    text matches, or the text itself where it matches none, which is still a claim. It blocks
+    with `basis` `priority` when its priority is one a release cannot carry. Everything else is LEAVABLE and recorded with
     its priority and the reasoning, never silently dropped: the decision to ship with a known
     defect is a decision, and one nobody wrote down is indistinguishable from not having noticed.
 

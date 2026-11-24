@@ -17,6 +17,10 @@ report's row; (4) the close refuses on a priority-floor defect; (5) the recorded
 re-read live at revalidation, so the page no longer re-derives; (6) the judgement is written into
 the Known issues table; (7) the HTML page leaves the section out; (8) the defects detail for a
 goal with no clause is dropped, so the page reads `none open` over open defects.
+
+BG1692: the clause half is judged from the bug file itself. `_open_defects` reads a bug's
+`Falsifies` header field, so the close runs unpatched; MUTANTS: the field never read (the bug
+ruled leavable, `0 BLOCKING`); read from a bug that is not open; read when empty.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -42,9 +46,8 @@ AUTHOR = "Dani Okafor (engineering)"
 
 def _closed(falsifies: str | None = None) -> tuple[int, str, dict, str, str]:
     """`(rc, stdout, the filed report, its Markdown twin, its HTML page)` for one close over the
-    fixture. With `falsifies`, a second open bug, Low, is read by the close as falsifying that
-    clause: `_open_defects` reads no such field from a bug file, so the close's own defect list
-    is wrapped to carry it, and `judge_defects_against_goal` rules on it unpatched."""
+    fixture. With `falsifies`, a second open bug, Low, carries `> **Falsifies:** <falsifies>`
+    in its header, which the close reads from the file: nothing in the close is patched."""
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
         lean._fixture(root, author=AUTHOR)
@@ -58,16 +61,11 @@ def _closed(falsifies: str | None = None) -> tuple[int, str, dict, str, str]:
             "rounds": [{"goal": GOAL, "seats": [
                 {"seat": "qa", "achievable": "yes", "done_means": "x", "one_increment": "yes"}]}]
         }), encoding="utf-8")
-        mod = lean._live("sprint")
-        defects = mod._open_defects
         if falsifies:
             (bugs / f"{CLAUSE_BUG}-a-goal-breaker.md").write_text(
-                f"# {CLAUSE_BUG}: a goal breaker\n\n> **Status:** Open\n> **Severity:** Low\n",
-                encoding="utf-8")
-            defects = lambda r, _real=mod._open_defects: [  # noqa: E731
-                {**x, "falsifies": falsifies} if x["id"] == CLAUSE_BUG else x for x in _real(r)]
-        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
-                unittest.mock.patch.object(mod, "_open_defects", defects):
+                f"# {CLAUSE_BUG}: a goal breaker\n\n> **Status:** Open\n> **Severity:** Low\n"
+                f"> **Falsifies:** {falsifies}\n", encoding="utf-8")
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
             rc, out, err = lean._close(root)
             assert rc == 0, err
             state = lean._read(root)
@@ -153,8 +151,12 @@ class CloseGoalJudgementInReportTests(unittest.TestCase):
         self.assertNotIn(BUG, [r[0] for r in _rows(self.report) if r[1] == "blocks the goal claim"])
         self.assertEqual(0, self.rc, "a close whose only blocking defect is a priority floor "
                                      "must not refuse")
-        # The clause half: a defect falsifying a goal clause is labelled as blocking the goal
-        # claim, on the close's line and on the report's row, beside the priority one.
+
+    def test_a_falsifies_field_in_the_bug_file_blocks_the_goal_claim(self) -> None:
+        """BG1692 AC1. The clause half, over a Low bug whose file carries `Falsifies` and a
+        close whose `_open_defects` is the shipped one: the bug is labelled as blocking the goal
+        claim, on the close's line and on the report's row, beside the priority one, and the
+        close does not refuse on it."""
         why = f"falsifies the goal clause: {GOAL}"
         self.assertIn(f"BLOCKS THE GOAL CLAIM {CLAUSE_BUG}: {why}", self.clause_out)
         self.assertNotIn(f"WOULD BLOCK A RELEASE {CLAUSE_BUG}", self.clause_out)
@@ -164,6 +166,8 @@ class CloseGoalJudgementInReportTests(unittest.TestCase):
                          [r for r in rows if r[0] == CLAUSE_BUG], rows)
         self.assertEqual([BUG], [r[0] for r in rows if r[1] == "would block a release"], rows)
         self.assertEqual(0, self.clause_rc, "the close refused on a clause-basis defect")
+        self.assertEqual([("open defects", "defects vs goal", "2 BLOCKING, 0 leavable")],
+                         [r for r in rows if r[1] == "defects vs goal"], rows)
 
     def test_defects_the_goal_cannot_judge_say_why(self) -> None:
         """MUTANT: drop the defects detail for a goal with no clause, so the record and the page
@@ -188,6 +192,33 @@ class CloseGoalJudgementInReportTests(unittest.TestCase):
             rows = [(r["judged_item"]["value"], r["judged_ruling"]["value"],
                      r["judged_detail"]["value"]) for r in section["rows"]]
             self.assertIn(("open defects", "defects vs goal", detail), rows)
+
+
+class OpenDefectsFalsifiesTests(unittest.TestCase):
+
+    def test_open_defects_reads_falsifies_only_where_declared(self) -> None:
+        """BG1692 AC2. An Open bug declaring `Falsifies`, an Open one with none, a Fixed one
+        declaring it, and an In Progress one whose field is empty: only the first carries
+        `falsifies`, with the field's text, and the Fixed bug is not listed."""
+        sprint = lean._live("sprint")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            for uid, status, extra in (
+                    ("BG0911", "Open", "> **Falsifies:** the parser keeps every tab\n"),
+                    ("BG0912", "Open", ""),
+                    ("BG0913", "Fixed", "> **Falsifies:** the parser keeps every tab\n"),
+                    ("BG0914", "In Progress", "> **Falsifies:**\n")):
+                (bugs / f"{uid}-x.md").write_text(
+                    f"# {uid}: x\n\n> **Status:** {status}\n> **Severity:** Low\n{extra}",
+                    encoding="utf-8")
+            got = {x["id"]: x for x in sprint._open_defects(root)}
+        self.assertEqual(["BG0911", "BG0912", "BG0914"], sorted(got))
+        self.assertEqual("the parser keeps every tab", got["BG0911"]["falsifies"])
+        self.assertNotIn("falsifies", got["BG0912"])
+        self.assertNotIn("falsifies", got["BG0914"])
+        self.assertEqual("Low", got["BG0911"]["priority"])
 
 
 if __name__ == "__main__":

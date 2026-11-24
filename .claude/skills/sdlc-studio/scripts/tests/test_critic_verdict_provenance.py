@@ -10,7 +10,9 @@ record `provenance:unknown` and say why, never naming an agent.
 
 Every case drives `critic.py` through its entry point in a throwaway project. The transcripts
 are fixtures under a temporary folder named by `SDLC_STUDIO_TRANSCRIPTS`, shaped after Claude
-Code 2.1.318's own records, so no case reads or writes a real harness store.
+Code 2.1.318's own records, so no case reads or writes a real harness store. BG1513's cases
+leave that variable unset and place the session in a throwaway HOME's projects store instead,
+under another project's folder or the repository's own.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/critic.py
 from __future__ import annotations
@@ -218,6 +220,8 @@ class VerdictProvenanceTests(unittest.TestCase):
             want = _cell(written.encode(), path, f"session:{SESSION}", "agent:r1")
             self.assertEqual(want, critic.read_verdicts(root)[-1]["source"])
             self.assertIn("written by agent r1", rec.stdout)
+            # the folder named by SDLC_STUDIO_TRANSCRIPTS is no other project's (BG1513)
+            self.assertNotIn("another project", rec.stdout)
             line = _show_line(cwd, root, "US0001")
             self.assertIn("(written by agent r1)", line)
             self.assertIn(f"verdicts/US0001/{path.name}", line)
@@ -345,6 +349,83 @@ class VerdictProvenanceTests(unittest.TestCase):
             self.assertEqual([], got["tokens"])
             self.assertIn("writer was not read", got["note"])
             self.assertIsNone(provenance.label([]))
+
+    # -- BG1513: the reviewer's session lies in the store under another project's folder ----
+
+    def _briefed(self, base: Path) -> tuple[Path, Path, Path, Path, list[str], str]:
+        """`(root B, cwd, home, the store, the record argv, the bytes written)`."""
+        root, cwd, home = base / "proj-b", base / "elsewhere", base / "home"
+        for p in (root, cwd, home):
+            p.mkdir()
+        _project(root, "US0001")
+        path, stem, argv = _brief(cwd, root, "US0001")
+        written = _block("US0001", stem, "The widget holds.\n")
+        path.write_text(written, encoding="utf-8")
+        return root, cwd, home, home / ".claude" / "projects", argv, written
+
+    def _recorded(self, cwd: Path, root: Path, argv: list[str], env: dict) -> str:
+        r = _critic(cwd, *argv, "--reviewer", "qa-seat", "--author", "builder (engineering)",
+                    "--root", str(root), env=env)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        return r.stdout + r.stderr
+
+    def test_a_reviewer_in_another_project_s_session_is_named(self) -> None:
+        """AC4. The session's main thread and r1's transcript lie under project A's folder only.
+        MUTANTS: the session looked for in B's folder alone (`provenance:unknown`, `session <id>
+        has no transcript in <B's folder>`); the folder read left out of the note."""
+        from lib import run_state  # noqa: PLC0415 - the store's own folder naming
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            root, cwd, home, store, argv, written = self._briefed(base)
+            path = Path(argv[argv.index("--from-verdict") + 1])
+            folder_a = store / run_state.harness_project_slug(base / "proj-a")
+            _session(folder_a, base / "proj-a", path, written).flush()
+            out = self._recorded(cwd, root, argv, _store_env(home))
+            self.assertEqual(_cell(written.encode(), path, f"session:{SESSION}", "agent:r1"),
+                             critic.read_verdicts(root)[-1]["source"])
+            self.assertIn("written by agent r1", out)
+            self.assertIn(f"read from another project's folder, {folder_a}", out)
+            self.assertFalse((store / run_state.harness_project_slug(root)).exists())
+
+    def test_a_same_project_reviewer_resolves_from_its_own_folder(self) -> None:
+        """AC5. The session lies under B's own folder, where r1 wrote the file, and a decoy of
+        the same session id under A's folder, where agent x9 wrote it. MUTANT: the other
+        projects' folders read ahead of the repository's own (the row names x9)."""
+        from lib import run_state  # noqa: PLC0415 - the store's own folder naming
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            root, cwd, home, store, argv, written = self._briefed(base)
+            path = Path(argv[argv.index("--from-verdict") + 1])
+            folder_a = store / run_state.harness_project_slug(base / "proj-a")
+            decoy = _Transcripts(folder_a, base / "proj-a")
+            decoy.said(None, "00:00", "run the review")
+            decoy.said("x9", "00:06", f"Review it. Verdict file: {path}")
+            decoy.tool("x9", "00:08", "Write", file_path=str(path), content=written)
+            decoy.flush()
+            _session(store / run_state.harness_project_slug(root), root, path, written).flush()
+            out = self._recorded(cwd, root, argv, _store_env(home))
+            self.assertEqual(_cell(written.encode(), path, f"session:{SESSION}", "agent:r1"),
+                             critic.read_verdicts(root)[-1]["source"])
+            self.assertNotIn("another project", out)
+            self.assertNotIn("x9", out)
+            # The repository's own folder holding only the session's subagents still holds the
+            # session: read there, not from the decoy. MUTANT: a folder chosen by its main
+            # thread's transcript alone.
+            from lib import verdict_provenance as provenance  # noqa: PLC0415
+            (store / run_state.harness_project_slug(root) / f"{SESSION}.jsonl").unlink()
+            env = _store_env(home)
+            with mock.patch.dict(os.environ, {"HOME": env["HOME"]}):
+                got = provenance.read(root, path, written.encode(), env)
+            self.assertEqual([f"session:{SESSION}", "agent:r1"], got["tokens"])
+
+
+def _store_env(home: Path) -> dict:
+    """`_env` with no transcripts folder named, so the session is looked for in `home`'s
+    harness projects store, and git kept off the operator's own configuration."""
+    env = _env(home / "unused", home)
+    env.pop("SDLC_STUDIO_TRANSCRIPTS")
+    env.update(XDG_CONFIG_HOME=str(home / "config"), GIT_CONFIG_GLOBAL=os.devnull)
+    return env
 
 
 if __name__ == "__main__":
