@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, changelog.d/BG1361.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_yield_frozen.py, changelog.d/BG1361.md
 > **Evidence:** RUN-01M77177, 2026-11-12: qa-seat-US1001-r1
 > **Created:** 2026-11-12
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Reword to what the code does.
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced the wording at HEAD, ACs split frozen and live branches |
+| 2026-11-24 | orchestrator | Affects gains tests/test_lane_yield_frozen.py, whose line 150 pins the old wording the fix corrects (the RS builder's full-suite run) |
