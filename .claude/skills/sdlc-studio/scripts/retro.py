@@ -2926,9 +2926,11 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     # only its legacy baseline is read from that baseline with this reading as its close, the
     # inputs the report passes `run_token_total` for one.
     reads_agents = bool(cap.get("includes_subagents"))
-    whole = bool(run_state.run_token_total(state, cap).get("includes_subagents"))
-    delegated = run_state.delegated_records(state)
-    supplied = 0 if whole else run_state.delegated_total(state)
+    stamped = run_state.run_token_total(state, cap)
+    whole = bool(stamped.get("includes_subagents"))
+    readers = set() if whole else run_state.subagent_readers(stamped)
+    delegated = run_state.delegated_records(state, readers)
+    supplied = 0 if whole else run_state.delegated_total(state, readers)
     total = delta + supplied
     # The sentences below are the Claude transcript's, kept word for word. Another harness's
     # reading is stated in its reader's own words, and "main thread" appears only where they

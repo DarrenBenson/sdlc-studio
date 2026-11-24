@@ -242,6 +242,30 @@ class LaneYieldTests(unittest.TestCase):
         self.assertRegex(html, r"<th scope=\"row\"[^>]*>style</th><td class=\"num\">1</td>"
                                r"<td class=\"num\">0</td><td class=\"num\">1</td>")
 
+    def _note(self) -> str:
+        report = _live("sprint_report").build_report(self.root, RETRO)
+        return _section_of(report)["figures"]["lane_yield_note"]["value"]
+
+    def test_a_frozen_tally_names_the_closing_clones_log(self) -> None:
+        """AC1. MUTANT: the frozen note says `this clone's` refusal log, which in a fresh clone
+        reads as that clone's own log when the tally came from the closing clone."""
+        _classed_run(self.root)
+        frozen = {"in_run": 1, "skipped": 0, "rows": [
+            {"lane": "gate", "refusals": 1, "catches": 1, "paperwork": 0, "verdict": "kept"}]}
+        _run_state(self.root, lane_yield=frozen)
+        note = self._note()
+        self.assertIn("The tally is the closing clone's refusal log as the close read it.", note)
+        self.assertNotIn("this clone's", note)
+
+    def test_a_live_tally_names_no_closing_clone(self) -> None:
+        """AC2. MUTANT: the reword applied to both branches, which claims a closing clone where
+        none froze a tally."""
+        _classed_run(self.root)
+        note = self._note()
+        self.assertIn("refusal(s) in this run", note, "premise: the live section is built")
+        self.assertNotIn("closing clone", note)
+        self.assertNotIn("as the close read it", note)
+
     def test_a_lane_that_caught_nothing_in_three_runs_is_listed_not_enforced(self) -> None:
         """MUTANT: list a lane on this run's refusals alone - `gate`, which caught a defect two
         runs ago, is listed too. MUTANT: list a lane with no catch whatever its refusals were -

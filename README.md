@@ -92,9 +92,9 @@ On Windows, use [install.ps1](docs/INSTALL.md#windows).
 | --- | --- | --- | --- | --- | --- |
 | Claude Code | `claude` | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio`, or model-invoked | `/sdlc-studio status` |
 | Codex | `codex` | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio` | `/skills` |
-| Copilot | `copilot` | `~/.agents/skills` | `.github/skills` | ask in chat | `copilot skill list` |
 | Cursor | `agents` | `~/.agents/skills` | `.agents/skills` | untested | `ls ~/.agents/skills/sdlc-studio/SKILL.md` |
 | Gemini CLI | `gemini` | `~/.gemini/skills` | `.gemini/skills` | automatic, from its description | `/skills` |
+| GitHub Copilot | `copilot` | `~/.agents/skills` | `.github/skills` | ask in chat | `copilot skill list` |
 | opencode | `opencode` | `~/.config/opencode/skills` | `.opencode/skills` | found by its skill tool | `ls ~/.config/opencode/skills/sdlc-studio/SKILL.md` |
 
 Copilot here is GitHub Copilot CLI; Copilot in an editor is untested. What each harness gives,

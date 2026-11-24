@@ -664,13 +664,14 @@ def file_tracked(repo_root: Path | str, state: dict) -> Path:
 
 def read_tracked(repo_root: Path | str, run_id: str) -> dict:
     """The tracked record of `run_id`, or `{}` when none is filed. RAISES `RunStateError` on
-    one that does not parse: a damaged signed record is not the same fact as an absent one."""
+    one that does not parse or is not UTF-8: a damaged signed record is not the same fact as an
+    absent one."""
     p = tracked_path(repo_root, run_id)
     try:
         rec = json.loads(p.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return {}
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError) as exc:  # ValueError: a JSONDecodeError or a UnicodeDecodeError
         raise RunStateError(f"the tracked run record at {p} cannot be read: {exc}") from exc
     if not isinstance(rec, dict):
         raise RunStateError(f"the tracked run record at {p} is not an object")
@@ -703,6 +704,19 @@ def signed_record(repo_root: Path | str, run_id: str | None) -> dict | None:
             and len(live.get("reopened") or []) > len(rec.get("reopened") or [])):
         return None
     return rec
+
+
+def record_unreadable(repo_root: Path | str, run_id: str | None) -> str | None:
+    """Why the tracked record of `run_id` cannot be read, naming its path, or None when it is
+    readable or not filed. `signed_record` answers None for both a damaged record and an
+    unsigned one; this tells the two apart."""
+    if not run_id:
+        return None
+    try:
+        read_tracked(repo_root, run_id)
+    except RunStateError as exc:
+        return str(exc)
+    return None
 
 
 def awaiting_signature(repo_root: Path | str) -> list[dict]:
@@ -2789,8 +2803,18 @@ def record_goal_verdict(repo_root: Path | str, verdict: str, note: str = "",
     return record
 
 
-def delegated_records(state: dict) -> list[dict]:
-    """Every SUPPLIED delegated total on a run record, in the order they landed.
+def subagent_readers(total: dict) -> set[str]:
+    """The harnesses whose reading in the run total `total` already holds delegated agents'
+    spend (`_meters`): the ones a delegated record tagged to them is not added for. Empty over
+    a run Claude alone metered, whose `includes_subagents` flag says it for the whole total."""
+    return {m[HARNESS] for m in (total or {}).get("meters") or [] if m.get("includes_subagents")}
+
+
+def delegated_records(state: dict, read_by=()) -> list[dict]:
+    """Every SUPPLIED delegated total on a run record, in the order they landed, leaving out a
+    record tagged to a harness in `read_by` (`subagent_readers`): that harness's reading holds
+    its agents' spend, so adding the record counts it twice. An untagged record is always
+    kept.
 
     Pure over a state dict, because the close already holds one and re-reading the file would
     let the two answers drift. A malformed entry is skipped rather than raising: these are cost
@@ -2807,17 +2831,20 @@ def delegated_records(state: dict) -> list[dict]:
         t = r.get("tokens")
         if isinstance(t, bool) or not isinstance(t, int) or t <= 0:
             continue
+        if r.get(HARNESS) in read_by:
+            continue
         out.append(r)
     return out
 
 
-def delegated_total(state: dict) -> int:
-    """The supplied delegated spend on a run, or 0 when none was supplied.
+def delegated_total(state: dict, read_by=()) -> int:
+    """The supplied delegated spend on a run, or 0 when none was supplied, over the records
+    `delegated_records` keeps for `read_by`.
 
     0 here means NOTHING WAS SUPPLIED, which is not the same fact as no delegation happening -
     which is exactly why the figure it is added to is published as a lower bound rather than as
     the run's cost."""
-    return sum(r["tokens"] for r in delegated_records(state))
+    return sum(r["tokens"] for r in delegated_records(state, read_by))
 
 
 def delegated_split(state: dict) -> dict:
@@ -2918,7 +2945,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
                             reading: dict | None = None,
                             provenance: str = SUPPLIED,
                             apportioned: dict | None = None,
-                            model: str | None = None) -> dict | None:
+                            model: str | None = None,
+                            harness: str | None = None) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
@@ -2951,6 +2979,10 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     and never priced: a supplied total is one number, and a price needs its components. With no
     model, or a blank one, the record carries no `model` key; nothing is filled in for it, since
     the main thread's model would price a smaller model's subagent at the larger one's rate.
+
+    `harness` names the harness the agent ran under, stored on the record trimmed. A record
+    tagged to a harness whose reading holds its agents' spend is not added to that run's total
+    (`delegated_records`); an untagged record is added as it always was.
     """
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
@@ -2982,6 +3014,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         entry[APPORTIONED] = dict(apportioned)
     if isinstance(model, str) and model.strip():
         entry["model"] = model.strip()
+    if isinstance(harness, str) and harness.strip():
+        entry[HARNESS] = harness.strip()
     if reading:
         # A lane run session's reading (`lanes.run_reading`) with no split names its session's
         # one model: its components are booked under that model, so the unit's dollars price

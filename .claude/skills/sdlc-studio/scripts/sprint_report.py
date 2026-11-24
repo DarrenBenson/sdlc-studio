@@ -1973,7 +1973,12 @@ def _ck_cost(ctx: dict) -> tuple:
     import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     spend, run = ctx.get("spend") or {}, ctx.get("run") or {}
     metered = _metered(run, _at(run.get(sprint.REPORT_WINDOW_END)))
-    total = run_state.run_token_total(metered) if run else {}
+    current = None
+    if run and not (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):
+        # The legacy single baseline has no closing reading of its own: the page reads the
+        # transcript for it, so the row does too.
+        current = run_state.session_tokens(ctx["root"])
+    total = run_state.run_token_total(metered, current) if run else {}
     measured, agents = _run_tokens_actual(run, total) if run else (None, 0)
     rebased = (f"; {run_state.rebased_note(total)}" if run_state.rebased_note(total) else "")
     priced = (f"; priced, the report's headline"
@@ -3786,13 +3791,19 @@ def _run_tokens_actual(state: dict, run_tokens: dict, delegated_rule: bool = Tru
     Never over a meter whose readings hold the subagent transcripts (`includes_subagents`):
     the builders and reviewers the totals were supplied for are already in it, and adding them
     counts each twice. A run whose stamps carry no such flag, as every run before the meter read
-    subagents, adds them as it always did, so a page filed from it re-derives unchanged."""
+    subagents, adds them as it always did, so a page filed from it re-derives unchanged.
+
+    A record tagged to a harness whose reading holds its agents' spend (`subagent_readers`) is
+    not added either, in a run another harness's reading sits beside Claude's main thread: an
+    untagged record still is."""
     tokens = run_tokens.get("tokens")
-    delegated = run_state.delegated_total(state)
+    readers = run_state.subagent_readers(run_tokens)
+    delegated = run_state.delegated_total(state, readers)
     if (not delegated or tokens is None or not (tokens or delegated_rule)
             or run_tokens.get("includes_subagents")):
         return tokens, 0
-    agents = len([r for r in (state.get(run_state.DELEGATED) or []) if isinstance(r, dict)])
+    agents = len([r for r in (state.get(run_state.DELEGATED) or [])
+                  if isinstance(r, dict) and r.get(run_state.HARNESS) not in readers])
     return tokens + delegated, agents
 
 
@@ -4679,7 +4690,8 @@ def _cost_section(state: dict, state_rel: str, total: dict, effort: dict | None 
     figures.update({
         # The supplied totals are not added over a meter that already read the subagents.
         "tokens_total": fig("tokens_total", total["tokens"] + (
-            0 if total.get("includes_subagents") else delegated), state_rel),
+            0 if total.get("includes_subagents") else
+            run_state.delegated_total(state, run_state.subagent_readers(total))), state_rel),
         "token_coverage": fig("token_coverage", coverage, state_rel),
         # A run another harness metered names it and its reader's basis here, in the figure the
         # page renders as the cost section's reading; a Claude run's figure reads as filed.
@@ -5594,7 +5606,7 @@ def _lane_yield_section(root: Path, state: dict, state_rel: str, start, end) -> 
     each prepare refreshes the tally."""
     if LANE_YIELD in state:
         tally, src, cited = state[LANE_YIELD], f"{state_rel}, git log", state_rel
-        held = " The tally is this clone's refusal log as the close read it."
+        held = " The tally is the closing clone's refusal log as the close read it."
     else:
         tally, src, cited = (_lane_yield_tally(root, state, start, end),
                              f"{REFUSALS_REL}, git log", REFUSALS_REL)

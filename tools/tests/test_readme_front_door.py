@@ -120,11 +120,8 @@ HARNESSES = ("Claude Code", "Codex", "Cursor", "Gemini CLI", "GitHub Copilot", "
 FIRST_SCREEN_PAGES = ("docs/harnesses.md", "docs/enterprise.md")
 #: The README's count by `wc -w` at 59b649d4, before CR0742 (US1318 AC4).
 CR0742_WORDS = 1500
-#: The install table's rows, in order. Copilot keeps its short label because
-#: test_install_copilot_global pins a `| Copilot |` row; the quick start names it GitHub Copilot.
-TABLE_ROWS = ("Claude Code", "Codex", "Copilot", "Cursor", "Gemini CLI", "opencode")
-#: A row's label -> its row on docs/harnesses.md, where the two differ.
-PAGE_ROW = {"Copilot": "GitHub Copilot"}
+#: The install table's rows, in alphabetical order, each labelled as docs/harnesses.md names it.
+TABLE_ROWS = ("Claude Code", "Codex", "Cursor", "Gemini CLI", "GitHub Copilot", "opencode")
 #: The install table's header cells this page reads, by role.
 COLUMNS = {"harness": "Harness", "target": "`--target`", "global": "Global",
            "local": "Project-local", "invoke": "Invoke as", "verify": "Verify with"}
@@ -207,7 +204,8 @@ def harness_table_problems(text: str, root: Path = REPO) -> list[str]:
     quick = next(((s, e) for h, s, e in sections(text) if h == "Quick start"), (0, 0))
     problems = [] if quick[0] <= at < quick[1] else ["the harness table is not in the quick start"]
     body = text[quick[0]:quick[1]]
-    if "GitHub Copilot" not in " ".join(body.split()):
+    prose = " ".join(ln for ln in body.splitlines() if not ln.startswith("|"))
+    if "GitHub Copilot" not in " ".join(prose.split()):
         problems.append("the quick start does not name GitHub Copilot")
     first = re.search(r"```\w*\n(.*?)```", body, re.S)
     if not first or "--target" not in first.group(1):
@@ -226,7 +224,7 @@ def harness_table_problems(text: str, root: Path = REPO) -> list[str]:
                       ("docs/INSTALL.md", "docs/harnesses.md") if (root / p).is_file())
     for row in rows[1:]:
         cell = dict(zip(col, (row[i] if i < len(row) else "" for i in col.values())))
-        name, matrix = cell["harness"], page_row(PAGE_ROW.get(cell["harness"], cell["harness"]), root)
+        name, matrix = cell["harness"], page_row(cell["harness"], root)
         paths = {k: re.findall(r"`([^`]+)`", cell[k]) for k in ("global", "local", "target")}
         for key, found_paths in paths.items():
             token = (f"`--target {found_paths[0]}`" if key == "target" and found_paths
@@ -399,6 +397,16 @@ class ReadmeFrontDoorTests(unittest.TestCase):
                              [f"the first screen links {p}, which does not exist"
                               for p in FIRST_SCREEN_PAGES])
 
+    def test_the_copilot_row_is_labelled_github_copilot(self) -> None:
+        """The install table's Copilot row reads `GitHub Copilot`, the name docs/harnesses.md
+        uses, and no row is labelled with the short name."""
+        text = README.read_text(encoding="utf-8")
+        (_, rows), = [t for t in md_tables(text) if t[1][0][0] == "Harness"]
+        labels = [r[0] for r in rows[1:]]
+        row, = [r for r in rows[1:] if "`copilot`" in r[1]]
+        self.assertEqual("GitHub Copilot", row[0])
+        self.assertNotIn("Copilot", labels)
+
     def test_the_harness_table_is_alphabetical_with_a_verification_command(self) -> None:
         """US1318 AC2: one harness table, in the quick start, its six rows alphabetical, each
         with the harness page's install locations, an invocation and a backed verification
@@ -415,10 +423,10 @@ class ReadmeFrontDoorTests(unittest.TestCase):
         twice = text.replace("## FAQ", f"## FAQ\n\n{table}\n", 1)
         self.assertEqual(harness_table_problems(twice), ["the README has 2 harness tables, not one"])
         swapped = text.replace(row["Codex"], "\0", 1).replace(
-            row["Copilot"], row["Codex"], 1).replace("\0", row["Copilot"], 1)
+            row["GitHub Copilot"], row["Codex"], 1).replace("\0", row["GitHub Copilot"], 1)
         self.assertEqual(harness_table_problems(swapped),
                          ["the harness table's rows are not in alphabetical order"])
-        cut = text.replace(row["Copilot"] + "\n", "", 1)
+        cut = text.replace(row["GitHub Copilot"] + "\n", "", 1)
         self.assertEqual(len(harness_table_problems(cut)), 1)
         self.assertIn("not the six", harness_table_problems(cut)[0])
         for name in TABLE_ROWS:
@@ -429,7 +437,7 @@ class ReadmeFrontDoorTests(unittest.TestCase):
                              [f"the {name} row gives no verification command"], name)
         unbacked = text.replace("`copilot skill list`", "`copilot skills ls`", 1)
         self.assertEqual(harness_table_problems(unbacked),
-                         ["the Copilot row's verification `copilot skills ls` is backed by "
+                         ["the GitHub Copilot row's verification `copilot skills ls` is backed by "
                           "neither docs/INSTALL.md nor docs/harnesses.md"])
         moved = text.replace(row["Gemini CLI"], row["Gemini CLI"].replace(
             "`~/.gemini/skills`", "`~/.gemini/skill`", 1), 1)
@@ -445,14 +453,16 @@ class ReadmeFrontDoorTests(unittest.TestCase):
         silent = text.replace(row["Codex"], "|".join(cells), 1)
         self.assertEqual(harness_table_problems(silent), ["the Codex row gives no invocation"])
         body = next(text[s:e] for h, s, e in sections(text) if h == "Quick start")
-        unnamed = text.replace(body, body.replace("GitHub Copilot", "Copilot"), 1)
+        prose = "\n".join(ln if ln.startswith("|") else ln.replace("GitHub Copilot", "Copilot")
+                          for ln in body.splitlines())
+        unnamed = text.replace(body, prose + "\n", 1)
         self.assertEqual(harness_table_problems(unnamed),
                          ["the quick start does not name GitHub Copilot"])
         later = text.replace(table + "\n", "", 1).replace("## FAQ", f"## FAQ\n\n{table}\n", 1)
         self.assertEqual(harness_table_problems(later),
                          ["the harness table is not in the quick start"])
         with tempfile.TemporaryDirectory() as d:
-            self.assertIn("the Copilot row's Global cell is not the harness page's",
+            self.assertIn("the GitHub Copilot row's Global cell is not the harness page's",
                           harness_table_problems(text, Path(d)))
         default = text.replace(" | bash -s -- --target auto\n", " | bash\n", 1)
         self.assertNotEqual(default, text)

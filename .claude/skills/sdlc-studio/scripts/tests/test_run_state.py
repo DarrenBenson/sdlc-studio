@@ -1304,5 +1304,174 @@ class CrossRepoMeterTests(unittest.TestCase):
                          f"the Priced cost row: {row}")
 
 
+class TrackedRecordTests(unittest.TestCase):
+    """The tracked run record is read as an object or named unreadable, never a traceback."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.path = run_state.tracked_path(self.root, "RUN-T")
+        self.path.parent.mkdir(parents=True)
+
+    def test_a_non_utf8_record_is_named_as_unreadable(self) -> None:
+        """AC3. MUTANT: `read_tracked` catches OSError and JSONDecodeError only, so a
+        UnicodeDecodeError escapes both it and `signed_record`."""
+        self.path.write_bytes(b"\xff\xfe{")
+        with self.assertRaises(run_state.RunStateError) as caught:
+            run_state.read_tracked(self.root, "RUN-T")
+        self.assertIn(str(self.path), str(caught.exception))
+        self.assertIsNone(run_state.signed_record(self.root, "RUN-T"))
+        self.assertIn(str(self.path), run_state.record_unreadable(self.root, "RUN-T"))
+
+    def test_a_record_that_does_not_parse_is_named_and_one_that_does_is_not(self) -> None:
+        """The controls: invalid JSON and an empty file are unreadable, a readable record, an
+        absent one and no run id are not."""
+        self.path.write_text("", encoding="utf-8")
+        self.assertIn(str(self.path), run_state.record_unreadable(self.root, "RUN-T"))
+        self.path.write_text("[]", encoding="utf-8")
+        self.assertIn("is not an object", run_state.record_unreadable(self.root, "RUN-T"))
+        self.path.write_text(json.dumps({"outcome": "running"}), encoding="utf-8")
+        self.assertIsNone(run_state.record_unreadable(self.root, "RUN-T"))
+        self.path.unlink()
+        self.assertIsNone(run_state.record_unreadable(self.root, "RUN-T"))
+        self.assertIsNone(run_state.record_unreadable(self.root, None))
+        self.assertIsNone(run_state.record_unreadable(self.root, ""))
+
+
+class DelegatedHarnessTests(unittest.TestCase):
+    """A run metered by Claude's main thread and by a harness whose reader holds its subagents'
+    spend (opencode) reads its supplied delegated totals by harness: a record tagged to the
+    harness whose reading holds its agents is not added, an untagged one still is."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+
+    @staticmethod
+    def _stamps() -> list[dict]:
+        claude = "/c/s.jsonl"
+        return [
+            {"tokens": 1000, "source": claude, "at": "2026-09-23T00:00:00Z", "kind": "open"},
+            {"tokens": 5000, "source": claude, "at": "2026-09-23T01:00:00Z", "kind": "report"},
+            {"tokens": 100, "source": "oc:1", "harness": "opencode", "subagents": True,
+             "basis": "opencode usage", "at": "2026-09-23T00:00:00Z", "kind": "open"},
+            {"tokens": 700, "source": "oc:1", "harness": "opencode", "subagents": True,
+             "basis": "opencode usage", "at": "2026-09-23T01:00:00Z", "kind": "report"}]
+
+    def _state(self, *records: dict) -> dict:
+        return {"run_id": "RUN-X", "outcome": "running",
+                run_state.TOKEN_STAMPS: self._stamps(), run_state.DELEGATED: list(records)}
+
+    @staticmethod
+    def _record(tokens: int, **extra) -> dict:
+        return {"tokens": tokens, "agent": "a", "provenance": run_state.SUPPLIED, **extra}
+
+    def test_the_record_carries_its_harness(self) -> None:
+        """AC2. MUTANT: `record_delegated_tokens` writes no harness, so records cannot be split
+        by it."""
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        tagged = run_state.record_delegated_tokens(str(self.root), 300, harness=" opencode ")
+        plain = run_state.record_delegated_tokens(str(self.root), 200)
+        blank = run_state.record_delegated_tokens(str(self.root), 100, harness="  ")
+        self.assertEqual("opencode", tagged["harness"])
+        self.assertNotIn("harness", plain)
+        self.assertNotIn("harness", blank, "a blank harness names none")
+        state = run_state.read(str(self.root))
+        self.assertEqual("opencode", state[run_state.DELEGATED][0]["harness"])
+        self.assertEqual(600, run_state.delegated_total(state))
+        self.assertEqual(300, run_state.delegated_total(state, {"opencode"}))
+        self.assertEqual(2, len(run_state.delegated_records(state, {"opencode"})),
+                         "the untagged records are kept whatever harness is excluded")
+
+    def test_a_record_tagged_to_a_subagent_reading_harness_is_not_added(self) -> None:
+        """AC1. MUTANT: the whole delegated total is added because `includes_subagents` is an
+        all() over the meters, so the opencode session's delegated spend counts twice."""
+        import retro
+        import sprint_report
+        state = self._state(self._record(300, harness="opencode"), self._record(200))
+        total = run_state.run_token_total(state)
+        self.assertFalse(total["includes_subagents"], "premise: Claude's main thread is in it")
+        self.assertEqual({"opencode"}, run_state.subagent_readers(total))
+        self.assertEqual((4600 + 200, 1), sprint_report._run_tokens_actual(state, total))
+        held = {**state, run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b"}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual(4000 + 200, got["tokens"])
+        self.assertEqual(200, got["delegated_tokens"])
+        self.assertEqual(1, got["delegated_records"])
+
+    def test_a_lane_run_return_tags_its_harness(self) -> None:
+        """AC4. MUTANT: the lane-run return call passes no harness, so every delegated total it
+        records is untagged and the exclusion never reaches a real record."""
+        import argparse
+
+        import sprint
+        from lib import lanes
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        comps = {"input": 900, "output": 100, "cache_write_5m": 0, "cache_write_1h": 0,
+                 "cache_read": 0}
+        reading = {"tokens": 1000, "components": comps, "model": "grok-4.7",
+                   "harness": "opencode", "source": "/lane/run.json", "priced": 0}
+        with mock.patch.object(lanes, "run_readings", return_value=[(reading, None)]):
+            sprint._lane_run_totals(
+                self.root, argparse.Namespace(tokens=None, agent=None),
+                [{"unit": "BG0001", "outcome": "delivered"}])
+        [record] = run_state.delegated_records(run_state.read(str(self.root)))
+        self.assertEqual("opencode", record["harness"])
+        self.assertEqual("lane-run-opencode", record["agent"])
+        self.assertEqual(0, run_state.delegated_total(
+            run_state.read(str(self.root)), {"opencode"}))
+
+    def test_a_run_whose_every_reading_holds_its_agents_counts_the_tagged_record_as_supplied(
+            self) -> None:
+        """The retro says how many delegated totals it did not add: over a run whose readings
+        all hold their agents, every supplied record, tagged or not. MUTANT: the tagged record
+        left out of that count."""
+        import retro
+        held = {"run_id": "RUN-X", "outcome": "running", run_state.TOKEN_STAMPS: [
+            s for s in self._stamps() if s.get("harness") == "opencode"],
+                run_state.DELEGATED: [self._record(300, harness="opencode"), self._record(200)],
+                run_state.TOKEN_BASELINE: {"tokens": 100, "source": "oc:1",
+                                           "harness": "opencode"}}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 700, "source": "oc:1", "harness": "opencode", "basis": "b",
+                  "includes_subagents": True}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual(600, got["tokens"], "nothing supplied is added over such a run")
+        self.assertIn("so the 2 delegated total(s) supplied are not added", got["basis"])
+
+    def test_the_page_total_leaves_the_tagged_record_out_too(self) -> None:
+        """The report page's Tokens figure states the same total as the Estimates row."""
+        import sprint_report
+        state = self._state(self._record(300, harness="opencode"), self._record(200))
+        total = run_state.run_token_total(state)
+        section = sprint_report._cost_section(state, "state", total)
+        self.assertEqual(4800, section["figures"]["tokens_total"]["value"])
+
+    def test_untagged_records_are_added_as_before(self) -> None:
+        """AC3. MUTANT: stop adding untagged records, which understates a Claude-only fan-out."""
+        import sprint_report
+        state = self._state(self._record(300), self._record(200))
+        total = run_state.run_token_total(state)
+        self.assertEqual((4600 + 500, 2), sprint_report._run_tokens_actual(state, total))
+        self.assertEqual(500, run_state.delegated_total(state, run_state.subagent_readers(total)))
+        claude_only = {"run_id": "RUN-X", run_state.TOKEN_STAMPS: self._stamps()[:2],
+                       run_state.DELEGATED: [self._record(300, harness="opencode")]}
+        total = run_state.run_token_total(claude_only)
+        self.assertEqual(set(), run_state.subagent_readers(total),
+                         "a run Claude alone metered excludes no harness")
+        self.assertEqual((4000 + 300, 1), sprint_report._run_tokens_actual(claude_only, total))
+
+
 if __name__ == "__main__":
     unittest.main()

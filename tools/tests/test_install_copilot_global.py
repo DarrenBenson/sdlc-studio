@@ -187,7 +187,7 @@ class CopilotGlobalTests(unittest.TestCase):
         for name in ("README.md", "docs/INSTALL.md"):
             blocks = doc_blocks((REPO / name).read_text(encoding="utf-8"))
             copilot = [b for b in blocks if "Copilot" in b]
-            rows = [b for b in copilot if re.match(r"^\|\s*Copilot\s*\|", b)]
+            rows = [b for b in copilot if re.match(r"^\|\s*(?:GitHub )?Copilot\s*\|", b)]
             self.assertTrue(rows, f"{name}: no Copilot row in its tool table")
             for block in copilot:
                 self.assertNotIn("repo-scoped", block, f"{name}: {block}")

@@ -140,7 +140,7 @@ def read_cli(repo_root: Path, env: Mapping) -> dict:
     holds other tables than the pinned build's, and is then not read as keeping no usage."""
     ledger = ledger_path(repo_root)
     if ledger.is_file():
-        return read_ledger(ledger)
+        return read_ledger(ledger, repo_root)
     chats = cli_chats(repo_root, env)
 
     def none(why: str) -> dict:
@@ -170,7 +170,7 @@ def ledger_path(repo_root: Path) -> Path:
     return Path(repo_root) / LEDGER_REL
 
 
-def read_ledger(ledger: Path) -> dict:
+def read_ledger(ledger: Path, repo_root: Path | str | None = None) -> dict:
     """The reading the hook ledger `ledger` holds: every line's counts summed, or tokens None
     with the reason when no line can be read. A line that is not a JSON object whose
     `LEDGER_FIELDS` are each a count is skipped and counted as `skipped`; the figure is then a
@@ -185,8 +185,10 @@ def read_ledger(ledger: Path) -> dict:
     naming no model is not priced; the reading is named as its one model, or as
     `run_state.SESSION_MODEL_MIXED` over more. A line is one response, and its `input_tokens` is
     that response's whole prompt, so a response whose prompt reaches its model's long-context
-    threshold in the shipped price table is booked under that model's long-context id
-    (`token_meters.book`) and priced at that rate for all its tokens."""
+    threshold in the price table is booked under that model's long-context id
+    (`token_meters.book`) and priced at that rate for all its tokens. The table is the shipped
+    one with the project's `pricing` block over it when `repo_root` is given, so a project that
+    moves a threshold books its responses by it."""
     from . import run_state, token_meters  # noqa: PLC0415 - lazy: run_state loads this reader
 
     sums = dict.fromkeys(LEDGER_FIELDS, 0)
@@ -241,17 +243,18 @@ def read_ledger(ledger: Path) -> dict:
             "priced": run_state.price(comps), "responses": read, "skipped": skipped,
             "model": (next(iter(models)) if len(models) == 1 else
                       run_state.SESSION_MODEL_MIXED if models else None),
-            run_state.BY_MODEL: token_meters.book(requests, _rates()),
+            run_state.BY_MODEL: token_meters.book(requests, _rates(repo_root)),
             "source": f"the Cursor CLI hook ledger {ledger}", "basis": basis,
             "includes_subagents": False}
 
 
-def _rates():
-    """The shipped price table, whose long-context thresholds `read_ledger` books each response
-    by; an empty one when it cannot be read, so every response is booked under its own model."""
+def _rates(repo_root: Path | str | None = None):
+    """The price table, whose long-context thresholds `read_ledger` books each response by: the
+    shipped one with the project's `pricing` block over it when `repo_root` is given; an empty
+    one when it cannot be read, so every response is booked under its own model."""
     from . import prices  # noqa: PLC0415 - only the per-model split needs it
     try:
-        return prices.load()
+        return prices.load(repo_root)
     except prices.PriceTableError:
         return prices.PriceTable(models={}, stale_after_days=prices.DEFAULT_STALE_AFTER_DAYS,
                                  origin="no readable price table")

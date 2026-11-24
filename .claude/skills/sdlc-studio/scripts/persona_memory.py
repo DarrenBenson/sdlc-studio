@@ -487,16 +487,18 @@ def digest(root: Path | str, key: str, affects=(), *, today: str | None = None) 
     and `standing` live), ranked by relevance to `affects` and then recency, capped at
     `inject_max`.
 
-    Returns `{persona, path, learnings, live, withheld, expired, unsigned, unlisted, cap,
-    absent, error}`: `unsigned` counts approved learnings whose listing run is not signed,
-    `unlisted` those no signed close has listed. Only the persona's own file is read. A file
+    Returns `{persona, path, learnings, live, withheld, expired, unsigned, unreadable,
+    damaged, unlisted, cap, absent, error}`: `unsigned` counts approved learnings whose listing run is not signed,
+    `unreadable` those whose run's tracked record cannot be read (its repo-relative paths in
+    `damaged`), `unlisted` those no signed close has listed. Only the persona's own file is read. A file
     that cannot be parsed sets `error`, never reads as empty; a missing file sets `absent`."""
     root = Path(root)
     path = memory_path(root, key)
     rel = path.relative_to(root).as_posix()
     cap = inject_max(root)
     out = {"persona": key, "path": rel, "learnings": [], "live": 0, "withheld": 0,
-           "expired": 0, "unsigned": 0, "unlisted": 0, "cap": cap,
+           "expired": 0, "unsigned": 0, "unreadable": 0, "damaged": [], "unlisted": 0,
+           "cap": cap,
            "absent": not path.exists(), "error": ""}
     if out["absent"]:
         return out
@@ -517,8 +519,13 @@ def digest(root: Path | str, key: str, affects=(), *, today: str | None = None) 
             out["expired"] += 1
             continue
         held = standing(root, e, records)
-        if held in ("unsigned", "unlisted"):
+        if held in ("unsigned", "unreadable", "unlisted"):
             out[held] += 1
+        if held == "unreadable":
+            damaged = run_state.tracked_path(root, e["fields"]["listed-in"].strip()
+                                             ).relative_to(root).as_posix()
+            if damaged not in out["damaged"]:
+                out["damaged"].append(damaged)
         if held != "live":
             continue
         relevant = bool(unit_files & _cited_files(root, e["fields"].get("evidence", "")))
@@ -562,6 +569,12 @@ def render(d: dict, render_name: str) -> list[str]:
                         "signed)" if one else
                         "learnings await their runs' signatures, not carried until those runs "
                         "are signed)"))
+    if d.get("unreadable"):
+        one = d["unreadable"] == 1
+        lines.append(f"  ({d['unreadable']} approved {'learning' if one else 'learnings'} not "
+                     f"carried: the run record at {', '.join(d.get('damaged') or [])} is "
+                     f"unreadable, so whether {'its' if one else 'their'} run is signed is "
+                     f"not known; restore it from git)")
     if d.get("unlisted"):
         one = d["unlisted"] == 1
         lines.append(f"  ({d['unlisted']} approved {'learning' if one else 'learnings'} no "
@@ -587,8 +600,9 @@ def standing(root: Path | str, entry: dict, records: dict | None = None) -> str:
     """Where an approved learning stands against the signature: `live` when the run its
     Listed-in names has a signed tracked record (`run_state.signed_record`) that lists it and
     does not strike it; `struck` when that record strikes it or its Struck field is set;
-    `unsigned` when its run is not signed; `unlisted` when no signed close has listed it.
-    `records` caches each run's signed record across calls."""
+    `unsigned` when its run is not signed; `unreadable` when its run's tracked record is filed
+    and cannot be read, which is not the same fact as unsigned; `unlisted` when no signed close
+    has listed it. `records` caches each run's signed record across calls."""
     f = entry["fields"]
     if f.get("struck"):
         return "struck"
@@ -600,7 +614,7 @@ def standing(root: Path | str, entry: dict, records: dict | None = None) -> str:
         cache[run] = run_state.signed_record(root, run)
     rec = cache[run]
     if rec is None:
-        return "unsigned"
+        return "unreadable" if run_state.record_unreadable(root, run) else "unsigned"
     if entry["id"] in _struck_ids(rec):
         return "struck"
     return "live" if entry["id"] in (rec.get(run_state.PERSONA_LISTED) or []) else "unlisted"

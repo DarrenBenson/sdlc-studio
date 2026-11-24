@@ -147,7 +147,7 @@ class FrozenLaneYieldTests(unittest.TestCase):
         self.assertEqual(16, len(figures))
         for f in figures:
             self.assertEqual([TRACKED, "git log"], f["source"].split(", "), f)
-        self.assertIn("this clone's refusal log as the close read it",
+        self.assertIn("the closing clone's refusal log as the close read it",
                       section["figures"]["lane_yield_note"]["value"])
         named = [(s, k, f) for s, k, f in _sr().leaf_figures(page)
                  if ".local/" in json.dumps(f)]

@@ -242,6 +242,26 @@ class EvidencePageTests(unittest.TestCase):
                                  r".*`model` figure")
         self.assertEqual(0, self._run("--check")[0], "the page the verb wrote checks clean")
 
+    def test_a_not_measured_model_figure_names_no_model(self) -> None:
+        """A Cost model figure reading NOT MEASURED, the word any unmeasured figure reads,
+        names no model: the cell reads not recorded. MUTANT: `NOT_MEASURED` dropped from
+        `_NO_MODEL`, which prints the word as though it were a model. The control beside it is
+        a figure naming one."""
+        measured = _models(_report("RPT0112", "RUN-KKK", "2026-02-07T00:00:00Z",
+                                   "2026-02-07T01:00:00Z", "Judged achieved", "", None),
+                           figure="NOT MEASURED")
+        named = _models(_report("RPT0113", "RUN-LLL", "2026-02-08T00:00:00Z",
+                                "2026-02-08T01:00:00Z", "Judged achieved", "", None),
+                        figure="claude-opus-5")
+        self.assertEqual("NOT MEASURED", sr.NOT_MEASURED, "premise: the word the figure reads")
+        self._file(measured)
+        self._file(named)
+        code, out = self._run()
+        self.assertEqual(0, code, out)
+        models = {r["Run"]: r.get("Model") for r in _table(self._region())}
+        self.assertEqual("not recorded", models["RUN-KKK"])
+        self.assertEqual("claude-opus-5", models["RUN-LLL"])
+
     def test_hand_text_is_kept_and_every_figure_is_a_report_field(self) -> None:
         self.assertEqual(0, self._run()[0])
         raw = self.page.read_bytes()

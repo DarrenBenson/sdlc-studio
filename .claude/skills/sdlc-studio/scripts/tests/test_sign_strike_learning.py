@@ -211,6 +211,64 @@ class StrikeLearningTests(unittest.TestCase):
         self.assertNotIn(self.qa, brief)
         self.assertIn("1 approved learning awaits its run's signature", brief)
 
+    def test_a_damaged_run_record_is_named_as_unreadable_on_the_brief(self) -> None:
+        """AC1. MUTANT: a record that no longer parses reads as the run awaiting its signature,
+        so the brief tells the operator to sign a run that is signed."""
+        root = self.root
+        _close(root)
+        rc, out, err = _sign(root)
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"{self.qa} A retry loop hides a race", _brief(root, "qa"),
+                      "premise: the signed run's learning is live")
+        rel = f"sdlc-studio/reports/runs/{RUN}.json"
+        (root / rel).write_text("{not json", encoding="utf-8")
+        brief = _brief(root, "qa")
+        self.assertNotIn(self.qa, brief, "a learning of an unreadable run is carried")
+        self.assertIn("1 approved learning not carried", brief)
+        self.assertIn(f"the run record at {rel} is unreadable, so whether its run is signed is "
+                      f"not known", brief)
+        self.assertNotIn("awaits its run's signature", brief)
+
+    def test_a_record_that_is_not_utf8_reads_as_unreadable_on_the_brief(self) -> None:
+        """The malformed-input path through the brief: bytes that are not UTF-8."""
+        root = self.root
+        _close(root)
+        rc, out, err = _sign(root)
+        self.assertEqual(0, rc, out + err)
+        rel = f"sdlc-studio/reports/runs/{RUN}.json"
+        (root / rel).write_bytes(b"\xff\xfe\x00{")
+        brief = _brief(root, "qa")
+        self.assertNotIn(self.qa, brief)
+        self.assertIn(f"the run record at {rel} is unreadable", brief)
+
+    def test_an_unsigned_or_absent_record_still_awaits_its_signature(self) -> None:
+        """AC2. MUTANT: the damaged state reported for a record that is only unsigned or
+        absent."""
+        root = self.root
+        _close(root)
+        unsigned = _brief(root, "qa")
+        self.assertIn("1 approved learning awaits its run's signature", unsigned)
+        self.assertNotIn("the run record at", unsigned)
+        (root / "sdlc-studio" / "reports" / "runs" / f"{RUN}.json").unlink()
+        absent = _brief(root, "qa")
+        self.assertIn("1 approved learning awaits its run's signature", absent)
+        self.assertNotIn("the run record at", absent)
+
+    def test_several_learnings_of_one_damaged_record_name_its_path_once(self) -> None:
+        """MUTANT: the damaged path appended once per learning, or the count left at one."""
+        root = self.root
+        extra = _learning(root, "qa", "A second qa lesson", PRODUCT)
+        _close(root)
+        rc, out, err = _sign(root)
+        self.assertEqual(0, rc, out + err)
+        rel = f"sdlc-studio/reports/runs/{RUN}.json"
+        (root / rel).write_text("[]x", encoding="utf-8")
+        brief = _brief(root, "qa")
+        self.assertIn("2 approved learnings not carried", brief)
+        self.assertIn("so whether their run is signed is not known", brief)
+        self.assertEqual(1, brief.count(rel))
+        self.assertNotIn(extra, brief)
+
     def test_a_run_sealed_without_a_signature_holds_its_learning(self) -> None:
         """A run its close filed and listed, then sealed with no signature, as a `sprint
         boundary` stop seals it (`blocked`) and as `--file-and-close` seals it
