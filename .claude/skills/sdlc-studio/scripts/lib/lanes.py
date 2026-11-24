@@ -19,7 +19,9 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
    conflict;
 4. fast-forward the root's branch to it;
 5. remove the worktree and delete its branch;
-6. record each unit's self-check on the root with `critic.py self-check record`;
+6. record each unit's self-check on the root with `critic.py self-check record`, under
+   `--author` when given, else the building seat the unit's lane brief recorded, in its
+   `<holder> (<role>)` form, else the worktree's directory name;
 7. write each unit's QA brief with `critic.py brief --seat qa` to
    `sdlc-studio/.local/briefs/<unit>-qa.txt`, printing its review tier and fingerprint. A unit
    whose latest verdict is an unanswered REJECT has its brief open with a line naming that
@@ -62,8 +64,10 @@ is left in place, and a unit whose self-check or brief is refused is named while
 briefed.
 
 Every landing keeps a land record, `landed/<worktree>.land.json` for the first worktree named:
-its worktrees, their paths and branches, and units, the steps of `LAND_STEPS` it completed, the
-step it stopped at, the units it briefed and, once the root's branch moved, the commit.
+its worktrees, their paths and branches, and units, the worktree each unit was built in
+(`owners`) and the author its self-check was recorded under (`authors`), the steps of
+`LAND_STEPS` it completed, the step it stopped at, the units it briefed and, once the root's
+branch moved, the commit.
 `--resume` runs only the steps the record does not name as completed: the hand-in it kept is
 read, never emptied or copied again, a unit already briefed keeps its brief, and a worktree the
 removal step took away is not looked for. A resume with no record, or with one whose landing
@@ -80,12 +84,16 @@ verdict file with `critic.py record` against the brief's fingerprint and tier (a
 `BRIEF:` line names one a later `critic.py brief` issued, a second seat's or a rejoinder's,
 against that brief's, and one naming no brief of the unit is refused), and on an APPROVE
 runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its lane with
-`sprint.py lane return`, each through its own entry point. Under `review.author_self_check:
-block` it refuses a unit with no current self-check (`critic.self_check_gap`, the check
-`critic.py brief` applies), as after a commit to its Affects that no `lane land` checked. Exit 2
+`sprint.py lane return`, each through its own entry point. A unit in the top risk class takes
+two independent seats: an APPROVE that leaves it without a second seat's is recorded and held
+for that seat (`critic.hold_for_second_seat`), whose verdict shares its round, and the unit is
+moved only on the APPROVE that completes the pair. Under `review.author_self_check:
+block` it refuses an APPROVE on a unit with no current self-check (`critic.self_check_gap`, the
+check `critic.py brief` applies), as after a commit to its Affects that no `lane land` checked,
+and records a REJECT, which moves nothing, with that gap named. Exit 2
 is a refusal before anything was recorded, 1 a verdict recorded and the unit not moved (a REJECT,
-a red criterion or a refused transition) or a return that exited non-zero, 0 a unit moved and its
-lane returned.
+an APPROVE held for a second seat, a red criterion or a refused transition) or a return that
+exited non-zero, 0 a unit moved and its lane returned.
 
 `sprint lane run` runs one lane's brief headless in a supported CLI (`headless_command`), in the
 lane's worktree and under a timeout, and keeps one lane record per session under
@@ -544,6 +552,15 @@ def _reviewer_line(root_top: Path, unit: str) -> str | None:
     return (f"{REVIEWER_LINE}{who} - this repair answers {who}'s REJECT: resume {who} for round "
             f"two rather than spawning a new reviewer, since a round-two verdict from any other "
             f"reviewer is refused at record")
+
+
+def _building_seat(root_top: Path, unit: str) -> str | None:
+    """The seat the unit's lane brief recorded as building it (`run_state.lane_seat`), in the
+    `<holder> (<role>)` form `critic.seat_signature` gives; None when no brief recorded one."""
+    import critic  # noqa: PLC0415 - sibling; its seat signature is the form a verdict carries
+    from lib import run_state  # noqa: PLC0415 - only the self-check step reads the run
+    role = run_state.lane_seat(root_top, unit)
+    return critic.seat_signature(root_top, role) if role else None
 
 
 def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tuple[bool, str]:
@@ -1108,7 +1125,11 @@ def _steps(root_top: Path, lanes_: list[_Lane], record: dict, author: str | None
             for unit in lane.units:
                 if unit in record["briefed"]:
                     continue
-                good, line = _record_and_brief(root_top, lane.keep, unit, author or lane.name)
+                # `--author`, else the building seat the unit's lane brief recorded, else the
+                # worktree's name; kept per unit beside `owners`, the worktree that built it
+                who = author or _building_seat(root_top, unit) or lane.name
+                record.setdefault("authors", {})[unit] = who
+                good, line = _record_and_brief(root_top, lane.keep, unit, who)
                 if good:
                     record["briefed"].append(unit)
                 else:
@@ -1250,9 +1271,9 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     fingerprint, as it was then, so a re-brief of its scope is taken for its landing. One that
     names a file no note records cannot be dated, so a verdict its header or a rejoinder's path
     ties to a noted brief is refused, naming the brief to save again. Under
-    `review.author_self_check: block` a unit with no
-    current self-check (`critic.self_check_gap`) is refused; under `report` that is a warning;
-    `off` asks nothing."""
+    `review.author_self_check: block` a verdict on a unit with no
+    current self-check (`critic.self_check_gap`) is refused, except a REJECT, which moves nothing
+    and is recorded with a warning; under `report` that is a warning; `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
@@ -1278,14 +1299,22 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     except ValueError as exc:
         raise LandError(str(exc), 2) from None
     gap = critic.self_check_gap(root, unit) if mode != "off" else None
-    if gap and mode == "block":
+    # A REJECT moves nothing and holds the findings the repair answers, so `block` records it
+    # with the stale self-check named; only a verdict that could move the unit is refused.
+    try:
+        rejecting = str(critic.parse_verdict_block(said)[0] or "").upper() == critic.REJECT
+    except ValueError:      # no readable verdict: judged as one that could move the unit
+        rejecting = False
+    if gap and mode == "block" and not rejecting:
         raise LandError(f"{gap}, so no self-check covers the diff {rel} would be the brief of, "
                         f"and nothing was recorded: land {unit} again with its self-check "
                         f"handed in, and that landing writes the brief "
                         f"(review.author_self_check: block)", 2)
     if gap:
         _say(f"WARNING {unit}: {gap}, so no self-check covers the diff {rel} is the brief of "
-             f"(review.author_self_check: {mode}; `block` refuses the verdict)", err=True)
+             + ("; a REJECT moves nothing, so it is recorded (review.author_self_check: block "
+                "refuses an APPROVE)" if mode == "block" else
+                f"(review.author_self_check: {mode}; `block` refuses the verdict)"), err=True)
     uid, tier = sdlc_md.norm_id(unit), None
     try:
         notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")
@@ -1416,6 +1445,19 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
             _say(f"  {unit} {critic.CARRIED_REASON}: {carried.group(1)} carries it")
         return 1
     _say(f"{unit}: APPROVE recorded, round {rnd}, against brief {fp} at the {tier} tier")
+    owed = critic.second_seat_owed(root, unit)
+    if owed:
+        # A high-risk unit takes two independent seats: hold this APPROVE so the second seat's
+        # verdict shares its round, and move nothing until that seat approves too.
+        try:
+            critic.hold_for_second_seat(root, unit)
+        except (OSError, ValueError) as exc:
+            _say(f"  WARNING the APPROVE could not be held for the second seat ({exc}), so "
+                 f"that seat's verdict takes a round of its own", err=True)
+        _say(f"{unit}: NOT moved to {target}: its risk class is high, so it takes two "
+             f"independent seats and a second seat is owed ({owed}). Its APPROVE, accepted "
+             f"here, moves the unit; its REJECT shares round {rnd} and opens the repair")
+        return 1
     ran = _script(root, "verify_ac.py", "run", "--id", unit, "--timeout", str(timeout))
     if ran.returncode:
         _say(f"{unit}: NOT moved to {target}: `verify_ac.py run` exited {ran.returncode}, so a "
@@ -1444,6 +1486,7 @@ def accept(root: Path | str, unit: str | None, verdict: Path | str | None,
            reviewer: str | None, terminal: dict[str, str], author: str | None = None,
            timeout: int = 300, passthrough: list[str] | None = None) -> int:
     """Record one unit's verdict and, on an APPROVE, verify, move and return it; the exit status.
+    A high-risk unit's APPROVE that leaves it without a second seat's is held instead.
     `terminal` maps each type lane accept moves to its status; `passthrough` is the argv handed
     to `sprint.py lane return` as given."""
     try:

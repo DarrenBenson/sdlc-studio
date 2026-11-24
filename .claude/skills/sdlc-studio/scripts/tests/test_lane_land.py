@@ -279,6 +279,97 @@ class LaneLandTests(_LaneFixture):
                 self.assertIn(f"review tier: {critic.tier_for(self.root, unit)},", lines[0])
                 self.assertIn(f"fingerprint: {fp}", lines[0])
 
+    def test_a_comma_separated_units_list_lands_each_unit(self) -> None:
+        """BG1595 AC4: `--units A,B` lands both units, as `--units A B` does and as `lane brief
+        --units` splits the same list. MUTANT: hand land the list unsplit, so the comma list is
+        one id the landing refuses."""
+        self._stage("src/a.py", "A = 2\n")
+        self._stage(f"changelog.d/{A}.md", "a is two\n")
+        self._stage("src/b.py", "B = 2\n")
+        self._stage(f"changelog.d/{B}.md", "b is two\n")
+        self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
+        r = self._land(f"{A},{B},")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual({A, B}, {row["unit"] for row in critic.read_self_checks(self.root)})
+        for unit in (A, B):
+            with self.subTest(unit=unit):
+                self.assertTrue((self.root / f"sdlc-studio/.local/briefs/{unit}-qa.txt").is_file(),
+                                f"no QA brief written for {unit}")
+                self.assertEqual(1, len([ln for ln in r.stdout.splitlines()
+                                         if ln.startswith(f"{unit}: ")]), r.stdout)
+
+    # -- BG1594: the self-check is recorded under the briefed building seat ----------------
+
+    def _briefed_as(self, role: str) -> None:
+        """A run open on A whose lane brief recorded `role` as A's building seat, and an
+        engineering seat card held by Dani Okafor."""
+        _write(self.root, "sdlc-studio/personas/seats/engineering.md",
+               "<!-- role: engineering -->\n# Dani Okafor - engineering amigo\n\ncharter\n\n"
+               "## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
+        with unittest.mock.patch.dict(os.environ, {
+                run_state.TRANSCRIPTS_ENV: str(Path(self._tmp.name) / "no-transcripts")}):
+            run_state.open_run(self.root, batch=[A], goal="g")
+        run_state.record_lane_start(self.root, A, role)
+
+    def _landed_authors(self) -> tuple[str, dict]:
+        """A landed with no --author: its self-check row's author and the land record."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        rows = [row for row in critic.read_self_checks(self.root) if row["unit"] == A]
+        record = json.loads(lanes._record_file(self.root, self.wt.name)  # noqa: SLF001
+                            .read_text(encoding="utf-8"))
+        return rows[-1]["author"], record
+
+    def test_the_self_check_is_recorded_under_the_briefed_building_seat(self) -> None:
+        """BG1594 AC1. MUTANTS: `author or lane.name`, so the self-check author is the
+        worktree's directory name; the seat's bare role kept, not its `<holder> (<role>)`."""
+        self._briefed_as("engineering")
+        author, record = self._landed_authors()
+        self.assertEqual("Dani Okafor (engineering)", author)
+        self.assertNotEqual(self.wt.name, author)
+        # the land record keeps the author beside the worktree that built the unit
+        self.assertEqual({A: "Dani Okafor (engineering)"}, record["authors"])
+        self.assertEqual({A: self.wt.name}, record["owners"])
+
+    def test_a_land_with_no_briefed_seat_keeps_the_worktree_name(self) -> None:
+        """The control: with no lane brief recording a seat, the worktree's name stands, as
+        before."""
+        author, record = self._landed_authors()
+        self.assertEqual(self.wt.name, author)
+        self.assertEqual({A: self.wt.name}, record["authors"])
+
+    def test_an_explicit_author_wins_over_the_briefed_seat(self) -> None:
+        """BG1594 AC3, the control beside AC1. The brief recorded the qa seat; the land names
+        Dani Okafor, and the self-check, the land record and the accepted verdict keep Dani.
+        MUTANT: the briefed seat read ahead of `--author`."""
+        self._briefed_as("qa")
+        self.assertEqual("Sam (qa)", critic.seat_signature(self.root, "qa"),
+                         "premise: the briefed seat signs differently from the author given")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A, author="Dani Okafor (engineering)")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        rows = [row for row in critic.read_self_checks(self.root) if row["unit"] == A]
+        self.assertEqual("Dani Okafor (engineering)", rows[-1]["author"])
+        record = json.loads(lanes._record_file(self.root, self.wt.name)  # noqa: SLF001
+                            .read_text(encoding="utf-8"))
+        self.assertEqual({A: "Dani Okafor (engineering)"}, record["authors"])
+        verdict = Path(self._tmp.name) / "verdict.txt"
+        verdict.write_text("VERDICT: REJECT\nISSUES: [new] a is wrong\n"
+                           "BLOCKING: [new] a is wrong\n", encoding="utf-8")
+        acc = subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "accept", "--unit", A, "--verdict",
+             str(verdict), "--reviewer", "Sam Eriksson (qa)", "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+        self.assertEqual(1, acc.returncode, acc.stdout + acc.stderr)
+        text = critic.verdicts_path(self.root).read_text(encoding="utf-8")
+        row = [c.strip() for c in next(ln for ln in text.splitlines()
+                                       if ln.startswith(f"| {A} |")).strip("|").split("|")]
+        self.assertEqual(["REJECT", "Dani Okafor (engineering)"], [row[1], row[3]])
+
     # -- the refusals and the resume the module documents ---------------------------------
 
     def test_a_staged_change_with_no_commit_message_is_refused_before_anything_moves(self) -> None:

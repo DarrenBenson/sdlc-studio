@@ -181,6 +181,64 @@ class SignSealsOnceTests(unittest.TestCase):
                 else:
                     self.assertEqual(["US0102"], held)
 
+    def _anchor_block(self, root: Path) -> str:
+        text = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
+        return text[text.index(sprint.ANCHOR_BEGIN):text.index(sprint.ANCHOR_END)]
+
+    def _close_anchor(self, root: Path, state: dict) -> tuple[bool, str]:
+        """The close's own `review-anchor` step, the one its chain dispatches."""
+        self.assertIn("review-anchor", sprint._CLOSE_CHAIN)
+        ok, detail, _remedy = sprint._close_review_anchor(root, None, state)
+        self.assertTrue(ok, detail)
+        return ok, detail
+
+    def test_the_close_anchor_of_an_awaiting_run_says_awaiting_signature_and_the_verdict(
+            self) -> None:
+        """BG1589 AC1. A run closed under the deferred signature keeps outcome `running` until
+        `sign` seals it. MUTANT: the raw outcome printed, so the block read `closed running`
+        with no verdict; the verdict dropped; the awaiting wording given to a signed run."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _run_state(root, ["US0101"],
+                               sprint_goal_verdict={"verdict": "partial", "note": "most of it"})
+            _unit(root, "US0101")
+            _ok, detail = self._close_anchor(root, state)
+            block = self._anchor_block(root)
+            self.assertIn(f"**{RUN} closed, awaiting signature (goal verdict: partial).** "
+                          "1 unit(s) in the batch.", block)
+            self.assertIn("The run signature is OWED", block)
+            self.assertNotIn("closed running", block)
+            # The close's own step line says the same, not the raw outcome.
+            self.assertEqual(f"review anchor created: {RUN} closed, awaiting signature "
+                             "(goal verdict: partial)", detail)
+        with tempfile.TemporaryDirectory() as d:
+            # No verdict recorded: the awaiting wording stands alone, never `verdict: None`.
+            root = Path(d)
+            state = _run_state(root, ["US0101"], sprint_goal_verdict=None)
+            self._close_anchor(root, state)
+            self.assertIn(f"**{RUN} closed, awaiting signature.** 1 unit(s)",
+                          self._anchor_block(root))
+
+    def test_the_sealed_anchor_says_the_sealed_outcome_not_awaiting(self) -> None:
+        """BG1589 AC2, the control beside AC1. MUTANT: the signed block reworded too, or the
+        awaiting wording left standing after the seal."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _run_state(root, ["US0101"],
+                               sprint_goal_verdict={"verdict": "partial", "note": "most of it"})
+            _unit(root, "US0101")
+            self._close_anchor(root, state)
+            self.assertIn("closed, awaiting signature", self._anchor_block(root))
+            rc, out, err = _sign(root)
+            self.assertEqual(0, rc, out + err)
+            outcome = sprint.run_state.read(root)["outcome"]
+            self.assertNotEqual("running", outcome)
+            block = self._anchor_block(root)
+            self.assertIn(f"**{RUN} closed {outcome}.** 1 unit(s) in the batch. "
+                          "**The run is SIGNED**", block)
+            self.assertNotIn("awaiting signature", block)
+            self.assertNotIn("goal verdict", block)
+
     def test_preflight_is_retired(self) -> None:
         """AC2. MUTANTS: keep the verb; keep it in the parser; delete `close_preflight` with it,
         or stop `sprint.py close` calling it."""

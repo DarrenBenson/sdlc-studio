@@ -746,7 +746,7 @@ file it issued is dated by the last note of its fingerprint; one naming a file n
 cannot be dated, so a verdict another noted brief issued is refused. The verdict is recorded under the author of the unit's latest self-check unless
 `--author` names one. On an APPROVE it runs `verify_ac.py run`, moves a story to Done or a
 bug to Fixed, and calls `lane return`, passing `--agent`, `--tokens`, `--minutes`, `--proof` and
-`--gap` through. A REJECT moves nothing and prints the round and the BLOCKING findings, plus the
+`--gap` through. A high-risk unit takes two independent seats: an APPROVE that leaves it without a second seat's is recorded and held, moves nothing and says the second seat is owed, and that seat's verdict shares the held round, its APPROVE moving the unit and its REJECT opening the repair. A REJECT moves nothing and prints the round and the BLOCKING findings, plus the
 carrying bug's id at the review cap. A red criterion leaves the unit where it was, named in the
 verifier's output. Exit 2 is a refusal before anything was recorded, 1 a unit not moved or a
 non-zero return, 0 a unit moved and returned.

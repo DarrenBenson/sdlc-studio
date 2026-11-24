@@ -419,9 +419,9 @@ class FreshSessionTests(unittest.TestCase):
         self.assertEqual(sprint.PLAN_NEXT_STEP, last)
         p, _root = f.plan_write("--format", "json")
         self.assertEqual(0, p.returncode, p.stdout + p.stderr)
-        # the JSON closes stdout (the run-opening lines above it are the plan's own), so a
-        # warning printed there after it breaks the parse
-        json.loads(p.stdout[p.stdout.index("\n{\n") + 1:])
+        # stdout is the one JSON document (the plan's run-opening lines go to stderr under
+        # --format json), so a warning printed there breaks the parse
+        json.loads(p.stdout)
         self.assertNotIn("fresh_session", p.stdout)
         self._assert_warns(_session_lines(p.stderr), 120_000, "plan --write --format json")
 

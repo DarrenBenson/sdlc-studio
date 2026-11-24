@@ -2449,7 +2449,11 @@ def _shared_file_clusters(files_by_unit: dict[str, list[str]],
                 any(f in (src.get(u) or {}).get("declared", ()) for u in members),
                 any(f in (src.get(u) or {}).get("derived", ()) for u in members))
             for f in shared}
-        out.append({"units": members, "files": shared, "sources": sources})
+        # Each member's own shared files, so a wave is judged by what two of its units hold
+        # in common rather than by their being joined through some third unit.
+        unit_files = {u: [f for f in shared if u in by_file[f]] for u in members}
+        out.append({"units": members, "files": shared, "sources": sources,
+                    "unit_files": unit_files})
     return sorted(out, key=lambda c: c["units"])
 
 
@@ -4715,8 +4719,10 @@ def _render_clusters(data: dict) -> None:
 
     A `Depends on:` edge is a DECLARATION; a shared file is a FACT. The wave computation only
     knows the declarations, so it has called two units parallel while both rewrote one module.
-    The cluster is printed with the plan, and a wave holding more than one member of the same
-    cluster is called out as NOT safely parallel."""
+    The cluster is printed with the plan, and a wave is called out as NOT safely parallel once
+    for each pair of its units that declare a file in common, naming the pair and the files.
+    Two units joined in one cluster only through a third unit share no file, so they are not
+    warned."""
     bd = data.get("breakdown") or {}
     clusters = bd.get("clusters") or []
     if not clusters:
@@ -4730,11 +4736,15 @@ def _render_clusters(data: dict) -> None:
         print(f"    {', '.join(c['units'])} -> {shown}{more}")
     for i, wave in enumerate(data.get("waves") or [], 1):
         for c in clusters:
-            both = [u for u in wave if u in set(c["units"])]
-            if len(both) > 1:
-                print(f"  warning: wave {i} is NOT safely parallel - {', '.join(both)} touch "
-                      f"{', '.join(c['files'][:2])}. Run them in sequence, or declare "
-                      f"`Depends on:` so the waves say so.", file=sys.stderr)
+            held = c["unit_files"]
+            members = [u for u in wave if u in held]
+            for n, a in enumerate(members):
+                for b in members[n + 1:]:
+                    common = [f for f in held[a] if f in held[b]]
+                    if common:
+                        print(f"  warning: wave {i} is NOT safely parallel - {a} and {b} both "
+                              f"touch {', '.join(common)}. Run them in sequence, or declare "
+                              f"`Depends on:` so the waves say so.", file=sys.stderr)
 
 
 #: Whether an `Affects` a unit's own content contradicts REPORTS or REFUSES. Default `warn`,
@@ -6781,10 +6791,25 @@ ANCHOR_BEGIN = "<!-- close-status:begin -->"
 ANCHOR_END = "<!-- close-status:end -->"
 
 
+def anchor_closed_words(outcome: str, signature_owed: bool, rung: str = "done",
+                        verdict: str = "") -> str:
+    """The `closed ...` words of the anchor's status line. A run the close leaves for the
+    signature keeps outcome `running` until `sprint sign` seals it, so that word is never
+    printed: such a run reads `closed, awaiting signature` when it owes the operator's
+    signature on a `done` rung and `closed` on a rung that owes none, each followed by the goal
+    verdict the close recorded. A sealed outcome reads `closed <outcome>`."""
+    if outcome != run_state.RUNNING:
+        return f"closed {outcome}"
+    owes = signature_owed and str(rung or "done").lower() == "done"
+    words = "closed, awaiting signature" if owes else "closed"
+    return f"{words} (goal verdict: {verdict})" if verdict else words
+
+
 def anchor_status_block(run_id: str, outcome: str, units: int, signature_owed: bool,
-                        rung: str = "done") -> str:
+                        rung: str = "done", verdict: str = "") -> str:
     """The status the close stamps on the anchor. It states what is owed, or states plainly that
     nothing is - a reader must never have to diff this against the run state to learn which.
+    Its `closed ...` words are `anchor_closed_words`, so an unsealed run never reads `running`.
 
     RUNG-AWARE, because Done is not every rung's terminal. A `design` rung grooms units and they
     correctly end at Ready with RED acceptance criteria - that is the bar it exists to prove, and
@@ -6800,18 +6825,19 @@ def anchor_status_block(run_id: str, outcome: str, units: int, signature_owed: b
                 "batch in one signature." if signature_owed else
                 "**The run is SIGNED** - nothing is owed on this run.")
     return (f"{ANCHOR_BEGIN}\n"
-            f"> **{run_id} closed {outcome}.** {units} unit(s) in the batch. {owed}\n"
+            f"> **{run_id} {anchor_closed_words(outcome, signature_owed, rung, verdict)}.** "
+            f"{units} unit(s) in the batch. {owed}\n"
             f"> Stamped by `sprint close` - edit the prose below, not this block.\n"
             f"{ANCHOR_END}")
 
 
 def refresh_review_anchor(repo_root: Path | str, run_id: str, outcome: str, units: int,
-                          signature_owed: bool, rung: str = "done") -> str:
+                          signature_owed: bool, rung: str = "done", verdict: str = "") -> str:
     """Replace (or insert) the status block in `sdlc-studio/reviews/LATEST.md`. Returns the verb
     for the close line. Never rewrites the narrative: an existing block is swapped in place, and
     a missing one is inserted just after the H1."""
     anchor = Path(repo_root) / "sdlc-studio" / "reviews" / "LATEST.md"
-    block = anchor_status_block(run_id, outcome, units, signature_owed, rung)
+    block = anchor_status_block(run_id, outcome, units, signature_owed, rung, verdict)
     if not anchor.is_file():
         anchor.parent.mkdir(parents=True, exist_ok=True)
         sdlc_md.atomic_write(anchor, f"# Reviews - LATEST (anchor)\n\n{block}\n")
@@ -6838,16 +6864,19 @@ def _close_review_anchor(root, retro, state):
     run_id = st.get("run_id") or "(unknown run)"
     outcome = st.get("outcome") or "closed"
     units = len(st.get("batch") or [])
+    # The verdict this close recorded, stamped beside an unsealed run's `closed` words.
+    verdict = (st.get("sprint_goal_verdict") or {}).get("verdict") or ""
     try:
         verb = refresh_review_anchor(root, run_id, outcome, units,
-                                     not st.get("signature"), run_rung(st))
+                                     not st.get("signature"), run_rung(st), verdict)
     except OSError as exc:
         return False, f"the review anchor could not be written: {exc}", \
                "check sdlc-studio/reviews/LATEST.md is writable, then re-run close"
     if run_rung(st) == "design":
         print(render_grooming_report(grooming_report(root, st.get("batch") or [])),
               file=sys.stderr)
-    return True, f"review anchor {verb}: {run_id} closed {outcome}", ""
+    words = anchor_closed_words(outcome, not st.get("signature"), run_rung(st), verdict)
+    return True, f"review anchor {verb}: {run_id} {words}", ""
 
 
 def _retro_path(root, rid: str):
@@ -6910,7 +6939,24 @@ def _scaffold_run_retro(root, state) -> dict:
     return res
 
 
-def _resolve_retro(root, args, state) -> int | None:
+def _scaffold_bare_close_retro(root, state) -> tuple[str, str]:
+    """Mint the bare close's retro, or reuse the one this run already scaffolded, and return
+    its id and the verb the close prints. Called by the bare close before its pre-flight, so a
+    close stopped during that slow report still leaves the retro and the run's record of it."""
+    # Reuse an already-scaffolded retro for this run if it still exists - a bare close re-run
+    # (or a wrapper that retries on non-zero) must not mint a second empty retro.
+    prior = (state.get("scaffolded_retro") or "").strip()
+    if prior and _retro_path(root, prior) is not None:
+        return prior, "already scaffolded"
+    res = _scaffold_run_retro(root, state)
+    # The id the FILE carries (`RETRO0001`), not the allocator's display form
+    # (`RETRO-0001`): it is printed as the `--retro` to pass back and recorded on the run.
+    disp = sdlc_md.any_record_id(Path(res["path"]).stem) or res["id"]
+    run_state.update(root, scaffolded_retro=disp)
+    return disp, f"scaffolded (indexed={res['indexed']})"
+
+
+def _resolve_retro(root, args, state, scaffolded: tuple[str, str] | None = None) -> int | None:
     """Ensure the close has a retro to gate on, through the deterministic path.
 
     - `--retro` omitted: SCAFFOLD one via `artifact.meta_new` (allocated id + rendered template
@@ -6918,6 +6964,8 @@ def _resolve_retro(root, args, state) -> int | None:
       fills it. This is the forced-scaffold path: a retro is never hand-authored into a missing
       index row that only the reconcile step would catch. Idempotent: the scaffolded id is
       stashed on run state, so a second bare close REUSES it rather than minting a duplicate.
+      `scaffolded` is the id and verb the bare close already minted before its pre-flight
+      (`_scaffold_bare_close_retro`); it is printed rather than minted again.
     - `--retro` names an existing retro: proceed, and self-heal a missing index row
       (`reconcile.apply_meta`) so a retro made any other way still never stalls the close.
     - `--retro` names a missing retro: refuse (the sequential allocator cannot mint a chosen id).
@@ -6933,18 +6981,7 @@ def _resolve_retro(root, args, state) -> int | None:
             return 2
         reconcile.apply_meta(root)  # B safety net: add the index row if a prior author skipped it
         return None
-    # Reuse an already-scaffolded retro for this run if it still exists - a bare close re-run
-    # (or a wrapper that retries on non-zero) must not mint a second empty retro.
-    prior = (state.get("scaffolded_retro") or "").strip()
-    if prior and _retro_path(root, prior) is not None:
-        disp, verb = prior, "already scaffolded"
-    else:
-        res = _scaffold_run_retro(root, state)
-        # The id the FILE carries (`RETRO0001`), not the allocator's display form
-        # (`RETRO-0001`): it is printed as the `--retro` to pass back and recorded on the run.
-        disp = sdlc_md.any_record_id(Path(res["path"]).stem) or res["id"]
-        verb = f"scaffolded (indexed={res['indexed']})"
-        run_state.update(root, scaffolded_retro=disp)
+    disp, verb = scaffolded or _scaffold_bare_close_retro(root, state)
     # Don't silently drop a --goal-verdict passed on the scaffold call: record it now so the
     # re-run reuses it (the goal-verdict block below runs only once the retro is supplied).
     if args.goal_verdict and args.note and not state.get("sprint_goal_verdict"):
@@ -7520,11 +7557,10 @@ def _apply_signoff_tail(root, state, units=None, retro_arg: str | None = None) -
     import reconcile  # noqa: PLC0415
     import retro  # noqa: PLC0415
     _derive_close_parents(root, units, "close")
-    # The run-state field is set only when THIS close scaffolded the retro. A retro made
-    # the documented way (`artifact.py new --type retro`) never sets it, so fall back to
-    # the id the close was given. With neither, say so - a close that skips the
+    # The same retro `sprint sign` writes (`_sign_retro`): the id given, then the one the
+    # close recorded, then the one it scaffolded. With none, say so - a close that skips the
     # measurement it owes must not print unqualified success.
-    retro_id = (state.get("scaffolded_retro") or "").strip() or (retro_arg or "").strip()
+    retro_id = _sign_retro(state, retro_arg)
     if retro_id:
         # `retro accuracy --write` records the velocity row (record_velocity), keyed by retro id so
         # a re-run upserts rather than duplicating. Advisory: a mixed-model or unmeasured sprint
@@ -9505,9 +9541,10 @@ def cmd_batch(args: argparse.Namespace) -> int:
 def _lane_unit_ids(args: argparse.Namespace) -> list[str]:
     """The units this lane covers: the ones named, else the OPEN run's approved batch. Derived
     from the run rather than retyped, so a lane brief cannot quietly cover a different set from
-    the one the sprint approved."""
+    the one the sprint approved. A named id list splits on commas as well as spaces, in order,
+    dropping an empty piece, so `--units US0001,US0002` names two units."""
     if getattr(args, "units", None):
-        return [u.strip() for u in args.units if u and u.strip()]
+        return [p.strip() for u in args.units for p in u.split(",") if p.strip()]
     try:
         return list((run_state.read(args.root) or {}).get("batch") or [])
     except Exception as exc:  # noqa: BLE001 - a missing run state is reported, not fatal
@@ -9633,6 +9670,10 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     in place of its reading."""
     tokens, minutes = getattr(args, "tokens", None), getattr(args, "minutes", None)
     agent, land = getattr(args, "agent", None), bool(getattr(args, "land", False))
+    # The id is taken with or without the `agent-` prefix `lane land` prints it with, so the
+    # printed form an operator copies reads the transcript `agent-<id>.jsonl` too.
+    if agent is not None and agent.startswith("agent-"):
+        agent = agent[len("agent-"):]
     model = getattr(args, "model", None)
     if tokens is None and minutes is None and agent is None:
         return
@@ -10529,8 +10570,9 @@ def cmd_lane(args: argparse.Namespace) -> int:
     outcome, which is `blocked` whenever a criterion is red, unresolved or unspecified, whatever
     the lane claimed. Exit 2 on a refusal, 1 on a blocked return - so a wrapper script cannot
     treat either as a delivery. `land` commits a builder's staged worktree and lands it, and
-    `accept` records its reviewer's verdict and on an APPROVE verifies, moves and returns it;
-    the steps and exit statuses of both are `lib/lanes.py`'s.
+    `accept` records its reviewer's verdict and on an APPROVE verifies, moves and returns it,
+    holding a high-risk unit's until a second seat approves too; the steps and exit statuses of
+    both are `lib/lanes.py`'s.
     """
     if args.action == "land":
         # Before the landing commits anything or moves main: a commit made now would carry an
@@ -10539,8 +10581,10 @@ def cmd_lane(args: argparse.Namespace) -> int:
             print(refusal, file=sys.stderr)
             return 2
         from lib import lanes  # noqa: PLC0415 - only the landing needs it
+        # the named ids split on commas as `lane brief` splits them; none named stays none
+        units = _lane_unit_ids(args) if getattr(args, "units", None) else []
         return lanes.land(args.root, getattr(args, "worktree", None) or [],
-                          getattr(args, "units", None) or [], getattr(args, "author", None),
+                          units, getattr(args, "author", None),
                           price=_lane_land_price, resume=bool(getattr(args, "resume", False)))
     if args.action == "accept":
         from lib import lanes  # noqa: PLC0415 - only the accept needs it
@@ -11275,6 +11319,13 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(f"  Sign the run with: sprint.py sign --report "
               f"{state.get('report') or '<report id>'} --principal \"<name>\"", file=sys.stderr)
         return 2
+    # A BARE CLOSE SCAFFOLDS ITS RETRO FIRST, ahead of the pre-flight, which on a large
+    # repository runs for many minutes: a close stopped during it still leaves the retro and
+    # the run's record of it. Only where the close would scaffold anyway (a sprint goal, no
+    # --retro, not --file-and-close); the stop that prints it stays below the pre-flight.
+    scaffolded = (_scaffold_bare_close_retro(root, state)
+                  if state.get("sprint_goal") and not (args.retro or "").strip() and not filing
+                  else None)
     pre = _report_preflight(root, args.retro, goal_verdict=supplied, writes_anchor=not filing)
     # An OVER-APPETITE batch is reported as the over-commitment it was, not as the raised ceiling
     # Placed above every refusal so a close that stops later still states it.
@@ -11309,7 +11360,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     # Resolve the retro through the deterministic path: scaffold + stop when omitted,
     # heal a missing index row when present, refuse a named-but-missing id. Runs BEFORE the
     # goal-verdict so a first `close` (scaffold) records nothing until the retro is filled.
-    rc = _resolve_retro(root, args, state)
+    rc = _resolve_retro(root, args, state, scaffolded)
     if rc is not None:
         return rc
     # Goal-verdict: record it here when given, reuse it when already judged, refuse when
@@ -11838,6 +11889,12 @@ def _cascade_after_signature(root, state, units, retro_arg: str | None = None) -
                 if line.startswith("token actual"):
                     print(f"sign: {line}")
             print("sign: velocity row recorded")
+        else:
+            # the exit and the command's own words, so a refused write is never silent
+            print(f"sign: velocity row NOT recorded - `retro.py accuracy --id {retro_id} "
+                  f"--write` exited {rc}:", file=sys.stderr)
+            for line in out.splitlines():
+                print(f"  {line}", file=sys.stderr)
     except Exception as exc:  # noqa: BLE001 - a missing row must not lose a written signature
         print(f"sign: velocity row NOT recorded ({exc})", file=sys.stderr)
 
@@ -12028,6 +12085,14 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if sdlc_md.norm_id(report_id) != sdlc_md.norm_id(recorded):
         print(f"sign REFUSED: {report_id} is not this run's report - {state.get('run_id')} "
               f"records {recorded or 'no report'}. Sign the page the close filed.",
+              file=sys.stderr)
+        return 2
+    # A NAMED RETRO IS CHECKED BEFORE THE SEAL: its accuracy block and velocity row are written
+    # after it, where a mistyped id could only be reported once the run was already sealed.
+    named = (getattr(args, "retro", None) or "").strip()
+    if named and _retro_path(root, named) is None:
+        print(f"sign REFUSED: retro {named} not found, so nothing is sealed - name the run's "
+              f"own retro with --retro, or omit it to write the one the close recorded",
               file=sys.stderr)
         return 2
     # ONCE HEAD HAS MOVED PAST THE CLOSE COMMIT, or a later run open here goes on changing the
@@ -12873,6 +12938,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
             return 2
     write = getattr(args, "write", False)
     out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
+    # The run-opening lines are for a person: under --format json they go to stderr, so
+    # stdout carries the one JSON document a caller parses.
+    human = sys.stderr if args.format == "json" else sys.stdout
     # OPEN THE RUN FIRST, before anything is persisted. `open_run` is the AUTHORITY on whether
     # this plan may proceed, so nothing the plan produces is written until it has said yes. The
     # earlier order wrote the forecast record and sprint-plan.json first, so a batch refused by
@@ -12926,7 +12994,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
                   f"had just been opened was removed, so nothing is left half-opened and the "
                   f"next plan is not refused against it.", file=sys.stderr)
             return 2
-        print(f"wrote sprint plan -> {out}")
+        print(f"wrote sprint plan -> {out}", file=human)
         # Record the RESOLVED appetite and the token forecast - additive fields on the
         # run-state object, merged, never touching its schema. The appetite was resolved once,
         # from the sprint capacity (flag > appetite.* > capacity.*), and the plan has already
@@ -12954,7 +13022,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             appetite = prior["appetite"]
             print("sprint plan: keeping the appetite set by `appetite resize` "
                   f"({appetite.get('minutes'):g}min/{appetite.get('units')}units) - a recorded "
-                  "resize outranks a re-resolution from the standing capacity")
+                  "resize outranks a re-resolution from the standing capacity", file=human)
         # The digest of the plan this write left, on every write: a re-plan rewrites the file,
         # so a digest kept from the open would name a plan that no longer exists.
         extra: dict = {"appetite": appetite, run_state.PLAN_DIGEST: run_state.content_digest(out)}
@@ -12988,7 +13056,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
                               "policy_run_id": state["run_id"]}
         state = run_state.update(args.root, **extra)
         state = record_plan_snapshot(args.root, data["batch"])
-        print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}")
+        print(f"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}", file=human)
         # THE QUEUE'S EXIT, and the ONE place that writes it. `Spent` shipped in the charter
         # vocabulary and in the schema contract with no code path setting it, so a charter stayed
         # Queued forever and re-materialised at the head of every later `next` - an operator who
@@ -13002,13 +13070,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         charter = (getattr(args, "charter", "") or "").strip()
         if charter:
             spent = spend_charter(args.root, charter, state["run_id"])
-            print(f"  {spent['detail']}")
+            print(f"  {spent['detail']}", file=human)
             # Transition's own words, INDENTED and attributed. Unindented they read as the
             # plan's own output, which is how a refusal travelled out of here looking like
             # progress.
             for line in (spent.get("output") or "").splitlines():
                 if line.strip():
-                    print(f"    transition: {line.strip()}")
+                    print(f"    transition: {line.strip()}", file=human)
             if not spent["ok"] and spent.get("attempted"):
                 # NON-ZERO, loudly, and ONLY for a write that was attempted and did not take:
                 # that is the state the bug describes - the run open, the charter still Queued,
@@ -13029,25 +13097,26 @@ def cmd_plan(args: argparse.Namespace) -> int:
                 record_content_review(args.root, "plan", state.get("sprint_goal") or "",
                                       args.content_review,
                                       missing=getattr(args, "content_missing", "") or "")
-                print(f"  content review (plan): {args.content_review}")
+                print(f"  content review (plan): {args.content_review}", file=human)
             except ValueError as exc:
                 print(f"  content review NOT recorded: {exc}", file=sys.stderr)
         elif state.get("sprint_goal"):
             print("  content review (plan): UNANSWERED - will this content deliver the goal? "
                   "Record it with --content-review yes|partial|no (a partial or no must name "
-                  "what is missing), so the close can score its judgement against the prediction")
+                  "what is missing), so the close can score its judgement against the prediction",
+                  file=human)
         if policy:
-            _render_policy(policy)
+            _render_policy(policy, human)
     _render_plan(args, data, queries, worklist, epics)
     export_dir = getattr(args, "export_lanes", None)
     if export_dir:
         lp = data.get("lane_partition") or {"lanes": [], "unplaceable": []}
         files = _write_lane_worklists(lp["lanes"], export_dir, args.root)
         print(f"exported {len(files)} lane worklist(s) to {export_dir}: "
-              + ", ".join(Path(f).name for f in files))
+              + ", ".join(Path(f).name for f in files), file=human)
         if lp["unplaceable"]:
             print("  not exported (declared no Affects, cannot be placed in a disjoint lane): "
-                  + ", ".join(lp["unplaceable"]))
+                  + ", ".join(lp["unplaceable"]), file=human)
     if getattr(args, "write", False):
         # The run is open, so the plan's last word is where the build starts: a fresh session
         # resumed from the brief, not this planning context carried into wave 1. On stderr
@@ -13133,13 +13202,15 @@ def build_policy(args: argparse.Namespace, data: dict, queries: list,
     }
 
 
-def _render_policy(policy: dict) -> None:
+def _render_policy(policy: dict, stream) -> None:
+    """Print the rolling policy to `stream`: stdout for the text plan, stderr under
+    --format json."""
     print(f"rolling policy: {policy['cycles']} cycle(s), goal \"{policy['sprint_goal']}\", "
           f"order={policy['order']}, capacity {policy['capacity']['minutes']:g}min/"
-          f"{policy['capacity']['units']}units")
-    print(f"  stop conditions: {', '.join(policy['stop_conditions'])}")
+          f"{policy['capacity']['units']}units", file=stream)
+    print(f"  stop conditions: {', '.join(policy['stop_conditions'])}", file=stream)
     print("  the plan is regenerated from the live backlog at each boundary "
-          "(`sprint.py boundary`)")
+          "(`sprint.py boundary`)", file=stream)
 
 
 def _boundary_stop(root, cause: str, detail: str, remedy: str) -> int:

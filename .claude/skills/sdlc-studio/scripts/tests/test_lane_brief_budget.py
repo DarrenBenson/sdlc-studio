@@ -178,5 +178,36 @@ class LaneBriefBudgetTests(unittest.TestCase):
                                    capture_output=True, text=True, check=False).stdout
         self.assertNotIn("record the self-check and commit it", " ".join(lane_help.split()))
 
+    def _briefed(self, *units: str) -> list[str]:
+        """The ids `lane brief --units <units...>` briefs, in the order it briefs them. A third
+        Ready story joins the fixture's two, so a list of three names three real units."""
+        stories = self.root / "sdlc-studio" / "stories"
+        (stories / "US0103-x.md").write_text(
+            "# US0103: x\n\n> **Status:** Ready\n> **Affects:** src/third.py\n"
+            "> **Points:** 1\n\n## Acceptance Criteria\n\n### AC1: it holds\n\n"
+            "- **Verify:** file src/app.py\n", encoding="utf-8")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _live("sprint").main(["lane", "brief", "--units", *units,
+                                       "--root", str(self.root)])
+        self.assertEqual(0, rc, err.getvalue())
+        return re.findall(r"^Unit: (\S+) \(", out.getvalue(), flags=re.M)
+
+    def test_a_comma_separated_units_list_briefs_each_unit(self) -> None:
+        """BG1595 AC1. MUTANT: the comma list kept as one id, refused as
+        `US0101US0102US0103` resolving to no artefact."""
+        self.assertEqual(["US0101", "US0102", "US0103"], self._briefed("US0101,US0102,US0103"))
+
+    def test_mixed_space_and_comma_units_split_in_order(self) -> None:
+        """BG1595 AC2. MUTANTS: only whitespace splitting; a stray trailing comma or an empty
+        piece kept as an id; the ids reordered."""
+        self.assertEqual(["US0103", "US0101", "US0102"],
+                         self._briefed("US0103", "US0101,US0102,", ","))
+        self.assertEqual(["US0102", "US0101"], self._briefed(" US0102 ,, US0101"))
+
+    def test_a_space_separated_units_list_still_briefs_each_unit(self) -> None:
+        """BG1595 AC3, the control beside AC1: the space-separated form briefs as before."""
+        self.assertEqual(["US0101", "US0102"], self._briefed("US0101", "US0102"))
+
 if __name__ == "__main__":
     unittest.main()

@@ -481,7 +481,7 @@ def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delive
     if phase != "delivery":
         return path, None, None, None
     rounds = delivery_rounds(repo_root, unit)
-    return (path, len(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds),
+    return (path, rounds_spent(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds),
             _rejoin_if_discharged(repo_root, unit, verdict, ruling))
 
 
@@ -530,7 +530,7 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
         _mark_review_base(repo_root, unit)
     with _ledger_lock(path):
         past_cap = (phase == "delivery" and bool(ruling)
-                    and len(delivery_rounds(repo_root, unit)) >= review_ceiling(repo_root))
+                    and next_round(repo_root, unit, reviewer) > review_ceiling(repo_root))
         if phase == "delivery" and (why := round_refusal(repo_root, unit, reviewer, verdict,
                                                          ruling)):
             raise ValueError(why)
@@ -594,7 +594,7 @@ def _append_ruling(path: Path, unit: str, ruling: str, reviewer: str) -> None:
     rows = read_verdicts(root)
     record = _RULING_PREFIX + " ".join(
         f"{key}={_ruling_value(value)}" for key, value in zip(_RULING_KEYS, (
-            uid, _row_keys(rows)[-1], len(delivery_rounds(root, uid)),
+            uid, _row_keys(rows)[-1], rounds_spent(delivery_rounds(root, uid)),
             str(ruling).strip().upper(), reviewer or "-", sdlc_md.now_date())))
     text = path.read_text(encoding="utf-8")
     # The section alone decides the note: a verdict row's issues may quote the phrase.
@@ -858,6 +858,94 @@ def _number_rounds(rows: list[dict]) -> list[dict]:
     return rows
 
 
+#: Where `lane accept` notes each APPROVE it held for a high-risk unit's second seat: one JSON
+#: line per held row, `{"unit": <id>, "row": <the row's key>}` (`_row_keys`).
+SEAT_HOLDS_REL = Path("sdlc-studio") / ".local" / "seat-holds.jsonl"
+
+
+def held_rows(repo_root: Path | str, unit: str) -> set[str]:
+    """The keys of `unit`'s delivery rows held for a second seat (`hold_for_second_seat`). A
+    line that is not a JSON object naming a unit and a row is skipped, so a damaged file holds
+    what it can still read rather than refusing a record."""
+    try:
+        text = (Path(repo_root) / SEAT_HOLDS_REL).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return set()
+    uid, out = sdlc_md.norm_id(unit), set()
+    for line in text.splitlines():
+        try:
+            note = json.loads(line)
+        except ValueError:
+            continue
+        if (isinstance(note, dict) and isinstance(note.get("row"), str)
+                and isinstance(note.get("unit"), str) and sdlc_md.norm_id(note["unit"]) == uid):
+            out.add(note["row"])
+    return out
+
+
+def hold_for_second_seat(repo_root: Path | str, unit: str) -> str:
+    """Hold `unit`'s latest delivery row, the APPROVE `lane accept` has just recorded for a
+    high-risk unit, for its second independent seat: the next verdict from another seat shares
+    that row's round (`delivery_rounds`), so its REJECT opens a repair rather than spending a
+    round of its own. The row's key; raises ValueError with no row and OSError when the note
+    cannot be written."""
+    uid = sdlc_md.norm_id(unit)
+    rows = [r for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
+    if not rows:
+        raise ValueError(f"{uid} has no delivery verdict to hold")
+    key = _row_keys(rows)[-1]
+    path = Path(repo_root) / SEAT_HOLDS_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:  # append-only, one short line per hold
+        fh.write(json.dumps({"unit": uid, "row": key}) + "\n")
+    return key
+
+
+def _shares_round(repo_root: Path | str, prev: dict | None, reviewer: str) -> bool:
+    """Whether a verdict by `reviewer` after the delivery row `prev` takes `prev`'s round: `prev`
+    is an APPROVE held for a second seat and `reviewer` sits in another seat."""
+    return bool(prev and prev.get("held")
+                and str(prev.get("verdict") or "").upper() == APPROVE
+                and verdict_seat(repo_root, reviewer or "")
+                != verdict_seat(repo_root, prev.get("reviewer") or ""))
+
+
+def rounds_spent(rows: list[dict]) -> int:
+    """How many review rounds `delivery_rounds` rows have spent: the last row's round, so a
+    second seat's verdict sharing a held round spends none of its own."""
+    return int(rows[-1].get("round") or len(rows)) if rows else 0
+
+
+def next_round(repo_root: Path | str, unit: str, reviewer: str,
+               prior: list[dict] | None = None) -> int:
+    """The round a further delivery verdict on `unit` by `reviewer` would take."""
+    prior = delivery_rounds(repo_root, unit) if prior is None else prior
+    spent = rounds_spent(prior)
+    return spent if _shares_round(repo_root, prior[-1] if prior else None, reviewer) else spent + 1
+
+
+def second_seat_owed(repo_root: Path | str, unit: str) -> str:
+    """Why a top-risk-class `unit` may not move on the APPROVE just recorded, or "". It takes two
+    independent seats, so it moves once two seats' latest verdicts in its current delivery are
+    APPROVEs and no seat's is a REJECT; below the top class one APPROVE moves it, as ever."""
+    from lib import risk_class  # noqa: PLC0415 - deferred; only class readers need the map
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    text = sdlc_md.read_text_safe(Path(found[0])) if found else ""
+    if unit_risk_class(repo_root, text) != risk_class.CLASSES[-1]:
+        return ""
+    latest: dict[str, str] = {}
+    for row in delivery_rounds(repo_root, unit):
+        latest[verdict_seat(repo_root, row.get("reviewer") or "")] = str(
+            row.get("verdict") or "").upper()
+    rejecting = sorted(s for s, v in latest.items() if v == REJECT)
+    approving = sorted(s for s, v in latest.items() if v == APPROVE)
+    if rejecting:
+        return f"the {', '.join(rejecting)} seat's REJECT stands"
+    if len(approving) >= 2:
+        return ""
+    return f"only the {' and '.join(approving) or 'no'} seat has approved"
+
+
 def delivery_rounds(repo_root: Path | str, unit: str, state: dict | None = None) -> list[dict]:
     """The live delivery verdict rows of `unit`'s CURRENT delivery, oldest first, each `round`
     numbered from 1 within it.
@@ -866,9 +954,15 @@ def delivery_rounds(repo_root: Path | str, unit: str, state: dict | None = None)
     `REVIEW_BASE`), so a unit carried out of an earlier run starts again at round 1. Outside
     one: the rows since the APPROVE that closed the previous delivery. A final APPROVE closes
     the current delivery rather than starting the next, so its rounds still count against a
-    further verdict: outside a run nothing else marks where a new delivery began."""
+    further verdict: outside a run nothing else marks where a new delivery began.
+
+    An APPROVE held for a second seat (`hold_for_second_seat`) is marked `held`; it closes no
+    delivery, and the next row from another seat shares its round (`_shares_round`)."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid]
+    held = held_rows(repo_root, uid)
+    if held:
+        rows = [{**r, "held": True} if key in held else r for key, r in zip(_row_keys(rows), rows)]
     # A caller holding a run's own record (the report of a sealed run) counts against THAT
     # run's base whether or not it is still open: a figure that moved when the run sealed would
     # invalidate the very page the seal signs.
@@ -880,9 +974,14 @@ def delivery_rounds(repo_root: Path | str, unit: str, state: dict | None = None)
     else:
         rows = [r for r in rows if not is_superseded(r)]
         closed = [i for i, r in enumerate(rows[:-1])
-                  if str(r.get("verdict") or "").upper() == APPROVE]
+                  if str(r.get("verdict") or "").upper() == APPROVE and not r.get("held")]
         rows = rows[closed[-1] + 1:] if closed else rows
-    return [{**r, "round": n} for n, r in enumerate(rows, 1)]
+    out: list[dict] = []
+    for row in rows:
+        prev = out[-1] if out else None
+        shares = _shares_round(repo_root, prev, row.get("reviewer") or "")
+        out.append({**row, "round": prev["round"] if shares else (prev["round"] + 1 if prev else 1)})
+    return out
 
 
 def _mark_review_base(repo_root: Path | str, unit: str) -> None:
@@ -897,7 +996,7 @@ def _mark_review_base(repo_root: Path | str, unit: str) -> None:
 
 def review_rounds(repo_root: Path | str, unit: str, state: dict | None = None) -> int:
     """How many review rounds `unit`'s current delivery has recorded (`delivery_rounds`)."""
-    return len(delivery_rounds(repo_root, unit, state))
+    return rounds_spent(delivery_rounds(repo_root, unit, state))
 
 
 def unit_review_rounds(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
@@ -1997,8 +2096,11 @@ def escalation_notice(repo_root: Path | str, unit: str, phase: str = "delivery")
                                state if state.get("outcome") == run_state.RUNNING else None)
     else:
         rows = unit_review_rounds(repo_root, unit, phase)
+    # An APPROVE held for a second seat is no panel vote: the unit needs both seats' APPROVEs,
+    # so the other seat's REJECT is answered by a repair, and there is no tie to break.
     escalate, why = panel_escalation([str(r.get("verdict") or "") for r in rows],
-                                     seat_verdicts(repo_root, unit, phase, rows))
+                                     seat_verdicts(repo_root, unit, phase,
+                                                   [r for r in rows if not r.get("held")]))
     if not escalate:
         return ""
     uid = sdlc_md.norm_id(unit)
@@ -2049,15 +2151,18 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
     `ruling` names an accepted decision authorising this unit one more round
     (`ruling_refusal`); the round is then judged by the same rejecting-reviewer rule as any
     other. With no carry to discharge, a reviewer in a seat other than the unit's first is told
-    the cause: rounds are one sequence per unit, so a second seat shares the first's cap.
+    the cause: rounds are one sequence per unit, so a second seat shares the first's cap. A
+    verdict from another seat after an APPROVE `lane accept` held for it takes that APPROVE's
+    round (`next_round`), so it is past the cap only when the held round is.
     Every writer of a delivery verdict asks here, so the rules cannot differ between
     them; only `critic.py record` passes a ruling, so a round past the cap is written there."""
     prior = delivery_rounds(repo_root, unit)
     cap = review_ceiling(repo_root)
     uid = sdlc_md.norm_id(unit)
-    authorised = bool(ruling) and len(prior) >= cap and ruling_refusal(repo_root, uid, ruling) is None
-    if len(prior) >= cap and not authorised:
-        at_cap = (f"{uid} has {len(prior)} review round(s) recorded, at the cap of {cap} "
+    spent, over = rounds_spent(prior), next_round(repo_root, uid, reviewer, prior) > cap
+    authorised = bool(ruling) and over and ruling_refusal(repo_root, uid, ruling) is None
+    if over and not authorised:
+        at_cap = (f"{uid} has {spent} review round(s) recorded, at the cap of {cap} "
                   f"(`review.max_rounds`)")
         if ruling:
             return f"{at_cap}. {ruling_refusal(repo_root, uid, ruling)}"
@@ -2084,7 +2189,7 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
     last = prior[-1] if prior else None
     if (last and str(last.get("verdict") or "").upper() == REJECT
             and not same_identity(last.get("reviewer", ""), reviewer or "")):
-        return (f"round {len(prior) + 1} of {uid} re-checks the fixes to "
+        return (f"round {spent + 1} of {uid} re-checks the fixes to "
                 f"{last.get('reviewer')}'s REJECT, so it must be recorded by "
                 f"{last.get('reviewer')}, not {reviewer}")
     return None
@@ -2118,13 +2223,13 @@ def _carry_if_capped(repo_root: Path | str, unit: str, verdict: str, path: Path,
     if str(verdict or "").upper() != REJECT:
         return None
     rounds = delivery_rounds(repo_root, unit) if rounds is None else rounds
-    if not rounds or len(rounds) < review_ceiling(repo_root):
+    if not rounds or rounds_spent(rounds) < review_ceiling(repo_root):
         return None
     try:
         return carry_at_cap(repo_root, unit, rounds[-1])
     except Exception as exc:  # noqa: BLE001 - any failure here follows a written row
         raise CarryFailed(
-            f"{sdlc_md.norm_id(unit)}'s round {len(rounds)} REJECT WAS written to {path}, but "
+            f"{sdlc_md.norm_id(unit)}'s round {rounds_spent(rounds)} REJECT WAS written to {path}, but "
             f"carrying it at the review cap failed: {exc}. The unit stays in the open run's "
             f"batch with that REJECT unanswered: file its findings as a bug and drop it from "
             f"the batch (`sprint batch drop`) by hand") from exc
@@ -2252,7 +2357,7 @@ def carried_to(repo_root: Path | str, unit: str, reason: str,
     if not bug:
         return None
     rounds = delivery_rounds(repo_root, unit, state)
-    if (len(rounds) < review_ceiling(repo_root)
+    if (rounds_spent(rounds) < review_ceiling(repo_root)
             or str(rounds[-1].get("verdict") or "").upper() != REJECT):
         return None
     return bug

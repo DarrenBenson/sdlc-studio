@@ -167,6 +167,72 @@ class SignRetroTests(ccr._Case):
         self.assertIn("velocity row NOT recorded", said)
         self.assertIn("--retro", said, "the sign names the remedy")
 
+    def test_a_mistyped_retro_id_is_refused_before_the_seal(self) -> None:
+        """BG1619 AC1. MUTANT: `--retro` passed to the cascade unchecked, so the seal is
+        written and the accuracy write is refused after it, inside `_cascade_after_signature`.
+        The control: the same run signed with its own retro is sealed."""
+        root = self._bare("mistyped", {"scaffolded_retro": "RETRO0002"})
+        before = (root / "sdlc-studio" / ".local" / "run-state.json").read_bytes()
+        rc, out, err = self._sign(root, "RPT0001", "--retro", "RETRO9999")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("sign REFUSED: retro RETRO9999 not found", err)
+        self.assertEqual([], self.accuracy_ids, "a retro was written for a refused sign")
+        state = self.rs.read(root)
+        self.assertEqual("running", state.get("outcome"), "the refused sign sealed the run")
+        self.assertIsNone(state.get("signature"), "the refused sign wrote a signature")
+        self.assertEqual(before, (root / "sdlc-studio" / ".local" / "run-state.json")
+                         .read_bytes(), "the refused sign changed the run state")
+        rc, out, err = self._sign(root, "RPT0001", "--retro", "RETRO0002")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("goal-reached", self.rs.read(root).get("outcome"))
+        self.assertEqual(["RETRO0002"], self.accuracy_ids)
+
+    def test_a_failed_accuracy_write_is_said_on_stderr(self) -> None:
+        """BG1619 AC2. MUTANT: only `rc == 0` handled, so a non-zero exit prints nothing; the
+        exit or the command's own output left out of what is said."""
+        root = self._bare("refused", {})
+        real = self.sprint._run_cli
+
+        def refusing(module_main, argv):
+            if "accuracy" in argv:
+                return 3, "accuracy refused: the batch is mixed-model\nsee the retro\n"
+            return real(module_main, argv)
+
+        with unittest.mock.patch.object(self.sprint, "_run_cli", refusing):
+            rc, out, err = _out(self.sprint.main, [
+                "sign", "--report", "RPT0001", "--principal", PRINCIPAL, "--retro", "RETRO0002",
+                "--root", str(root)])
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("goal-reached", self.rs.read(root).get("outcome"), "the seal held")
+        self.assertIn("sign: velocity row NOT recorded - `retro.py accuracy --id RETRO0002 "
+                      "--write` exited 3:\n  accuracy refused: the batch is mixed-model\n"
+                      "  see the retro\n", err)
+        self.assertNotIn("velocity row recorded", out)
+
+    def test_the_close_tail_writes_the_retro_sign_chooses(self) -> None:
+        """BG1619 AC3. MUTANT: the tail reading `scaffolded_retro` ahead of the `--retro` it is
+        given, so it writes RETRO0001 where `_sign_retro` picks RETRO0002."""
+        root = self._bare("tail", {"scaffolded_retro": "RETRO0001"})
+        state = self.rs.read(root)
+        self.assertEqual("RETRO0002", self.sprint._sign_retro(state, "RETRO0002"))
+        real = self.sprint._run_cli
+
+        def spy(module_main, argv):
+            if "accuracy" in argv:
+                self.accuracy_ids.append(argv[argv.index("--id") + 1])
+            return real(module_main, argv)
+
+        with unittest.mock.patch.object(self.sprint, "_run_cli", spy):
+            _rc, out, err = _out(self.sprint._apply_signoff_tail, root, state, [], "RETRO0002")
+        self.assertEqual(["RETRO0002"], self.accuracy_ids, out + err)
+        self.assertIn("close: velocity row recorded for RETRO0002", out)
+        # the close's retro, then the scaffolded one, as `_sign_retro` orders them
+        self.accuracy_ids.clear()
+        state[self.sprint.CLOSE_RETRO] = "RETRO0002"
+        with unittest.mock.patch.object(self.sprint, "_run_cli", spy):
+            _out(self.sprint._apply_signoff_tail, root, state, [], None)
+        self.assertEqual(["RETRO0002"], self.accuracy_ids)
+
 
 if __name__ == "__main__":
     unittest.main()

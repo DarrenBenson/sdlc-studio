@@ -500,7 +500,7 @@ answered only by an **APPROVE in a later round from the reviewer who rejected**,
 the fixes, briefed by `critic.py brief --rejoinder`, which quotes that reviewer's standing REJECT from the ledger; `critic.py record` refuses a later round from anyone else. **The round cap is 2**:
 the value of `critic.DEFAULT_REVIEW_CEILING`, which a project overrides with
 `review.max_rounds` in `sdlc-studio/.config.yaml` (a value that is not a positive whole number
-falls back to it), and `critic.py record` refuses a round past it. An operator can authorise
+falls back to it), and `critic.py record` refuses a round past it. A high-risk unit's second seat takes the first seat's round when `sprint lane accept` held that seat's APPROVE for it (`critic.hold_for_second_seat`), so its REJECT opens a repair rather than spending a round of its own; every cap reader counts rounds (`critic.rounds_spent`), not rows. An operator can authorise
 one round past it with a decision: `critic.py record --ruling DNNNN` admits it when the decision
 is accepted and no later decision supersedes it, names the unit as its subject (the first
 artefact id in its text, in either id era), and has not already authorised a round on that unit.

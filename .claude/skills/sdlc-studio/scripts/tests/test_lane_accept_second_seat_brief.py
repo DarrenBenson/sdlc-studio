@@ -181,6 +181,62 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertIn("the verdict file cannot be read", err.getvalue())
         self.assertEqual(self._rows(GREEN), rows, "a verdict was recorded")
 
+    # BG1661: a high-risk unit takes two independent seats, so the first seat's APPROVE is
+    # recorded and held rather than moving the unit, and the second seat's verdict shares its
+    # round: an APPROVE moves the unit, a REJECT opens the repair.
+    _scripts = base.LaneAcceptTests._scripts
+
+    def _held(self) -> str:
+        """Land round one and accept the qa seat's APPROVE: recorded as round 1, nothing else
+        run, the unit left where it was and the second seat named as owed."""
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, APPROVE)
+        self.assertEqual(rc, 1, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 1, against brief {saved}", out, err)
+        self.assertEqual(self._scripts(), ["critic.py record"])
+        self.assertEqual(base._status(self.root, GREEN), "Review")
+        said = " ".join(out.split())
+        self.assertIn(f"{GREEN}: NOT moved to Done: its risk class is high, so it takes two "
+                      f"independent seats and a second seat is owed", said)
+        self.assertIn("only the qa seat has approved", said)
+        return saved
+
+    def test_a_high_risk_first_seat_approve_defers_done(self) -> None:
+        """BG1661 AC1. MUTANTS: move the unit on the first seat's APPROVE; defer it with no
+        hold, so the second seat's REJECT is round 2 at the cap."""
+        self._held()
+        path, fp, _ = self._seat_brief()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{base.REJECT}",
+                                    at=path, reviewer=ENGINEER)
+        self.assertEqual(rc, 1, out + err)
+        self.assertIn(f"{GREEN}: REJECT recorded, round 1; nothing was moved", out, err)
+        self.assertNotIn(critic.CARRIED_REASON, out + err)
+        self.assertEqual(base._status(self.root, GREEN), "Review")
+        self.assertEqual([r["round"] for r in critic.delivery_rounds(self.root, GREEN)], [1, 1])
+
+    def test_the_last_required_seat_approve_moves_a_high_risk_unit(self) -> None:
+        """BG1661 AC3. MUTANTS: never move a high-risk unit; count one seat's two APPROVEs as
+        two seats."""
+        self._held()
+        with self.subTest("the first seat again is not a second seat"):
+            rc, out, err = self._accept(GREEN, APPROVE, reviewer="qa-seat-2")
+            self.assertEqual((rc, base._status(self.root, GREEN)), (1, "Review"), out + err)
+            self.assertIn("only the qa seat has approved", " ".join(out.split()))
+        path, fp, tier = self._seat_brief()
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path, reviewer=ENGINEER)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round ", out, err)
+        self.assertEqual(self._scripts(), ["critic.py record", "verify_ac.py run",
+                                           "transition.py set", "sprint.py lane"])
+        self.assertEqual(base._status(self.root, GREEN), "Done")
+        self.assertIn(f"{GREEN}: moved to Done", out)
+        self.assertNotIn("NOT moved", out)
+
 
 class SavedBriefDatingTests(unittest.TestCase):
     """The landing a saved QA brief is dated by when no note names a file it issued: one that

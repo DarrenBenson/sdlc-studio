@@ -2210,6 +2210,78 @@ class SharedFileClusterTests(unittest.TestCase):
             self.assertEqual(bd["clusters"], [])
 
 
+class WaveClusterWarningTests(unittest.TestCase):
+    """BG1495: a wave was warned NOT safely parallel when its units shared no file with each
+    other, because the cluster joined them through a unit in a later wave. The warning is
+    judged from the files each pair in the wave declares in common."""
+
+    def _bug(self, root: Path, num: int, files: list[str], depends: str = "") -> None:
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        dep = f"> **Depends on:** {depends}\n" if depends else ""
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"> **Affects:** {', '.join(_src(root, f) for f in files)}\n> **Points:** 3\n{dep}"
+            "## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
+            "- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
+
+    def _plan(self, root: Path) -> tuple[str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root),
+                               "--no-fetch", "--skip-personas"])
+        self.assertEqual(0, rc, err.getvalue())
+        return out.getvalue(), err.getvalue()
+
+    def test_a_wave_joined_only_through_a_later_unit_is_not_warned(self) -> None:
+        """EP0314's wave 2 shape: three units each share one file with a fourth that depends
+        on all three, so all four are one cluster and the three share nothing pairwise."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, ["src/a.py"])
+            self._bug(root, 2, ["src/b.py"])
+            self._bug(root, 3, ["src/c.py"])
+            self._bug(root, 4, ["src/a.py", "src/b.py", "src/c.py"],
+                      depends="BG0001, BG0002, BG0003")
+            out, err = self._plan(root)
+            self.assertIn("BG0001, BG0002, BG0003, BG0004 -> ", out,
+                          "the fixture must join the four units in one cluster")
+            self.assertIn("wave 1 (parallel): BG0001, BG0002, BG0003", out)
+            self.assertNotIn("NOT safely parallel", err)
+
+    def test_a_same_wave_shared_file_is_warned_by_pair(self) -> None:
+        """Two units of one wave declare src/shared.py; a third in the same wave and cluster
+        shares no file with either, so the warning names the pair and their file only."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, ["src/shared.py"])
+            self._bug(root, 2, ["src/shared.py", "src/own.py"])
+            self._bug(root, 3, ["src/c.py"])
+            self._bug(root, 4, ["src/c.py", "src/shared.py"], depends="BG0001, BG0002, BG0003")
+            out, err = self._plan(root)
+            self.assertIn("BG0001, BG0002, BG0003, BG0004 -> ", out)
+            warned = [ln for ln in err.splitlines() if "NOT safely parallel" in ln]
+            self.assertEqual(
+                ["  warning: wave 1 is NOT safely parallel - BG0001 and BG0002 both touch "
+                 "src/shared.py. Run them in sequence, or declare `Depends on:` so the waves "
+                 "say so."], warned)
+
+    def test_every_colliding_pair_of_a_wave_is_warned(self) -> None:
+        """Three units of one wave on one file are three pairs, each named once, and a pair
+        sharing two files names both."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._bug(root, 1, ["src/s.py", "src/t.py"])
+            self._bug(root, 2, ["src/s.py", "src/t.py"])
+            self._bug(root, 3, ["src/s.py"])
+            _out, err = self._plan(root)
+            warned = [ln.split(" - ", 1)[1].split(". Run", 1)[0] for ln in err.splitlines()
+                      if "NOT safely parallel" in ln]
+            self.assertEqual(["BG0001 and BG0002 both touch src/s.py, src/t.py",
+                              "BG0001 and BG0003 both touch src/s.py",
+                              "BG0002 and BG0003 both touch src/s.py"], warned)
+
+
 def _verified_story(root: Path, num: int, affects: str | None, verifiers: list[str],
                     points: int = 2, status: str = "Ready") -> Path:
     """A story whose ACs carry `Verify:` lines - the files a unit will touch, named in the
@@ -4080,6 +4152,77 @@ class GoalReviewWindowTests(unittest.TestCase):
             _bug(root, 1)
             rc, _out, err = self._plan(root, "--write")
             self.assertEqual(0, rc, err)
+
+
+class PlanJsonTests(unittest.TestCase):
+    """BG1342: `plan --write --format json` printed its run-opening lines on stdout ahead of
+    the JSON, so a caller piping stdout to a JSON reader had to hunt for the first brace."""
+
+    def _plan(self, root, *extra):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err), \
+                unittest.mock.patch.object(sys, "stdin", io.StringIO("")):
+            rc = _load().main(["plan", "--bugs", "Open", "--no-fetch", "--write",
+                               "--sprint-goal", "g", "--root", str(root), *extra])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _charter(self, root, cid="SC0001"):
+        d = root / "sdlc-studio" / "charters"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{cid}-x.md").write_text(
+            f"# {cid}: charter {cid}\n\n> **Status:** Queued\n"
+            f"> **Appetite:** 480min/8units\n> **Scope query:** --bugs Open\n\n"
+            f"## Sprint Goal\n\ngoal of {cid}\n", encoding="utf-8")
+        (d / "_index.md").write_text(
+            "# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+            f"| [{cid}]({cid}-x.md) | c | Queued |\n", encoding="utf-8")
+
+    def test_plan_write_json_stdout_is_one_document(self) -> None:
+        """MUTANT: send any one of the run-opening lines back to stdout. Each line the write
+        prints is reached here: the first plan opens the run from a charter with no content
+        review and exports its lanes; the second re-plans over a resized appetite with a
+        content review and a rolling policy."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            self._charter(root)
+            _bug(root, 1)
+            rc, out, err = self._plan(root, "--format", "json", "--charter", "SC0001",
+                                      "--export-lanes", str(root / "lanes"))
+            self.assertEqual(0, rc, err)
+            self.assertEqual(["BG0001"], [u["id"] for u in json.loads(out)["batch"]],
+                             f"stdout is not one JSON document: {out[:300]!r}")
+            for line in ("wrote sprint plan ->", "opened run ", "SC0001",
+                         "    transition: ", "content review (plan): UNANSWERED",
+                         "exported 1 lane worklist(s)"):
+                self.assertIn(line, err, f"{line!r} is not on stderr under --format json")
+            state = json.loads((root / "sdlc-studio" / ".local" / "run-state.json")
+                               .read_text(encoding="utf-8"))
+            state["appetite_changes"] = [{"reason": "raised on the record"}]
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps(state), encoding="utf-8")
+            rc, out, err = self._plan(root, "--format", "json", "--content-review", "yes",
+                                      "--cycles", "2")
+            self.assertEqual(0, rc, err)
+            self.assertEqual(["BG0001"], [u["id"] for u in json.loads(out)["batch"]],
+                             f"stdout is not one JSON document: {out[:300]!r}")
+            for line in ("keeping the appetite set by `appetite resize`",
+                         "content review (plan): yes", "rolling policy: 2 cycle(s)",
+                         "  stop conditions: ", "regenerated from the live backlog"):
+                self.assertIn(line, err, f"{line!r} is not on stderr under --format json")
+
+    def test_plan_write_text_keeps_its_lines_on_stdout(self) -> None:
+        """The control: without --format json the run-opening lines stay on stdout."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            _bug(root, 1)
+            rc, out, err = self._plan(root, "--cycles", "2")
+            self.assertEqual(0, rc, err)
+            for line in ("wrote sprint plan ->", "opened run ", "rolling policy: 2 cycle(s)",
+                         "content review (plan): UNANSWERED"):
+                self.assertIn(line, out)
+                self.assertNotIn(line, err)
 
 
 class GoalConsultTests(unittest.TestCase):

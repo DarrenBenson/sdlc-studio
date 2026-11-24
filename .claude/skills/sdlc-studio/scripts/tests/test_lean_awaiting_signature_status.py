@@ -175,6 +175,34 @@ class AwaitingSignatureStatusTests(unittest.TestCase):
             self.assertIn("RUN-WAIT0002.json", lines[0])
             self.assertIn("this is not the same as none", lines[0])
 
+    def test_a_design_rung_anchor_owes_no_signature_and_never_reads_running(self) -> None:
+        """BG1589 AC3. A `design` rung owes no Done sign-off, so its closed-but-unsealed anchor
+        reads `closed` with its goal verdict, never the awaiting wording and never the raw
+        `running`. MUTANTS: the awaiting wording applied to every rung; the raw outcome kept
+        for a rung that owes no signature."""
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state = _state(root, ["US0101"])
+            state.update(goal="design",
+                         sprint_goal_verdict={"verdict": "partial", "note": "most groomed"})
+            (root / "sdlc-studio" / ".local" / "run-state.json").write_text(
+                json.dumps(state), encoding="utf-8")
+            _unit(root, "US0101", "Ready", approved=False)
+            with contextlib.redirect_stderr(io.StringIO()):
+                ok, detail, _remedy = sprint._close_review_anchor(root, None, state)
+            self.assertTrue(ok, detail)
+            text = (root / "sdlc-studio" / "reviews" / "LATEST.md").read_text(encoding="utf-8")
+            block = text[text.index(sprint.ANCHOR_BEGIN):text.index(sprint.ANCHOR_END)]
+            self.assertIn(f"**{RUN} closed (goal verdict: partial).** 1 unit(s) in the batch. "
+                          "This was a `design` rung", block)
+            for owed in ("awaiting signature", "OWED", "closed running"):
+                self.assertNotIn(owed, block)
+            self.assertEqual(f"review anchor created: {RUN} closed (goal verdict: partial)",
+                             detail)
+
     def test_the_loop_moves_a_built_unit_to_review(self) -> None:
         """AC2. MUTANT: the rc.1 and HEAD Build step, which never names the move to Review."""
         text = (SKILL / "reference-sprint.md").read_text(encoding="utf-8")

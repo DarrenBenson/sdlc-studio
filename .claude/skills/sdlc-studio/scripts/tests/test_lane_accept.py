@@ -242,6 +242,68 @@ class LaneAcceptTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertFalse(critic.verdicts_path(self.root).exists())
 
+    # -- BG1594: a land then an accept with no --author names the building seat ------------
+
+    AGENT_WT = "agent-a1b2c3d4"
+
+    def _landed_by_agent(self) -> dict:
+        """GREEN briefed to the engineering seat (Dani Okafor's card), built in an
+        `agent-<id>` worktree and landed with no --author: the land record."""
+        from lib import run_state  # noqa: PLC0415 - the fixture's own run record
+        _write(self.root, "sdlc-studio/personas/seats/engineering.md",
+               "<!-- role: engineering -->\n# Dani Okafor - engineering amigo\n\ncharter\n\n"
+               "## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: the engineering seat"], self.root)
+        with unittest.mock.patch.dict(os.environ, {
+                run_state.TRANSCRIPTS_ENV: str(self.root / "no-transcripts")}):
+            run_state.open_run(self.root, batch=[GREEN], goal="g")
+        run_state.record_lane_start(self.root, GREEN, "engineering")
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        wt = Path(tmp.name).resolve() / self.AGENT_WT
+        gitutil.git(["worktree", "add", "-q", "-b", self.AGENT_WT, str(wt), "main"], self.root)
+        _write(wt, "src/a.py", "A = 2\n")
+        gitutil.git(["add", "--", "src/a.py"], wt)
+        _write(wt, f"{HAND_IN}/commit-msg.txt", f"feat({GREEN}): a is two\n")
+        _write(wt, f"{HAND_IN}/{GREEN}-claims.json", json.dumps(CLAIMS))
+        _write(wt, f"{HAND_IN}/{GREEN}-mutants.json", json.dumps(MUTANTS))
+        landed = subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "sprint.py"), "lane", "land", "--worktree",
+             str(wt), "--units", GREEN, "--root", str(self.root)], capture_output=True,
+            text=True, timeout=600, cwd=str(self.root), env=gitutil.git_env(), check=False)
+        self.assertEqual(0, landed.returncode, landed.stdout + landed.stderr)
+        return json.loads(lanes._record_file(self.root, self.AGENT_WT)  # noqa: SLF001
+                          .read_text(encoding="utf-8"))
+
+    def test_an_accept_after_a_land_names_the_building_seat_and_prints_no_author_warning(
+            self) -> None:
+        """BG1594 AC2. MUTANT: the land records the self-check under the worktree's name, so
+        accept reads `agent-<id>` back as the author and `critic.py record` warns that it
+        lacks the `<holder> (<role>)` form."""
+        self._landed_by_agent()
+        rc, out, err = self._accept(GREEN, APPROVE, reviewer="Sam Eriksson (qa)")
+        self.assertEqual(0, rc, out + err)
+        row = self._rows(GREEN)[-1]
+        self.assertEqual(["APPROVE", "Sam Eriksson (qa)", "Dani Okafor (engineering)"],
+                         row[1:4])
+        self.assertNotIn("lacks the", out + err)
+        self.assertNotIn(self.AGENT_WT, row[3])
+        self.assertEqual(_status(self.root, GREEN), "Done")
+
+    def test_the_agent_id_is_kept_in_its_own_field_beside_the_seat_author(self) -> None:
+        """BG1594 AC4, carried from BG1462. MUTANT: the agent id the only author on the row,
+        with no field of its own keeping it; the seat recorded and the agent id dropped."""
+        record = self._landed_by_agent()
+        rc, out, err = self._accept(GREEN, REJECT, reviewer="Sam Eriksson (qa)")
+        self.assertEqual(1, rc, out + err)
+        self.assertEqual("Dani Okafor (engineering)", self._rows(GREEN)[-1][3])
+        self.assertNotIn("lacks the", out + err)
+        # the land record keeps, per unit, the seat the self-check was recorded under beside
+        # the agent's worktree that built it
+        self.assertEqual({GREEN: "Dani Okafor (engineering)"}, record["authors"])
+        self.assertEqual({GREEN: self.AGENT_WT}, record["owners"])
+
     # -- BG1520: the Reviewer cell names the briefed seat ---------------------------------
 
     def test_the_recorded_reviewer_cell_names_the_briefed_seat(self) -> None:

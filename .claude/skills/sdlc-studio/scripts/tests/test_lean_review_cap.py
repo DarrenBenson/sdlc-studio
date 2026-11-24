@@ -332,6 +332,97 @@ class PerDeliveryRoundTests(_NoTranscripts):
             self.assertIn(transition.UNANSWERED_REJECT,
                           transition._unanswered_delivery_reject(root, UNIT) or "")
 
+    # BG1661: a high-risk unit's two seats judge one round. `lane accept` holds the first seat's
+    # APPROVE (`critic.hold_for_second_seat`) rather than moving the unit, and the next verdict
+    # from another seat shares that round.
+    QA, ENG = "sam (qa)", "dani (engineering)"
+
+    def _high_risk(self, d: str, max_rounds: int | None = None) -> Path:
+        root = _workspace(d, max_rounds)
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        cfg.write_text(cfg.read_text(encoding="utf-8") + "risk:\n  components:\n    src/: high\n",
+                       encoding="utf-8")
+        return root
+
+    def test_a_second_seat_reject_on_a_deferred_high_risk_unit_is_round_one(self) -> None:
+        """BG1661 AC2. MUTANTS: give the held round's next seat a round of its own; count the
+        cap over rows rather than rounds; read the split over the held APPROVE. Each reports
+        round 2, carries the unit or escalates a split the repair answers."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._high_risk(d)
+            run_state.open_run(root, batch=[UNIT, "US0002"], goal="g")
+            self.assertEqual(_record(root, "APPROVE", self.QA)[0], 0)
+            critic.hold_for_second_seat(root, UNIT)    # what `lane accept` does as it defers
+            rc, out, err = _record(root, "REJECT", self.ENG, "[new] the charge is taken twice")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 1", out)
+            said = " ".join((out + err).split())
+            for word in ("cap", critic.CARRIED_REASON, "ESCALATED", "split"):
+                self.assertNotIn(word, said)
+            self.assertIsNone(critic.carried_by(root, UNIT))
+            self.assertEqual(run_state.read(root)["batch"], [UNIT, "US0002"])
+            self.assertEqual(_status(root), "Review")
+            self.assertEqual([(r["round"], r["verdict"]) for r in critic.delivery_rounds(root, UNIT)],
+                             [(1, "APPROVE"), (1, "REJECT")])
+            self.assertEqual(critic.review_rounds(root, UNIT), 1)
+            # the repair's round 2 is the rejecting seat's, as any REJECT's re-check is
+            self.assertEqual(_record(root, "APPROVE", self.QA)[0], 2, "round 2 is dani's")
+            rc, out, err = _record(root, "APPROVE", self.ENG)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 2", out)
+        # Control: with no hold, the same two verdicts are one sequence, so the REJECT is round 2
+        # at the cap and carries the unit, as `critic.py record` alone has always numbered them.
+        with tempfile.TemporaryDirectory() as d:
+            root = self._high_risk(d)
+            run_state.open_run(root, batch=[UNIT, "US0002"], goal="g")
+            _record(root, "APPROVE", self.QA)
+            rc, out, err = _record(root, "REJECT", self.ENG, "[new] the charge is taken twice")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 2", out)
+            self.assertTrue(critic.carried_by(root, UNIT))
+
+    def test_a_second_seat_after_a_held_round_two_approve_shares_round_two(self) -> None:
+        """BG1661: a first seat's APPROVE held at the cap leaves the second seat its share of
+        that round rather than refusing it, so the unit is never held for a verdict that cannot
+        be recorded; a REJECT there is at the cap and carries the unit. MUTANT: judge the cap
+        on the rows recorded, not the round the verdict takes."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._high_risk(d)
+            run_state.open_run(root, batch=[UNIT, "US0002"], goal="g")
+            _record(root, "REJECT", self.QA, "[new] a")
+            self.assertEqual(_record(root, "APPROVE", self.QA)[0], 0)
+            critic.hold_for_second_seat(root, UNIT)
+            rc, out, err = _record(root, "REJECT", self.ENG, "[new] b")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 2", out)
+            self.assertTrue(critic.carried_by(root, UNIT), "a round-2 REJECT is at the cap")
+        # positive control: with no hold the second seat is past the cap and refused
+        with tempfile.TemporaryDirectory() as d:
+            root = self._high_risk(d)
+            _record(root, "REJECT", self.QA, "[new] a")
+            _record(root, "APPROVE", self.QA)
+            rc, _out, err = _record(root, "APPROVE", self.ENG)
+            self.assertEqual(rc, 2, err)
+            self.assertIn("at the cap of 2", err)
+
+    def test_a_damaged_holds_file_holds_only_its_readable_notes(self) -> None:
+        """The hold notes are read line by line: a line that is not a JSON object naming a unit
+        and a row is skipped, never a traceback, and the readable note still holds."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._high_risk(d)
+            _record(root, "APPROVE", self.QA)
+            key = critic.hold_for_second_seat(root, UNIT)
+            path = root / critic.SEAT_HOLDS_REL
+            path.write_bytes(b"{not json\n[1, 2]\n{\"unit\": 7, \"row\": \"x\"}\n\xff\xfe\n"
+                             b"{\"unit\": \"US0001\", \"row\": 3}\n" + path.read_bytes())
+            self.assertEqual(critic.held_rows(root, UNIT), {key})
+            self.assertEqual(critic.held_rows(root, "US0002"), set())
+            rc, out, err = _record(root, "REJECT", self.ENG, "[new] b")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 1", out)
+            path.unlink()
+            self.assertEqual(critic.held_rows(root, UNIT), set())
+
 
 BUG = "BG0001"
 

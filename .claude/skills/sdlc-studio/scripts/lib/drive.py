@@ -857,7 +857,9 @@ def _after_reviewer(root: Path, agent: str, unit: str | None, state: dict,
         return out + _next_prompt(root, unit, state, record)
     kept = keep(root, unit, "accept", done)
     entry["reviewer"] = agent
-    rounds, cap = len(critic.delivery_rounds(root, unit)), critic.review_ceiling(root)
+    # the round the REJECT took, which a second seat shares with an APPROVE held for it
+    rounds = critic.rounds_spent(critic.delivery_rounds(root, unit))
+    cap = critic.review_ceiling(root)
     found = [rejected.group(0).rstrip(";"), *_blocking(done.stdout)]
     if rounds >= cap:
         entry["stage"] = "capped"

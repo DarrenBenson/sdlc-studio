@@ -314,6 +314,28 @@ class SprintDriveStepTests(_StepFixture):
         self.assertIn("at the review round cap of 1", out)
         self.assertFalse(list((case.root / drive.PROMPTS).glob(f"{A}-repair-*")))
 
+    def test_a_reject_sharing_a_held_round_is_not_at_the_cap(self) -> None:
+        """BG1661: the cap is judged on the round a REJECT took, not on the rows recorded. An
+        APPROVE held for a second seat (`critic.hold_for_second_seat`, as `lane accept` holds a
+        high-risk unit's first seat) shares its round with the next seat's REJECT, so that
+        REJECT is round 1 and its repair is briefed, not stopped at the cap of 2. MUTANT: count
+        the delivery's rows (`len`), which reads two rounds and stops the unit."""
+        self.builder("a1", A, "A = 2\n")
+        rc, out, err = self.step("a1")
+        self.assertEqual(0, rc, out + err)
+        walk.critic.record_verdict(self.root, A, "APPROVE", "dani (engineering)", "builder")
+        walk.critic.hold_for_second_seat(self.root, A)
+        self.verdict(A, REJECT, by="ra")
+        rc, out, err = self.step("ra")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual([1, 1], [r["round"] for r in walk.critic.delivery_rounds(self.root, A)])
+        self.assertNotIn("round cap", out)
+        prompt = Path(self.last(out))
+        self.assertTrue(prompt.is_file(), out)
+        self.assertEqual(f"{A}-repair-r1.txt".lower(), prompt.name.lower())
+        self.assertIn(f"--- REPAIR: what this repair of {A} answers, quoted verbatim ---",
+                      prompt.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()
