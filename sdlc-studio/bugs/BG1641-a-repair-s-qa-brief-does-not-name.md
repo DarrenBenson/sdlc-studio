@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1641.md
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,16 @@ When the unit has an unanswered REJECT, have the QA brief open with the reviewer
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: critic.py record refuses a round-two verdict from anyone but the reviewer who rejected round one (critic.py:1986-1990).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Record a REJECT on a unit, land its repair with sprint.py lane land, read the QA brief it writes (sdlc-studio/.local/briefs/<ID>-qa.txt): no line names the...
-- [ ] **AC3** The proposed fix lands, pinned by a test: When the unit has an unanswered REJECT, have the QA brief open with the reviewer who must judge round two and the instruction to resume that reviewer rather...
+- [ ] **AC1** Given a unit with an unanswered REJECT from reviewer R whose repair is landed with `sprint.py lane land`, when the QA brief `sdlc-studio/.local/briefs/<ID>-qa.txt` is read, then it opens with a line naming R and telling the orchestrator to resume R rather than spawn a new reviewer. Fails on: no line of the brief names the reviewer.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers
+- [ ] **AC2** Given the same landing, when `lane land` prints the brief path, then the same reviewer line is printed beside it. Fails on: the output names only the path.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_lane_land_prints_the_reviewer_beside_the_brief_path
+- [ ] **AC3** Given a unit with no REJECT, when its first-round QA brief is written, then no reviewer line is added and the brief is byte-identical to `critic.py brief` output (positive control). Fails on: a fix that adds the line to every brief, which also changes the fingerprint `_brief_of` hashes from the saved text.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_first_round_brief_carries_no_reviewer_line
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: criteria pin the brief line, the printed line and a first-round control; the builder must keep the fingerprint `lane accept` hashes from the saved text (`_brief_of`) valid |

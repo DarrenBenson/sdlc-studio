@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 92 |
+| Open | 91 |
 | In Progress | 0 |
-| Fixed | 1179 |
+| Fixed | 1180 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -361,7 +361,7 @@
 | [BG1283](BG1283-one-old-codex-thread-whose-rollout-file-is.md) | One old Codex thread whose rollout file is gone makes every later Codex reading in that workspace unmetered, permanently | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1284](BG1284-dollars-per-point-omits-the-coverage-its-dollar.md) | Dollars per point omits the coverage its dollar figure has, and the Priced cost row's reach sentence uses Claude-transcript wording for every harness | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1285](BG1285-a-non-utf-8-legacy-opencode-message-file.md) | A non-UTF-8 legacy OpenCode message file is refused as 'raised UnicodeDecodeError', and a Cursor cloud reading's stamps are given the wrong unpriced reason | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
-| [BG1286](BG1286-sprint-lane-land-leaves-a-timed-out-commit.md) | `sprint lane land` leaves a timed-out commit's hook running while saying it was stopped, and reports a dirty worktree's rebase refusal as a conflict | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1286](BG1286-sprint-lane-land-leaves-a-timed-out-commit.md) | `sprint lane land` leaves a timed-out commit's hook running while saying it was stopped, and reports a dirty worktree's rebase refusal as a conflict | Fixed | Low | 2026-11-08 | 2026-11-08 |
 | [BG1287](BG1287-every-lane-brief-s-standing-obligation-hard-codes.md) | Every lane brief's standing obligation hard-codes `main` and tells the builder to fast-forward, contradicting the same brief's 'do not commit' | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1288](BG1288-a-codex-reading-counts-a-lane-worktree-s.md) | A Codex reading counts a lane worktree's own `codex exec` thread but says it holds no subagent spend, so the report adds the lane's delegated total a second time | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1289](BG1289-sprint-lane-land-never-clears-the-previous-landing.md) | `sprint lane land` never clears the previous landing's hand-in, so a repair round that hands in no self-check files records round one's as its own and the `author_self_check: block` gate passes an unchecked diff | Fixed | Medium | 2026-11-08 | 2026-11-08 |

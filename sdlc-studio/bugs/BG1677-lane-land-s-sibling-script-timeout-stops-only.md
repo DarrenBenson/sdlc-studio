@@ -24,12 +24,16 @@ Run `_script` through the bounded runner lane L's units introduce (`lanes._bound
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: lib/lanes.py `_script` runs a sibling script (`verify_ac.py` among them) through subprocess.run with a timeout.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read lib/lanes.py `_script` (subprocess.run([...], timeout=timeout) with no new session and no process-group kill).
-- [ ] **AC3** The proposed fix lands, pinned by a test: Run `_script` through the bounded runner lane L's units introduce (`lanes._bounded`: its own session, the whole process group killed on timeout), and pin it...
+- [ ] **AC1** Given `lanes._script` runs a sibling script that starts a child which outlives the bound, when the bound passes, then the LandError is raised and the child is no longer running. Fails on: `subprocess.run` kills only the direct child, so the grandchild keeps running.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_a_timed_out_script_leaves_no_child_running
+- [ ] **AC2** Given a script that exits within the bound, when `_script` runs it, then it returns the CompletedProcess with stdout, stderr and returncode as before (positive control). Fails on: a fix that drops the captured output.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_a_script_inside_the_bound_returns_its_output
+- [ ] **AC3** Given `lanes._script`, when its source is read, then it runs through `lanes._bounded`, not `subprocess.run`. Fails on: `_script` still calling `subprocess.run`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_script_runs_through_the_bounded_runner
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: criteria pin the group kill by a surviving grandchild, plus a positive control; the test module is new, modelled on test_lane_land_commit_timeout_group.py |

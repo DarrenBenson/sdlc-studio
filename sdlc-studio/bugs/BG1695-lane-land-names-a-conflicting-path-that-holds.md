@@ -24,11 +24,16 @@ List the conflicting names with git diff --name-only --diff-filter=U -z and spli
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: When a lane's replay or rebase meets a conflict, lib/lanes.py names the conflicting files from git's name listing with .stdout.split() (the replay refusal at...
-- [ ] **AC2** The proposed fix lands, pinned by a test: List the conflicting names with git diff --name-only --diff-filter=U -z and split on NUL in both places, decoding each with os.fsdecode as `_loose` does.
+- [ ] **AC1** Given a lane and main that both edit `docs/release notes.md` so the replay conflicts, when `sprint.py lane land` refuses, then the refusal's Conflicting files names `docs/release notes.md` once. Fails on: `.stdout.split()` at the replay refusal names `docs/release` and `notes.md`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_names_a_path_holding_a_space_once
+- [ ] **AC2** Given the same conflict met by `_rebase` (a lane committed on its branch), when lane land refuses, then it names `docs/release notes.md` once. Fails on: `_rebase` splits the same listing on whitespace.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_rebase_conflict_names_a_path_holding_a_space_once
+- [ ] **AC3** Given a conflict in `plain.md`, when either refusal fires, then it names `plain.md` alone (positive control). Fails on: a NUL split that returns an empty trailing name.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_still_names_an_ordinary_path
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: the one reproduction is now two criteria (replay and `_rebase`) and a control; both sites (lanes.py:390 and :475) still split on whitespace at HEAD |

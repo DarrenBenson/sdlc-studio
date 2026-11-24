@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Points:** 3
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1649.md
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -23,12 +23,16 @@ When the transition refuses after an APPROVE, name the finishing command in the 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: RUN-01M7TTK3, US1299: lane accept recorded the round-two APPROVE, ran `verify_ac`, then transition.py set refused Done (AC3 had no Verify line).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Groom a unit with one criterion lacking a Verify line, land it, and run sprint.py lane accept on an APPROVE verdict: the transition refuses.
-- [ ] **AC3** The proposed fix lands, pinned by a test: When the transition refuses after an APPROVE, name the finishing command in the refusal ('after fixing it, run transition.py set ...
+- [ ] **AC1** Given an APPROVE whose `transition.py set` refuses, when `lane accept` prints its refusal, then it names the finishing step (`transition.py set ...` then `sprint.py lane return --units <ID>`). Fails on: the `transition.py set` branch of `_accept` names no next step.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_refused_transition_names_the_lane_return_that_finishes_the_unit
+- [ ] **AC2** Given a unit finished by hand after that refusal and still in `lanes_in_flight`, when `sprint.py close` runs, then its in-flight note names `sprint.py lane return --units <ID>` as the command that clears a lane whose unit is already terminal. Fails on: the note says only that the span reads NOT MEASURED.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_terminal_unit_in_flight_names_the_lane_return_that_clears_it
+- [ ] **AC3** Given the same unit, when `sprint.py lane return --units <ID>` is run after the hand transition, then the unit leaves `lanes_in_flight` and its span closes (positive control for the named command). Fails on: a named command that does not clear the lane.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_lane_return_after_a_hand_transition_clears_the_lane
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: the proposed fix offers two routes; the criteria take the first (name the finishing command, also in the close note), so a `--resume` flag is not required; points raised to 3 for two surfaces and three tests (split if the builder adds `--resume`) |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1595.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, changelog.d/BG1595.md
 > **Evidence:** .local/run17/lane-meta.err, 2026-11-18.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,16 @@ Split --units values on commas as well as spaces, or refuse a comma list by nami
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint lane brief --units US1315,US1319,US1320` refused with 'REFUSED US1315US1319US1320: no artefact on disk resolves to this id': the commas are stripped...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run `sprint.py lane brief --units US1315,US1319,US1320`: it refuses 'US1315US1319US1320'.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Split --units values on commas as well as spaces, or refuse a comma list by naming the space-separated form.
+- [ ] **AC1** Given `sprint.py lane brief --units US1315,US1319,US1320` over three real units, when it runs, then it briefs the three ids and exits 0. Fails on: `_lane_unit_ids` keeps the comma list as one id and refuses `US1315,US1319,US1320`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_comma_separated_units_list_briefs_each_unit
+- [ ] **AC2** Given `--units US1315 US1319,US1320` (a mix of space and comma), when it runs, then three ids are briefed in order, and a stray trailing comma or empty piece is dropped. Fails on: only whitespace splitting.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_mixed_space_and_comma_units_split_in_order
+- [ ] **AC3** Given the space-separated form that works today, when `--units US1315 US1319` runs, then it behaves as before (the control beside AC1). Fails on: a split that breaks the existing form.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_space_separated_units_list_still_briefs_each_unit
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: executable criteria for the comma list, a mixed list and the unchanged space form; the fix splits in `_lane_unit_ids`, not refuses; Affects names the brief test module, which has the lane fixture |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py, changelog.d/BG1713.md
 > **Evidence:** CI run 45068223727 (30eb84a5), job ci 137349078590: test_sprint_drive_wave FAIL with the commondir error
 > **Created:** 2026-11-22
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,16 @@ Serialise worktree creation per repository (a lock file under the git common dir
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: lib/lanes.py `_lane_worktree` runs `git worktree add` with no lock, and sprint.py drive builds a wave's lanes in parallel, so two lanes can add worktrees to...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run sprint.py drive over a wave of two disjoint units with a harness, many times or under load; occasionally one unit stops at build with 'the lane worktree ...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Serialise worktree creation per repository (a lock file under the git common dir held around the add in `_lane_worktree)`, and pin it with a test that adds...
+- [ ] **AC1** Given six threads each calling `lanes._lane_worktree` for a distinct unit on one repository, with a short delay forced inside the add so the race is deterministic, when they run together, then every call returns its worktree and none raises LandError. Fails on: concurrent `git worktree add` can refuse one add with the commondir error (CI run 45068223727).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_parallel_adds_all_succeed
+- [ ] **AC2** Given a lock held by another process under the git common dir, when `_lane_worktree` runs, then it waits for the lock and adds the worktree after it is released, and the lock is released after the add, also when the add fails. Fails on: no lock is taken.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_the_add_waits_for_the_common_dir_lock_and_releases_it
+- [ ] **AC3** Given an existing worktree for the unit, when `_lane_worktree` runs, then it is reused with no lock taken and no add run (positive control). Fails on: a fix that locks or re-adds on the reuse path.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_an_existing_worktree_is_reused_without_the_lock
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: criteria pin the parallel add, the lock's wait and release, and the reuse control; the race is timing-dependent, so the test must force it with a delay inside the add rather than rely on luck |
