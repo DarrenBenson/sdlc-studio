@@ -1,9 +1,9 @@
 # BG1063: `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/scripts/constitution.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py, sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1063.md, docs/existing-users.md, changelog.d/BG1525.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/scripts/constitution.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py, sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1063.md, docs/existing-users.md, changelog.d/BG1525.md, tools/tests/test_lean_breaking_inventory.py
 > **Evidence:** RV0028 finding PRD-2; config-defaults.yaml:98; reference-outputs.md:768; transition.py:1042-1049 reads `quality.done_requires_verified`.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -39,12 +39,16 @@ PRD test that uses BG1063 as its held-criterion example.
 
 - [ ] **AC1** Given a project `.config.yaml` holding `require_ac_verification: true` beside `quality: done_requires_verified: false`, when `migrate.py --apply` runs, then the key is removed and the removal reported, and `quality.done_requires_verified` is kept. Fails on: HEAD, whose `sdlc_md.RETIRED_CONFIG_KEYS` lacks the key, so migrate keeps a line that changes nothing (measured: with it set true, a story with `shell false` reached Done).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_retired_by_migrate
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the shipped skill, when every reference-*.md, help page and template is read, then none names `require_ac_verification`, config-defaults.yaml declares no such key, and reference-verify.md's gated-completion section names `quality.done_requires_verified`. Fails on: HEAD's config-defaults.yaml:117, reference-verify.md, reference-outputs.md:770, reference-config.md:298 and help/verify.md:311.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given the key registered as retired, when the breaking inventory reads the pending fragments, then a `Breaking` line names `require_ac_verification`. Fails on: a fix that registers the key and files its fragment under `Fixed`.
   - **Verify:** pytest tools/tests/test_lean_breaking_inventory.py::BreakingInventoryTests::test_every_registered_retirement_is_disclosed
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given BG1063 at Fixed, when the PRD rules are read, then the Verify AC criterion names `quality.done_requires_verified`, is ticked and held by no bug, its block and Feature row read Complete, and the held-criterion test no longer depends on a BG1063 hold. Fails on: a fix that reaches Fixed with the PRD untouched (`criterion 3 is held by BG1063, which is Fixed`).
   - **Verify:** shell python3 -m pytest -q -p no:cacheprovider tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_engagement_floor_tracks_bg0959 tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 
@@ -63,3 +67,4 @@ An operator who sets the documented key believes they changed a gate; nothing ch
 | 2026-11-23 | Sam Eriksson (qa) | Groomed for run twenty-four: reproduced at HEAD through `transition.py set` both ways; the fix chooses retirement through `RETIRED_CONFIG_KEYS`; the one `-k` criterion replaced by four executable ones (migrate, docs, Breaking disclosure, PRD); Affects adds sdlc_md.py and reference-config.md and drops test_retired_config_keys.py (never existed) and test_constitution.py (reads no such text); 2 to 3 points |
 | 2026-11-24 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + docs/existing-users.md: retiring the key makes the upgrade page's every-retired-surface test require its row |
 | 2026-11-24 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + changelog.d/BG1525.md: the round-one review found the unreleased BG1525 fragment still lists the retired key among the live gate keys |
+| 2026-11-24 | Claude Opus 5.5 (run twenty-four orchestrator) | Affects + tools/tests/test_lean_breaking_inventory.py: only its every-registered-retirement test kills the fragment-filed-under-fixed mutant of the repair |

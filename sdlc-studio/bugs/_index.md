@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-23
+**Last Updated:** 2026-11-24
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 253 |
+| Open | 252 |
 | In Progress | 0 |
-| Fixed | 1139 |
+| Fixed | 1142 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1733** |
+| **Total** | **1735** |
 
 ## All Bugs
 
@@ -138,7 +138,7 @@
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
-| [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1066](BG1066-the-product-seat-approves-only-stories-that-serve.md) | The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens | Fixed | Medium | 2026-10-19 | 2026-10-19 |
@@ -586,10 +586,10 @@
 | [BG1508](BG1508-bg1506-s-tests-catch-only-the-unstamped-writer.md) | BG1506's tests catch only the unstamped writer's stale patch: pointing the at_close or at_sign patch back at the load-time module leaves its criteria green | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1509](BG1509-release-cut-never-restamps-the-releasing-repository-s.md) | release_cut never restamps the releasing repository's own sdlc-studio/.version, so each release needs a hand migrate --apply and CI's corpus check reds on US0926::AC1 until it gets one | Won't Fix | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Fixed | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
-| [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Fixed | High | 2026-11-17 | 2026-11-17 |
@@ -809,6 +809,8 @@
 | [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1733](BG1733-transition-py-drops-a-status-decoration-such-as.md) | transition.py drops a status decoration such as '(partially superseded)' on every move | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1734](BG1734-bg1548-did-not-converge-in-review-round-2.md) | BG1548 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-24 | 2026-11-24 |
+| [BG1735](BG1735-bg1574-did-not-converge-in-review-round-2.md) | BG1574 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-24 | 2026-11-24 |
 
 ## Archived Releases
 

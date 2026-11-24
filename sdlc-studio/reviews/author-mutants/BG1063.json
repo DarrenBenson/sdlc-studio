@@ -1,10 +1,46 @@
 {
   "unit": "BG1063",
-  "digest": "485473c3280ab041 at d830f925779e",
-  "report": "sdlc-studio/.local/lane/landed/agent-a1c7efae84caa4135/BG1063-mutation-edits.json",
+  "digest": "08d33623bd337d7d at a35d93e251d8",
+  "report": "sdlc-studio/.local/lane/landed/agent-abf19f4fed7e47ab0/BG1063-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "key left out of the retired registry",
+      "mutant": "prd-verify-criterion-names-the-retired-key",
+      "file": "sdlc-studio/prd.md",
+      "old": "Supports a verify gate (`quality.done_requires_verified`, on by default)",
+      "new": "Supports a verify gate (`require_ac_verification`, on by default)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-verify-criterion-names-both-keys",
+      "file": "sdlc-studio/prd.md",
+      "old": "while its criteria are red or never run; `transition.py` reads it.",
+      "new": "while its criteria are red or never run; `transition.py` reads it, as `require_ac_verification` once claimed.",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-verify-criterion-unticked",
+      "file": "sdlc-studio/prd.md",
+      "old": "- [x] Supports a verify gate",
+      "new": "- [ ] Supports a verify gate",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held-test-pin-reads-off-by-default",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "self.assertIn(\"(`quality.done_requires_verified`, on by default)\", crit)",
+      "new": "self.assertIn(\"(`quality.done_requires_verified`, off by default)\", crit)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "retired-key-unregistered",
       "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
       "old": "    \"require_ac_verification\": \"no code read it: the Done gate is `quality.done_requires_verified`\",\n",
       "new": "",
@@ -13,74 +49,20 @@
       "answer": ""
     },
     {
-      "mutant": "registry reason names no replacement",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "no code read it: the Done gate is `quality.done_requires_verified`",
-      "new": "no code read it",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_retired_by_migrate",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the replacement gate retired with it",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "    \"require_ac_verification\": \"no code read it",
-      "new": "    \"quality.done_requires_verified\": \"x\",\n    \"require_ac_verification\": \"no code read it",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_retired_by_migrate",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "key declared again in the defaults",
+      "mutant": "defaults-redeclare-the-key",
       "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
-      "old": "\ntwo_backlog:\n  enforce: false\n",
-      "new": "\nrequire_ac_verification: false\ntwo_backlog:\n  enforce: false\n",
+      "old": "constitution:\n  enforce: false\n",
+      "new": "require_ac_verification: false\n\nconstitution:\n  enforce: false\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "key named again in the verify reference",
-      "file": ".claude/skills/sdlc-studio/reference-verify.md",
-      "old": "## Gated Completion {#verify-gate}\n",
-      "new": "## Gated Completion {#verify-gate}\n\nSet `require_ac_verification`.\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "key named again in the help page",
-      "file": ".claude/skills/sdlc-studio/help/verify.md",
-      "old": "The `quality.done_requires_verified` Done gate",
-      "new": "The require_ac_verification gate",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "gated section stops naming the live key",
-      "file": ".claude/skills/sdlc-studio/reference-verify.md",
-      "old": "`quality.done_requires_verified` in the project's",
-      "new": "The flag in the project's",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "gated section stops naming transition.py",
-      "file": ".claude/skills/sdlc-studio/reference-verify.md",
-      "old": "`transition.py` reads it; see",
-      "new": "the code reads it; see",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_require_ac_verification_is_not_documented",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "PRD criterion unticked again",
-      "file": "sdlc-studio/prd.md",
-      "old": "- [x] Supports a verify gate (`quality.done_requires_verified`",
-      "new": "- [ ] Supports a verify gate (`quality.done_requires_verified`",
-      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_engagement_floor_tracks_bg0959",
+      "mutant": "fragment-filed-under-fixed",
+      "file": "changelog.d/BG1063.md",
+      "old": "<!-- section: Breaking -->",
+      "new": "<!-- section: Fixed -->",
+      "test": "tools/tests/test_lean_breaking_inventory.py::BreakingInventoryTests::test_every_registered_retirement_is_disclosed",
       "result": "killed",
       "answer": ""
     }

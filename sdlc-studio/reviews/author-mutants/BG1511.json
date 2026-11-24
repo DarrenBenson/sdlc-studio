@@ -1,167 +1,329 @@
 {
   "unit": "BG1511",
-  "digest": "dfb4681565b31937 at d0d0aceca65e",
-  "report": "sdlc-studio/.local/lane/landed/agent-aae9c6f0fd4bd3feb/BG1511-mutation-edits.json",
+  "digest": "1f05d44c96e86eca at 4c5a2c8da3dd",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab55dd903ee1cb200/BG1511-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "del-not-restore",
+      "mutant": "any addCleanup counts as a restore (the round-one rule)",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "isinstance(node, (ast.Assign, ast.Delete))",
-      "new": "isinstance(node, ast.Assign)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "assign-not-restore",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "            if _assigns_module(c):\n                return True",
-      "new": "            if False:\n                return True",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "pop-not-restore",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "\"sys.modules.pop\", ",
-      "new": "\"sys.modules.popx\", ",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "finally-itself",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "            if child in parent.finalbody:\n                return True",
-      "new": "            if child in parent.finalbody:\n                return False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "try-body",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if child in parent.body and _puts_back(parent.finalbody)",
-      "new": "if child in parent.body and False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "decorator",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if any(_patches_modules(d) for d in parent.decorator_list)",
-      "new": "if False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "cleanup",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "            if _registers_cleanup(parent):\n                return True",
-      "new": "            if False:\n                return True",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "later-try",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if any(isinstance(s, ast.Try) and _puts_back(s.finalbody) for s in later)",
-      "new": "if False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "with-patch",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "isinstance(parent, ast.With) and child in parent.body",
-      "new": "isinstance(parent, ast.With) and False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "patch-any-mapping",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "c.args and _is_sys_modules(c.args[0])",
-      "new": "c.args",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "always-restored",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "        if _restored(node, parents):\n            continue",
-      "new": "        if True:\n            continue",
+      "old": "        callback = call.args[0]\n",
+      "new": "        return True\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_an_unrestored_assignment_is_reported_by_file_and_line",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "scope-all-method",
+      "mutant": "the pre-filter admits only a double-quoted key",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "\"scope\": \"method\" if in_function and in_class else \"module\"",
-      "new": "\"scope\": \"method\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_scope_separates_a_method_from_an_import_time_registration",
+      "old": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[[^\\n]*\\]\\s*=(?!=)\")",
+      "new": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[\\x22[^\\n]*\\]\\s*=(?!=)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_pre_filter_reads_a_key_in_any_spelling",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "scope-no-class",
+      "mutant": "the pre-filter admits only a single-quoted key",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if in_function and in_class",
-      "new": "if in_function",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_scope_separates_a_method_from_an_import_time_registration",
+      "old": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[[^\\n]*\\]\\s*=(?!=)\")",
+      "new": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[\\x27[^\\n]*\\]\\s*=(?!=)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_pre_filter_reads_a_key_in_any_spelling",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "scope-no-function",
+      "mutant": "the pre-filter admits only a literal key",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if in_function and in_class",
-      "new": "if in_class",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_scope_separates_a_method_from_an_import_time_registration",
+      "old": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[[^\\n]*\\]\\s*=(?!=)\")",
+      "new": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[[\\x22\\x27][^\\n]*\\]\\s*=(?!=)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_pre_filter_reads_a_key_in_any_spelling",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "prefilter-inverted",
+      "mutant": "the pre-filter refuses a space inside the brackets",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if not _MAYBE_SWAP.search(source):",
-      "new": "if _MAYBE_SWAP.search(source):",
+      "old": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[[^\\n]*\\]\\s*=(?!=)\")",
+      "new": "_MAYBE_SWAP = re.compile(r\"sys\\.modules\\s*\\[\\S[^\\n]*\\]\\s*=(?!=)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_pre_filter_reads_a_key_in_any_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pop is not a restorer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "_RESTORERS = (\"sys.modules.pop\", ",
+      "new": "_RESTORERS = (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "__setitem__ is not a restorer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "\"sys.modules.pop\", \"sys.modules.__setitem__\", ",
+      "new": "\"sys.modules.pop\", ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "__delitem__ is not a restorer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": ", \"sys.modules.__delitem__\")",
+      "new": ")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a restoring call of any key restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "                    and ast.unparse(c.args[0]) == key):",
+      "new": "                    ):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an assignment or del of any entry restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "and key in _keys(c):",
+      "new": "and bool(_keys(c)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a started patch of any mapping restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "    return held and any(",
+      "new": "    return any(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a bound patch restores unstarted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "    return held and any(",
+      "new": "    return held or any(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a patch started after the swap restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "and _at(c) < _at(swap) for c",
+      "new": "and _at(c) > _at(swap) for c",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a patch started at the swap's own position restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "and _at(c) < _at(swap) for c",
+      "new": "and _at(c) <= _at(swap) for c",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "survived",
+      "answer": "equivalent: `<=` differs from `<` only when the start() call and the swap begin at the same line and column, and two nodes cannot: the swap is an assignment whose first token is its `sys.modules[...]` target, so a `<owner>.start()` call is either a separate statement at another position or inside the assigned value, to its right"
+    },
+    {
+      "mutant": "lines alone order the start, a start left of the swap on its line refused",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "and _at(c) < _at(swap) for c",
+      "new": "and c.lineno < swap.lineno for c",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lines alone order the start, a start right of the swap on its line accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "and _at(c) < _at(swap) for c",
+      "new": "and c.lineno <= swap.lineno for c",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the column is not read",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "    return node.lineno, node.col_offset",
+      "new": "    return node.lineno, 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any .start() call starts the patch",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "ast.unparse(c.func) == f\"{owner}.start\"",
+      "new": "ast.unparse(c.func).endswith(\".start\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the stop's owner need not be the patch",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "               and owner in [ast.unparse(t) for t in a.targets] for a in",
+      "new": "               for a in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any method of a started patch restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "isinstance(callback, ast.Attribute) and callback.attr == \"stop\"",
+      "new": "isinstance(callback, ast.Attribute)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the callback is read as an attribute without checking",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "isinstance(callback, ast.Attribute) and callback.attr == \"stop\"",
+      "new": "callback.attr == \"stop\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cleanup's arguments are not passed to its callback",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "args=call.args[1:], keywords=[]",
+      "new": "args=[], keywords=[]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an addCleanup with no argument is read",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": ".endswith(\"addCleanup\")\n                and call.args):",
+      "new": ".endswith(\"addCleanup\")\n                ):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no cleanup restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "            if _cleanup_restores(parent, key, node):",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one restored entry of a multi-target swap restores it",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "if not isinstance(node, ast.Assign) or all(",
+      "new": "if not isinstance(node, ast.Assign) or any(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a del is read as a swap",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "if not isinstance(node, ast.Assign) or all(",
+      "new": "if all(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the key is the whole subscript",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "    return [ast.unparse(t.slice) for t in",
+      "new": "    return [ast.unparse(t) for t in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any finally after a swap in its try restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "            if child in parent.body and _puts_back(parent.finalbody, key):",
+      "new": "            if child in parent.body and parent.finalbody:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any later try's finally restores",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "isinstance(s, ast.Try) and _puts_back(s.finalbody, key) for s in later",
+      "new": "isinstance(s, ast.Try) for s in later",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any subscript assignment is a swap",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "if isinstance(t, ast.Subscript) and _is_sys_modules(t.value)]",
+      "new": "if isinstance(t, ast.Subscript)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_skill_s_tests_restore_every_module_they_swap",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any target is read as a subscript",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "if isinstance(t, ast.Subscript) and _is_sys_modules(t.value)]",
+      "new": "if _is_sys_modules(t.value)]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_an_unrestored_assignment_is_reported_by_file_and_line",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "sweep-counts-all",
+      "mutant": "a del in a finally restores nothing",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if found[\"scope\"] == \"method\":",
-      "new": "if True:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_sweep_reads_every_module_of_a_directory",
+      "old": "if isinstance(c, (ast.Assign, ast.Delete)) and key in _keys(c):",
+      "new": "if isinstance(c, ast.Assign) and key in _keys(c):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "sweep-skips-methods",
+      "mutant": "an assignment in a finally restores nothing",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "if found[\"scope\"] == \"method\":",
-      "new": "if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_sweep_reads_every_module_of_a_directory",
+      "old": "if isinstance(c, (ast.Assign, ast.Delete)) and key in _keys(c):",
+      "new": "if isinstance(c, ast.Delete) and key in _keys(c):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "sweep-glob",
+      "mutant": "a restoring call with no argument is read",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
-      "old": "directory.glob(\"*.py\")",
-      "new": "directory.glob(\"nothing*.py\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_sweep_reads_every_module_of_a_directory",
+      "old": "ast.unparse(c.func) in _RESTORERS and c.args\n",
+      "new": "ast.unparse(c.func) in _RESTORERS\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any call with a callback registers a cleanup",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py",
+      "old": "ast.unparse(call.func).endswith(\"addCleanup\")\n",
+      "new": "True\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the indexing-failure test's swap of reconcile goes unrestored",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_review_prep.py",
+      "old": "swap = mock.patch.dict(sys.modules)\n            swap.start()\n            self.addCleanup(swap.stop)\n            sys.modules[\"reconcile\"] = rec\n            spec.loader.exec_module(rec)\n            original",
+      "new": "sys.modules[\"reconcile\"] = rec\n            spec.loader.exec_module(rec)\n            original",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_skill_s_tests_restore_every_module_they_swap",
       "result": "killed",
       "answer": ""
     }

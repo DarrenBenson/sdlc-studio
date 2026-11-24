@@ -1,6 +1,6 @@
 # BG1514: Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, tools/remote-gate.sh, tools/tests/test_remote_gate_release.py, changelog.d/BG1514.md
@@ -27,10 +27,13 @@ Make each test wait on the event it asserts (the sibling's write, the parallel p
 
 - [ ] **AC1** Given a sibling process that starts late, as it does when the module-alone lane loads every worker, when the leak check's test runs, then it waits on the sibling's write up to a bounded deadline before judging, and passes. Fails on: a fixed window the sibling outlasts, read as 'the sibling never wrote'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_leak_check_waits_for_a_sibling_that_writes_late
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a parallel phase slowed the same way, when the serial-only mark's test runs, then it waits on the phase's output up to a bounded deadline, and a phase that never produces one fails with its whole message rather than a clipped one. Fails on: the test reading red under load and green alone on the same host.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::ProjectConfigurationTests::test_a_serial_only_mark_is_judged_once_a_slow_parallel_phase_has_reported
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a boundary run the gate host refuses, when the refusal names its full log, then that log exists at the named path and is still there until the next boundary run for the clone replaces it. Fails on: a refusal naming a log that is gone minutes later, so a flake cannot be told from a fault.
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 
