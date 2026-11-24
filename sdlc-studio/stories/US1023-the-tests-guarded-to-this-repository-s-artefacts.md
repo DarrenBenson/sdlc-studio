@@ -1,6 +1,6 @@
 # US1023: The tests guarded to this repository's artefacts carry the corpus marker or a reasoned exemption, the shell-hazard test that turned main red among them
 
-> **Status:** Draft
+> **Status:** Won't Implement
 > **Delivers:** CR0617
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -57,3 +57,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G8 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: Won't Implement (D0617) |

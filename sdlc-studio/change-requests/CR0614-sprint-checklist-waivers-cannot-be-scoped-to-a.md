@@ -1,6 +1,6 @@
 # CR-0614: Sprint-checklist waivers cannot be scoped to a unit or expire, so a defect in one checklist row has only a permanent project-wide exit
 
-> **Status:** In Progress
+> **Status:** Deferred
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0279
 > **Priority:** Medium
@@ -36,6 +36,7 @@ Operators facing a checker defect either disable a correctness row permanently o
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Raised |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: Deferred (D0615) |
 
 ## Amigo Consult
 

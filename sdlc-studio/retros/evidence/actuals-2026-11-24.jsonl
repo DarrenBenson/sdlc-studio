@@ -180,3 +180,6 @@
 {"id": "BG1311", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG1204", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG1737", "type": "bug", "project": "sdlc-studio"}
+{"id": "US1042", "type": "story", "project": "sdlc-studio"}
+{"id": "US1023", "type": "story", "project": "sdlc-studio"}
+{"id": "US1024", "type": "story", "project": "sdlc-studio"}

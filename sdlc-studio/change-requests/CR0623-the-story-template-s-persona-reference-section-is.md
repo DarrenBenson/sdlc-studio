@@ -1,6 +1,6 @@
 # CR-0623: The story template's Persona Reference section is boilerplate - require it to name the goal served, or drop it
 
-> **Status:** In Progress
+> **Status:** Deferred
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0285
 > **Priority:** Medium
@@ -32,6 +32,7 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size S; relations recorded |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: Deferred (D0620) |
 
 ## Amigo Consult
 

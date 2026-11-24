@@ -1,6 +1,6 @@
 # CR-0624: Run revert-check at the terminal gate, so a test that passes with the change removed is caught by the tool, not by a reviewer breaking the code by hand
 
-> **Status:** In Progress
+> **Status:** Deferred
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0281
 > **Priority:** Medium
@@ -38,6 +38,7 @@ Kept (D0387). To plan it:
 | --- | --- | --- |
 | 2026-10-08 | Claude Opus 5.5 | Raised |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: Deferred (D0621) |
 
 ## Amigo Consult
 

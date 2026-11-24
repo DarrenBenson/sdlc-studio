@@ -31,6 +31,7 @@ A product seat reviewing against the wrong primary persona gives confident verdi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-08 | Claude Opus 5.5 | Raised |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: delivered (D0622); stays In Progress until EP0285 resolves (D0625) |
 
 ## Amigo Consult
 

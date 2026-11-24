@@ -37,6 +37,7 @@ That project defines a 'Household Member' persona - 'affected by the platform wi
 | 2026-10-08 | sdlc-studio | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: behaviour confirmed; Affects made repository paths; Size L; relations recorded |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Further evidence: testable persona end goals, checked at the goal review; AC added |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: delivered (D0619); stays In Progress until EP0285 resolves (D0625) |
 
 ## Amigo Consult
 

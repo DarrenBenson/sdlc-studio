@@ -7,13 +7,13 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 161 |
+| Draft | 158 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 978 |
-| Won't Implement | 93 |
+| Won't Implement | 96 |
 | Deferred | 0 |
 | Superseded | 94 |
 | Blocked | 0 |
@@ -60,8 +60,8 @@
 | [US1020](US1020-the-terminal-transition-names-each-criterion-that-passes.md) | The terminal transition names each criterion that passes without the change, even when the unit goes through | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
 | [US1021](US1021-gate-py-names-and-runs-the-corpus-marked.md) | gate.py names and runs the corpus-marked tests that a change under sdlc-studio/ reaches | Draft | EP0282 | 2026-10-09 | 2026-10-09 |
 | [US1022](US1022-an-artefact-commit-runs-the-corpus-tests-in.md) | An artefact commit runs the corpus tests in the commit hooks, names them and their time, and records them apart from the code-commit series | Draft | EP0282 | 2026-10-09 | 2026-10-09 |
-| [US1023](US1023-the-tests-guarded-to-this-repository-s-artefacts.md) | The tests guarded to this repository's artefacts carry the corpus marker or a reasoned exemption, the shell-hazard test that turned main red among them | Draft | EP0282 | 2026-10-09 | 2026-10-09 |
-| [US1024](US1024-the-measured-corpus-readers-outside-the-guarded-modules.md) | The measured corpus readers outside the guarded modules carry the marker or a reasoned exemption, BG0813's test among them | Draft | EP0282 | 2026-10-09 | 2026-10-09 |
+| [US1023](US1023-the-tests-guarded-to-this-repository-s-artefacts.md) | The tests guarded to this repository's artefacts carry the corpus marker or a reasoned exemption, the shell-hazard test that turned main red among them | Won't Implement | EP0282 | 2026-10-09 | 2026-10-09 |
+| [US1024](US1024-the-measured-corpus-readers-outside-the-guarded-modules.md) | The measured corpus readers outside the guarded modules carry the marker or a reasoned exemption, BG0813's test among them | Won't Implement | EP0282 | 2026-10-09 | 2026-10-09 |
 | [US1025](US1025-refining-a-request-into-one-story-carries-each.md) | Refining a request into one story carries each criterion's own Given, When, Then and Verify lines onto its AC | Draft | EP0283 | 2026-10-09 | 2026-10-09 |
 | [US1026](US1026-refine-apply-breakdown-mints-each-story-with-the.md) | refine apply --breakdown mints each story with the persona, user story and criteria its entry carries | Draft | EP0283 | 2026-10-09 | 2026-10-09 |
 | [US1027](US1027-a-breakdown-entry-artifact-py-new-would-refuse.md) | A breakdown entry artifact.py new would refuse is refused before anything is minted, naming the story | Draft | EP0283 | 2026-10-09 | 2026-10-09 |
@@ -79,7 +79,7 @@
 | [US1039](US1039-a-persona-end-goal-can-carry-verify-and.md) | A persona End goal can carry Verify and Applies-to lines, and validate personas checks them | Done | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | Done | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1041](US1041-sprint-plan-names-a-batch-story-or-bug.md) | Sprint plan names a batch story or bug that touches a standing End goal's files without carrying it | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
-| [US1042](US1042-a-standing-end-goal-is-seeded-onto-every.md) | A standing End goal is seeded onto every story minted to touch its files | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
+| [US1042](US1042-a-standing-end-goal-is-seeded-onto-every.md) | A standing End goal is seeded onto every story minted to touch its files | Won't Implement | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1043](US1043-a-story-s-serves-line-names-the-end.md) | A story's Serves line names the End goal it serves, and validate serves checks it is on the card | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1044](US1044-artifact-new-writes-a-story-s-serves-line.md) | artifact new writes a story's Serves line from --serves | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1045](US1045-review-prep-reports-which-end-goals-each-persona.md) | Review prep reports which End goals each persona's stories serve | Draft | EP0285 | 2026-10-09 | 2026-10-09 |

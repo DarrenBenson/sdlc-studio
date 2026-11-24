@@ -1,6 +1,6 @@
 # CR-0618: refine discards the request's own Verify lines when it seeds the story, so grooming done on the CR is lost and redone
 
-> **Status:** In Progress
+> **Status:** Deferred
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0283
 > **Priority:** Low
@@ -35,6 +35,7 @@ Every refined CR's executable checks are re-typed by hand, with room for transcr
 | --- | --- | --- |
 | 2026-10-08 | Claude Opus 5.5 | Raised |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: confirmed; private project names generalised; relations recorded |
+| 2026-11-24 | orchestrator (delegate under D0545) | Triaged by the product seat during run twenty-six planning: Deferred (D0618) |
 
 ## Amigo Consult
 
