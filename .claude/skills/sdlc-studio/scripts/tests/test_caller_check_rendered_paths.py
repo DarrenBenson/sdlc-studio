@@ -73,12 +73,16 @@ class CallerCheckRenderedPathsTests(unittest.TestCase):
         self._clean(_check(self.root, "US0101"), 1)
 
     def test_a_declared_rendered_path_is_consumed_by_the_build(self) -> None:
-        """AC2. Mutants: `review.rendered_paths` not read; one glob of several honoured."""
+        """AC2. A glob's `*` crosses a `/`, so `src/pages/*` covers a page nested below
+        src/pages/, the ordinary static-site case. Mutants: `review.rendered_paths` not read;
+        one glob of several honoured; the globs matched by `PurePosixPath.match`, where `*`
+        stops at a `/`, so the nested page is reported."""
         _write(self.root, "sdlc-studio/.config.yaml", RENDERED)
         _unit(self.root, "US0102", "src/pages/index.astro")
         _unit(self.root, "US0103", "src/components/Card.astro")
         _unit(self.root, "US0104", "src/data/nav.json")
-        self._clean(_check(self.root, "US0102", "US0103", "US0104"), 3)
+        _unit(self.root, "US0106", "src/pages/blog/post.astro")
+        self._clean(_check(self.root, "US0102", "US0103", "US0104", "US0106"), 4)
 
     def test_code_outside_the_rendered_paths_is_still_asked_for_a_caller(self) -> None:
         """AC3, the guards. Mutants: every unit exempted; a path exempted by its suffix or by

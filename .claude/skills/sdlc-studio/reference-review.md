@@ -487,11 +487,11 @@ author's evidence and does not count as the reviewer's own mutation pass.
 when the unit has no current row: `block` refuses it (exit 2 naming the missing or stale record and
 `critic.py self-check record`, nothing on stdout, no fingerprint noted, the AUTHOR SELF-CHECK
 section still on stderr); `report`, the default, prints the brief, naming that record on stderr;
-`off` says nothing; any other value is refused by name. A row is current when its digest matches the Affects content now, or
-that content with the commits another unit made since the row's commit (a subject naming a unit id, none of them this one)
-set aside: file by file where they top a file's history, or hunk by hunk, each taken back out of the content as it stands,
-from the commit HEAD shares with the row's. So a restored diff, a cherry-pick, or another unit's commit before or after the
-author's own needs no second record; a further edit of the unit's own stales it, and an edit made in a merge can be missed.
+`off` says nothing; any other value is refused by name. A row is current when its digest matches the Affects content now, or that content with the commits another unit made since
+the row's commit (a subject naming a unit id, none of them this one) set aside: file by file where they top a file's history, or hunk by hunk, each taken back out of the content as
+it stands, from the commit HEAD shares with the row's. So a restored diff, a cherry-pick, or another unit's commit before or after the author's own needs no second record, unless
+it lies beneath the author's own change, committed, uncommitted or cherry-picked, where it is taken out hunk by hunk, and its change is on or next to a line the author's own
+change touches, which `git merge-file` reads as a conflict and cannot take back out; that, and a further edit of the unit's own, stale it, and an edit made in a merge can be missed.
 
 ### A REJECT has two exits
 

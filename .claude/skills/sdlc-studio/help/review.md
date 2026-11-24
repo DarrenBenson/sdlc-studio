@@ -47,7 +47,10 @@ result of killed or survived, or survived with no answer. The row it writes to
 `sdlc-studio/reviews/author-self-checks.md` carries a digest of the unit's Affects content and
 the commit it was taken at. Another unit's commits to a shared file are set aside, hunk by hunk
 where need be, whether they land before or after the author's own or the author's commit is
-cherry-picked, so the record stays current until the unit's own change moves. See
+cherry-picked. One beneath the author's own change, committed, uncommitted or cherry-picked, is
+taken back out hunk by hunk, which `git merge-file` cannot do for a change on or next to a line
+the author's own change touches (it reads the two as a conflict), so the record then reads as
+stale until it is recorded again, as it does when the unit's own change moves. See
 [the author's self-check](../reference-review.md#author-self-check).
 
 ## Retiring a verdict row

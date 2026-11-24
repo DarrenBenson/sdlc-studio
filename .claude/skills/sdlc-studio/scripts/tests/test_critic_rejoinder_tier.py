@@ -131,6 +131,36 @@ class RejoinderTierTests(unittest.TestCase):
         r = self._rejoinder(str(self.prior))
         self.assertEqual(f"review tier: light {DERIVED}", _tier_line(r.stderr))
 
+    def test_the_tier_is_read_from_the_briefed_seats_own_reject(self) -> None:
+        """The tier a rejoinder inherits is the briefed seat's own REJECT's, never another
+        seat's: an engineering rejoinder on a unit where only the qa seat holds a full REJECT
+        stays at the band's tier, and one answering the engineering seat's own full REJECT,
+        with no qa REJECT standing, is briefed full naming it. Mutant: the REJECT read for a
+        fixed seat (`qa`) whichever seat is briefed."""
+        engineering = ("<!-- role: engineering -->\n# Dani - Engineering amigo\n\ncharter\n\n"
+                       "## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
+        _write(self.root, "sdlc-studio/personas/seats/engineering.md", engineering)
+        _reject(self.root, "--tier", "full", "--tier-explicit")
+        r = _cli(self.root, "brief", "--unit", UNIT, "--seat", "engineering", "--rejoinder",
+                 str(self.prior))
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertEqual(f"review tier: light {DERIVED}", _tier_line(r.stderr),
+                         "the qa seat's REJECT set the engineering rejoinder's tier")
+        with tempfile.TemporaryDirectory() as d:
+            self.root = Path(d)
+            _project(self.root)
+            _write(self.root, "sdlc-studio/personas/seats/engineering.md", engineering)
+            r = _cli(self.root, "record", "--unit", UNIT, "--verdict", "reject", "--reviewer",
+                     "engineering-seat", "--author", "eng-builder", "--issues",
+                     "[new] the note is wrong", "--tier", "full", "--tier-explicit")
+            self.assertEqual(0, r.returncode, r.stderr)
+            r = _cli(self.root, "brief", "--unit", UNIT, "--seat", "engineering", "--rejoinder")
+            self.assertEqual(0, r.returncode, r.stderr)
+            line = _tier_line(r.stderr)
+            self.assertTrue(line.startswith("review tier: full ("), line)
+            self.assertIn(f"engineering-seat's REJECT of {UNIT}", line,
+                          "the engineering seat's own REJECT is not the tier's source")
+
     def test_a_shallower_reject_never_lowers_the_band(self) -> None:
         """A light REJECT on a unit whose band derives full is re-reviewed full, as before.
         Mutant: the REJECT's tier taken whatever the band."""

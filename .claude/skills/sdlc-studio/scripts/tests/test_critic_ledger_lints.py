@@ -121,6 +121,36 @@ class CriticLedgerBareUrlTests(unittest.TestCase):
         self.assertEqual(issues, _record(self.root, issues))
         self._lints()
 
+    def test_an_escaped_semicolon_after_an_address_stays_one_finding(self) -> None:
+        """The escape a reviewer writes for a semicolon inside one finding (`\\;`) may follow an
+        address straight on: the address is spanned, the escape stays outside the span, and
+        the finding is one finding, as it was before addresses were spanned. Mutant: the
+        `www.` pass running on through the backslash, so the span closes after it and the
+        record is refused for an odd backtick the reviewer never wrote."""
+        cell = _record(self.root, "[new] see www.example.com\\; mail ops@example.com\\; "
+                                  "still one finding")
+        self.assertIn("see `www.example.com`\\; mail `ops@example.com`\\; still", cell)
+        self.assertEqual(1, len(critic.parse_findings(cell)), cell)
+        self._lints()
+
+    def test_a_url_holding_an_address_is_one_span(self) -> None:
+        """An http(s) URL whose host starts `www.` or whose authority holds an address is one
+        code span, as the URL pass writes it, since that pass runs before the address pass.
+        Mutant: the address pass first, so the scheme is left bare beside a span of the rest."""
+        cell = _record(self.root, "[new] see https://www.example.com/x and "
+                                  "https://ops@example.com/x here")
+        self.assertEqual("[new] see `https://www.example.com/x` and "
+                         "`https://ops@example.com/x` here", cell)
+        self._lints()
+
+    def test_a_www_address_in_any_case_lints(self) -> None:
+        """markdownlint reads `WWW.` as it reads `www.`, so an upper-case or mixed-case address
+        is spanned too. Mutant: the `www.` pass matching lower case alone, leaving the host
+        bare (MD034)."""
+        cell = _record(self.root, "[new] host WWW.EXAMPLE.COM and Www.Example.org/a upper")
+        self.assertIn("host `WWW.EXAMPLE.COM` and `Www.Example.org/a` upper", cell)
+        self._lints()
+
 
 if __name__ == "__main__":
     unittest.main()

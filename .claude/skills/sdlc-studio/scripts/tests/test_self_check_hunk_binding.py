@@ -134,6 +134,63 @@ class HunkBindingTests(unittest.TestCase):
         self._premise()
         self._admitted("another unit's commit before the record was taken out of it")
 
+    def test_another_units_commits_are_taken_out_newest_first(self) -> None:
+        """B commits V11 twice beneath A's own commit of its recorded V2 edit. Only the newest
+        of B's changes can come out of the content as it stands, the content then holds the
+        older one to take out next, so the walk runs newest first. Mutant: the walk run oldest
+        first, so B's first change cannot be taken out of content that holds its second and
+        the record reads as stale."""
+        later._write(self.root, SHARED, _text(V2="'a'"))
+        later._record(self.root, self.scratch)
+        later._commit(self.root, f"feat({B}): V11", SHARED, _text(V11="'b1'"))
+        later._commit(self.root, f"feat({B}): V11 again", SHARED, _text(V11="'b2'"))
+        later._commit(self.root, f"feat({A}): V2", SHARED, _text(V2="'a'", V11="'b2'"))
+        self._premise()
+        self._admitted("B's two commits to one hunk staled A's record")
+
+    def test_another_units_change_next_to_the_units_own_stales_the_record(self) -> None:
+        """git's three-way merge reads two changes on neighbouring lines as a conflict, so B's
+        commit of V3 beneath A's own commit of its recorded V2 edit cannot be taken back out
+        hunk by hunk and the record reads as stale, as the review help and reference say; with
+        one unchanged line between the two (B edits V4) it is taken out and the record
+        admitted. B's V3 commit on top of the commit A recorded at, or on top of that commit
+        cherry-picked onto main, is set aside whole, so it needs no second record."""
+        original = self.root
+        for line, order, admitted in (("V3", "beneath", False), ("V4", "beneath", True),
+                                      ("V3", "on top", True), ("V3", "picked, on top", True)):
+            with self.subTest(line=line, order=order), tempfile.TemporaryDirectory() as d:
+                self.root = Path(d)
+                later._project(self.root)
+                later._commit(self.root, f"feat({A}): twelve lines", SHARED, _text())
+                if order == "beneath":
+                    later._write(self.root, SHARED, _text(V2="'a'"))
+                    later._record(self.root, self.scratch)
+                    later._commit(self.root, f"feat({B}): {line}", SHARED,
+                                  _text(**{line: "'b'"}))
+                    later._commit(self.root, f"feat({A}): V2", SHARED,
+                                  _text(V2="'a'", **{line: "'b'"}))
+                    self._premise()
+                elif order == "on top":
+                    later._commit(self.root, f"feat({A}): V2", SHARED, _text(V2="'a'"))
+                    later._record(self.root, self.scratch)
+                    later._commit(self.root, f"feat({B}): {line}", SHARED,
+                                  _text(V2="'a'", **{line: "'b'"}))
+                else:
+                    main = _git(self.root, "rev-parse", "--abbrev-ref", "HEAD")
+                    _git(self.root, "checkout", "-q", "-b", "side")
+                    later._commit(self.root, f"feat({A}): V2", SHARED, _text(V2="'a'"))
+                    picked = _git(self.root, "rev-parse", "HEAD")
+                    later._record(self.root, self.scratch)
+                    _git(self.root, "checkout", "-q", main)
+                    gitutil.git(["cherry-pick", picked], self.root)
+                    later._commit(self.root, f"feat({B}): {line}", SHARED,
+                                  _text(V2="'a'", **{line: "'b'"}))
+                if admitted:
+                    self._admitted(f"B's change of {line}, {order}, staled A's record")
+                else:
+                    self._refused(f"B's change of {line}, next to A's, was taken out")
+        self.root = original
+
     def test_an_unrecorded_hunk_of_the_units_own_still_stales_the_record(self) -> None:
         """AC3, the guards. Mutants: a binding that only checks the recorded hunks are present,
         so a further edit of A's own is admitted, uncommitted or committed under A's id; a
@@ -269,6 +326,29 @@ class HunkBindingTests(unittest.TestCase):
                 for stale in ("landing first", "can still read as stale",
                               "read at its newest commit since"):
                     self.assertNotIn(stale, flat)
+
+    def test_the_pages_say_a_change_next_to_the_units_own_stales_the_record(self) -> None:
+        """The review help and the review reference say that another unit's change beneath the
+        author's own, committed, uncommitted or cherry-picked, is taken out hunk by hunk and
+        cannot be when it is on or next to a line the author's own change touches, so the
+        record reads as stale, and neither says such a commit needs no second record. Mutants:
+        either page left saying another unit's commit never needs a second record."""
+        review = (SKILL / "reference-review.md").read_text(encoding="utf-8")
+        start = review.index("`review.author_self_check` decides")
+        help_page = (SKILL / "help" / "review.md").read_text(encoding="utf-8")
+        texts = {"help/review.md": help_page[help_page.index("The row it writes to"):
+                                             help_page.index("## Retiring a verdict row")],
+                 "reference-review.md": review[start:review.index("### A REJECT", start)]}
+        for name, text in texts.items():
+            flat = " ".join(text.split())
+            with self.subTest(text=name):
+                self.assertIn("on or next to a line the author's own change touches", flat)
+                self.assertIn("beneath the author's own change, committed, uncommitted or "
+                              "cherry-picked", flat)
+                self.assertIn("`git merge-file`", flat)
+                for false in ("stays current until the unit's own change moves",
+                              "after the author's own needs no second record;"):
+                    self.assertNotIn(false, flat)
 
 
 if __name__ == "__main__":

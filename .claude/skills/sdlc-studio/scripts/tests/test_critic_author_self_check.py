@@ -305,6 +305,41 @@ class AuthorStepsTests(unittest.TestCase):
             self.assertEqual("1. Claim inventory, over: the commit message; Resolutions; "
                              "docstrings; comments; CHANGELOG; changelog.d/US0802.md.",
                              _line(_section(r.stderr), "1. Claim inventory"))
+            self.assertEqual("Rule each claim in the commit message and in each changelog "
+                             "fragment the same way.", _line(_section(r.stderr), "Rule each"))
+
+    def test_the_ruling_line_covers_the_declared_pages(self) -> None:
+        """BG1591: a declared page step 1 names is ruled as the commit message and the fragments
+        are, so the line that says how to rule them names the pages too, read from the
+        surfaces `claim_surfaces` returns. Mutants: the pages left out of the line; the line
+        keyed on the fragments, so a unit declaring pages and no fragment is told nothing of
+        them; the pages counted from the Affects rather than `claim_surfaces`, so a page it
+        adds goes unruled."""
+        cases = {"US0801": ("docs/evidence.md, docs/guide.mdx, changelog.d/US0801.md",
+                            "in the commit message, in each changelog fragment and in each "
+                            "declared page"),
+                 "US0806": ("src/widget.py, docs/guide.mdx",
+                            "in the commit message and in each declared page"),
+                 "US0807": ("src/widget.py", "in the commit message")}
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for unit, (affects, ruled) in cases.items():
+                with self.subTest(unit=unit):
+                    _project(root, unit, affects)
+                    r = _brief(root, unit)
+                    self.assertEqual(0, r.returncode, r.stderr)
+                    self.assertEqual(f"Rule each claim {ruled} the same way.",
+                                     _line(_section(r.stderr), "Rule each"))
+            real = critic.claim_surfaces
+
+            def one_more(affects: list[str]) -> tuple[list[str], list[str]]:
+                required, optional = real(affects)
+                return required, [*optional, "docs/extra.md"]
+
+            with unittest.mock.patch.object(critic, "claim_surfaces", one_more):
+                self.assertEqual("Rule each claim in the commit message and in each declared "
+                                 "page the same way.",
+                                 _line(critic.author_self_check(root, "US0807"), "Rule each"))
 
 if __name__ == "__main__":
     unittest.main()

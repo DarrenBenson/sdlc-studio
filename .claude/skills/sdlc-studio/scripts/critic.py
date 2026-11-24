@@ -359,18 +359,22 @@ def _edge_whitespace_span(text: str) -> tuple[int, str, str] | None:
 
 
 #: What markdownlint's MD034 reads as a bare URL besides an http(s) one: an email address, and a
-#: `www.` address that no word character or dot runs into. An `<...>` autolink or a link
-#: destination matches `keep` first, so an address inside one is written as it stands.
+#: `www.` address, in any case as markdownlint reads it, that no word character or dot runs
+#: into. The address ends before a backslash, so the `\;` a finding's own semicolon is escaped
+#: with stays outside the span. An `<...>` autolink or a link destination matches `keep` first,
+#: so an address inside one is written as it stands.
 _BARE_ADDRESS = re.compile(r"(?P<keep><[^<>\s]*>|\]\([^()\s]*\))"
                            r"|[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
-                           r"|(?<![\w.])www\.[^\s<>`]+")
+                           r"|(?<![\w.])(?i:www)\.[^\s<>`\\]+")
 
 
 def _code_urls(text: str) -> str:
     """Each bare http(s) URL, email address or `www.` address in a finding as a code span, so
     the ledger row passes the markdown lane's no-bare-URL rule (MD034) unedited: the filer's own
     rule, `file_finding._code_urls`, reused for the URLs, and its `_code_url` for the others,
-    outside every code span. A trailing full stop or an unbalanced `)` stays outside the span."""
+    outside every code span. The URLs are spanned first, so a URL whose host starts `www.` or
+    that holds an address is one span. A trailing full stop or an unbalanced `)` stays outside
+    the span."""
     import file_finding  # noqa: PLC0415 - imported where used, as the other callers here do
 
     def span(m: re.Match) -> str:
@@ -3065,9 +3069,14 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     required, optional = claim_surfaces(affects)
     surfaces = [f"the {required[0]}", *optional, *required[1:]]
     # The brief's instruction counts its own surfaces ("all four"), so it is printed under the
-    # prose surfaces it counts, and the commit message and fragments are held to it after.
+    # prose surfaces it counts, and the commit message, the fragments and the declared pages
+    # (the optional surfaces past the prose ones) are held to it after.
     prose = (", ".join(CLAIM_SURFACES[:-1]) + f" and {CLAIM_SURFACES[-1]}"
              if len(CLAIM_SURFACES) > 1 else "".join(CLAIM_SURFACES))
+    pages = [s for s in optional if s not in CLAIM_SURFACES]
+    ruled = [f"in the {COMMIT_SURFACE}", *(["in each changelog fragment"] if fragments else []),
+             *(["in each declared page"] if pages else [])]
+    rule = ", ".join(ruled[:-1]) + f" and {ruled[-1]}" if len(ruled) > 1 else ruled[0]
     lines = [AUTHOR_SELF_CHECK_HEADING,
              "Run the two passes below first, so the review confirms the work rather than "
              "finding what your own pass would have found. At the full review tier the "
@@ -3077,8 +3086,7 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
              (f"   The unit's changelog fragments: {', '.join(fragments)}." if fragments else
               "   The unit's Affects declares no changelog fragment."),
              f"   For {prose}, the brief's own instruction: {claims}",
-             f"   Rule each claim in the {COMMIT_SURFACE}"
-             f"{' and in each changelog fragment' if fragments else ''} the same way.",
+             f"   Rule each claim {rule} the same way.",
              "",
              (f"2. Mutation pass, over: {', '.join(tests)}." if tests else
               "2. Mutation pass: the unit's Affects declares no test file, so there is no test "
