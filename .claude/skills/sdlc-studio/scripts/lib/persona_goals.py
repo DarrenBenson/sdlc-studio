@@ -48,6 +48,8 @@ class EndGoal(NamedTuple):
     extra_verifies: tuple[str, ...]
 
 
+#: An inline code span: a whole run of backticks, its text, then the next whole run of the same
+#: length. A run with no such closer opens no span.
 _CODE_SPAN_RE = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)")
 
 
@@ -169,11 +171,14 @@ def findings(goals: list[EndGoal], lint_verifier: Callable[[str], str | None]
                                             "template placeholder"))
             elif (nudge := lint_verifier(expr)):
                 out.append((GOAL_VERIFY, n, f"End goal {n}: its Verify `{expr}` - {nudge}"))
+        first = (g.verify or "").strip("`").strip()
+        kept = (f"its first Verify `{first}` is" if first
+                else "its first Verify line is, and it names no check")
         for extra in g.extra_verifies:
-            out.append((GOAL_VERIFY, n, f"End goal {n}: a second Verify "
-                                        f"`{extra.strip('`').strip()}` is not read; only its "
-                                        f"first Verify `{(g.verify or '').strip('`').strip()}` "
-                                        "is, so keep one Verify line per goal"))
+            second = extra.strip("`").strip()
+            said = f"a second Verify `{second}`" if second else "a second, empty Verify line"
+            out.append((GOAL_VERIFY, n, f"End goal {n}: {said} is not read; only {kept}, so "
+                                        "keep one Verify line per goal"))
         if g.applies_to and g.verify is None:
             out.append((GOAL_SCOPE, n, f"End goal {n}: Applies-to "
                                        f"{', '.join(f'`{p}`' for p in g.applies_to)} but no "

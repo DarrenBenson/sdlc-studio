@@ -261,6 +261,16 @@ class CommentInsideCodeTests(unittest.TestCase):
                       "Use ``<!-- a ` b`` to open one."):
             with self.subTest(above=above):
                 self.assertEqual([g.number for g in self._goals(above)], ["1", "2"])
+        # A span closes on the first backtick run of its opener's length, so a real comment
+        # opener after or among unmatched runs stays a comment and goal 2 stays hidden.
+        for goal_one in ("one ``x`` <!-- then `y`",  # a double span is one span, not two
+                         "one `a` <!-- `b`",          # each span closes at its first closer
+                         "one ``a <!-- `",            # an unmatched pair opens no single span
+                         "one ```a <!-- ``",          # nor does the tail of a longer run
+                         "one `a <!-- ``"):           # a single opener closes on no longer run
+            with self.subTest(goal_one=goal_one):
+                text = f"## End Goals\n\n1. {goal_one}\n2. hidden\n-->\n3. three\n"
+                self.assertEqual([g.number for g in persona_goals.end_goals(text)], ["1", "3"])
 
     def test_a_real_comment_and_a_fence_inside_a_comment_still_hide(self) -> None:
         text = ("## End Goals\n\n1. kept\n<!--\n```\n2. hidden\n-->\n3. after\n"
@@ -311,6 +321,25 @@ class NestedLineAttachmentTests(unittest.TestCase):
         self.assertIn("pytest c.py", found[0][2])
         self.assertIn("pytest b.py", found[0][2])
         self.assertIn("pytest d.py", found[1][2])
+        # An empty Verify line, first or second, bare or an empty span, is said to be empty, not
+        # quoted as ``; a backticked check is quoted once, not in doubled backticks.
+        text = ("## End Goals\n\n1. one\n   - **Verify:**\n   - **Verify:** `pytest c.py`\n"
+                "2. two\n   - **Verify:** `pytest a.py`\n   - **Verify:** ` `\n"
+                "3. three\n   - **Verify:** ` `\n   - **Verify:** pytest e.py\n")
+        found = persona_goals.findings(persona_goals.end_goals(text), lambda expr: None)
+        self.assertEqual([m for _r, _n, m in found], [
+            "End goal 1: its Verify line names no check",
+            "End goal 1: a second Verify `pytest c.py` is not read; only its first Verify line "
+            "is, and it names no check, so keep one Verify line per goal",
+            "End goal 2: a second, empty Verify line is not read; only its first Verify "
+            "`pytest a.py` is, so keep one Verify line per goal",
+            "End goal 3: its Verify line names no check",
+            "End goal 3: a second Verify `pytest e.py` is not read; only its first Verify line "
+            "is, and it names no check, so keep one Verify line per goal"])
+        # a goal built with no first Verify reads the same as an empty one
+        bare = persona_goals.EndGoal("3", "three", None, (), ("pytest e.py",))
+        self.assertIn("only its first Verify line is, and it names no check",
+                      persona_goals.findings([bare], lambda expr: None)[0][2])
         row = next(line for line in REFERENCE.read_text(encoding="utf-8").splitlines()
                    if line.startswith("| `persona-goal-verify`"))
         self.assertIn("second nested Verify on one goal is also warned of", row)

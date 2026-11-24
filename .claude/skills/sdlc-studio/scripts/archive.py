@@ -66,9 +66,13 @@ def _range_label(ids: list) -> str:
 def _check_release_label(release: str) -> None:
     """Refuse a release label that is not one plain path segment.
 
-    The label becomes a directory name under `<type>/archive/`, so a label with a
-    separator, a drive form or an absolute path (which holds a separator), a bare `.` or `..`, or an empty or NUL-bearing
-    value could write outside that folder.
+    The label becomes a directory name under `<type>/archive/`. `..` segments can climb out of
+    that folder (`../../x` reaches `sdlc-studio/x/`), and enough of them out of the workspace.
+    A path separator, an absolute path or a drive form is not one segment either: on POSIX it
+    would nest the sub-index inside `archive/`, and a backslash or a drive is path syntax on
+    Windows. A bare `.` or an empty label names no release folder (the sub-index would land in
+    `archive/` itself), and a NUL byte is no legal path character. Each is refused before
+    anything is written.
     """
     bad = (not release or release in (".", "..") or any(c in release for c in "/\\\0")
            or bool(PureWindowsPath(release).drive))

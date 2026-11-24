@@ -14,6 +14,7 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -669,13 +670,22 @@ class DerivedTrailerTests(unittest.TestCase):
         gitutil.git(["config", "core.hooksPath", str(hooks)], cwd=repo)
         return repo
 
-    def _hook(self, repo: Path, message: str):
+    def _hook(self, repo: Path, message: str, hook: Path | None = None):
         msg = repo / "COMMIT_EDITMSG"
         msg.write_text(message, encoding="utf-8")
         env = gitutil.git_env()
-        r = subprocess.run(["bash", str(HOOK), str(msg)], capture_output=True, text=True,
+        r = subprocess.run(["bash", str(hook or HOOK), str(msg)], capture_output=True, text=True,
                            cwd=repo, env=env, timeout=120)
         return r, msg.read_text(encoding="utf-8")
+
+    def _copied_hook(self, repo: Path) -> Path:
+        """Swap the fixture's link to the tracked hook for a copy of it, so a run (and a mutant
+        of the script it calls) exercises a copy in the throwaway repository and never the
+        tracked `.githooks` file."""
+        hook = repo / "hooks" / "commit-msg"
+        hook.unlink()
+        shutil.copy2(HOOK, hook)
+        return hook
 
     def test_owning_ids_get_refs_written_and_the_commit_lands(self):
         # AC1. Must fail on: `message-refs` still refusing a message the staged-file map can
@@ -832,9 +842,56 @@ class DerivedTrailerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             repo = self._fixture(d, stage=("src/a.py",), units=units, files=files)
             gitutil.git(["config", "core.commentChar", ";"], cwd=repo)
-            r, after = self._hook(repo, f"{subject}\n{scaffold}")
+            r, after = self._hook(repo, f"{subject}\n{scaffold}", hook=self._copied_hook(repo))
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n{scaffold}")
+
+    def _commit_through_the_editor(self, d: str, comment: str, *, verbose: bool):
+        """A real `git commit -e` (and `-v` when `verbose`) under `core.commentChar=<comment>`,
+        through a copy of the hook in a throwaway repository. The staged file keeps a
+        `Refs: US0005` line, so a verbose diff shows it as a context line below the scissors.
+        Returns (result, the message file as the hook left it, the committed message)."""
+        units = (("stories", "US0001", "src/a.py"), ("bugs", "BG0002", "bin/gate"),
+                 ("stories", "US0005", "docs/x.md"))
+        repo = self._fixture(d, stage=(), units=units, files=("src/a.py", "bin/gate", "docs/x.md"))
+        (repo / "src" / "a.py").write_text("Refs: US0005\nx = 1\n", encoding="utf-8")
+        gitutil.git(["commit", "-qam", "seed the context line"], cwd=repo)
+        (repo / "src" / "a.py").write_text("Refs: US0005\nx = 2\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=repo)
+        gitutil.git(["config", "core.commentChar", comment], cwd=repo)
+        self._copied_hook(repo)
+        r = gitutil.git(["commit", "-e", *(["-v"] if verbose else []),
+                         "-m", "fix(US0001, BG0002): through the editor"],
+                        cwd=repo, check=False, text=True, env_extra={"GIT_EDITOR": "true"})
+        left = (repo / ".git" / "COMMIT_EDITMSG").read_text(encoding="utf-8")
+        body = gitutil.git(["log", "-1", "--format=%B"], cwd=repo, text=True).stdout.rstrip("\n")
+        return r, left, body
+
+    def test_a_verbose_commit_under_a_word_comment_character_lands_with_its_trailers(self):
+        # git accepts `core.commentChar=x` and writes `x ---- >8 ----`. A scissors pattern that
+        # takes only punctuation reads the diff's ` Refs: US0005` below it and refuses the
+        # commit for a Refs line naming a unit that owns none of the staged files.
+        with tempfile.TemporaryDirectory() as d:
+            r, left, body = self._commit_through_the_editor(d, "x", verbose=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("\nx ------------------------ >8 ------------------------\n", left)
+        authored, diff = left.split("\nx ------------------------ >8", 1)
+        self.assertIn("Refs: US0001\nMentions: BG0002", authored)
+        self.assertLess(authored.index("Mentions: BG0002"), authored.index("\nx "), authored)
+        self.assertIn("\n Refs: US0005\n", diff)
+        self.assertEqual(body, "fix(US0001, BG0002): through the editor\n\n"
+                               "Refs: US0001\nMentions: BG0002")
+
+    def test_a_plain_commit_under_another_comment_character_closes_on_its_trailers(self):
+        # With no scissors line the scaffolding is read as `#`, so under `;` the trailers are
+        # written after git's `;` lines; git strips those, and the trailers close the commit.
+        with tempfile.TemporaryDirectory() as d:
+            r, left, body = self._commit_through_the_editor(d, ";", verbose=False)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn(">8", left)
+        self.assertGreater(left.index("Refs: US0001"), left.rindex("\n;"), left)
+        self.assertEqual(body, "fix(US0001, BG0002): through the editor\n\n"
+                               "Refs: US0001\nMentions: BG0002")
 
 class ChangelogFragmentRequiredTests(unittest.TestCase):
     """BG1574: a commit that names a unit and stages code is refused until the unit's

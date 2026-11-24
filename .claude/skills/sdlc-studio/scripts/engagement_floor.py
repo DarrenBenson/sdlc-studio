@@ -971,9 +971,10 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
 #: A trailer line as git reads one: a token, a colon, then the value.
 _TRAILER_LINE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*:[ \t]")
 #: The line below which a verbose commit's message file carries git's diff, never the author's.
-#: git writes it as its comment character (`#` unless `core.commentChar` says otherwise: `;`,
-#: `@`, `!`, ... or a longer `core.commentString`) then dashes, `>8` and dashes.
-_SCISSORS_RE = re.compile(r"^[^\w\s]+ -+ >8 -+$")
+#: git writes it as its comment string (`#` unless `core.commentChar` or `core.commentString`
+#: says otherwise: `;`, `x`, `//`, ...), a space, then dashes, `>8` and dashes. Any run of
+#: non-space characters is read as that string, so a comment string holding a space is not.
+_SCISSORS_RE = re.compile(r"^\S+ -+ >8 -+$")
 #: The review ledgers a paperwork commit stages. Each row opens with the unit it records, so a
 #: row the commit adds or edits is that unit's paperwork.
 _RECORD_LEDGERS = ("sdlc-studio/reviews/critic-verdicts.md",
@@ -1081,11 +1082,15 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
 def with_trailers(message: str, lines: list[str]) -> str:
     """`message` with `lines` added as trailers: joined to the closing paragraph when that is
     already a trailer block (so git reads one block, not two), else after a blank line, and in
-    either case above git's comment scaffolding (in its comment character) and any verbose diff."""
+    either case above any verbose diff. git's comment scaffolding is kept below them as well,
+    read in the comment character a verbose message's scissors line opens with. A message with
+    no scissors line has its scaffolding read as `#`, so under another comment character the
+    trailers follow git's comment lines, which git strips, leaving them to close the commit."""
     all_lines = message.splitlines()
     cut = _scissors_cut(all_lines)
     head, tail = all_lines[:cut], all_lines[cut:]
-    # git's comment character is the one its scissors line opens with (`#` when there is none).
+    # The comment character the scissors line opens with; `#` with no scissors line, as git's
+    # config is not read here.
     mark = tail[0].split(" ", 1)[0] if tail else "#"
     last = max((n for n, ln in enumerate(head)
                 if ln.strip() and not ln.lstrip().startswith(mark)), default=-1)

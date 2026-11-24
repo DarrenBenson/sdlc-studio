@@ -1140,7 +1140,9 @@ class CommitMsgCheckTests(unittest.TestCase):
     def test_a_refs_line_below_the_scissors_accounts_for_no_subject_id(self):
         # BG1323 AC2. `git commit -v` puts git's diff below the scissors line, and a diff context
         # line reading ` Refs: ...` is git's text. Fails on a check that reads the whole message.
-        for mark in ("#", ";", "@"):
+        # git accepts a word character (`core.commentChar=x`) and a longer `core.commentString`
+        # (`//`) as well as punctuation; each opens the scissors line it writes.
+        for mark in ("#", ";", "@", "x", "//"):
             with self.subTest(comment_char=mark):
                 scaffold = (f"\n{mark} Please enter the commit message.\n"
                             f"{mark} ------------------------ >8 ------------------------\n"
@@ -1155,6 +1157,13 @@ class CommitMsgCheckTests(unittest.TestCase):
         code, warning = self._check("US0301 US0302: batch fix\n\nRefs: US0301, US0302\n"
                                     "# ------------------------ >8 ------------------------\n")
         self.assertEqual((code, warning), (0, None))
+        # an author's line is no scissors line: its prefix holds a space, or text follows the
+        # closing dashes, so the trailer below it is still read
+        for line in ("see this ---- >8 ----", "x ---- >8 ---- and more"):
+            with self.subTest(authored=line):
+                self.assertEqual(
+                    self._check(f"US0301 US0302: batch fix\n\n{line}\nRefs: US0301, US0302\n"),
+                    (0, None))
 
     def test_a_subject_below_the_scissors_is_not_the_subject(self):
         # A message that opens with the scissors line has no author text: the first line of git's
@@ -1974,6 +1983,26 @@ class UnnamedUnitAttributionTests(unittest.TestCase):
             self.assertIn("Refs: BG-01JQK3F8`", notes[0]["note"])
             self.assertNotIn("BG01JQK3F8", notes[0]["note"])
             self.assertIn("only BG-01JQK3F8 declares", notes[0]["note"])
+
+    def test_the_named_file_note_spells_a_schema_3_id_dashed(self):
+        # BG1736. The named-file signal reads the id from the staged path, and its note is pasted
+        # as the Affects one is: `Refs: BG01JQK3F8` names no artefact, `Refs: BG-01JQK3F8` does.
+        root, td = self._repo()
+        with td:
+            folder = root / "sdlc-studio" / "bugs"
+            folder.mkdir(parents=True)
+            (folder / "BG-01JQK3F8-sample.md").write_text(
+                "# BG-01JQK3F8: sample\n\n> **Status:** Open\n> **Affects:** src/v3.py\n",
+                encoding="utf-8")
+            notes = _load().unnamed_unit_attribution(
+                root, "fix(BG9002): b", staged=["sdlc-studio/bugs/BG-01JQK3F8-sample.md"])
+            self.assertEqual([(n["id"], n["signal"]) for n in notes],
+                             [("BG01JQK3F8", "named-file")])
+            note = notes[0]["note"]
+            self.assertIn("carry its id in their own filenames", note)
+            self.assertIn("message never names BG-01JQK3F8.", note)
+            self.assertIn("If that work is BG-01JQK3F8's, add `Refs: BG-01JQK3F8`", note)
+            self.assertNotIn("BG01JQK3F8", note)
 
     def test_the_note_keeps_a_sequential_id_unchanged(self):
         # BG1736 AC2. The sequential spelling is already the artefact's.
