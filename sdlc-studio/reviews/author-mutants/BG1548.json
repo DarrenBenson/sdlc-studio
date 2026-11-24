@@ -1,49 +1,103 @@
 {
   "unit": "BG1548",
-  "digest": "ae284eab9d9b256b at a35d93e251d8",
-  "report": "sdlc-studio/.local/lane/landed/agent-abf19f4fed7e47ab0/BG1548-mutation-edits.json",
+  "digest": "723ecb52d5e49792 at 6bcfedcfd72a",
+  "report": "sdlc-studio/.local/lane/landed/agent-aafa41e1ca14f2114/BG1548-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "lint-corpus-returns-markdownlint-only",
+      "mutant": "heading-end-word-boundary",
       "file": "tools/lint_corpus.py",
-      "old": "    return [*lint_files(files, cwd=root, config=config or (root / ROOT_CONFIG),\n                        linter=linter or find_linter(root)),\n            *accepted_rfc_decision_findings(root, files)]\n",
-      "new": "    return lint_files(files, cwd=root, config=config or (root / ROOT_CONFIG),\n                      linter=linter or find_linter(root))\n",
-      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "decision-heading-end-anchor-dropped",
-      "file": "tools/lint_corpus.py",
-      "old": "r\"^##[ \\t]+Decision[ \\t]*$\"",
-      "new": "r\"^##[ \\t]+Decision\"",
+      "old": "Decision[ \\t]*$\", re.MULTILINE)",
+      "new": "Decision\\b\", re.MULTILINE)",
       "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_only_a_heading_reading_decision_alone_opens_the_decision_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "analyse-without-the-rule",
+      "mutant": "heading-end-no-trailing-blanks",
       "file": "tools/lint_corpus.py",
-      "old": "    current = [*lint_files(files, cwd=root, config=config, linter=linter),\n               *accepted_rfc_decision_findings(root, files)]\n",
-      "new": "    current = lint_files(files, cwd=root, config=config, linter=linter)\n",
-      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "old": "Decision[ \\t]*$\", re.MULTILINE)",
+      "new": "Decision$\", re.MULTILINE)",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_only_a_heading_reading_decision_alone_opens_the_decision_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "baseline-without-the-rule",
+      "mutant": "heading-end-no-anchor",
       "file": "tools/lint_corpus.py",
-      "old": "        return [*lint_files(files, cwd=base, config=config.resolve(), linter=linter),\n                *accepted_rfc_decision_findings(base, files)]\n",
-      "new": "        return lint_files(files, cwd=base, config=config.resolve(), linter=linter)\n",
-      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported",
+      "old": "Decision[ \\t]*$\", re.MULTILINE)",
+      "new": "Decision\", re.MULTILINE)",
+      "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_only_a_heading_reading_decision_alone_opens_the_decision_section",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "heading-fixture-made-the-real-heading",
+      "mutant": "linter-looked-up-at-import",
       "file": "tools/tests/test_lint_corpus.py",
-      "old": "resolved_list = \"## Decisions (resolved later)\\n",
-      "new": "resolved_list = \"## Decision\\n",
+      "old": "\"_lc_gitutil\")\n\n\ndef _linter() -> str:",
+      "new": "\"_lc_gitutil\")\nLINTER = lint_corpus.find_linter(REPO)\n\n\ndef _linter() -> str:",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_the_module_collects_where_markdownlint_cannot_be_found",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skip-catches-the-wrong-error",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "    except lint_corpus.LinterUnavailable as exc:\n        raise unittest.SkipTest",
+      "new": "    except KeyError as exc:\n        raise unittest.SkipTest",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_a_test_that_needs_the_linter_is_skipped_with_the_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing-linter-not-skipped",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "        raise unittest.SkipTest(f\"markdownlint is not installed here: {exc}\") from exc",
+      "new": "        return \"markdownlint\"",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_a_test_that_needs_the_linter_is_skipped_with_the_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skip-reason-dropped",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "        raise unittest.SkipTest(f\"markdownlint is not installed here: {exc}\") from exc",
+      "new": "        raise unittest.SkipTest() from exc",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_a_test_that_needs_the_linter_is_skipped_with_the_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "probe-leaves-node-modules-visible",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "            \"pathlib.Path.is_file = lambda p: p.name != 'markdownlint' and is_file(p)\\n\"\n",
+      "new": "",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_the_module_collects_where_markdownlint_cannot_be_found",
+      "result": "survived",
+      "answer": "Survives only in the runner's scratch copy, which sits under no node_modules, so the hiding line is a no-op there. Run by hand in this worktree, whose parent holds the node_modules/.bin/markdownlint find_linter reaches, the same edit fails the test (killed, 1 failed): the child's positive control requires find_linter to raise, so the probe cannot pass while the linter is findable."
+    },
+    {
+      "mutant": "probe-leaves-path-lookup-live",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "            \"shutil.which = lambda *a, **k: None\\n\"\n",
+      "new": "",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_the_module_collects_where_markdownlint_cannot_be_found",
+      "result": "survived",
+      "answer": "Survives only where markdownlint is not on PATH, as in the runner's scratch copy. Run by hand in this worktree with node_modules/.bin on PATH, the same edit fails the test (killed, 1 failed): the child's positive control requires find_linter to raise, so a live PATH lookup that finds the linter turns it red."
+    },
+    {
+      "mutant": "probe-keeps-the-override",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "        env = {k: v for k, v in os.environ.items() if k != \"MARKDOWNLINT_BIN\"}",
+      "new": "        env = dict(os.environ, MARKDOWNLINT_BIN=\"/bin/true\")",
+      "test": "tools/tests/test_lint_corpus.py::LinterLookupTests::test_the_module_collects_where_markdownlint_cannot_be_found",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-suffixed-heading-reads-alone",
+      "file": "tools/tests/test_lint_corpus.py",
+      "old": "        suffixed = \"## Decision (accepted 2026-11-14)\\n\"",
+      "new": "        suffixed = \"## Decision\\n\"",
       "test": "tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_only_a_heading_reading_decision_alone_opens_the_decision_section",
       "result": "killed",
       "answer": ""

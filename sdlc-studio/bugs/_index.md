@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 252 |
+| Open | 249 |
 | In Progress | 0 |
-| Fixed | 1142 |
+| Fixed | 1146 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1735** |
+| **Total** | **1736** |
 
 ## All Bugs
 
@@ -623,7 +623,7 @@
 | [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Fixed | Medium | 2026-11-17 | 2026-11-17 |
@@ -649,7 +649,7 @@
 | [BG1571](BG1571-us1314-s-tests-never-pin-a-raise-to.md) | US1314's tests never pin a raise to a middle class, a story with several Affects files, the open-status scope, or the silent skip of a stamp apply cannot rewrite | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1572](BG1572-the-evidence-pack-crashes-with-a-traceback-on.md) | The evidence pack crashes with a traceback on a malformed report instead of refusing it by name | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1573](BG1573-the-second-seat-refusal-past-the-round-cap.md) | The second-seat refusal past the round cap names a seat that does not exist when the reviewer id carries no seat word | Open | Low | 2026-11-18 | 2026-11-18 |
-| [BG1574](BG1574-no-gate-refuses-a-unit-s-commit-that.md) | No gate refuses a unit's commit that ships no changelog fragment, so run sixteen landed twelve of fourteen units without one | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1574](BG1574-no-gate-refuses-a-unit-s-commit-that.md) | No gate refuses a unit's commit that ships no changelog fragment, so run sixteen landed twelve of fourteen units without one | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1575](BG1575-bg0660-s-unscoped-boundary-guard-flags-a-run.md) | BG0660's unscoped-boundary guard flags a --run-tests call that runs no other lane, and is satisfied by an --only that call ignores | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1576](BG1576-the-skill-tests-lane-s-serial-only-collection.md) | The skill-tests lane's serial_only collection may read empty under an inherited -q, so serial tests could be skipped unseen | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1577](BG1577-the-tsd-s-full-suite-row-states-bg1519.md) | The TSD's full-suite row states BG1519's count floor but not that a commit whose selection holds only push-deferred tests is exempt | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
@@ -809,8 +809,9 @@
 | [BG1731](BG1731-us1112-ac4-reads-red-in-ci-a-batched.md) | US1112 AC4 reads red in CI: a batched node over its per-verifier ceiling is also spawned on its own | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1732](BG1732-test-persona-coherence-writes-a-stub-registry-into.md) | `test_persona_coherence` writes a stub registry into the real personas folder, so a parallel persona-card test reads it and the push gate goes red | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1733](BG1733-transition-py-drops-a-status-decoration-such-as.md) | transition.py drops a status decoration such as '(partially superseded)' on every move | Open | Low | 2026-11-23 | 2026-11-23 |
-| [BG1734](BG1734-bg1548-did-not-converge-in-review-round-2.md) | BG1548 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-24 | 2026-11-24 |
-| [BG1735](BG1735-bg1574-did-not-converge-in-review-round-2.md) | BG1574 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-24 | 2026-11-24 |
+| [BG1734](BG1734-bg1548-did-not-converge-in-review-round-2.md) | BG1548 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
+| [BG1735](BG1735-bg1574-did-not-converge-in-review-round-2.md) | BG1574 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
+| [BG1736](BG1736-the-commit-msg-attribution-note-advises-a-schema.md) | The commit-msg attribution note advises a schema 3 id by its dashless key | Open | Low | 2026-11-24 | 2026-11-24 |
 
 ## Archived Releases
 

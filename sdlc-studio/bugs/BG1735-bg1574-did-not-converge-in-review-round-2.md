@@ -1,6 +1,6 @@
 # BG1735: BG1574 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .githooks/commit-msg, .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/reference-scripts-surface.md, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, changelog.d/BG1574.md, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py
@@ -27,12 +27,16 @@ Fix each finding above, then deliver BG1574 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1574 AC1 still passes: Given a clone with a `changelog.d/` directory, when a commit whose subject names one unit (`fix(BG9001): ...`) stages a skill script and no `changelog.d/BG9001.md` is staged or tracked, then commit-msg refuses, naming BG9001 and the missing path `changelog.d/BG9001.md`. Fails on: HEAD, which passes it (measured: exit 0, `message rules green - 1 lane(s) passed`).
   - **Verify:** pytest tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_unit_commit_with_a_code_change_and_no_fragment_is_refused
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** BG1574 AC2 still passes: Given the same clone, when the commit stages its fragment, or the fragment is already tracked at HEAD from an earlier commit of the unit, or the commit stages only files under `sdlc-studio/`, or its subject names no unit, then commit-msg passes. Fails on: a fix that refuses a repair-round commit whose fragment landed earlier, or a paperwork commit such as a run close.
   - **Verify:** pytest tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_a_staged_or_tracked_fragment_or_a_paperwork_commit_passes
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** BG1574 AC3 still passes: Given a shared commit whose subject names BG9001 and BG9002, each owning a staged code file (`Refs:`), with only `changelog.d/BG9001.md` staged, then commit-msg refuses naming BG9002 alone; a `Mentions:` id needs no fragment; a `Changelog: none - <reason>` trailer passes the commit and a bare `Changelog: none` refuses. Fails on: HEAD, which passes all of them; a fix that reads only the subject's first id or accepts an exemption with no reason.
   - **Verify:** pytest tools/tests/test_commit_msg_hook.py::ChangelogFragmentRequiredTests::test_each_owning_id_needs_its_fragment_and_an_exemption_needs_a_reason
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC5** BG1574 AC4 still passes: Given a project with a `changelog.d/` directory, when `refine.py apply` mints stories, then each story's Affects ends with `changelog.d/<its id>.md`; in a project with no `changelog.d/` no fragment path is added. Fails on: HEAD's refine, which mints Affects with no fragment.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::FragmentInAffectsAtRefineTests
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

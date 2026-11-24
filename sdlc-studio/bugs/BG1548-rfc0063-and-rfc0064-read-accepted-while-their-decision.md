@@ -1,6 +1,6 @@
 # BG1548: RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/rfcs/RFC0063-human-in-the-lead-the-accountable-engineering-lead.md, sdlc-studio/rfcs/RFC0064-production-learning-and-risk-proportionate-review.md, tools/lint_corpus.py, tools/tests/test_lint_corpus.py, changelog.d/BG1548.md
@@ -31,10 +31,13 @@ Fill the Decision section of both RFCs with the outcome, the date, the rationale
 
 - [ ] **AC1** Given a fixture corpus holding an Accepted RFC whose Decision Outcome still reads pending, when `tools/lint_corpus.py` runs, then it reports a finding naming that RFC; a Proposed RFC with a pending Outcome and an Accepted RFC with a filled Decision beside it are not reported. Fails on: an Accepted RFC with an unfilled Decision reading as clean, or a finding against an RFC not yet decided.
   - **Verify:** pytest tools/tests/test_lint_corpus.py::AcceptedRfcDecisionTests::test_an_accepted_rfc_with_a_pending_outcome_is_reported
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given this repository's RFCs after the fix, when the new rule reads them, then it reports nothing: the Decision sections of RFC0063 and RFC0064 state the outcome, the date, the rationale, the decisions that resolved each open question and the spawned CRs. Fails on: either RFC still reading pending under Status Accepted.
   - **Verify:** pytest tools/tests/test_lint_corpus.py::CorpusLaneRunsOnThisRepo::test_no_accepted_rfc_here_has_a_pending_decision
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given RFC0063's workstream table after the fix, when rows WS2, WS5 (the monthly budget view), WS6 (the model scorecard) and WS7 are read, then each names a CR that is also in the Decomposed-into line, or the decision that defers it, and each RFC carries a Revision History row for the correction. Fails on: a workstream row promising a new CR that no unit or recorded deferral carries.
   - **Verify:** pytest tools/tests/test_lint_corpus.py::CorpusLaneRunsOnThisRepo::test_rfc0063_deferred_workstreams_name_a_request_or_ruling
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 
