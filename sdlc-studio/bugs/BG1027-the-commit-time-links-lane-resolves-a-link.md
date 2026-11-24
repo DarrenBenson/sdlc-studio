@@ -1,6 +1,6 @@
 # BG1027: The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/check_links.py, .githooks/pre-commit, tools/tests/test_check_links_staged_targets.py, changelog.d/BG1027.md, tools/tests/test_check_links.py
@@ -25,10 +25,13 @@ At commit time, resolve a relative link from a staged markdown file against the 
 
 - [ ] **AC1** Given a staged markdown file linking to a file that exists only untracked in the working tree, when the pre-commit links lane runs, then it refuses and names the untracked target
   - **Verify:** pytest tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same link with its target staged, when the lane runs, then it passes
   - **Verify:** pytest tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_a_staged_target_passes
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a link to a tracked file deleted in the working tree but not in the index, when the lane runs, then it passes, because the commit still carries the target
   - **Verify:** pytest tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_unstaged_deletion_still_resolves
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # BG1407: A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, changelog.d/BG1407.md
@@ -45,8 +45,10 @@ lane brief carries it.
 
 - [ ] **AC1** Given a unit whose Affects declare a test file, when its author self-check is printed, then the sentence sending a mutant the runner cannot run to MUTANTS.json also says to run it in the lane's worktree or a detached worktree of the repository, never a copy of the tests alone. Fails on: HEAD, whose sentence names no place (measured: a bare copy's probe sees the operator's real HOME).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_mutant_the_runner_cannot_run_is_sent_to_a_worktree
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given the lane brief `sprint lane` prints for the same unit, then the hand-in instruction for MUTANTS.json carries the same where-to-run sentence. Fails on: a fix that puts the sentence on a line naming `self-check record`, which `_hand_in_self_check` replaces, so the brief drops it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_says_where_a_hand_run_mutant_runs
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

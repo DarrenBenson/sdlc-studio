@@ -1,0 +1,43 @@
+{
+  "unit": "BG1569",
+  "digest": "22d3b25a66c951bc at bd051d554e37",
+  "report": "sdlc-studio/.local/lane/landed/agent-a6a75ce9100b779c1/BG1569-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "delete the index Delivered summary row",
+      "file": ".claude/skills/sdlc-studio/templates/indexes/rfc.md",
+      "old": "| Delivered | {{delivered_count}} |\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_rfc_templates_cover_every_rfc_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delete the index Withdrawn summary row",
+      "file": ".claude/skills/sdlc-studio/templates/indexes/rfc.md",
+      "old": "| Withdrawn | {{withdrawn_count}} |\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_rfc_templates_cover_every_rfc_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index Delivered count cell loses its placeholder",
+      "file": ".claude/skills/sdlc-studio/templates/indexes/rfc.md",
+      "old": "| Delivered | {{delivered_count}} |",
+      "new": "| Delivered | 0 |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_rfc_templates_cover_every_rfc_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "core header drops Delivered",
+      "file": ".claude/skills/sdlc-studio/templates/core/rfc.md",
+      "old": "Accepted / Delivered / Superseded",
+      "new": "Accepted / Superseded",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_rfc_templates_cover_every_rfc_status",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

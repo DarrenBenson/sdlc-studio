@@ -1,0 +1,6 @@
+UNIT: US1191
+BRIEF: ee3bd0d156b9-e24f7395
+VERDICT: REJECT
+ISSUES: [new] .githooks/commit-msg runs `tools/remote-gate.sh staged` (commit-msg host call) with no time cap, and remote-gate sets no ConnectTimeout, so an unreachable-by-blackhole host stalls a commit for about two minutes before the local fallback starts\; CONTRIBUTING.md and tsd.md say the host gives no verdict and the hook runs the selection here at once, which holds for an error but not for a silent host (probe: a transport sleeping 15s before failing held remote-gate for 15.4s with no cap);
+BLOCKING: .githooks/commit-msg runs
+RULINGS: all 4 test classes pass (test_commit_suites_remote.py)\; the tsd.md and trd.md sentences match the lock-wait, exit 3/4/5 and SDLC_GATE_LOCAL behaviour\; the hook's precedence `A && B || C` and host_verdict are correct\; a busy or unreachable host runs the selection locally and never passes by itself. Fix both with one bound on the whole staged call (a ConnectTimeout in the staged transport and a cap in the hook).

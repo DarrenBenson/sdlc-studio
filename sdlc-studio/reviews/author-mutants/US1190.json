@@ -1,0 +1,97 @@
+{
+  "unit": "US1190",
+  "digest": "dfa062198c71de78 at e68d0a2ae7fe",
+  "report": "sdlc-studio/.local/lane/landed/agent-a61e8fe303cbf5679/US1190-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "connect bound removed from the default",
+      "file": "tools/remote-gate.sh",
+      "old": " -o ConnectTimeout=$CONNECT_TIMEOUT",
+      "new": "",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "connect bound 10 -> 120",
+      "file": "tools/remote-gate.sh",
+      "old": "CONNECT_TIMEOUT=10",
+      "new": "CONNECT_TIMEOUT=120",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged keepalive left at the push's",
+      "file": "tools/remote-gate.sh",
+      "old": "[ -z \"$staged\" ] || ssh_cmd=\"$(default_ssh \"$STAGED_ALIVE_INTERVAL\" \"$STAGED_ALIVE_COUNT\")\"",
+      "new": ":",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged interval 15 -> 60",
+      "file": "tools/remote-gate.sh",
+      "old": "STAGED_ALIVE_INTERVAL=15",
+      "new": "STAGED_ALIVE_INTERVAL=60",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged count 4 -> 10",
+      "file": "tools/remote-gate.sh",
+      "old": "STAGED_ALIVE_COUNT=4",
+      "new": "STAGED_ALIVE_COUNT=10",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "push interval 60 -> 15",
+      "file": "tools/remote-gate.sh",
+      "old": "PUSH_ALIVE_INTERVAL=60",
+      "new": "PUSH_ALIVE_INTERVAL=15",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "push count 10 -> 4",
+      "file": "tools/remote-gate.sh",
+      "old": "PUSH_ALIVE_COUNT=10",
+      "new": "PUSH_ALIVE_COUNT=4",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "push takes the staged keepalive too",
+      "file": "tools/remote-gate.sh",
+      "old": "[ -z \"$staged\" ] || ssh_cmd",
+      "new": "ssh_cmd",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default_ssh swaps interval and count",
+      "file": "tools/remote-gate.sh",
+      "old": "ServerAliveInterval=$1 -o ServerAliveCountMax=$2",
+      "new": "ServerAliveInterval=$2 -o ServerAliveCountMax=$1",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BatchMode dropped from default_ssh",
+      "file": "tools/remote-gate.sh",
+      "old": "-o BatchMode=yes -o ConnectTimeout=$CONNECT",
+      "new": "-o ConnectTimeout=$CONNECT",
+      "test": "tools/tests/test_remote_gate_selected.py::RemoteGateSelectedTests::test_a_silent_host_is_bounded_and_is_not_a_verdict",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+UNIT: BG1407
+BRIEF: c9eae89030a6-75a865d3
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory: the fragment's sentence is TRUE (executed in a detached worktree at cce4d3c54, both named tests pass, verify_ac dry-run ac=2 pass=2). Own mutants on critic.py, each applied and seen red: copy-clause shortened, "by hand" dropped, "--detach" dropped, conftest clause replaced; all killed.

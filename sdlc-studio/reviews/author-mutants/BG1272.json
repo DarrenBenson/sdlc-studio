@@ -1,0 +1,151 @@
+{
+  "unit": "BG1272",
+  "digest": "131771117082b0b6 at 158d012628b3",
+  "report": "sdlc-studio/.local/lane/landed/agent-acc2cf62c6741923c/BG1272-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "completed-inverted",
+      "file": ".githooks/pre-push",
+      "old": "status != \"completed\"",
+      "new": "status == \"completed\"",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-id-guard",
+      "file": ".githooks/pre-push",
+      "old": "if run_id and status and status",
+      "new": "if status and status",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_unusable_newest_read_adds_nothing_and_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-status-guard",
+      "file": ".githooks/pre-push",
+      "old": "if run_id and status and status",
+      "new": "if run_id and status",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_unusable_newest_read_adds_nothing_and_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing-key-reads-None",
+      "file": ".githooks/pre-push",
+      "old": "str(run.get(k) or \"\")",
+      "new": "str(run.get(k))",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_unusable_newest_read_adds_nothing_and_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status-underscore-kept",
+      "file": ".githooks/pre-push",
+      "old": "{status.replace('_', ' ')}",
+      "new": "{status}",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unnamed-commit-blank",
+      "file": ".githooks/pre-push",
+      "old": "{sha or '(not named by the forge)'}",
+      "new": "{sha}",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_run_whose_commit_is_not_named_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest-read-wrong-event",
+      "file": ".githooks/pre-push",
+      "old": "--event push --limit 1 --json databaseId,status,headSha",
+      "new": "--event schedule --limit 1 --json databaseId,status,headSha",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest-read-limit-2",
+      "file": ".githooks/pre-push",
+      "old": "--event push --limit 1 --json databaseId,status,headSha",
+      "new": "--event push --limit 2 --json databaseId,status,headSha",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest-read-not-called",
+      "file": ".githooks/pre-push",
+      "old": "note_unfinished\njudge_ci schedule",
+      "new": "judge_ci schedule",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_green_main_with_nothing_in_progress_says_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader-errors-shown",
+      "file": ".githooks/pre-push",
+      "old": "python3 - \"$json\" 1>&2 2>/dev/null",
+      "new": "python3 - \"$json\" 1>&2",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_unusable_newest_read_adds_nothing_and_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "notice-to-stdout",
+      "file": ".githooks/pre-push",
+      "old": "python3 - \"$json\" 1>&2 2>/dev/null",
+      "new": "python3 - \"$json\" 2>/dev/null",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lean-push-extra-read",
+      "file": ".githooks/pre-push",
+      "old": "note_unfinished\njudge_ci schedule",
+      "new": "note_unfinished\nnote_unfinished\njudge_ci schedule",
+      "test": "tools/tests/test_lean_push.py::PushBoundaryTests::test_a_stale_red_answer_is_re_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lean-push-skipped-read",
+      "file": ".githooks/pre-push",
+      "old": "note_unfinished\njudge_ci schedule",
+      "new": "judge_ci schedule",
+      "test": "tools/tests/test_lean_push.py::PushBoundaryTests::test_a_stale_red_answer_is_re_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac1-nothing-in-progress",
+      "file": "tools/tests/test_pre_push_red_main.py",
+      "old": "        r = self._push(\"green\", \"in_progress\")\n        self.assertEqual(0, r.returncode, r.stderr)\n        self.assertIn(NOTICE, r.stderr)\n        self.assertEqual(1, r.stderr.count",
+      "new": "        r = self._push(\"green\", \"same_green\")\n        self.assertEqual(0, r.returncode, r.stderr)\n        self.assertIn(NOTICE, r.stderr)\n        self.assertEqual(1, r.stderr.count",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac3-run-in-progress",
+      "file": "tools/tests/test_pre_push_red_main.py",
+      "old": "        r = self._push(\"green\", \"same_green\")",
+      "new": "        r = self._push(\"green\", \"in_progress\")",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_green_main_with_nothing_in_progress_says_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac2-concluded-green",
+      "file": "tools/tests/test_pre_push_red_main.py",
+      "old": "        r = self._push(\"red\", \"in_progress\")\n        self.assertNotEqual",
+      "new": "        r = self._push(\"green\", \"in_progress\")\n        self.assertNotEqual",
+      "test": "tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_red_concluded_run_behind_an_in_progress_one_refuses",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

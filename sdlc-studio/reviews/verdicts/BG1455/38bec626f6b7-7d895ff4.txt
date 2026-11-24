@@ -1,0 +1,6 @@
+UNIT: BG1455
+BRIEF: 38bec626f6b7-7d895ff4
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac dry-run 3 of 3 AC pass\; test_escape_trace 10 tests green on Python 3.10, 3.12 and 3.14\; own mutant (keep a subject id a Mentions trailer names) killed by the Mentions tests\; changelog and docstring claims checked against the code and TRUE.

@@ -700,3 +700,14 @@
 | BG1373 | Dani Okafor (engineering) | 2026-11-23 | TRUE 7, FALSE 0, UNVERIFIABLE 3 | killed 14, survived 0 | ee32efddf1f052f6 at cce4d3c548ad |
 | BG1407 | Dani Okafor (engineering) | 2026-11-23 | TRUE 6, FALSE 0, UNVERIFIABLE 1 | killed 8, survived 0 | 63f1273276324bd7 at cce4d3c548ad |
 | BG1570 | Dani Okafor (engineering) | 2026-11-23 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | c220d338a50031e5 at cce4d3c548ad |
+| US1190 | Dani Okafor (engineering) | 2026-11-23 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 50, survived 0 | 7789aeb8a7bf3b28 at 1b280daa32cb |
+| US1191 | Dani Okafor (engineering) | 2026-11-23 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 28, survived 0 | e1fe2d0839f6d250 at 1b280daa32cb |
+| BG1569 | Dani Okafor (engineering) | 2026-11-23 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 17, survived 0 | 74b412d2f9c2b714 at 5d7e6a427309 |
+| BG1678 | Dani Okafor (engineering) | 2026-11-23 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 0 | 15c4160073ce0408 at 5d7e6a427309 |
+| BG1027 | Dani Okafor (engineering) | 2026-11-23 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 24, survived 0 | baec29ea88e631dd at 158d012628b3 |
+| BG1272 | Dani Okafor (engineering) | 2026-11-24 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 16, survived 0 | 131771117082b0b6 at 158d012628b3 |
+| BG0967 | Dani Okafor (engineering) | 2026-11-24 | TRUE 29, FALSE 0, UNVERIFIABLE 0 | killed 25, survived 2 | da696c0b191e58c1 at 54fcf7724f9f |
+| BG1569 | Dani Okafor (engineering) | 2026-11-24 | TRUE 5, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | 22d3b25a66c951bc at bd051d554e37 |
+| US1190 | Dani Okafor (engineering) | 2026-11-24 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | dfa062198c71de78 at e68d0a2ae7fe |
+| US1191 | Dani Okafor (engineering) | 2026-11-24 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 21, survived 0 | c9b4c4c684cb3e35 at e68d0a2ae7fe |
+| BG1373 | Dani Okafor (engineering) | 2026-11-24 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 0 | f586727db015f412 at c7ab88e92796 |

@@ -1,0 +1,79 @@
+{
+  "unit": "BG1678",
+  "digest": "15c4160073ce0408 at 5d7e6a427309",
+  "report": "sdlc-studio/.local/lane/landed/agent-a8b7b67a2dd304574/BG1678-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "N1 an Accepted RFC never derives",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "            if not status or (sdlc_md.is_terminal_status(type_, status)\n                              and status not in settled):",
+      "new": "            if not status or (sdlc_md.is_terminal_status(type_, status)\n                              and True):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_an_accepted_rfc_whose_requests_finished_derives_delivered",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N2 every terminal status derives",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        settled = sdlc_md.settled_before_success(type_)",
+      "new": "        settled = sdlc_md.terminal_statuses(type_)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_only_a_settled_status_before_the_successful_terminal_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N3 terminal skip dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "            if not status or (sdlc_md.is_terminal_status(type_, status)\n                              and status not in settled):",
+      "new": "            if not status:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_only_a_settled_status_before_the_successful_terminal_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N4 settled reaches past the successful terminal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    return {s for s in vocab[:vocab.index(success)] if s in absorbing}",
+      "new": "    return {s for s in vocab if s in absorbing}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_only_a_settled_status_before_the_successful_terminal_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N5 settled includes open statuses",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    return {s for s in vocab[:vocab.index(success)] if s in absorbing}",
+      "new": "    return {s for s in vocab[:vocab.index(success)]}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_only_a_settled_status_before_the_successful_terminal_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N6 unknown type guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    if success not in vocab:\n        return set()\n    absorbing = terminal_statuses(type_)",
+      "new": "    absorbing = terminal_statuses(type_)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_only_a_settled_status_before_the_successful_terminal_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N7 no settled status anywhere",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    return {s for s in vocab[:vocab.index(success)] if s in absorbing}",
+      "new": "    return set()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_an_accepted_rfc_whose_requests_finished_derives_delivered",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N8 sweep runs uncached",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    with sdlc_md.corpus_cache():\n        return _derivable_request_drift(Path(repo_root), explain)",
+      "new": "    return _derivable_request_drift(Path(repo_root), explain)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::AcceptedRfcDerivesDeliveredTests::test_the_sweep_weighs_every_request_inside_one_corpus_cache",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

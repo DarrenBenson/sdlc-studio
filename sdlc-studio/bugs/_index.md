@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 266 |
+| Open | 258 |
 | In Progress | 0 |
-| Fixed | 1126 |
+| Fixed | 1134 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -102,7 +102,7 @@
 | [BG1024](BG1024-verify-ac-s-grep-verb-takes-a-leading.md) | verify_ac's grep verb takes a leading flag as the pattern, so `grep -q -e X file` and `grep -E ... file` Verify lines fail | Open | Low | 2026-10-11 | 2026-10-11 |
 | [BG1025](BG1025-sprint-sign-moves-every-batch-unit-to-its.md) | sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it | Fixed | Medium | 2026-10-12 | 2026-10-12 |
 | [BG1026](BG1026-an-ac-heading-with-a-suffix-after-its.md) | An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above | Open | Low | 2026-10-12 | 2026-10-12 |
-| [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Open | Medium | 2026-10-12 | 2026-10-12 |
+| [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Fixed | Medium | 2026-10-12 | 2026-10-12 |
 | [BG1028](BG1028-there-is-no-supported-way-to-run-only.md) | There is no supported way to run only the release verify lane: `gate.py --release --only verify` is refused for deselecting the bound lanes, and the refusal's advice (drop --release) leads to `unknown check name(s): verify` | Open | Low | 2026-10-12 | 2026-10-12 |
 | [BG1029](BG1029-critic-record-splits-a-verdict-s-findings-on.md) | critic record splits a verdict's findings on every ';', so reviewer prose with a semicolon is refused as an untagged finding | Superseded | Low | 2026-10-12 | 2026-10-12 |
 | [BG1030](BG1030-prose-after-blocking-none-or-a-trailing-rulings.md) | Prose after `BLOCKING: none`, or a trailing `RULINGS:` line, is folded into BLOCKING and refused, so an APPROVE carrying rulings cannot be recorded unedited | Fixed | Low | 2026-10-13 | 2026-10-13 |
@@ -347,7 +347,7 @@
 | [BG1269](BG1269-sprint-plan-puts-every-unit-in-one-shared.md) | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing keeps those units sequential | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1270](BG1270-the-always-loaded-instruction-cuts-leave-their-restored.md) | The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char cap | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1271](BG1271-sprint-cost-anatomy-counts-a-call-from-the.md) | `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start budget as none, and leaves three boundaries and an AC2 pin loose | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1272](BG1272-the-pre-push-check-reads-only-the-latest.md) | The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1272](BG1272-the-pre-push-check-reads-only-the-latest.md) | The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1273](BG1273-us1133-made-engagement-floor-py-a-writer-without.md) | US1133 made engagement_floor.py a writer without a confinement case or allowlist entry, so the push gate's roster sweep is red | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1274](BG1274-us1133-did-not-converge-in-review-round-2.md) | US1133 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1275](BG1275-two-statements-from-run-eight-s-last-repairs.md) | Two statements from run eight's last repairs claim more than the code or its tests show | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
@@ -482,7 +482,7 @@
 | [BG1404](BG1404-critic-py-record-splits-a-verdict-s-issues.md) | critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1405](BG1405-nothing-pins-critic-s-live-rows-filter-the.md) | Nothing pins critic's 'live rows' filter, the carried-refusal wording or the stacked-criterion naming, and the BG1339 rejoinder path guards are untested | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1406](BG1406-lane-run-accepts-a-home-isolated-unit-and.md) | lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home | Fixed | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1407](BG1407-a-builder-s-mutation-probe-in-a-scratch.md) | A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1407](BG1407-a-builder-s-mutation-probe-in-a-scratch.md) | A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1408](BG1408-sprint-lane-land-s-hook-refusal-text-and.md) | sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1410](BG1410-bg1330-s-re-pointed-clean-run-test-lost.md) | BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
@@ -530,7 +530,7 @@
 | [BG1452](BG1452-reconcile-derives-a-request-complete-when-every-child.md) | reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1453](BG1453-file-finding-keeps-a-placeholder-id-such-as.md) | file_finding keeps a placeholder id such as changelog.d/BGXXXX.md in Affects verbatim instead of substituting the minted id or refusing it | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1454](BG1454-sprint-lane-return-agent-agent-id-leaves-the.md) | sprint lane return --agent agent-<id> leaves the unit unpriced, while lane land prints the builder as agent-<id> | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1455](BG1455-escape-py-trace-counts-a-mentions-trailer-id.md) | escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1455](BG1455-escape-py-trace-counts-a-mentions-trailer-id.md) | escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1456](BG1456-the-escaped-bug-fixed-gate-s-scaffold-stripping.md) | The escaped-bug Fixed gate's scaffold stripping is untested and matches the scaffold by exact string, and test_file_finding's selector reader test fails outside a git checkout | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
 | [BG1457](BG1457-the-seat-record-reads-any-bracketed-word-as.md) | The seat record reads any bracketed word as a seat, lane brief --seat accepts any value, and retro seats counts rounds across deliveries | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1458](BG1458-escape-py-to-class-records-a-class-with.md) | escape.py to-class records a class with no files for a hand-edited bug with no Affects, collapses whitespace inside Affects paths, and the catalogue pages lag the new verb and flags | Open | Low | 2026-11-15 | 2026-11-15 |
@@ -644,8 +644,8 @@
 | [BG1566](BG1566-the-generated-reference-catalogue-in-help-references-md.md) | The generated reference catalogue in help/references.md links all 58 references to paths that do not exist | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1569](BG1569-the-rfc-accept-workflow-spawns-crs-and-then.md) | The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1570](BG1570-the-evidence-pack-trusts-the-run-record-as.md) | The evidence pack trusts the run record as committed at the build revision, so one commit that edits a report's figures, its signature and its run record together still passes | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1569](BG1569-the-rfc-accept-workflow-spawns-crs-and-then.md) | The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1570](BG1570-the-evidence-pack-trusts-the-run-record-as.md) | The evidence pack trusts the run record as committed at the build revision, so one commit that edits a report's figures, its signature and its run record together still passes | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1571](BG1571-us1314-s-tests-never-pin-a-raise-to.md) | US1314's tests never pin a raise to a middle class, a story with several Affects files, the open-status scope, or the silent skip of a stamp apply cannot rewrite | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1572](BG1572-the-evidence-pack-crashes-with-a-traceback-on.md) | The evidence pack crashes with a traceback on a malformed report instead of refusing it by name | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1573](BG1573-the-second-seat-refusal-past-the-round-cap.md) | The second-seat refusal past the round cap names a seat that does not exist when the reviewer id carries no seat word | Open | Low | 2026-11-18 | 2026-11-18 |
@@ -753,7 +753,7 @@
 | [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1676](BG1676-reconcile-stops-on-an-index-that-is-not.md) | reconcile stops on an index that is not UTF-8 without naming the file or how to fix it | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
-| [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1681](BG1681-bg1023-did-not-converge-in-review-round-2.md) | BG1023 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
@@ -798,7 +798,7 @@
 | [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1722](BG1722-conformance-adopt-after-takes-a-schema-v3-cutoff.md) | `conformance.adopt_after` takes a schema v3 cutoff on a schema v2 project, so the conformance lane exempts every sequential unit | Open | Low | 2026-11-23 | 2026-11-23 |
-| [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-23 | 2026-11-23 |
+| [BG1723](BG1723-bg0967-did-not-converge-in-review-round-2.md) | BG0967 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1724](BG1724-bg0974-did-not-converge-in-review-round-2.md) | BG0974 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1725](BG1725-bg0997-did-not-converge-in-review-round-2.md) | BG0997 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1726](BG1726-readiness-detector-owed-reports-a-project-lens-as.md) | readiness detector-owed reports a project lens as PRD (None) and would declare a bare pack directory as the owed unit's Affects | Open | Low | 2026-11-23 | 2026-11-23 |

@@ -1,0 +1,6 @@
+UNIT: BG1570
+BRIEF: ddeb319546e8-9af13359
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory: the fragment and docstrings are TRUE by execution at cce4d3c54 (18 tests pass\, verify_ac dry-run passes all three ACs\, and evidence-pack builds from the real history for RPT0030\, RPT0038\, RPT0041 and RPT0042 so no legitimate signature is refused). Own mutants on evidence_pack.py each applied and seen red: --reverse dropped\, signed_at ignored in the comparison\, only principal/fingerprint/delegation compared\, build revision dropped from the log; all killed.

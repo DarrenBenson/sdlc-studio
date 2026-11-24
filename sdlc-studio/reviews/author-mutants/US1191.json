@@ -1,0 +1,196 @@
+{
+  "unit": "US1191",
+  "digest": "c9b4c4c684cb3e35 at e68d0a2ae7fe",
+  "report": "US1191-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "host-never-tried",
+      "file": ".githooks/commit-msg",
+      "old": "if [ -n \"$selectors\" ] && [ -n \"$gate_host\" ] && [ \"${SDLC_GATE_LOCAL:-}\" != \"1\" ]; then",
+      "new": "if false; then",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any-override-value-keeps-it-here",
+      "file": ".githooks/commit-msg",
+      "old": "[ \"${SDLC_GATE_LOCAL:-}\" != \"1\" ]; then\n  host_args=()",
+      "new": "[ -z \"${SDLC_GATE_LOCAL:-}\" ]; then\n  host_args=()",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_no_host_or_the_local_override_runs_the_suites_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "override-ignored",
+      "file": ".githooks/commit-msg",
+      "old": "[ -n \"$gate_host\" ] && [ \"${SDLC_GATE_LOCAL:-}\" != \"1\" ]; then",
+      "new": "[ -n \"$gate_host\" ]; then",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_no_host_or_the_local_override_runs_the_suites_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "full-run-sent-to-host",
+      "file": ".githooks/commit-msg",
+      "old": "if [ -n \"$selectors\" ] && [ -n \"$gate_host\" ] &&",
+      "new": "if [ -n \"$gate_host\" ] &&",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_no_host_or_the_local_override_runs_the_suites_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-host-still-connects",
+      "file": ".githooks/commit-msg",
+      "old": "if [ -n \"$selectors\" ] && [ -n \"$gate_host\" ] &&",
+      "new": "if [ -n \"$selectors\" ] &&",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_no_host_or_the_local_override_runs_the_suites_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "red-read-as-no-verdict",
+      "file": ".githooks/commit-msg",
+      "old": "    0|1) host_rc=\"$host_exit\" ;;",
+      "new": "    0) host_rc=\"$host_exit\" ;;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreachable-cause-unnamed",
+      "file": ".githooks/commit-msg",
+      "old": "    3) host_cause=\"it could not be reached\" ;;",
+      "new": "    3) host_cause=\"it failed\" ;;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unready-cause-unnamed",
+      "file": ".githooks/commit-msg",
+      "old": "    4) host_cause=\"its setup refused before any test ran\" ;;",
+      "new": "    4) host_cause=\"it failed\" ;;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other-cause-unnamed",
+      "file": ".githooks/commit-msg",
+      "old": "    *) host_cause=\"tools/remote-gate.sh exited $host_exit before any test verdict\" ;;",
+      "new": "    *) host_cause=\"it failed\" ;;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fallback-line-held-on-a-pass",
+      "file": ".githooks/commit-msg",
+      "old": "then printf '%s\\n' \"$host_line\" >&4; else",
+      "new": "then printf '%s\\n' \"$host_line\" >&2; else",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fallback-line-to-a-closed-fd",
+      "file": ".githooks/commit-msg",
+      "old": "else printf '%s\\n' \"$host_line\" >&2; fi",
+      "new": "else printf '%s\\n' \"$host_line\" >&4; fi",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fallback-drops-remote-gate-output",
+      "file": ".githooks/commit-msg",
+      "old": "    printf '%s\\n' \"$host_out\" | sed 's/^/       /' >&2\n",
+      "new": "",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fallback-line-names-no-host",
+      "file": ".githooks/commit-msg",
+      "old": "host_line=\"commit-msg: the gate host $gate_host did not judge",
+      "new": "host_line=\"commit-msg: the gate host did not judge",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-pytest-clone-runs-unittest-beside-host",
+      "file": ".githooks/commit-msg",
+      "old": ">/dev/null 2>&1 || [ -n \"$host_rc\" ]; then",
+      "new": ">/dev/null 2>&1; then",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "host-verdict-unused",
+      "file": ".githooks/commit-msg",
+      "old": "  [ -n \"$host_rc\" ] && unit_run=(host_verdict)\n",
+      "new": "",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "host-red-read-as-green",
+      "file": ".githooks/commit-msg",
+      "old": "host_verdict() { printf '%s\\n' \"$host_out\"; return \"$host_rc\"; }",
+      "new": "host_verdict() { printf '%s\\n' \"$host_out\"; return 0; }",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "host-output-withheld",
+      "file": ".githooks/commit-msg",
+      "old": "host_verdict() { printf '%s\\n' \"$host_out\";",
+      "new": "host_verdict() { :;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index-scrubbed-from-remote-gate",
+      "file": ".githooks/commit-msg",
+      "old": "  host_out=\"$(bash tools/remote-gate.sh staged",
+      "new": "  host_out=\"$(\"${scrub[@]}\" bash tools/remote-gate.sh staged",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-selector-only",
+      "file": ".githooks/commit-msg",
+      "old": "for s in $selectors; do host_args+=(--test \"$s\"); done",
+      "new": "for s in ${selectors%% *}; do host_args+=(--test \"$s\"); done",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_a_named_host_runs_the_selected_suites_and_the_laptop_runs_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "busy-cause-unnamed",
+      "file": ".githooks/commit-msg",
+      "old": "    5) host_cause=\"it was busy: another run held its gate lock past the wait a commit allows\" ;;\n",
+      "new": "",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "busy-read-as-verdict",
+      "file": ".githooks/commit-msg",
+      "old": "    0|1) host_rc=\"$host_exit\" ;;",
+      "new": "    0|1|5) host_rc=\"$host_exit\" ;;",
+      "test": "tools/tests/test_commit_suites_remote.py::CommitSuitesRemoteTests::test_an_unreachable_host_falls_back_to_the_local_suites",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

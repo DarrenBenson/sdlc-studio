@@ -1,6 +1,6 @@
 # BG1723: BG0967 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0967.md
@@ -29,6 +29,7 @@ Fix each finding above, then deliver BG0967 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG0967 AC1 still passes: A steps value containing a shell command is filed byte-identical inside a fenced block, and still runs when copied
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_steps_commands.py -k command_survives_filing
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

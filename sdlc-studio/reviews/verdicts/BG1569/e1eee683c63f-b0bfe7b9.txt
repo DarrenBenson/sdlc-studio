@@ -1,0 +1,6 @@
+UNIT: BG1569
+BRIEF: e1eee683c63f-b0bfe7b9
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED: the RFC index template's Delivered summary row is unpinned. Run in a detached worktree at HEAD, the new test_the_rfc_templates_cover_every_rfc_status passes on the clean tree. It fails when the index template's Delivered row is deleted, when Delivered is dropped from the core template's header comment, and when the row's count placeholder is replaced by a literal. No new defect found in the repair: the test is driven by STATUS_VOCAB, and the other three tests in the module still pass.

@@ -1,0 +1,6 @@
+UNIT: US1190
+BRIEF: 5e11b851c092-9115d627
+VERDICT: REJECT
+ISSUES: [new] tools/remote-gate.sh gives the connection no bound: DEFAULT_SSH (remote-gate.sh:77) has no ConnectTimeout and the staged path wraps nothing in timeout, so a host that drops packets keeps a commit waiting for the kernel's connect timeout (about two minutes) before exit 3\; with a transport that sleeps 15s then exits 255 the staged call took 15.4s and returned 3, so only the 60s lock wait is bounded and the stated guarantee that a commit is never slower than the local run plus the bound does not hold (the upload and the host's run are unbounded too)\; no test pins any bound on connect and no open bug or CR names ConnectTimeout;
+BLOCKING: tools/remote-gate.sh gives the connection no bound
+RULINGS: the 2 new test files pass (9 tests, 26 subtests)\; the lock bound (flock -E 50 -w 60, exit 5, push unbounded) and the run-directory cleanup behave as designed\; the author's mutant replay did not finish in 600s so it is not counted as my pass.

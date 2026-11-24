@@ -1,6 +1,6 @@
 # BG1455: escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py, changelog.d/BG1455.md
@@ -35,10 +35,13 @@ Count the units a commit owns, its subject ids and its `Refs:` trailer ids, and 
 
 - [ ] **AC1** Given a release whose only commit names US0005 in a `Mentions:` trailer, when `escape.py trace` runs for a bug sharing US0005's file, then US0005 is not proposed and the trace refuses with `tags no unit`. Fails on: HEAD (measured: `units` is `['US0005']` and it is proposed).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_unit_named_only_in_a_mentions_trailer_is_not_proposed
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given a release with a shared commit whose subject names US0001 and US0003 and whose trailers are `Refs: US0001` and `Refs: US0003`, and a commit whose subject alone names US0006, when trace runs for a bug sharing all three units' file, then all three are proposed. Fails on: a fix that reads only the subject line or drops every trailer line, so a `Refs:` unit is lost.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceUnitsTests::test_a_subject_or_refs_unit_is_still_proposed
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC3** Given a unit whose ledger holds an APPROVE then a later REJECT, a release commit naming the escaped bug itself, and a bug with no Affects, when trace runs on each, then the proposal carries the APPROVE, the bug is never proposed as its own cause, and the bug with no Affects is refused with `names no Affects`. Fails on: HEAD's suite, under which the three mutants (latest row, own id kept, refusal dropped) each survive (measured).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceDocumentedRulesTests
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 

@@ -1,0 +1,6 @@
+UNIT: BG1272
+BRIEF: a950ae2c9f2e-12489723
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Executed in a detached worktree of HEAD against the clone-and-stub fixtures. test_pre_push_red_main.py, test_lean_push.py and test_pre_push_hook.py pass (44 passed, 11 subtests). The three acceptance criteria are covered: in-progress run named with id and commit\; red concluded run behind it still refuses\; green with nothing in progress prints nothing. Eight own mutants of the hook (status test altered, note_unfinished call removed, --limit changed, id guard dropped, status underscore replacement dropped, commit fallback text dropped, --branch or --workflow dropped from the new read) were each killed. One mutant (taking the last element instead of the first of the run list) survived, but it is equivalent because the read passes --limit 1 so the list holds one run. The unreadable-answer paths (gh failure, garbage, empty, dict, missing id, missing status) add nothing and never block, and the exact gh call counts in test_lean_push.py (4 and 3) match the hook. The extra gh read adds one forge round trip per push, which the unit declares and the tests count.

@@ -1,0 +1,223 @@
+{
+  "unit": "BG1027",
+  "digest": "baec29ea88e631dd at 158d012628b3",
+  "report": "sdlc-studio/.local/lane/landed/agent-acc2cf62c6741923c/BG1027-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "tagger-names-untracked-as-missing",
+      "file": "tools/check_links.py",
+      "old": "                return UNTRACKED\n        return FILE_MISSING",
+      "new": "                return FILE_MISSING\n        return FILE_MISSING",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tagger-exists-inverted",
+      "file": "tools/check_links.py",
+      "old": "            if (worktree / rel).exists():",
+      "new": "            if not (worktree / rel).exists():",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_target_absent_everywhere_is_still_missing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tagger-outside-export-untracked",
+      "file": "tools/check_links.py",
+      "old": "            except ValueError:\n                continue",
+      "new": "            except ValueError:\n                return UNTRACKED",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_link_climbing_out_of_the_repository_is_missing_not_a_crash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tagger-no-normpath",
+      "file": "tools/check_links.py",
+      "old": "rel = Path(os.path.normpath(target)).relative_to(export)",
+      "new": "rel = Path(target).relative_to(export)",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_link_climbing_out_of_the_repository_is_missing_not_a_crash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skill-pass-untagged",
+      "file": "tools/check_links.py",
+      "old": "f\"{tag(*(root / c for c in cands))}\")",
+      "new": "\"[file missing]\")",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_skill_reference_to_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "index-pass-untagged",
+      "file": "tools/check_links.py",
+      "old": "broken.append(f\"{rel}:{i} -> {tgt} {tag(path.parent / tgt)}\")\n    return sorted(broken)\n\n\n# A link in a fence",
+      "new": "broken.append(f\"{rel}:{i} -> {tgt} [file missing]\")\n    return sorted(broken)\n\n\n# A link in a fence",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "body-pass-untagged",
+      "file": "tools/check_links.py",
+      "old": "broken.append(f\"{rel}:{i} -> {tgt} {tag(path.parent / tgt)}\")\n    return sorted(broken)\n\n\n# The retitle",
+      "new": "broken.append(f\"{rel}:{i} -> {tgt} [file missing]\")\n    return sorted(broken)\n\n\n# The retitle",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_an_artefact_body_link_to_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "root-docs-untagged",
+      "file": "tools/check_links.py",
+      "old": "broken.append(f\"{name}:{i} -> {tgt} {tag(path.parent / tgt)}\")",
+      "new": "broken.append(f\"{name}:{i} -> {tgt} [file missing]\")",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_root_doc_link_to_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guide-untracked-inverted",
+      "file": "tools/check_links.py",
+      "old": "            if tag(skill / c[\"path\"]) == UNTRACKED:",
+      "new": "            if tag(skill / c[\"path\"]) != UNTRACKED:",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_loading_guide_cell_naming_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guide-untracked-falls-through",
+      "file": "tools/check_links.py",
+      "old": "                              f\"correct the cell\")\n                continue\n",
+      "new": "                              f\"correct the cell\")\n",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_loading_guide_cell_naming_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guide-pass-untagged",
+      "file": "tools/check_links.py",
+      "old": "check_loading_guide(root, tag=tag)",
+      "new": "check_loading_guide(root)",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_loading_guide_cell_naming_an_untracked_file_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guide-pass-unwired-pin",
+      "file": "tools/check_links.py",
+      "old": "check_loading_guide(root, tag=tag)",
+      "new": "check_loading_guide(root)",
+      "test": "tools/tests/test_check_links.py::LoadingGuideTests::test_the_check_is_wired_into_the_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-repository-inverted",
+      "file": "tools/check_links.py",
+      "old": "    if top.returncode != 0:",
+      "new": "    if top.returncode == 0:",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_outside_a_repository_the_staged_check_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "paths-not-mapped-into-export",
+      "file": "tools/check_links.py",
+      "old": "mapped.append(export / path.resolve().relative_to(worktree))",
+      "new": "mapped.append(path)",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "export-failure-ignored",
+      "file": "tools/check_links.py",
+      "old": "        if out.returncode != 0:",
+      "new": "        if False:",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_an_unreadable_index_is_an_error_not_a_pass",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "export-prefix-no-slash",
+      "file": "tools/check_links.py",
+      "old": "f\"--prefix={export}/\"",
+      "new": "f\"--prefix={export}\"",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_a_staged_target_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged-flag-ignored",
+      "file": "tools/check_links.py",
+      "old": "    if args.staged:\n        try:",
+      "new": "    if False:\n        try:",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_unstaged_deletion_still_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged-error-exit-1",
+      "file": "tools/check_links.py",
+      "old": "            print(f\"error: {exc}\", file=sys.stderr)\n            return 2",
+      "new": "            print(f\"error: {exc}\", file=sys.stderr)\n            return 1",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_outside_a_repository_the_staged_check_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "root-outside-not-refused",
+      "file": "tools/check_links.py",
+      "old": "            except ValueError:\n                raise StagedError(",
+      "new": "            except ValueError:\n                mapped.append(path); continue\n                raise StagedError(",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_root_outside_the_repository_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook-lane-without-staged",
+      "file": ".githooks/pre-commit",
+      "old": "-- python3 tools/check_links.py --staged",
+      "new": "-- python3 tools/check_links.py",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac1-fixture-stages-target",
+      "file": "tools/tests/test_check_links_staged_targets.py",
+      "old": "        self.fx.add_row(\"BG0002\", \"b\", stage_target=False)\n        r = self.fx.lane()\n        self.assertEqual(1, r.returncode",
+      "new": "        self.fx.add_row(\"BG0002\", \"b\", stage_target=True)\n        r = self.fx.lane()\n        self.assertEqual(1, r.returncode",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_untracked_target_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac3-deletes-from-index",
+      "file": "tools/tests/test_check_links_staged_targets.py",
+      "old": "        (self.fx.root / \"sdlc-studio/bugs/BG0001-a.md\").unlink()",
+      "new": "        self.fx.git(\"rm\", \"-q\", \"sdlc-studio/bugs/BG0001-a.md\")",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTargetTests::test_an_unstaged_deletion_still_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-pathspec-commit-takes-whole-index",
+      "file": "tools/tests/test_check_links_staged_targets.py",
+      "old": "[\"commit\", \"-q\", \"-m\", \"row only\", \"--\", INDEX]",
+      "new": "[\"commit\", \"-q\", \"-m\", \"row only\"]",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_a_pathspec_commit_judges_its_own_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-unstaged-edit-staged",
+      "file": "tools/tests/test_check_links_staged_targets.py",
+      "old": "        _write(self.fx.root, \"README.md\", \"# Fixture\\n\\nSee [gone](gone.md).\\n\")\n        r = self.fx.lane()",
+      "new": "        _write(self.fx.root, \"README.md\", \"# Fixture\\n\\nSee [gone](gone.md).\\n\")\n        self.fx.git(\"add\", \"README.md\")\n        r = self.fx.lane()",
+      "test": "tools/tests/test_check_links_staged_targets.py::StagedTreeTests::test_an_unstaged_edit_is_not_judged",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

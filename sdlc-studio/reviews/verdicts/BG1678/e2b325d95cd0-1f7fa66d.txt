@@ -1,0 +1,6 @@
+UNIT: BG1678
+BRIEF: e2b325d95cd0-1f7fa66d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: reconcile detect at HEAD reports scope=all drift_items=0 and the derivable sweep returns no RFC item\; the migration is 36 Delivered plus 20 decision-only (26 Accepted at HEAD, of which 20 read 'none - decided before decomposition was recorded' and RFC0061-0065 and RFC0067 hold open recorded requests)\; spot-checks of RFC0002, 0004, 0008, 0022, 0025, 0043, 0066 against their change requests and epics at HEAD show every recorded child Complete, Done, Superseded or Rejected\; D0611 and D0612 are recorded and match the behaviour\; the sweep opens its corpus cache around a read-only walk and apply transitions outside it, so a status written by apply is re-read\; my mutants dropping the settled-before-success clause (2 tests failed) and removing the corpus cache (1 test failed) were both killed in a detached worktree, now removed\; the 28 selected reconcile tests and tools/tests/test_supersession_records.py pass\; RFC0009 decoration restored by hand is not this unit's defect (BG1733).

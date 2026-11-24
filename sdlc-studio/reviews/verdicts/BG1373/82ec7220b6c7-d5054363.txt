@@ -1,0 +1,6 @@
+UNIT: BG1373
+BRIEF: 82ec7220b6c7-d5054363
+VERDICT: REJECT
+ISSUES: [new] test_a_path_under_a_loop_of_links_costs_only_itself never reaches the guard: its loop path `loop/a/unit.py` holds no Affects name, so `_edited_before_brief`'s raw-byte prefilter (verdict_provenance.py:384) drops the record before `_affected` resolves it, and the test passes with RuntimeError removed from `_resolved`'s except clause (run on Python 3.10.21 with a real symlink loop, where resolve raises RuntimeError: survived)\; the changelog claim that a loop of links is skipped is therefore pinned end to end by no test that a 3.10 or 3.12 user meets, only by the patched-resolve test at helper level (fix: put `src/unit.py` under the loop path so the record passes the prefilter);
+BLOCKING: test_a_path_under_a_loop_of_links_costs_only_itself never reaches the guard
+RULINGS: verify_ac dry-run 3 of 3 AC pass\; both suites green on Python 3.10, 3.12 and 3.14\; the patched-resolve test does pin both clauses (dropping RuntimeError dies on 3.10) and its exception text matches what 3.10 raises, but it calls the helpers directly, not the record entry point\; NUL and non-string cases and the empty-worktree case are properly pinned.

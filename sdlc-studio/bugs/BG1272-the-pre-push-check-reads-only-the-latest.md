@@ -1,6 +1,6 @@
 # BG1272: The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .githooks/pre-push, tools/tests/test_pre_push_red_main.py, tools/tests/test_pre_push_hook.py, tools/tests/test_lean_push.py, changelog.d/BG1272.md
@@ -26,10 +26,13 @@ When the latest run on main is in progress, read the most recent concluded run a
 
 - [ ] **AC1** Given the newest push-triggered Lint run on main still in progress and the most recent concluded run a success, when the pre-push hook runs, then it names the in-progress run by id and the commit it judges, and says its result is not yet read. Fails on: an unfinished run over the parent commit passing in silence.
   - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the newest run in progress and the most recent concluded run a failure nobody acknowledged, when the pre-push hook runs, then the push is refused naming the concluded run. Fails on: the in-progress run masking the red before it.
   - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_red_concluded_run_behind_an_in_progress_one_refuses
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given no run in progress and the latest concluded run a success, when the pre-push hook runs, then it prints no in-progress line and does not refuse. Fails on: the new notice printed on every push.
   - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_green_main_with_nothing_in_progress_says_nothing
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1569: The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses
 
-> **Status:** Open
+> **Status:** Fixed
 > **Supersedes:** BG1020
 > **Severity:** Medium
 > **Points:** 5
@@ -31,10 +31,13 @@ Decide which is right and make the two agree: either Accepted is the decided sta
 
 - [ ] **AC1** Given a fixture RFC whose every decision is resolved and one CR spawned from it at Proposed, when the accept steps reference-rfc.md documents are followed through `transition.py set` in the order written, then every step exits 0 without `--force` and the RFC holds the status the page names for a decided RFC. Fails on: the documented happy path refused, so that every accepted RFC is accepted by override.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RfcAcceptWorkflowTests::test_the_documented_accept_steps_pass_without_force
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same RFC with its spawned CR unresolved, when it is moved to the status that claims its workstreams are delivered, then the transition is refused naming the unresolved CR; once the CR is terminal the same transition succeeds. Fails on: the fix removing the derived gate instead of placing it at the status that claims delivery.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RfcAcceptWorkflowTests::test_the_delivery_claim_is_still_refused_over_an_unresolved_cr
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given reference-rfc.md and help/rfc.md, when the test reads the status each names for an RFC between decision and delivery and whether each calls Accepted terminal, then both agree with the RFC statuses and terminal set the tool holds, and an RFC with an Open decision row is still refused at the decided status. Fails on: the pages and the tool giving different accounts of what Accepted means, or the open-decision gate lost in the change.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::RfcAcceptWorkflowTests::test_the_pages_and_the_tool_agree_on_what_accepted_means
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1678: This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** sdlc-studio/rfcs/, changelog.d/BG1678.md, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, tools/tests/test_supersession_records.py
@@ -26,8 +26,10 @@ Record a ruling (a decisions row) on what an Accepted RFC with no change request
 
 - [ ] **AC1** Given BG1569's Delivered status is in, when reconcile.py detect runs on this repository, then it reports 0 drift items across sdlc-studio/rfcs/. Fails on: the 56 request-derivable and undecomposed items lane T measured.
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/reconcile.py detect | grep -q 'drift_items=0'
+  - **Verified:** yes (2026-11-23)
 - [ ] **AC2** Given an Accepted RFC with no change request, when the ruling is read in sdlc-studio/decisions.md, then it names that RFC state and what reconcile reports for it. Fails on: no ruling recorded, so 20 RFCs read as undecomposed with no decision behind them.
   - **Verify:** shell grep -E '^[|] D[0-9]{4} [|].*BG1678' sdlc-studio/decisions.md | grep -i 'accepted' | grep -qi 'reconcile'
+  - **Verified:** yes (2026-11-23)
 
 ## Revision History
 
