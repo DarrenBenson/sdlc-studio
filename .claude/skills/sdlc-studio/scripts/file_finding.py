@@ -1034,17 +1034,38 @@ def criteria_block(type_: str, fields: dict) -> str:
     return thin_evidence_note(type_, fields)
 
 
+#: A list item at column 0: a criterion, which may hold child items beneath it.
+_CRITERION_ITEM_RE = re.compile(r"^(?:[-*+]|\d+[.)])\s")
+
+#: A `- **Verify:**` item indented beneath a criterion: the line `checklist_block` writes under a
+#: request's criterion for each `verify` entry, and the criterion's check rather than its prose.
+_CHILD_VERIFY_RE = re.compile(r"^[ \t]+[-*+]\s+\*\*Verify:\*\*\s*\S")
+
+
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
     """Every command-shaped pseudo-`Verify:` inside an artefact's Acceptance Criteria section, as
     (1-based line number, the line, the offending command). The read-only counterpart of
-    `check_prose_acs`, for the instances already on disk (the validator's warning lane)."""
+    `check_prose_acs`, for the instances already on disk (the validator's warning lane).
+
+    Only a criterion's PROSE is judged, as `check_prose_acs` judges it. A `- **Verify:**` item
+    indented beneath a criterion (`_CHILD_VERIFY_RE`) is the check the filer writes there and is
+    skipped; a `Verify:` inside the criterion's own line, or on an item not beneath one, is
+    judged as before."""
     out: list[tuple[int, str, str]] = []
     in_ac = False
+    under_criterion = False
     for n, line in enumerate(text.splitlines(), 1):
         if line.startswith("## "):
             in_ac = "acceptance criteria" in line.lower()
+            under_criterion = False
             continue
         if not in_ac:
+            continue
+        if _CRITERION_ITEM_RE.match(line):
+            under_criterion = True
+        elif line.strip() and not line[0].isspace():
+            under_criterion = False  # a paragraph at column 0 ends the criterion's items
+        elif under_criterion and _CHILD_VERIFY_RE.match(line):
             continue
         cmd = pseudo_verify(line)
         if cmd:
@@ -1623,6 +1644,22 @@ def _stamp(f: dict) -> str:
     return stamp
 
 
+def _raised_in_batch(root: Path) -> str:
+    """The `Raised-in-batch` stamp of a finding no caller named a batch for: the id of the run
+    open at `root` (`<run id> - raised during the run, <moment>`), or, with none open or the
+    run state unreadable, `none open - raised outside a delivery batch, <moment>`. The moment
+    of filing is the last token either way."""
+    from lib import run_state  # noqa: PLC0415 - read only here, as the other callers import it
+    try:
+        state = run_state.read(root)
+    except run_state.RunStateError:
+        state = {}  # an unreadable state names no run; filing is not the place to refuse it
+    moment = sdlc_md.now_iso8601()
+    if state.get("outcome") == run_state.RUNNING and state.get("run_id"):
+        return f"{state['run_id']} - raised during the run, {moment}"
+    return f"none open - raised outside a delivery batch, {moment}"
+
+
 def _rev_author(f: dict) -> str:
     """The Revision History Author cell: the name of the authorship of record, resolved from
     `--author` (and defaulting to the invoking agent). The filer records who raised the
@@ -1678,8 +1715,23 @@ def _md_safe(text) -> str:
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
         pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p) for p in pieces[0::2]]
-        parts[i] = "".join(pieces)
+        parts[i] = _escape_lone_bold("".join(pieces), after_span=i > 0,
+                                     before_span=i < len(parts) - 1)
     return "`".join(parts)
+
+
+#: A `**` standing alone between whitespace (or a text edge): no emphasis opens or closes on it,
+#: and markdownlint's MD037 reads two of them as spaces inside emphasis markers. A `**bold**`
+#: pair and a `**Field:**` declaration have a non-space beside the marker, so they never match.
+_LONE_BOLD_RE = re.compile(r"(?<!\S)\*\*(?!\S)")
+
+
+def _escape_lone_bold(text: str, after_span: bool = False, before_span: bool = False) -> str:
+    """`text` with each lone `**` backslash-escaped. `text` is prose outside code spans;
+    `after_span` and `before_span` say a code span sits against its start or end, so a marker
+    touching the span is not alone."""
+    edged = ("x" if after_span else " ") + text + ("x" if before_span else " ")
+    return _LONE_BOLD_RE.sub(r"\\*\\*", edged)[1:-1]
 
 
 def _wrap_token(m: re.Match) -> str:
@@ -1709,9 +1761,12 @@ _BARE_URL_RE = re.compile(r"(?<![A-Za-z0-9<])(?<!\]\()https?://[^\s<>`]+", re.IG
 
 def _code_url(m: re.Match) -> str:
     """One bare URL as a code span, its trailing sentence punctuation and any unbalanced `)`
-    left outside, where they were punctuation rather than part of the address."""
+    left outside, where they were punctuation rather than part of the address. A trailing
+    backslash is the author's escape of the character after the URL (`a\\;`), so it stays
+    outside the span too: inside it, the span would close on an escaped backtick. A backslash
+    inside the address is kept."""
     url, tail = m.group(0), ""
-    while url[-1] in ".,;:!?*_~'\"" or (url[-1] == ")" and url.count(")") > url.count("(")):
+    while url[-1] in ".,;:!?*_~'\"\\" or (url[-1] == ")" and url.count(")") > url.count("(")):
         url, tail = url[:-1], url[-1] + tail
     return f"`{url}`{tail}"
 
@@ -1728,9 +1783,11 @@ def _code_urls(text) -> str:
 
 #: A token after `\` is left alone: `\_name` is already escaped, and a backtick after the
 #: backslash would be escaped in turn, leaving an unbalanced span (MD038). The leading-underscore
-#: shape also skips a token after `/` or `#`, which is a URL path, link target or anchor.
+#: shape also skips a token after `/` or `#`, which is a URL path, link target or anchor. The
+#: first shape takes the directories before it (`tools/tests/test_x.py`), so a path is one span
+#: and never a directory followed by a spanned file name.
 _MD_TOKEN_RE = re.compile(
-    r"(?<![\w`\\])([A-Za-z_][\w.]*_[\w().\[\]]*|(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
+    r"(?<![\w`\\])((?:[\w.\-]+/)*[A-Za-z_][\w.]*_[\w().\[\]]*|(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
 
 
 # The `**Field:**` declaration shape at either place `extract_field` anchors a field: a line
@@ -1758,9 +1815,12 @@ def _steps_safe(text: str) -> str:
     """A Steps to Reproduce value as its author wrote it, so a repro command copied out of the
     filed bug still runs. `_prose_safe` back-ticks underscored names, and inside a shell command
     a backtick is command substitution, so no line here is told apart as a command or prose: no
-    backtick, fence, list marker or indentation is added and no prompt is dropped. Two changes
+    backtick, fence, list marker or indentation is added and no prompt is dropped. Three changes
     remain, and neither tells a command from prose:
 
+    - a lone `**` between spaces on a line outside any fenced block and outside its inline code
+      spans is backslash-escaped, since markdownlint reads one as spaces inside emphasis
+      markers (MD037); a fenced block is the author's, as written;
     - the metadata-line guard `_prose_safe` applies (`_META_DECL_RE`) runs over the whole value,
       inside a fenced block the author wrote too, since `extract_field` reads a `**Field:**`
       declaration there as readily as outside: that declaration's bold markers are escaped;
@@ -1769,14 +1829,27 @@ def _steps_safe(text: str) -> str:
       cannot swallow the sections below. A line opening on a backtick run with another backtick
       after it is inline code (CommonMark), so it opens no block."""
     fence = None  # the (marker, run length) of the author's open fenced block
-    for line in text.split("\n"):
+    lines = text.split("\n")
+    for n, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("```") and "`" in stripped.lstrip("`"):
             continue  # inline code opens no block, and in one is no closer (a closer carries nothing)
+        was_open = fence is not None
         fence = sdlc_md.fence_step(stripped, fence)[0]
+        if not was_open and fence is None:
+            lines[n] = _escape_lone_bold_outside_spans(line)  # prose, not an author's block
+    text = "\n".join(lines)
     if fence:
         text += "\n" + fence[0] * fence[1]
     return _META_DECL_RE.sub(r"\1\\*\\*\2\\*\\*", text)
+
+
+def _escape_lone_bold_outside_spans(line: str) -> str:
+    """`_escape_lone_bold` over the parts of one line that sit outside its code spans."""
+    parts = line.split("`")
+    for i in range(0, len(parts), 2):
+        parts[i] = _escape_lone_bold(parts[i], after_span=i > 0, before_span=i < len(parts) - 1)
+    return "`".join(parts)
 
 
 def _field_safe(key: str, text) -> str:
@@ -2466,13 +2539,13 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # anything is minted - a child born pointing at nothing is the asymmetry class the
     # bidirectional wiring exists to abolish.
     parent = prose_value(fields, "parent")
-    parent_path = None
+    parent_path = parent_type = None
     if parent:
         found = sdlc_md.find_by_id(root, parent)
         if not found:
             raise ValueError(f"--parent {parent} does not resolve to any artefact - "
                              f"a child is never minted against a missing parent")
-        parent_path = found[0]
+        parent_path, parent_type = found
         # RESOLVING is not the same as being able to CARRY a child, and BG0619 made the two
         # diverge: widening `find_by_id` to reach retros, handoffs and reviews meant a
         # `--parent RETRO0109` sailed through the guard above, the child was minted AND indexed
@@ -2514,6 +2587,10 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                 child_id = sdlc_md.norm_id(result["id"])
                 if child_id not in existing:
                     sdlc_md.write_decomposed(parent_path, [*existing, child_id])
+                # the parent's index row projects that line: bring its spawned-work cell up to
+                # date now, as reconcile's own apply does, so the next commit finds no drift
+                # (it also fills any other row of that index the census can see past)
+                reconcile.apply_spawned_column(root, types=[parent_type])
     if warnings:
         result["duplicate_warnings"] = warnings
     return result
@@ -2562,13 +2639,13 @@ def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields:
     # names whoever raised it - the invoking agent - rather than a literal or a blank cell.
     fields = {**fields, "_raised_by": raised_by, "author": sdlc_md.authorship_name(raised_by)}
     # WHERE a finding was raised (US0561). A caller filing for a run (the close) names the run
-    # itself in `_batch`; otherwise the stamp states the absence and carries the MOMENT of filing:
+    # itself in `_batch`; otherwise the stamp names the run that is open, or states that none is,
+    # and carries the MOMENT of filing:
     # `Created` is only a date, so a finding filed later on a report's own day could not be told
     # from one filed before it, and entered the report's re-derivation alone. The moment is the
     # stamp's last token, where `sprint_report` and `close_owed` look for it. The delivery-batch
     # span the stamp once named is retired: nothing opened one any more.
-    fields = {**fields, "_batch": fields.get("_batch") or (
-        f"none open - raised outside a delivery batch, {sdlc_md.now_iso8601()}")}
+    fields = {**fields, "_batch": fields.get("_batch") or _raised_in_batch(root)}
     sdlc_md.atomic_write(path, _render(type_, disp_id, title, today, fields, create_status))
     if counted:
         triage_noise.record_creation(root)  # count this minted finding against the session budget

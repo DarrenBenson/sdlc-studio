@@ -808,9 +808,11 @@ def _resolve_and_require_affects(repo_root: Path | str, request_id: str, parent_
 # the "now being worked" signal. A request already terminal or without a working state is left be.
 _WORKING_STATUS = {"cr": "In Progress", "rfc": "In Review"}
 
-def _validate_into_target(root: Path, into_epic: str) -> None:
+def _validate_into_target(root: Path, into_epic: str, allow_terminal: bool = False) -> None:
     """Refuse (before anything is minted) an `--into` target that is unknown, not an epic, or
-    terminal - a closed epic cannot take new stories, and only an epic holds stories at all."""
+    terminal - a closed epic cannot take new stories, and only an epic holds stories at all.
+    `allow_terminal` lets a Done epic through, for a request that already decomposed into it:
+    the stories minted there reopen it."""
     hit = sdlc_md.find_by_id(root, into_epic)
     if not hit:
         raise ValueError(f"--into target {into_epic} does not exist; nothing minted")
@@ -821,9 +823,20 @@ def _validate_into_target(root: Path, into_epic: str) -> None:
     estatus = sdlc_md.canonical_status(
         sdlc_md.extract_field(epath.read_text(encoding="utf-8"), "Status"),
         sdlc_md.status_vocab("epic", root))
-    if sdlc_md.is_terminal_status("epic", estatus or ""):
+    if not allow_terminal and sdlc_md.is_terminal_status("epic", estatus or ""):
         raise ValueError(f"--into target {into_epic} is terminal ({estatus}); a closed epic "
                          f"cannot take new stories. Nothing minted")
+
+
+def _names_epic(root: Path, request_id: str, into_epic: str | None) -> bool:
+    """True when `request_id` already lists `into_epic` in its `Decomposed-into:`. False for no
+    target, an unknown request or an unreadable one: the shared validation that follows names
+    the refusal."""
+    hit = sdlc_md.find_by_id(root, request_id) if into_epic else None
+    if not hit:
+        return False
+    text = sdlc_md.read_text_safe(hit[0])
+    return sdlc_md.norm_id(into_epic) in {sdlc_md.norm_id(e) for e in sdlc_md.decomposed_ids(text)}
 
 
 def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
@@ -838,13 +851,19 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     recorded on the request's `Unrefined:` field and are not seeded onto the story or the epic.
 
     Validates ALL INPUT before minting anything - the request must resolve, be a request type and
-    not already decomposed; every story's points must be on the scale (parsed already); every title
+    not already decomposed (bar a further slice into an epic it already names, `into_epic`, which
+    adds the stories there and reopens a Done epic); every story's points must be on the scale
+    (parsed already); every title
     (epic and stories) must be a single line the creators will accept. Only after that does it mint,
     and if a create still fails part-way (a rare IO error), it ROLLS BACK the files it wrote. So a
     bad breakdown, or a failure mid-mint, leaves the backlog untouched - refine never
     half-decomposes a request."""
     root = Path(repo_root)
-    refinable(root, request_id)   # SHARED validation: non-request / already-decomposed refusals
+    # SHARED validation: non-request / already-decomposed refusals. A request already decomposed
+    # into the epic `--into` names is a further slice of it, not a second decomposition, so that
+    # one case is let through; `--into` any other epic is refused as it always was.
+    named = _names_epic(root, request_id, into_epic)
+    refinable(root, request_id, allow_decomposed=named)
     rpath, rtype = sdlc_md.find_by_id(root, request_id)
     if not stories:
         raise ValueError("refine needs at least one --story: an empty decomposition delivers "
@@ -859,7 +878,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
         raise ValueError("refine needs EITHER --epic-title (mint a new epic) OR --into EPxxxx "
                          "(decompose into an existing epic), not both and not neither")
     if into_epic:
-        _validate_into_target(root, into_epic)   # refuse a bad target BEFORE anything is minted
+        # refuse a bad target BEFORE anything is minted
+        _validate_into_target(root, into_epic, allow_terminal=named)
     else:
         sdlc_md.require_single_line("epic title", epic_title)
     for title, _, _ in stories:
@@ -901,12 +921,15 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
                 "unrefined": left}
 
     # A criterion left unrefined is not this decomposition's to carry, on the story or the epic.
+    # A further slice of an epic the request already decomposed into carries none: the epic holds
+    # the request's criteria from the first slice, and seeding them again would repeat them.
     seed_criteria = ([c for n, c in enumerate(criteria, 1) if f"AC{n}" not in (left or [])]
-                     if seed_acs else None)
+                     if seed_acs and not named else None)
     if into_epic:
-        epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
-                                             existing_children=[], seed_criteria=seed_criteria,
-                                             classes=classes)
+        epic_id, story_ids = _decompose_into(
+            root, rid, rpath, into_epic, stories, total,
+            existing_children=sdlc_md.decomposed_ids(rpath.read_text(encoding="utf-8")),
+            seed_criteria=seed_criteria, classes=classes)
     else:
         epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
                                         existing_children=[], seed_criteria=seed_criteria,
@@ -1351,7 +1374,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="decompose the request's stories INTO this existing OPEN epic (a shared "
                         "batch container) instead of minting a new one - the request's "
                         "Decomposed-into points at it and its point total rolls up. A terminal, "
-                        "non-epic, or unknown target is refused with nothing minted")
+                        "non-epic, or unknown target is refused with nothing minted, except a Done "
+                        "epic the request already decomposed into: the further slice reopens it")
     a.add_argument("--story", action="append", metavar="TITLE|POINTS[|AFFECTS]",
                    help="a story in the breakdown: 'title|points' or 'title|points|affects'. "
                         "Affects may be a path list, `inherit` (take the request's Affects), or "

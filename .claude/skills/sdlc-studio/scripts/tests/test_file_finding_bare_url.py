@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402 - confined git, so an inherited GIT_DIR cannot steer the lookup
+import loader  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
 SKILL = SCRIPT.parent.parent
@@ -113,6 +114,29 @@ class FiledBareUrlTests(unittest.TestCase):
         (3) no `](` lookbehind - the link destination gains backticks and the link breaks."""
         self.assertIn("see `https://ok.example/a` and <https://auto.example/b>, or "
                       "[the doc](https://link.example/c).", self.body)
+
+
+class BareUrlTests(unittest.TestCase):
+    """The URL span's end: a backslash that escapes the next character is the author's, not the
+    address's."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ff = loader.load_script("file_finding")
+
+    def test_a_url_stops_before_a_backslash_that_escapes_a_semicolon(self) -> None:
+        """AC1. Mutant: the trailing-punctuation strip without the backslash, so the span is
+        `https://example.com/a\\` and the backslash sits inside it."""
+        self.assertEqual("see `https://example.com/a`\\; next",
+                         self.ff._code_urls("see https://example.com/a\\; next"))
+
+    def test_an_inner_backslash_stays_in_the_url_and_a_plain_semicolon_stays_outside(
+            self) -> None:
+        """AC3, the controls. Mutant: a fix that cuts the URL at any backslash."""
+        self.assertEqual("`https://example.com/a\\b/c` and",
+                         self.ff._code_urls("https://example.com/a\\b/c and"))
+        self.assertEqual("see `https://example.com/a`; next",
+                         self.ff._code_urls("see https://example.com/a; next"))
 
 
 if __name__ == "__main__":

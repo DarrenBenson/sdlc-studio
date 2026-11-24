@@ -205,8 +205,14 @@ def _bullet(title: str, detail: str) -> str:
     """One consolidation-list item. A multi-line detail is rendered faithfully: its later lines
     are indented two spaces so they stay part of the list item, rather than flattened by an
     embedded raw newline that would break them OUT of the bullet into bare top-level lines (and a
-    line shaped like `> **Status:** x` would forge a metadata line). Nothing is dropped."""
-    detail = (detail or "").strip()
+    line shaped like `> **Status:** x` would forge a metadata line). Nothing is dropped.
+
+    The title and the detail are markdown-safed as the filer safes a finding's prose
+    (`file_finding._md_safe`, `_prose_safe`), so a bare identifier in either is code-spanned
+    rather than read as emphasis (MD037)."""
+    import file_finding  # noqa: PLC0415 - the load-time cycle is safe at call time
+    title = file_finding._md_safe(title)  # noqa: SLF001 - the one prose escaper
+    detail = file_finding._prose_safe((detail or "").strip()) if (detail or "").strip() else ""
     if not detail:
         return f"- **{title}**"
     first, *rest = detail.splitlines()
@@ -278,6 +284,7 @@ def _new_consolidation_cr(root, theme: str, title: str, detail: str, today: str,
     # the SAME shared writers the other two use, never a hand-copied expression that can drift.
     import file_finding  # noqa: E402
     rev = file_finding.rev_row(today, {"_raised_by": raised_by}, "Consolidation opened")
+    cr_title = file_finding._md_safe(cr_title)  # noqa: SLF001 - the slug above is of the raw words
     body = (
         f"# {disp}: {cr_title}\n\n"
         f"> **Status:** {create_status}\n> **Priority:** Low\n> **Type:** Improvement\n"

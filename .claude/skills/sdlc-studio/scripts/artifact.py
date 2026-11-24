@@ -120,6 +120,16 @@ def _list(f: dict, key: str) -> list[str]:
         if isinstance(items, (list, tuple)) else []
 
 
+def _affects_text(f: dict) -> dict:
+    """`f` with a list-valued `affects` joined into the comma-separated path line the `Affects`
+    field is, each path stripped and a blank one dropped. A list written as a value would be
+    rendered as its Python repr (`['a.py']`), which parses to one bracketed token. Any other
+    value is left as it was."""
+    if isinstance(f.get("affects"), (list, tuple)):
+        f = {**f, "affects": ", ".join(str(a).strip() for a in f["affects"] if str(a).strip())}
+    return f
+
+
 #: The refusal a retired `--target` (or a `target` field) meets. The tier was written on every
 #: supplied AC and read by nothing, so it is refused by name rather than silently dropped.
 TARGET_RETIRED = ("the verification-target tier is retired - no gate reads it, and an AC's "
@@ -973,6 +983,49 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
     return False
 
 
+def _reopen_done_epic(root: Path, epic_id: str) -> list[str]:
+    """Reopen the epic a story was just minted into when it reads Done, and the requests it
+    delivers when they read terminal; the notes of what could not be reopened.
+
+    A minted story is work nobody has built, so an epic left Done over it is wrong, and a request
+    left Complete over it is derived Complete again by the next `reconcile apply`. Both moves go
+    through `transition`, so each runs its own gates; the request moves to the working status
+    `refine` gives a request it decomposes (`refine._WORKING_STATUS`). Only the delivered
+    terminal reopens: a `Superseded` epic records a ruling, not a delivery, and is left as it
+    is. A refusal never fails a completed mint, it is returned as a note to print."""
+    ep = _find_epic(root, epic_id) if epic_id else None
+    if ep is None:
+        return []
+    text = ep.read_text(encoding="utf-8")
+    status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"),
+                                      sdlc_md.status_vocab("epic", root))
+    if status != sdlc_md.default_terminal_status("epic"):
+        return []
+    import refine  # noqa: PLC0415 - refine imports this module, so it is read where used
+    notes: list[str] = []
+    eid = sdlc_md.extract_record_id(ep.stem) or ep.stem
+
+    def reopen(rid: str, to: str) -> None:
+        try:
+            transition.transition(root, rid, to)
+        except (ValueError, FileNotFoundError) as exc:
+            notes.append(f"{rid} could not be reopened to {to} ({str(exc).splitlines()[0]}): "
+                         f"it still reads terminal over the story just added - reopen it with "
+                         f"`transition.py set --id {rid} --status {to}`")
+
+    reopen(eid, "In Progress")
+    for parent in sdlc_md.parent_refs(text):
+        hit = sdlc_md.find_by_id(root, parent)
+        working = refine._WORKING_STATUS.get(hit[1]) if hit else None  # noqa: SLF001
+        if working is None or not sdlc_md.is_terminal_status(
+                hit[1], sdlc_md.canonical_status(
+                    sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"),
+                    sdlc_md.status_vocab(hit[1], root)) or ""):
+            continue
+        reopen(sdlc_md.extract_record_id(hit[0].stem) or parent, working)
+    return notes
+
+
 def _refresh_epic_row(root: Path, epic_id: str) -> list[str]:
     """Bring the epic's index row back in step with the census after a story is wired to it.
 
@@ -1128,7 +1181,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     if type_ not in SPEC:
         raise ValueError(f"unknown type {type_!r} (expected one of {', '.join(SPEC)})")
     root = Path(repo_root)
-    f = dict(fields or {})
+    f = _affects_text(dict(fields or {}))
     # Parent link (spawning under an RFC/CR): validate BEFORE minting, wire both
     # directions after - the same contract as file_finding's --parent.
     _parent = (f.pop("parent", "") or "").strip()
@@ -1266,6 +1319,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # creators, one column, one behaviour - never the raw triple, never a discarded identity.
         f["author"] = sdlc_md.authorship_name(f["_raised_by"])
         render = _select_render(root, type_, f.get("template"))
+        # The slug above is made from the title's words; every written surface takes it safed.
+        title = file_finding._md_safe(title)
         body = _land_supplied(render(type_, disp, title, f["date"], f), type_, f)
         _refuse_dropped_content(body, type_, f)
         prov = str(f.get("provenance") or "").strip()
@@ -1295,6 +1350,7 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         linked = _wire_story_to_epic(root, f["epic"], disp, title, file_id, slug) \
             if (type_ == "story" and f.get("epic")) else None
         if linked:
+            ac_warnings.extend(_reopen_done_epic(root, f["epic"]))
             _refresh_epic_row(root, f["epic"])
         if _parent_path is not None:
             # wire BOTH directions inside the same lock as the mint (two concurrent
@@ -1323,7 +1379,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
     today = date.today().isoformat()
     if not items:
         raise ValueError("batch is empty")
-    items = [dict(it) for it in items]   # resolution rewrites fields; never mutate the caller's
+    items = [_affects_text(dict(it)) for it in items]  # resolution rewrites fields; the caller's stay
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
     # missing epic is an orphan; a colliding id would corrupt the run.
     groom_preview = (_select_render(root, type_, template)
@@ -1418,6 +1474,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
         render = _select_render(root, type_, template)
         _ensure_index(root, type_, today)
         created = []
+        reopen_notes: list[str] = []
         for p in plan:
             it = p["item"]
             f = dict(it)
@@ -1427,26 +1484,28 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["_raised_by"] = sdlc_md.authorship_value(f.get("author"), root)
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
-            body = _land_supplied(render(type_, p["disp"], it["title"], today, f), type_, f)
+            title = file_finding._md_safe(it["title"])  # the slug was made from the raw words
+            body = _land_supplied(render(type_, p["disp"], title, today, f), type_, f)
             # labelled as `new` labels it: a bare fence an author wrote in a field is MD040
             sdlc_md.atomic_write(p["path"], sdlc_md.normalise_fence_languages(body))
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
             if header:
                 row = sdlc_md.row_from_header(
-                    header, link, it["title"], create_status, f,
+                    header, link, title, create_status, f,
                     derived=sdlc_md.derive_epic_row_cells(root, p["disp"])
                     if type_ == "epic" else None)
                 file_finding.append_index_row(root, type_, row)
             if type_ == "story":
-                _wire_story_to_epic(root, it["epic"], p["disp"], it["title"], p["file_id"], p["slug"])
+                _wire_story_to_epic(root, it["epic"], p["disp"], title, p["file_id"], p["slug"])
+                reopen_notes.extend(_reopen_done_epic(root, it.get("epic", "")))
                 # The batch path is the one that skipped this before, so it is wired explicitly
                 # here rather than left to a shared tail nobody notices is missing.
                 _refresh_epic_row(root, it.get("epic", ""))
             created.append({"id": p["disp"], "file_id": p["file_id"], "path": str(p["path"])})
-        return {"type": type_, "count": len(created),
-                "template": _rendered_template(root, type_, template),
-                "created": created, "dry_run": False}
+        return _with_notes({"type": type_, "count": len(created),
+                            "template": _rendered_template(root, type_, template),
+                            "created": created, "dry_run": False}, reopen_notes, [])
 
 
 def infer_type_from_id(artifact_id: str) -> str | None:
@@ -1683,7 +1742,11 @@ def cmd_new(args: argparse.Namespace) -> int:
         # it did. Reporting unqualified success sent authors away from a document that still
         # needed writing, and they met that fact later as a refusal from another command.
         _body = sdlc_md.read_text_safe(Path(r["path"])) or ""
-        if "{{criterion}}" in _body or "{{" in _body.split("## Acceptance Criteria", 1)[-1][:400]:
+        # Only a file that HAS the section can leave it unwritten: a record whose template holds
+        # no Acceptance Criteria (a review, a retro, an epic) has other slots, not these.
+        _ac = _body.split("## Acceptance Criteria", 1)[1][:400] if (
+            "## Acceptance Criteria" in _body) else ""
+        if "{{criterion}}" in _body or "{{" in _ac:
             print("  NOT FINISHED: its acceptance criteria are still the scaffold placeholder. "
                   "Author them before planning or reviewing this - `sprint plan` refuses an "
                   "ungroomed unit, and a criterion nobody wrote is one nothing can check.")
@@ -1705,6 +1768,8 @@ def cmd_batch(args: argparse.Namespace) -> int:
         return 0
     verb = "would create" if r.get("dry_run") else "created"
     print(f"batch: {verb} {r['count']} {args.type}(s) (template={r['template']})")
+    for note in r.get("ac_warnings", []):
+        print(f"warning: {note}", file=sys.stderr)
     for row in (r.get("ids") or r.get("created") or []):
         print(f"  {row['id']} -> {row['path']}")
     return 0
@@ -2125,6 +2190,46 @@ class _WriteJournal:
         return unrestored
 
 
+#: A markdown link: its text, then its target up to the closing parenthesis.
+_LINK_TEXT_RE = re.compile(r"\[([^\]\n]*)\]\(([^)\s]+)\)")
+
+#: The id at the head of a link text that names an artefact (`US1080`, `US-1080`, a ULID form).
+_LINK_ID_RE = re.compile(r"^([A-Za-z]+(?:-[0-9A-Za-z]{8,}|-?\d+)): ")
+
+
+def _retext_inbound_links(body: str, new_name: str, file_id: str, old_title: str,
+                          new_title: str) -> str:
+    """`body` with the text of each link to `new_name` rewritten from the artefact's own
+    `<ID>: <old title>` to `<ID>: <new title>`, the id as the link spelt it. Any other link text
+    is left alone, as is a link to another file, and a link in a fenced block or an inline code
+    span, which `link_refs.rewrite_inbound_links` leaves alone too. A bracket in the new title
+    is escaped so the link still closes."""
+    if not old_title or old_title == new_title:
+        return body
+    safe = new_title.replace("[", "\\[").replace("]", "\\]")
+
+    def repl(m: re.Match) -> str:
+        text, target = m.group(1), m.group(2)
+        lead = _LINK_ID_RE.match(text)
+        if (lead is None or text[lead.end():] != old_title
+                or sdlc_md.norm_id(lead.group(1)) != sdlc_md.norm_id(file_id)
+                or Path(target.split("#", 1)[0]).name != new_name):
+            return m.group(0)
+        return f"[{lead.group(0)}{safe}]({target})"
+
+    out: list[str] = []
+    fence = None
+    for line in body.split("\n"):
+        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
+            out.append(line)
+            continue
+        segs = line.split("`")
+        segs[0::2] = [_LINK_TEXT_RE.sub(repl, s) for s in segs[0::2]]
+        out.append("`".join(segs))
+    return "\n".join(out)
+
+
 def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
             dry_run: bool = False) -> dict:
     """Atomically retitle an artefact across all three title surfaces - the H1, the filename
@@ -2272,8 +2377,9 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
         for r in rewritable:
             rp = Path(r["path"])
             body = rp.read_text(encoding="utf-8")
-            updated, n = link_refs.rewrite_inbound_links(body, path.name, new_name)
-            if n and updated != body:
+            updated, _n = link_refs.rewrite_inbound_links(body, path.name, new_name)
+            updated = _retext_inbound_links(updated, new_name, file_id, old_title, new_title)
+            if updated != body:
                 sdlc_md.atomic_write(rp, updated)
                 rewritten.append(r["rel"])
     except Exception as exc:  # noqa: BLE001 - ANY fault must put the tree back, then report

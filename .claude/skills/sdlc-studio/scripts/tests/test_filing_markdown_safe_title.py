@@ -168,6 +168,55 @@ class TitleMarkdownTests(unittest.TestCase):
                 r = self._lint(root / "sdlc-studio" / "bugs" / "_index.md")
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
+    def _filed_with(self, title: str, summary: str, steps: str, fix: str) -> tuple[Path, str, str]:
+        """One bug filed with the given prose; the fixture root, its file and its index row."""
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        root = Path(td.name)
+        body, row = _file(root, title, "bug", "--summary", summary, "--steps", steps,
+                          "--fix", fix)
+        return root, body, row
+
+    def test_a_bare_double_asterisk_in_the_title_passes_markdownlint_in_file_and_index(
+            self) -> None:
+        """AC1. Mutant: `_md_safe` leaves a lone `**` as written, so MD037 refuses the bug file
+        and the index."""
+        root, body, row = self._filed_with("a ** b flips the flag", "the ** marker breaks",
+                                           "1. run it", "escape the ** marker")
+        self.assertEqual("# BG0001: a \\*\\* b flips the flag", body.splitlines()[0])
+        self.assertIn("| a \\*\\* b flips the flag |", row)
+        self._lint(next((root / "sdlc-studio" / "bugs").glob("BG*.md")))
+        self._lint(root / "sdlc-studio" / "bugs" / "_index.md")
+
+    def test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed(self) -> None:
+        """AC2. Mutants: only the title safed; the Steps (written as given) left out; a marker
+        at a line start or end, or beside a code span, not reached."""
+        _root, body, _row = self._filed_with(
+            "plain", "summary ** here\n** at a line start\nat a line end **",
+            "1. run a ** b\n2. then `x` ** y\n```\ngit log ** keep\n```", "fix ** here")
+        for want in ("summary \\*\\* here\n\\*\\* at a line start\nat a line end \\*\\*",
+                     "1. run a \\*\\* b\n2. then `x` \\*\\* y\n",
+                     "git log ** keep\n```",  # a fenced block is the author's, as written
+                     "fix \\*\\* here"):
+            self.assertIn(want, body)
+        bare = re.sub(r"(?s)```.*?```", "", body)
+        bare = re.sub(r"`[^`\n]*`", "", bare)
+        self.assertNotRegex(bare, r"(?<!\S)\*\*(?!\S)")
+
+    def test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept(self) -> None:
+        """AC3, the controls. Mutants: every asterisk pair escaped; the marker inside a code
+        span escaped; the spaceless `**x**` pair escaped."""
+        _root, body, _row = self._filed_with(
+            "real **bold** stays",
+            "a **bold** word, and a `**` kept, and `a ** b` kept, `a`** b and c **`d`",
+            "1. run **x** and `a`** b and c **`d`\n2. keep `a ** b` here", "see **Note:** here")
+        self.assertEqual("# BG0001: real **bold** stays", body.splitlines()[0])
+        self.assertIn("a **bold** word, and a `**` kept, and `a ** b` kept, `a`** b and c **`d`",
+                      body)
+        self.assertIn("1. run **x** and `a`** b and c **`d`\n2. keep `a ** b` here", body)
+        self.assertIn("see **Note:** here", body)
+        self.assertIn("> **Status:** Open\n", body)
+
 
 class LinkDestinationTests(unittest.TestCase):
     """A markdown link to an underscored file keeps working on the lines the filer safes: the

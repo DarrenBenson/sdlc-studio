@@ -575,6 +575,224 @@ class LazyIndexTests(unittest.TestCase):
             self.assertFalse(Path(r["path"]).exists())
 
 
+def _finished_request(repo: Path, request_status: str = "Complete",
+                      epic_status: str = "Done") -> None:
+    """A CR decomposed into one epic whose one story is Done: the state a closed slice leaves."""
+    _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+    for folder, body in (
+            ("change-requests", ("CR0001-x", "# CR-0001: x\n\n> **Status:** {rs}\n"
+                                 "> **Decomposed-into:** EP0001\n\n## Summary\n\ns\n")),
+            ("epics", ("EP0001-x", "# EP0001: x\n\n> **Status:** {es}\n> **Parent:** CR0001\n\n"
+                       "## Story Breakdown\n\n- [x] [US0001: first](../stories/US0001-first.md)\n")),
+            ("stories", ("US0001-first", "# US0001: first\n\n> **Status:** Done\n"
+                         "> **Epic:** EP0001\n\n## User Story\n\nx\n"))):
+        d = repo / "sdlc-studio" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{body[0]}.md").write_text(
+            body[1].format(rs=request_status, es=epic_status)
+            + "\n## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n"
+            "| 2026-11-01 | sdlc | Raised |\n", encoding="utf-8")
+
+
+def _status_of(repo: Path, folder: str, name: str) -> str:
+    return sdlc_md.extract_field(
+        (repo / "sdlc-studio" / folder / f"{name}.md").read_text(encoding="utf-8"), "Status")
+
+
+class DoneEpicReopensTests(unittest.TestCase):
+    """A story minted into a Done epic is work nobody has built, so the epic reads Done over it
+    no longer, and the request that the epic delivers is not derived Complete over it."""
+
+    def _mint(self, repo: Path, epic: str = "EP0001") -> dict:
+        return artifact.new(repo, "story", "second slice", {"epic": epic})
+
+    def test_a_draft_story_minted_into_a_done_epic_reopens_it(self) -> None:
+        """AC1. Mutants: the reopen not called; called for an epic that is not Done."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            self._mint(repo)
+            self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
+            self.assertIn("US0002", (repo / "sdlc-studio" / "epics" / "EP0001-x.md").read_text())
+
+    def test_an_epic_that_is_not_done_is_left_as_it_is(self) -> None:
+        """The control: a Draft epic keeps its status, and so does a Superseded one, which
+        records a ruling rather than a delivery."""
+        for status in ("Draft", "Superseded"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _finished_request(repo, request_status="In Progress", epic_status=status)
+                self._mint(repo)
+                self.assertEqual(status, _status_of(repo, "epics", "EP0001-x"))
+                self.assertEqual("In Progress", _status_of(repo, "change-requests", "CR0001-x"))
+
+    def test_the_parent_request_is_not_derived_complete_after_the_mint(self) -> None:
+        """AC2. Mutants: only the epic reopened, so the request still reads Complete; the request
+        reopened but derived Complete again by the next `reconcile apply`."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            self._mint(repo)
+            self.assertEqual("In Progress", _status_of(repo, "change-requests", "CR0001-x"))
+            reconcile.apply_derivable_requests(repo)
+            self.assertEqual("In Progress", _status_of(repo, "change-requests", "CR0001-x"))
+            self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
+
+    def test_a_live_request_is_left_alone(self) -> None:
+        """A Done epic whose request still reads In Progress or Approved: only the epic reopens,
+        the request is not written and draws no note. Mutant: the terminal check inverted, so a
+        request not yet working is moved to In Progress."""
+        for status in ("In Progress", "Approved"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _finished_request(repo, request_status=status)
+                request = repo / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+                before = request.read_bytes()
+                r = self._mint(repo)
+                self.assertEqual(before, request.read_bytes(), "a live request is not rewritten")
+                self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
+                self.assertNotIn("ac_warnings", r)
+
+    def test_a_refused_reopen_is_a_note_and_the_mint_stands(self) -> None:
+        """A gate refusing the move leaves the minted story on disk and names what to run.
+        Mutants: the refusal raised out of the mint; swallowed with no note."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            with mock.patch.object(artifact.transition, "transition",
+                                   side_effect=ValueError("a gate refused\nsecond line")):
+                r = self._mint(repo)
+            self.assertTrue(Path(r["path"]).exists())
+            self.assertEqual("Done", _status_of(repo, "epics", "EP0001-x"))
+            self.assertEqual(2, len(r["ac_warnings"]), "one note for the epic, one for the CR")
+            self.assertIn("EP0001 could not be reopened to In Progress (a gate refused)",
+                          r["ac_warnings"][0])
+            self.assertIn("transition.py set --id EP0001 --status In Progress",
+                          r["ac_warnings"][0])
+            self.assertIn("CR0001 could not be reopened to In Progress", r["ac_warnings"][1])
+
+    def test_a_batch_mint_reopens_the_epic_the_same_way(self) -> None:
+        """`new_batch` wires the story to its epic on its own path."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            artifact.new_batch(repo, "story", [{"title": "second slice", "epic": "EP0001"}])
+            self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
+            self.assertEqual("In Progress", _status_of(repo, "change-requests", "CR0001-x"))
+
+
+class TitleMarkdownSafeTests(unittest.TestCase):
+    """A title holding bare identifiers is written code-spanned in the H1, the index row and an
+    epic's breakdown link, as the finding filer writes it, so markdownlint passes (MD037)."""
+
+    TITLE = "_mode_and_cutoff and _check disagree"
+    SAFE = "`_mode_and_cutoff` and `_check` disagree"
+
+    @staticmethod
+    def _bare(line: str) -> str:
+        return re.sub(r"`[^`]*`", "", line)
+
+    def _lint(self, folder: Path) -> None:
+        import os
+        import shutil
+        import subprocess
+        mdl = (os.environ.get("MARKDOWNLINT_BIN") or shutil.which("markdownlint")
+               or str(Path(__file__).resolve().parents[5] / "node_modules/.bin/markdownlint"))
+        if not Path(mdl).exists():
+            self.skipTest("markdownlint is not installed - the spans are asserted without it")
+        r = subprocess.run([mdl, "--disable", "MD013", "MD041", "--",
+                            *map(str, folder.glob("*.md"))], capture_output=True, text=True,
+                           check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def _check(self, repo: Path, path: Path) -> None:
+        body = path.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(f"# BG0001: {self.SAFE}", body[0])
+        row = next(ln for ln in (repo / "sdlc-studio" / "bugs" / "_index.md").read_text(
+            encoding="utf-8").splitlines() if ln.startswith("| [BG0001]"))
+        self.assertIn(f"| {self.SAFE} |", row)
+        self.assertNotIn("_", self._bare(row))
+        self.assertTrue(path.name.startswith("BG0001-mode-and-cutoff-and-check-disagree"),
+                        "the slug is still made from the title's words")
+        self._lint(repo / "sdlc-studio" / "bugs")
+
+    def test_title_identifier_is_markdown_safe_through_new(self) -> None:
+        """AC1. Mutant: the title written raw into the H1 or the row."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            r = artifact.new(repo, "bug", self.TITLE, {**GROOM, "severity": "Low", "summary": "s",
+                                                     "steps": "r", "fix": "f"})
+            self._check(repo, Path(r["path"]))
+
+    def test_title_identifier_is_markdown_safe_through_batch(self) -> None:
+        """AC1, the batch path. Mutant: only `new` safed."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            r = artifact.new_batch(repo, "bug", [{
+                "title": self.TITLE, **GROOM, "severity": "Low", "summary": "s", "steps": "r",
+                "fix": "f"}])
+            self._check(repo, Path(r["created"][0]["path"]))
+
+    def test_title_identifier_is_markdown_safe_in_an_epic_breakdown_link(self) -> None:
+        """The story's link text in its epic's breakdown carries the same safed title, so the
+        epic passes markdownlint too, and a plain title is written as it was."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
+            _epic(repo)
+            artifact.new(repo, "story", self.TITLE, {"epic": "EP0001"})
+            artifact.new(repo, "story", "a plain title", {"epic": "EP0001"})
+            artifact.new_batch(repo, "story", [{"title": "_row and _seat batch", "epic": "EP0001"}])
+            epic = (repo / "sdlc-studio" / "epics" / "EP0001-x.md").read_text(encoding="utf-8")
+            self.assertIn(f"[US0001: {self.SAFE}](", epic)
+            self.assertIn("[US0002: a plain title](", epic)
+            self.assertIn("[US0003: `_row` and `_seat` batch](", epic)
+            self._lint(repo / "sdlc-studio" / "epics")
+
+
+class BatchAffectsTests(unittest.TestCase):
+    """A batch spec item's `affects` may be a JSON list of paths, the shape a caller reaches for
+    beside `acs`; it is written as the comma-joined line the planner reads."""
+
+    def _batch(self, affects, **extra) -> str:
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            item = {"title": "a defect", "severity": "Low", "points": 1, "summary": "s",
+                    "steps": "r", "fix": "f", "acs": ["it holds"], "affects": affects, **extra}
+            r = artifact.new_batch(repo, "bug", [item])
+            return Path(r["created"][0]["path"]).read_text(encoding="utf-8")
+
+    def test_a_list_valued_affects_renders_as_a_path_list(self) -> None:
+        """AC1. Mutant: the list left as a value, so the line reads `['src/a.py', 'src/b.py']`
+        and parses to one bracketed token."""
+        body = self._batch(["src/a.py", "src/thing.py"])
+        self.assertIn("> **Affects:** src/a.py, src/thing.py\n", body)
+        self.assertEqual(["src/a.py", "src/thing.py"], sdlc_md.affects_files(body))
+
+    def test_a_string_affects_and_a_list_with_blanks_are_written_as_before(self) -> None:
+        """The controls. Mutants: a string affects split per character; a blank entry kept as
+        an empty path."""
+        self.assertIn("> **Affects:** src/a.py, src/thing.py\n",
+                      self._batch("src/a.py, src/thing.py"))
+        self.assertIn("> **Affects:** src/thing.py\n", self._batch([" src/thing.py ", "", " "]))
+        self.assertIn("> **Affects:** src/a.py, src/thing.py\n",
+                      self._batch([" src/a.py ", " src/thing.py "]))
+
+    def test_a_single_creation_takes_a_list_the_same_way(self) -> None:
+        """`new` shares the field with `new_batch`, so a list there is a path list too."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+            r = artifact.new(repo, "bug", "a defect", {
+                "severity": "Low", "points": 1, "summary": "s", "steps": "r", "fix": "f",
+                "acs": ["it holds"], "affects": ["src/a.py", "src/thing.py"]})
+            body = Path(r["path"]).read_text(encoding="utf-8")
+        self.assertIn("> **Affects:** src/a.py, src/thing.py\n", body)
+
+
 class BatchTests(unittest.TestCase):
     """CR0078: many artifacts of one type in one atomic, contiguous-id pass."""
 
@@ -2619,6 +2837,32 @@ class SuppliedContentLandsTests(unittest.TestCase):
     and somebody has to invent replacements, so the drop has to be refused where it happens."""
 
     CRITERIA = ["THE FIRST CRITERION", "THE SECOND CRITERION"]
+
+    def test_a_path_with_a_directory_is_never_split_by_a_code_span(self) -> None:
+        """BG1304 AC1. Mutant: the identifier pass wrapping the file name alone, so the path
+        reads `tools/tests/` then a backticked `test_check_links.py`."""
+        import json
+        path = "tools/tests/test_check_links.py"
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "cr", "| ID | Title | Status | Priority | Created |")
+            spec = repo / "fields.json"
+            spec.write_text(json.dumps({
+                "title": "a request", "priority": "Low", "size": "S", "affects": "src/thing.py",
+                "impact": f"the gate in {path} reads the wrong page",
+                "summary": f"see {path}: it fails",
+                "acs": [f"the cases in {path} all pass"]}), encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = artifact.main(["new", "--type", "cr", "--fields-file", str(spec),
+                                    "--root", str(repo)])
+            self.assertEqual(0, rc)
+            body = next(p for p in (repo / "sdlc-studio" / "change-requests").glob("CR*.md")).read_text(
+                encoding="utf-8")
+        self.assertNotRegex(body, r"tools/tests/`", "a directory is followed by a code span")
+        for want in (f"the gate in `{path}` reads", f"see `{path}`: it fails",
+                     f"the cases in `{path}` all pass"):
+            self.assertIn(want, body)
+        self.assertEqual(3, body.count(f"`{path}`"))
 
     def test_a_bug_filed_with_criteria_carries_them(self) -> None:
         with tempfile.TemporaryDirectory() as d:

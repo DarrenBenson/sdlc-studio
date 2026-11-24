@@ -874,6 +874,80 @@ class BreakdownFileTests(unittest.TestCase):
             self.assertEqual([t for t, _, _ in self._units(root)], ["A", "B"])
             self.assertEqual(1, len(list((root / "sdlc-studio" / "epics").glob("EP*.md"))))
 
+    def _set_status(self, root: Path, folder: str, prefix: str, status: str) -> None:
+        path = next((root / "sdlc-studio" / folder).glob(f"{prefix}*.md"))
+        text = path.read_text(encoding="utf-8")
+        path.write_text(re.sub(r"(?m)^> \*\*Status:\*\* .*$", f"> **Status:** {status}", text,
+                               count=1), encoding="utf-8")
+
+    def test_apply_into_an_epic_the_request_already_names_adds_the_slice(self) -> None:
+        """AC3. Mutants: the already-decomposed refusal kept for `--into`; the epic listed twice
+        on the request; a Done epic left Done; an epic the request does not name accepted."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            _cr(root, "CR0002", ["the other request is satisfied"])
+            refine.refine(root, "CR0001", "First slice", [("A", 2, None)], skip_personas=True)
+            refine.refine(root, "CR0002", "Other epic", [("X", 2, None)], skip_personas=True)
+            self._set_status(root, "stories", "US0001", "Done")
+            self._set_status(root, "epics", "EP0001", "Done")
+            self._set_status(root, "change-requests", "CR0001", "Complete")
+            # the controls first: an epic the request does not name, and a first-style apply
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--into", "EP0002", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(2, rc, msg)
+            self.assertIn("already decomposed into EP0001", msg)
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--epic-title", "Another", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(2, rc, msg)
+            self.assertEqual(["A", "X"], [t for t, _, _ in self._units(root)])
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--into", "EP0001", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(0, rc, msg)
+            self.assertEqual(["A", "X", "B"], [t for t, _, _ in self._units(root)])
+            story_b = next((root / "sdlc-studio" / "stories").glob("US0003*.md"))
+            self.assertNotIn("the request is satisfied", story_b.read_text(encoding="utf-8"),
+                             "the request's criteria are not seeded again onto a further slice")
+            request = next((root / "sdlc-studio" / "change-requests").glob("CR0001*.md"))
+            self.assertEqual("EP0001", sdlc_md.extract_field(
+                request.read_text(encoding="utf-8"), "Decomposed-into"))
+            epic = next((root / "sdlc-studio" / "epics").glob("EP0001*.md")).read_text(
+                encoding="utf-8")
+            self.assertEqual("In Progress", sdlc_md.extract_field(epic, "Status"))
+            self.assertEqual(1, epic.count("[US0003:"), "the new story is in the breakdown once")
+            self.assertEqual(1, epic.count("> **Parent:** CR0001"))
+            self.assertEqual("In Progress", sdlc_md.extract_field(
+                request.read_text(encoding="utf-8"), "Status"))
+
+    def test_a_further_slice_keeps_the_requests_other_epics(self) -> None:
+        """A request decomposed into two epics lists both after a further slice into the first.
+        Mutant: the request's existing children dropped from the rewritten line."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            refine.refine(root, "CR0001", "First slice", [("A", 2, None)], skip_personas=True)
+            refine.refine_add(root, "CR0001", "Second slice", [("C", 2, None)])
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--into", "EP0001", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(0, rc, msg)
+            request = next((root / "sdlc-studio" / "change-requests").glob("CR0001*.md"))
+            self.assertEqual("EP0001, EP0002", sdlc_md.extract_field(
+                request.read_text(encoding="utf-8"), "Decomposed-into"))
+
+    def test_a_closed_epic_the_request_does_not_name_still_refuses_into(self) -> None:
+        """The refusal beside the allowance: a terminal epic is refused for a request that has
+        not decomposed into it, as before."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            _cr(root, "CR0002", ["the other request is satisfied"])
+            refine.refine(root, "CR0002", "Other epic", [("X", 2, None)], skip_personas=True)
+            self._set_status(root, "epics", "EP0001", "Done")
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--into", "EP0001", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(2, rc, msg)
+            self.assertIn("terminal", msg)
+
     def test_a_missing_or_unreadable_breakdown_is_named(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

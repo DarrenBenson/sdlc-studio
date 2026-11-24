@@ -32,10 +32,13 @@ STARTED = "2026-01-01T00:00:00Z"
 STARTED_EPOCH = 1767225600  # STARTED as seconds since the epoch
 BEFORE_STARTED = STARTED_EPOCH - 86400
 #: The `Raised-in-batch` stamp `file_finding` writes on a finding filed while a run is open: the
-#: absence of a batch, then the moment of filing as its last token. A run's own close is the only
-#: writer that names the run (`<run id> close, <moment>`). `KnownIssuesTests` pins MID_RUN against
-#: a real filing, so no fixture here carries a stamp no tool writes.
-MID_RUN = "none open - raised outside a delivery batch, {}"
+#: run's id, then the moment of filing as its last token. A run's close stamps
+#: `<run id> close, <moment>`. `KnownIssuesTests` pins MID_RUN against a real filing, so no
+#: fixture here carries a stamp no tool writes.
+MID_RUN = RUN + " - raised during the run, {}"
+#: The stamp of a finding filed with no run open (or before stamps named runs): only its moment
+#: can place it in a run, which is what the re-dated fixtures and the report-helper test isolate.
+NO_RUN = "none open - raised outside a delivery batch, {}"
 #: Before the fixture run's start.
 PRE_RUN = "2025-12-31T23:59:59Z"
 DIRS = {"US": "stories", "BG": "bugs", "CR": "change-requests"}
@@ -446,7 +449,7 @@ class KnownIssuesTests(unittest.TestCase):
         text = path.read_text(encoding="utf-8")
         stamp = sdlc_md.extract_field(text, "Raised-in-batch")
         if moment:
-            text = text.replace(stamp, MID_RUN.format(moment))
+            text = text.replace(stamp, NO_RUN.format(moment))
         if status:
             text = text.replace("> **Status:** Open", f"> **Status:** {status}")
         path.write_text(text, encoding="utf-8")
@@ -458,7 +461,7 @@ class KnownIssuesTests(unittest.TestCase):
     def test_a_finding_filed_mid_run_is_listed_by_its_moment(self):
         uid, path = self.file("Gate host times out mid-run")
         stamp = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Raised-in-batch")
-        self.assertNotIn(RUN, stamp)   # nothing but the moment places it in the run
+        self.assertIn(RUN, stamp)   # the stamp names the run the finding was filed in
         known = self.known()
         self.assertIn(f"{uid}: Gate host times out mid-run (Open)", known)
         self.assertNotIn("- none", known)
@@ -489,6 +492,11 @@ class KnownIssuesTests(unittest.TestCase):
         # the fixtures' stamp is the one `file_finding` writes mid-run, to the character
         self.assertEqual(stamp, MID_RUN.format(moment))
         self.assertIsNotNone(sdlc_md.parse_iso8601(moment))
+        self.assertIn(uid, self.known())
+        # the run id in the stamp would place it alone, so isolate the moment path
+        legacy = NO_RUN.format(moment)
+        path.write_text(path.read_text(encoding="utf-8").replace(stamp, legacy), encoding="utf-8")
+        stamp = legacy
         self.assertIn(uid, self.known())
         # the brief reads the moment the way the report does: re-read it and the brief follows.
         # `resume_brief` imports `sprint_report` when it is called, so the patch goes on the module

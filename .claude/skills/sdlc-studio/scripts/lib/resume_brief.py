@@ -287,9 +287,10 @@ def _findings(root: Path, state: dict) -> list[str]:
     """Each open bug or CR raised in the run: one `sprint_report` places in the run by the moment
     its `Raised-in-batch` stamp records, or one whose stamp names the run.
 
-    `file_finding` names the run only when the close files for it; a finding filed while the run
-    is open is stamped `none open - raised outside a delivery batch, <moment>`, so the moment is
-    what makes it the run's. It is read through the report's own placement, never a second parser
+    `file_finding` stamps a finding filed while the run is open with the run's id and the moment
+    (`<run id> - raised during the run, <moment>`), and the close stamps `<run id> close,
+    <moment>`; a finding from before the stamp named runs reads `none open - raised outside a
+    delivery batch, <moment>`, and there the moment is what makes it the run's. It is read through the report's own placement, never a second parser
     of the stamp, so the brief places a finding by its moment exactly as the report does. With no
     recorded start nothing can be placed by its moment, and the list says so rather than none."""
     import sprint_report  # noqa: PLC0415 - sibling script that owns finding placement

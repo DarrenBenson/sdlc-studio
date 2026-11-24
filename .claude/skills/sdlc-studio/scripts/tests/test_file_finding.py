@@ -438,6 +438,24 @@ class MdSafeProseTests(unittest.TestCase):
     def test_already_backticked_not_doubled(self) -> None:
         self.assertEqual(ff._md_safe("uses `_next_number` here"), "uses `_next_number` here")
 
+    def test_a_slash_joined_path_is_one_token(self) -> None:
+        """BG1304 AC2. Mutants: the path split at its last slash, the file name wrapped alone;
+        the identifier pass switched off; a span re-wrapped."""
+        self.assertEqual("see `tools/tests/test_check_links.py` now",
+                         ff._md_safe("see tools/tests/test_check_links.py now"))
+        self.assertEqual("`a_b/c_d.py`: ok", ff._md_safe("a_b/c_d.py: ok"))
+        self.assertEqual("(`tools/test_x.py`)", ff._md_safe("(tools/test_x.py)"))
+        self.assertEqual("see `../my-dir/sub.d/test_x.py` now",
+                         ff._md_safe("see ../my-dir/sub.d/test_x.py now"))
+        self.assertEqual("then `test_foo` and `_cache_dir`",
+                         ff._md_safe("then test_foo and _cache_dir"))
+        self.assertEqual("in `tools/tests/test_x.py` ok", ff._md_safe("in `tools/tests/test_x.py` ok"))
+        # near misses: a path with no underscore, and `and/or`, hold nothing to wrap
+        self.assertEqual("see docs/guide.md and/or src/main.py",
+                         ff._md_safe("see docs/guide.md and/or src/main.py"))
+        self.assertEqual("see sdlc-studio/bugs/_index.md here",
+                         ff._md_safe("see sdlc-studio/bugs/_index.md here"))
+
 
 def _rev_row(body: str) -> str:
     """The first Revision History data row of a rendered artefact."""
@@ -2313,12 +2331,66 @@ class AFindingIsPricedWhereTheWorkWasTests(unittest.TestCase):
         """An absence stated is evidence; an absence omitted is indistinguishable from an
         attribution nobody made. MUTANTS: omit the stamp; stamp 'none open' with no moment, which
         `sprint_report` and `close_owed` read the filing time from."""
-        from lib import run_state
         root = self._repo()
-        run_state.open_run(root, goal="a goal", batch=["US0001"])
         stamped = sdlc_md.extract_field(self._file(root), "Raised-in-batch") or ""
         self.assertRegex(stamped, r"^none open - raised outside a delivery batch, "
                                   r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+
+class RaisedInBatchStampTests(unittest.TestCase):
+    """The stamp of a finding no caller named a batch for names the run that is open, and still
+    ends with the moment of filing, where `sprint_report` and `close_owed` read it."""
+
+    FIELDS = AFindingIsPricedWhereTheWorkWasTests.FIELDS
+    MOMENT = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"
+
+    def setUp(self) -> None:
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.root = Path(td.name)
+        (self.root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (self.root / "sdlc-studio" / "bugs").mkdir(parents=True)
+        (self.root / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+    def _stamp(self, **extra) -> str:
+        with contextlib.redirect_stdout(io.StringIO()), quiet.diagnostics():
+            f = dict(self.FIELDS, **extra)
+            res = ff.file_finding(self.root, "bug", f.pop("title"), f)
+        return sdlc_md.extract_field(Path(res["path"]).read_text(encoding="utf-8"),
+                                     "Raised-in-batch") or ""
+
+    def _state_path(self) -> Path:
+        from lib import run_state
+        return run_state.path(self.root)
+
+    def test_a_finding_filed_in_an_open_run_names_the_run(self) -> None:
+        """AC1. Mutants: the stamp reads none open while a run is open; the moment dropped or
+        no longer the last token."""
+        from lib import run_state
+        run_state.open_run(self.root, goal="a goal", batch=["US0001"])
+        run_id = json.loads(self._state_path().read_text(encoding="utf-8"))["run_id"]
+        self.assertRegex(run_id, r"^RUN-[A-Z0-9]+$")
+        self.assertRegex(self._stamp(), rf"^{run_id} - raised during the run, {self.MOMENT}")
+
+    def test_no_open_run_still_reads_none_open(self) -> None:
+        """AC2. Mutants: a closed run named as open; an unreadable run state refusing the
+        filing or naming a run; a caller's own batch overwritten."""
+        from lib import run_state
+        none_open = rf"^none open - raised outside a delivery batch, {self.MOMENT}"
+        self.assertRegex(self._stamp(), none_open)  # no run state at all
+        run_state.open_run(self.root, goal="a goal", batch=["US0001"])
+        state = json.loads(self._state_path().read_text(encoding="utf-8"))
+        self.assertEqual(run_state.RUNNING, state["outcome"])  # the premise: open means this
+        self.assertEqual("RUN-X close, 2026-09-24T00:00:00Z",
+                         self._stamp(_batch="RUN-X close, 2026-09-24T00:00:00Z"))
+        state["outcome"] = "achieved"
+        self._state_path().write_text(json.dumps(state), encoding="utf-8")
+        self.assertRegex(self._stamp(), none_open)  # a closed run is not an open one
+        self._state_path().write_text(json.dumps({"outcome": run_state.RUNNING}),
+                                      encoding="utf-8")
+        self.assertRegex(self._stamp(), none_open)  # an open state with no id names no run
+        self._state_path().write_text("{not json", encoding="utf-8")
+        self.assertRegex(self._stamp(), none_open)  # an unreadable state names no run
 
 
 def _load_audit_cost():

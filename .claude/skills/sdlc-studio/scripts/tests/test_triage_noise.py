@@ -230,6 +230,64 @@ class ConsolidationBulletTests(unittest.TestCase):
                             f"continuation not indented (flattened): {lines[i + 2]!r}")
 
 
+class ConsolidatedMarkdownTests(unittest.TestCase):
+    """BG1719: the consolidation CR is a creator like the others, so what it writes from a
+    finding's title, summary and theme is markdown-safed, and its file and index row lint."""
+
+    THEME = "_mode_and_cutoff and _check drift"
+
+    @staticmethod
+    def _bare(text: str) -> str:
+        return re.sub(r"`[^`]*`", "", text)
+
+    def _lint(self, folder: Path) -> None:
+        import shutil
+        import subprocess
+        mdl = (os.environ.get("MARKDOWNLINT_BIN") or shutil.which("markdownlint")
+               or str(Path(__file__).resolve().parents[5] / "node_modules/.bin/markdownlint"))
+        if not Path(mdl).exists():
+            self.skipTest("markdownlint is not installed - the spans are asserted without it")
+        r = subprocess.run([mdl, "--disable", "MD013", "MD041", "--",
+                            *map(str, folder.glob("*.md"))], capture_output=True, text=True,
+                           check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def test_consolidated_title_is_markdown_safe(self) -> None:
+        """AC2. Mutants: the theme written raw into the H1 or the row; the finding's title raw
+        in its bullet; its summary raw under the bullet; the second finding, appended to the
+        existing CR, left unsafed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            for title in ("_mode_and_cutoff and _check disagree", "a second _row and _seat clash"):
+                ff.file_finding(root, "bug", title, {
+                    **_bug("low"), "theme": self.THEME, "summary": "calls _next_number then _run"})
+            folder = root / "sdlc-studio" / "change-requests"
+            (cr,) = [p for p in folder.glob("CR*.md")]
+            body = cr.read_text(encoding="utf-8")
+            self.assertRegex(body, r"(?m)^# CR-\w+: Low-severity `_mode_and_cutoff` and "
+                                   r"`_check` drift \(consolidated\)$")
+            self.assertIn("- **`_mode_and_cutoff` and `_check` disagree**: calls "
+                          "`_next_number` then `_run`", body)
+            self.assertIn("- **a second `_row` and `_seat` clash**: calls `_next_number`", body)
+            row = next(ln for ln in (folder / "_index.md").read_text(
+                encoding="utf-8").splitlines() if ln.startswith("| [CR"))
+            self.assertIn("| Low-severity `_mode_and_cutoff` and `_check` drift (consolidated) |",
+                          row)
+            self.assertNotIn("_", self._bare(row.split(") | ", 1)[1]))
+            self.assertEqual(1, len(list(folder.glob("CR*.md"))), "both fold into the one CR")
+            self._lint(folder)
+
+    def test_a_plain_consolidated_finding_is_written_as_before(self) -> None:
+        """The control: nothing to span, nothing changes (the bullet, the title, the summary)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            ff.file_finding(root, "bug", "a low nit", {**_bug("low"), "summary": "plain words"})
+            body = next((root / "sdlc-studio" / "change-requests").glob("CR*.md")).read_text(
+                encoding="utf-8")
+            self.assertIn("- **a low nit**: plain words\n", body)
+            self.assertRegex(body, r"(?m)^# CR-\w+: Low-severity bugs \(consolidated\)$")
+
+
 class SessionCapTests(unittest.TestCase):
     """AC2: the N+1th finding in a session is refused loudly."""
 

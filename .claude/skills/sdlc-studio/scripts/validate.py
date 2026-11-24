@@ -394,6 +394,8 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
     # on a feature nobody built. The creators REFUSE to write one; this reports the ones already
     # on disk. A warning, not an error: the instances predate the guard, and the gate must not
     # fail unrelated work - but they are named, with their line, rather than silently tolerated.
+    # Only the criterion's prose is judged: the `- **Verify:**` line the filer writes beneath it
+    # is the place for a check, so it draws no warning (`file_finding.scan_prose_acs`).
     #
     # WHICH types is `sdlc_md.executes_verifiers`, not a list restated here. This lane used to
     # name bugs, while `verify_ac` was already running a bug's verifiers - so the two guards gave
@@ -407,8 +409,10 @@ def validate_file(path: Path, type_: str, repo_root: Path | None = None,
                 f"({cmd!r}) that NOTHING executes - a {type_} is a REQUEST, decomposed rather than "
                 f"delivered, so it is not among the types whose verifiers run "
                 f"(`sdlc_md.EXECUTES_VERIFIERS`). "
-                f"Restate it as the observable outcome; executable proof belongs on the stories "
-                f"this is actioned into. Offending line: {line.strip()}",
+                f"Restate the criterion as the observable outcome and keep the command on a "
+                f"`- **Verify:**` line beneath it, which this check does not judge; executable "
+                f"proof belongs on the stories this is actioned into. "
+                f"Offending line: {line.strip()}",
                 # The COMMAND, not the line number: a line number moves when unrelated prose is
                 # edited above it.
                 targets=[cmd])

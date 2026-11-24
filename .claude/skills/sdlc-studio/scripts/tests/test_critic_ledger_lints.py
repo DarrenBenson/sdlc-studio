@@ -152,5 +152,16 @@ class CriticLedgerBareUrlTests(unittest.TestCase):
         self._lints()
 
 
+class LedgerLintTests(unittest.TestCase):
+
+    def test_a_url_followed_by_an_escaped_semicolon_is_recorded(self) -> None:
+        """AC2. Mutant: the URL span closing after the backslash, which the tick counter reads
+        as an escaped backtick, so the span never closes and the record is refused."""
+        with tempfile.TemporaryDirectory() as tmp:
+            cell = _record(Path(tmp), "[new] see https://example.com/a\\; then more")
+            self.assertIn("see `https://example.com/a`\\; then more", cell)
+            self.assertEqual(1, len(critic.parse_findings(cell)), cell)
+
+
 if __name__ == "__main__":
     unittest.main()
