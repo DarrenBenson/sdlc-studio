@@ -129,5 +129,22 @@ class StatusVocabDocTests(unittest.TestCase):
                 self.assertEqual(divergences(table_rows(copy), sdlc_md.STATUS_VOCAB,
                                              sdlc_md.TERMINAL_STATUS), [expected])
 
+    def test_the_rfc_templates_cover_every_rfc_status(self) -> None:
+        """The RFC index template's Summary table has one row per RFC status in the vocabulary,
+        Delivered included, and the core template's header comment names the same set, so
+        deleting a status from either fails here."""
+        want = sdlc_md.STATUS_VOCAB["rfc"]
+        index = (SCRIPTS.parent / "templates" / "indexes" / "rfc.md").read_text(encoding="utf-8")
+        summary = index.split("## Summary", 1)[1].split("##", 1)[0]
+        rows = [_cells(ln) for ln in summary.splitlines() if ln.startswith("|")][2:]
+        counted = [r[0] for r in rows if r[0] != "**Total**"]
+        self.assertEqual(sorted(counted), sorted(want))
+        self.assertTrue(all(r[1].startswith("{{") for r in rows if r[0] in want))
+        core = (SCRIPTS.parent / "templates" / "core" / "rfc.md").read_text(encoding="utf-8")
+        named = core.split("Status values:", 1)[1].splitlines()[0]
+        listed = named[named.index("(") + 1:named.index(")")].split(" / ")
+        self.assertEqual(sorted(listed), sorted(want))
+
+
 if __name__ == "__main__":
     unittest.main()
