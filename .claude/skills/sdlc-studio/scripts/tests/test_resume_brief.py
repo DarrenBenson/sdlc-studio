@@ -269,6 +269,42 @@ class NextActionTests(unittest.TestCase):
         self.assertIn("verdict", resume_brief.at_wave_boundary(t.root).reason)
 
 
+class RepairBriefApprovalTests(unittest.TestCase):
+    """A repair's saved QA brief opens with the line naming the reviewer to resume; the verdict
+    rows are recorded against the fingerprint without it, so the lane's state must be read the
+    same way."""
+
+    def _brief(self, t: Tree, uid: str, verdict: str, line: bool) -> Path:
+        rel = t.land(uid)
+        t.verdict(uid, verdict)
+        path = t.root / rel
+        if line:
+            path.write_text(f"{lanes_line()}\n\n" + t.briefs[uid], encoding="utf-8")
+        return path
+
+    def test_a_repair_brief_with_a_reviewer_line_reads_its_reject(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            t = Tree(tmp, ["US0001", "US0002"])
+            for uid, verdict, expect in (("US0001", "REJECT", False), ("US0002", "APPROVE", True)):
+                with self.subTest(verdict=verdict):
+                    path = self._brief(t, uid, verdict, line=True)
+                    self.assertEqual(expect, resume_brief._approved(t.root, uid, path))
+
+    def test_a_brief_with_no_line_and_no_verdict_reads_none(self):
+        """Controls: the plain brief is read as before, and a brief no row answers is None."""
+        with tempfile.TemporaryDirectory() as tmp:
+            t = Tree(tmp, ["US0001", "US0002"])
+            plain = self._brief(t, "US0001", "REJECT", line=False)
+            self.assertIs(False, resume_brief._approved(t.root, "US0001", plain))
+            rel = t.land("US0002")
+            self.assertIsNone(resume_brief._approved(t.root, "US0002", t.root / rel))
+
+
+def lanes_line() -> str:
+    """The line a repair's landing puts at the head of its brief."""
+    return f"{resume_brief.lanes.REVIEWER_LINE}qa-seat - resume them"
+
+
 def _row(text: str, uid: str) -> str:
     rows = [ln for ln in text.splitlines() if ln.startswith(f"| {uid} |")]
     assert len(rows) == 1, (uid, rows)

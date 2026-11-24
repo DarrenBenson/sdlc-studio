@@ -461,6 +461,29 @@ class LaneRunTests(_LaneCase):
                 self.assertAlmostEqual(HAIKU_USD, self._unit_usd(), places=10)
                 self.assertIn("lane run cost: US$0.0036 (claude-haiku-5-5)", out)
 
+    def test_a_staged_path_holding_a_space_is_recorded_once(self) -> None:
+        """MUTANT: the staged listing split on whitespace, recording `src/lane` and `notes.py`.
+        Control: a path with no space is recorded as before, and an empty index records none."""
+        self._open_run()
+        wt = self._worktree("wt-space")
+        real = lanes._run_in_group
+
+        def stage(cmd, *a, **kw):
+            if Path(cmd[0]).name == "codex":
+                for rel in ("src/lane notes.py", "src/plain.py"):
+                    _write(wt, rel, "LANE = 1\n")
+                    gitutil.git(["add", "--", rel], wt)
+            return real(cmd, *a, **kw)
+
+        with unittest.mock.patch.object(lanes, "_run_in_group", side_effect=stage):
+            rc, out = self._run("codex", "--worktree", str(wt))
+        self.assertEqual(0, rc, out)
+        self.assertEqual(["src/lane notes.py", "src/plain.py"], sorted(self._record()["staged"]))
+        quiet = self._worktree("wt-none")
+        rc, out = self._run("codex", "--worktree", str(quiet))
+        self.assertEqual(0, rc, out)
+        self.assertEqual([], self._record()["staged"])
+
     # -- AC3 --------------------------------------------------------------------------------
     def test_a_failed_or_silent_cli_leaves_the_lane_unmetered(self) -> None:
         """AC3. MUTANTS: a non-zero exit priced as a metered run; a silent CLI recorded with zero

@@ -36,7 +36,7 @@ import loader  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
-from lib import lanes  # noqa: E402
+from lib import lanes, run_state  # noqa: E402
 
 critic = loader.load_script("critic")
 sprint = loader.load_script("sprint")
@@ -339,8 +339,8 @@ class LaneAcceptTests(unittest.TestCase):
     # -- BG1290: the brief a landing leaves -----------------------------------------------
 
     def _land_round(self, body: str, message: str, *, claims: list | None = None,
-                    self_check: bool = True,
-                    main_moves: bool = False) -> subprocess.CompletedProcess:
+                    self_check: bool = True, main_moves: bool = False,
+                    units: str = GREEN) -> subprocess.CompletedProcess:
         """Land one round of the green story from a fresh `lane-us0101` worktree: `src/a.py`
         set to `body` and staged, handed in with `message` and, when `self_check`, a self-check
         whose claims are `claims` if given. `main_moves` commits to main's `src/a.py` after the
@@ -363,7 +363,7 @@ class LaneAcceptTests(unittest.TestCase):
             _write(wt, f"{HAND_IN}/{GREEN}-mutants.json", json.dumps(MUTANTS))
         return subprocess.run(
             [sys.executable, "-B", str(SCRIPTS / "sprint.py"), "lane", "land", "--worktree",
-             str(wt), "--units", GREEN, "--root", str(self.root)], capture_output=True,
+             str(wt), "--units", units, "--root", str(self.root)], capture_output=True,
             text=True, timeout=600, cwd=str(self.root), env=gitutil.git_env(), check=False)
 
     def _brief(self, uid: str = GREEN) -> Path:
@@ -375,7 +375,7 @@ class LaneAcceptTests(unittest.TestCase):
         printed = re.search(rf"^{GREEN}: self-check recorded; QA brief .* fingerprint: (\S+)$",
                             landed.stdout, re.M)
         self.assertIsNotNone(printed, landed.stdout + landed.stderr)
-        fp = critic.brief_fingerprint(self._brief().read_text(encoding="utf-8"))
+        fp = lanes.saved_brief_fingerprint(self._brief().read_text(encoding="utf-8"))
         self.assertEqual(printed.group(1), fp, "the brief on disk is not the one it wrote")
         return fp
 
@@ -406,6 +406,67 @@ class LaneAcceptTests(unittest.TestCase):
                 self.assertIn(f"no QA brief at sdlc-studio/.local/briefs/{GREEN}-qa.txt", err)
                 self.assertIn(f"the landing of {LANE_WT} ", err)
                 self.assertIn(f"wrote no brief: {GREEN}: {why}", err)
+
+    def test_accept_reads_the_brief_by_the_normalised_unit_id(self) -> None:
+        """BG1296: a repair landed under `--units us0101` with no self-check leaves no brief for
+        `US0101`, so an APPROVE naming the unit in either spelling is refused for want of one and
+        records nothing, rather than landing on the earlier round's brief."""
+        _write(self.root, "sdlc-studio/.config.yaml", "review:\n  author_self_check: report\n")
+        landed = self._land_round("A = 2\n", f"fix({GREEN}): a is two", self_check=False,
+                                  units=GREEN.lower())
+        self.assertEqual(landed.returncode, 1, landed.stdout + landed.stderr)
+        self.assertFalse(self._brief().exists(), "the earlier round's brief was left")
+        ledger = critic.verdicts_path(self.root)
+        for spelling in (GREEN, GREEN.lower()):
+            with self.subTest(spelling):
+                self.calls.clear()
+                rc, out, err = self._accept(spelling, APPROVE)
+                self.assertEqual(rc, 2, out + err)
+                self.assertIn(f"no QA brief at sdlc-studio/.local/briefs/{GREEN}-qa.txt", err)
+                self.assertEqual(self.calls, [], "lane accept ran a script against no brief")
+                self.assertFalse(ledger.exists(), "a verdict was recorded")
+                self.assertEqual(_status(self.root, GREEN), "Review")
+
+    def test_a_refused_transition_names_the_lane_return_that_finishes_the_unit(self) -> None:
+        """BG1649: the verdict is recorded and the criteria are green, so the refusal of the
+        move names `transition.py set` and then `sprint.py lane return`. Control: the same
+        APPROVE with the move allowed prints no such advice."""
+        real = lanes._script
+
+        def refusing(root, script, *args, **kw):
+            if (script, args[0]) == ("transition.py", "set"):
+                return subprocess.CompletedProcess([script, *args], 1, "", "refused: stubbed\n")
+            return real(root, script, *args, **kw)
+
+        rc, out, err = self._accept(GREEN, APPROVE, stub=refusing)
+        self.assertEqual(rc, 1, out + err)
+        self.assertEqual(_status(self.root, GREEN), "Review")
+        self.assertIn("refused: stubbed", err)
+        self.assertIn(f"`transition.py set --id {GREEN} --status Done`, then "
+                      f"`sprint.py lane return --units {GREEN}`", err)
+        self.assertNotIn("sprint.py lane", self._scripts()[-1])
+        rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder")
+        self.assertEqual(rc, 0, out + err)
+        self.assertNotIn("then `sprint.py lane return --units", err)
+
+    def test_lane_return_after_a_hand_transition_clears_the_lane(self) -> None:
+        """BG1649: a unit moved by hand after that refusal is still in flight with its span
+        open; the named `lane return` clears the one and closes the other."""
+        run_state.open_run(self.root, batch=[GREEN])
+        run_state.record_lane_start(self.root, GREEN)
+        run_state.record_unit_actual(self.root, GREEN, run_state.UNIT_START_STATUS, False)
+        path = next((self.root / "sdlc-studio").glob(f"*/{GREEN}-lane.md"))
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            "> **Status:** Review", "> **Status:** Done"), encoding="utf-8")
+        self.assertEqual([GREEN], [r["unit"] for r in run_state.lanes_in_flight(self.root)])
+        span = lambda: (run_state.read(self.root).get(run_state.UNIT_ACTUALS) or {})[GREEN]
+        self.assertTrue(span()["open"], "premise: the span is open")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["lane", "return", "--units", GREEN, "--root", str(self.root)])
+        self.assertEqual(rc, 0, out.getvalue() + err.getvalue())
+        self.assertEqual([], run_state.lanes_in_flight(self.root))
+        self.assertFalse(span()["open"], "the span was left open")
 
     def test_a_landing_leaves_only_its_own_brief(self) -> None:
         earlier = self._brief().read_text(encoding="utf-8")

@@ -16,6 +16,7 @@ the unit was built in, on its branch at the landed commit, and says why when it 
 from __future__ import annotations
 
 import contextlib
+import importlib
 import io
 import json
 import os
@@ -634,6 +635,196 @@ class LaneLandTests(_LaneFixture):
                       f"carries no {A}-claims.json or {A}-mutants.json", r.stderr)
         self.assertEqual(rows, critic.read_self_checks(self.root),
                          "round one's claims and mutants were recorded for the repair")
+
+    def test_a_lower_case_unit_id_names_the_canonical_brief_and_note(self) -> None:
+        """BG1296: `--units us0101` lands the unit as `US0101`: the earlier round's brief is
+        removed, the no-brief note is the canonical one, and nothing is named for the lower-case
+        spelling."""
+        briefs = self.root / "sdlc-studio/.local/briefs"
+        _write(briefs, f"{A}-qa.txt", "an earlier round's brief\n")
+        self._stage("src/a.py", "A = 3\n")
+        self._hand_in(message=f"fix({A}): a is three", self_check=False)
+        r = self._land(A.lower())
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("A = 3\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual([f"{A}-qa.none"], sorted(p.name for p in briefs.iterdir()))
+        self.assertIn(f"{A}: self-check NOT RECORDED", (briefs / f"{A}-qa.none").read_text(
+            encoding="utf-8"))
+        record = next((self.root / LANE / "landed").glob("*.land.json"))
+        self.assertEqual([A], json.loads(record.read_text(encoding="utf-8"))["units"])
+
+    def test_an_unknown_unit_id_is_kept_as_given(self) -> None:
+        """A unit no artefact carries keeps the spelling it was given: the canonical form is read
+        from the artefact, never guessed."""
+        self._stage("src/a.py", "A = 3\n")
+        self._hand_in(units=("US9999",), message="fix(US0101): a is three", self_check=False)
+        r = self._land("us9999")
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("us9999: self-check NOT RECORDED", r.stderr)
+
+    def _joined(self, *messages: str) -> str:
+        """`lanes._combined_message` of worktrees A and B, each keeping the message given."""
+        lanes_ = []
+        for unit, message in zip((A, B), messages):
+            keep = Path(self._tmp.name) / f"keep-{unit}"
+            _write(keep, "commit-msg.txt", message)
+            lanes_.append(lanes._Lane(f"lane-{unit}", keep, "main", units=[unit]))
+        return lanes._combined_message(lanes_)
+
+    def test_a_body_line_shaped_like_a_trailer_stays_in_the_body(self) -> None:
+        """BG1616: a last body paragraph of `Key: value` lines is not a trailer block."""
+        joined = self._joined(f"feat({A}): a\n\nBody of a.\n\nNote: keep this\n\nRefs: {A}\n",
+                              f"feat({B}): b\n\nNote: keep that\n")
+        body, _, trailers = joined.strip().rpartition("\n\n")
+        self.assertIn("Note: keep this", body)
+        self.assertIn("Note: keep that", body)
+        self.assertEqual(f"Refs: {A}\nRefs: {B}", trailers)
+
+    def test_known_trailers_still_reach_the_trailer_block(self) -> None:
+        """BG1616 positive control: `Refs:` and `Mentions:` lines are gathered once each."""
+        joined = self._joined(f"feat({A}): a\n\nBody of a.\n\nRefs: BG1616\nMentions: X\n",
+                              f"feat({B}): b\n\nRefs: BG1616\nmentions: X\n")
+        body, _, trailers = joined.strip().rpartition("\n\n")
+        self.assertEqual(["Refs: BG1616", "Mentions: X", "mentions: X", f"Refs: {A}",
+                          f"Refs: {B}"], trailers.splitlines())
+        self.assertNotIn("Refs:", body)
+        self.assertNotIn("Mentions:", body.lower())
+
+    def test_naming_a_worktree_with_commits_ahead_first_lands_it(self) -> None:
+        """BG1616: the refusal of a later worktree holding commits ahead of main advises naming
+        it first; doing so lands both."""
+        wt2 = Path(self._tmp.name).resolve() / "agent-f6e5d4c3b2a1"
+        gitutil.git(["worktree", "add", "-q", "-b", "lane-us0102", str(wt2), "main"], self.root)
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in(units=(A,), message=f"feat({A}): a is two")
+        first, self.wt = self.wt, wt2
+        try:
+            self._stage("src/b.py", "B = 2\n")
+            gitutil.git(["commit", "-q", "--no-verify", "-m", "b is two"], wt2)
+            self._stage(f"changelog.d/{B}.md", "b is two\n")
+            self._hand_in(units=(B,), message=f"feat({B}): b is two")
+        finally:
+            self.wt = first
+
+        def land(*order: Path) -> subprocess.CompletedProcess:
+            named = [arg for wt in order for arg in ("--worktree", str(wt))]
+            return subprocess.run(
+                [sys.executable, "-B", str(SPRINT), "lane", "land", *named, "--units", A, B,
+                 "--root", str(self.root)], capture_output=True, text=True, timeout=600,
+                cwd=str(self.root), env=self._env(), check=False)
+
+        refused = land(self.wt, wt2)
+        self.assertEqual(2, refused.returncode, refused.stdout + refused.stderr)
+        self.assertIn("Name that worktree first", refused.stderr)
+        self.assertEqual("B = 1\n", (self.root / "src/b.py").read_text(encoding="utf-8"))
+        landed = land(wt2, self.wt)
+        self.assertEqual(0, landed.returncode, landed.stdout + landed.stderr)
+        for rel, body in (("src/a.py", "A = 2\n"), ("src/b.py", "B = 2\n")):
+            self.assertEqual(body, (self.root / rel).read_text(encoding="utf-8"))
+
+    REJECTING = "qa-seat-one"
+
+    def _rejected_and_repaired(self) -> subprocess.CompletedProcess:
+        """Round one landed, rejected by `REJECTING` through `lane accept`, then its repair landed
+        with its self-check handed in; the repair's landing."""
+        self._land_round_one()
+        verdict = self.root / "verdict-one.txt"
+        _write(self.root, verdict.name, "VERDICT: REJECT\nISSUES: [new] a is wrong\n"
+                                      "BLOCKING: [new] a is wrong\n")
+        rejected = self._sprint("lane", "accept", "--unit", A, "--verdict", str(verdict),
+                                "--reviewer", self.REJECTING)
+        self.assertEqual(1, rejected.returncode, rejected.stdout + rejected.stderr)
+        self._stage("src/a.py", "A = 3\n")
+        self._hand_in(message=f"fix({A}): a is three")
+        return self._land(A)
+
+    def _sprint(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), *args, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+
+    def test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers(self) -> None:
+        """BG1641: the brief opens with the reviewer to resume, and `lane accept` still records
+        against it, since its fingerprint is the one `critic.py brief` noted."""
+        landed = self._rejected_and_repaired()
+        self.assertEqual(0, landed.returncode, landed.stdout + landed.stderr)
+        text = (self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").read_text(encoding="utf-8")
+        first = text.splitlines()[0]
+        self.assertTrue(first.startswith(f"RESUME REVIEWER: {self.REJECTING}"), first)
+        self.assertIn("rather than spawning a new reviewer", first)
+        self.assertEqual(1, text.count("RESUME REVIEWER:"))
+        verdict = self.root / "verdict-two.txt"
+        _write(self.root, verdict.name, "VERDICT: APPROVE\nISSUES: none\nBLOCKING: none\n")
+        accepted = self._sprint("lane", "accept", "--unit", A, "--verdict", str(verdict),
+                                "--reviewer", self.REJECTING)
+        self.assertIn(f"{A}: APPROVE recorded, round 2", accepted.stdout,
+                      accepted.stdout + accepted.stderr)
+
+    def test_lane_land_prints_the_reviewer_beside_the_brief_path(self) -> None:
+        landed = self._rejected_and_repaired()
+        self.assertEqual(0, landed.returncode, landed.stdout + landed.stderr)
+        lines = landed.stdout.splitlines()
+        at = next(n for n, ln in enumerate(lines) if ln.startswith(f"{A}: self-check recorded; QA brief "))
+        self.assertIn(f"sdlc-studio/.local/briefs/{A}-qa.txt", lines[at])
+        brief = (self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").read_text(encoding="utf-8")
+        self.assertEqual(brief.splitlines()[0], lines[at + 1].strip())
+        self.assertIn(self.REJECTING, lines[at + 1])
+
+    def test_the_reviewer_line_is_named_only_for_a_reject_still_standing(self) -> None:
+        """BG1641: once the same reviewer's APPROVE answers the REJECT no reviewer is named, and
+        a ledger that cannot be read or a row naming no reviewer names none."""
+        self._rejected_and_repaired()
+        self.assertTrue(lanes._reviewer_line(self.root, A).startswith(  # noqa: SLF001
+            f"RESUME REVIEWER: {self.REJECTING} "))
+        verdict = self.root / "verdict-two.txt"
+        _write(self.root, verdict.name, "VERDICT: APPROVE\nISSUES: none\nBLOCKING: none\n")
+        self._sprint("lane", "accept", "--unit", A, "--verdict", str(verdict),
+                     "--reviewer", self.REJECTING)
+        self.assertIsNone(lanes._reviewer_line(self.root, A))  # noqa: SLF001
+        stands = {"verdict": "REJECT", "reviewer": ""}
+        # the module `lanes` imports by name, which a sibling suite may have replaced
+        live = sys.modules.get("critic") or importlib.import_module("critic")
+        with unittest.mock.patch.object(live, "verdict_for", lambda *a: stands):
+            self.assertIsNone(lanes._reviewer_line(self.root, A))  # noqa: SLF001
+            stands["reviewer"] = "someone"
+            self.assertIn("RESUME REVIEWER: someone ", lanes._reviewer_line(self.root, A))  # noqa: SLF001
+        for error in (OSError("no ledger"), ValueError("bad ledger")):
+            with unittest.mock.patch.object(live, "verdict_for", side_effect=error):
+                self.assertIsNone(lanes._reviewer_line(self.root, A))  # noqa: SLF001
+        # an empty ledger and one that is not UTF-8 name no reviewer either, and stop nothing
+        for raw in (b"", b"\xff\xfe\x00 not text\n"):
+            critic.verdicts_path(self.root).write_bytes(raw)
+            self.assertIsNone(lanes._reviewer_line(self.root, A))  # noqa: SLF001
+
+    def test_the_fingerprint_leaves_out_only_the_line_at_the_head(self) -> None:
+        """BG1641: `saved_brief_fingerprint` drops a reviewer line opening the brief and nothing
+        else: the same words further in are the brief's own, and a line with no blank line after
+        it is not the landing's."""
+        body = "You are the qa review seat.\n\nreview the diff\n"
+        line = f"{lanes.REVIEWER_LINE}someone - resume them\n\n"
+        self.assertEqual(critic.brief_fingerprint(body), lanes.saved_brief_fingerprint(line + body))
+        self.assertEqual(critic.brief_fingerprint(body), lanes.saved_brief_fingerprint(body))
+        inside = body + line
+        self.assertEqual(critic.brief_fingerprint(inside), lanes.saved_brief_fingerprint(inside))
+        run_on = f"{lanes.REVIEWER_LINE}someone - resume them\n{body}"
+        self.assertEqual(critic.brief_fingerprint(run_on), lanes.saved_brief_fingerprint(run_on))
+
+    def test_a_first_round_brief_carries_no_reviewer_line(self) -> None:
+        """BG1641 positive control: with no REJECT the saved brief is what `critic.py brief`
+        prints, with no line added, and the landing prints no reviewer line."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        landed = self._land(A)
+        self.assertEqual(0, landed.returncode, landed.stdout + landed.stderr)
+        saved = (self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").read_text(encoding="utf-8")
+        self.assertNotIn("RESUME REVIEWER", saved)
+        self.assertNotIn("RESUME REVIEWER", landed.stdout)
+        made = lanes._critic(self.root, "brief", "--unit", A, "--seat", "qa")
+        self.assertEqual(0, made.returncode, made.stderr)
+        # each briefing names its own verdict file; what else it holds is `critic.py brief`'s
+        self.assertEqual(critic.strip_verdict_file(made.stdout), critic.strip_verdict_file(saved))
+        self.assertTrue(saved.startswith("You are the qa review seat."), saved[:60])
 
     def _handed(self) -> dict[str, bytes]:
         return {p.name: p.read_bytes() for p in (self.wt / LANE).iterdir() if p.is_file()}

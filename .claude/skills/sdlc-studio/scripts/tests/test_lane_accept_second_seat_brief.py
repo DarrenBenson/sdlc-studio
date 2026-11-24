@@ -217,7 +217,7 @@ class SavedBriefDatingTests(unittest.TestCase):
         older = critic.strip_verdict_file(self._brief().read_text(encoding="utf-8"))
         self._brief().write_text(older, encoding="utf-8")
         self.assertNotRegex(older, r"(?m)^BRIEF: ")
-        self.assertEqual(critic.brief_fingerprint(older), saved)
+        self.assertEqual(base.lanes.saved_brief_fingerprint(older), saved)
         rows = self._rows(GREEN)
         rc, out, err = self._accept(GREEN, APPROVE, at=early)
         self.assertEqual((rc, self._rows(GREEN)), (2, rows), out + err)

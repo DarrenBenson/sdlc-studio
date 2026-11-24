@@ -11433,6 +11433,50 @@ class StaleLaneMarkersAreReportedTests(unittest.TestCase):
         self.assertNotIn("IN FLIGHT", joined)
 
 
+class LaneInFlightCloseTests(unittest.TestCase):
+    """BG1649. A unit finished by hand after `lane accept` refused its move is still in
+    `lanes_in_flight`; the close's notes about it name `sprint.py lane return --units <ID>`, the
+    command that clears a lane whose unit is already terminal."""
+
+    def _closed(self, status: str) -> tuple[str, str, str]:
+        """`sprint.py close` over a run whose one unit's lane was briefed (span open) and never
+        returned, the unit's file holding `status`: (the close's stdout, its stderr, the
+        judgement's lines)."""
+        import test_lean_close as lean  # noqa: PLC0415 - the close fixture, shared
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        lean._fixture(root)
+        rs = lean._live("lib.run_state")
+        rs.record_lane_start(root, "US0101")
+        rs.record_unit_actual(root, "US0101", rs.UNIT_START_STATUS, False)
+        story = next((root / "sdlc-studio" / "stories").glob("US0101-*.md"))
+        text = story.read_text(encoding="utf-8")
+        story.write_text(re.sub(r"(?m)^> \*\*Status:\*\*.*$", f"> **Status:** {status}", text),
+                         encoding="utf-8")
+        self.assertEqual(["US0101"], [r["unit"] for r in rs.lanes_in_flight(root)], "premise")
+        rc, out, err = lean._close(root)
+        self.assertEqual(0, rc, out + err)
+        sprint = lean._live("sprint")
+        return out, err, "\n".join(sprint.close_goal_judgement(root, sprint.run_state.read(root)))
+
+    def test_a_terminal_unit_in_flight_names_the_lane_return_that_clears_it(self) -> None:
+        out, _, judged = self._closed("Done")
+        note = "`sprint.py lane return --units US0101` clears its lane"
+        self.assertIn("US0101's lane was briefed and never returned - its span is left open "
+                      "and reads NOT MEASURED; US0101 is already terminal, so " + note, out)
+        self.assertIn("IN FLIGHT at close: US0101 was briefed at", judged)
+        self.assertIn("unattributed; US0101 is already terminal, so " + note, judged)
+
+    def test_a_unit_not_yet_terminal_in_flight_names_no_lane_return(self) -> None:
+        """Positive control: the clause is for a unit already terminal; a unit still at Review is
+        returned by its builder's return, not cleared."""
+        out, _, judged = self._closed("Review")
+        self.assertIn("US0101's lane was briefed and never returned", out)
+        self.assertIn("IN FLIGHT at close: US0101", judged)
+        self.assertNotIn("lane return", out + judged)
+
+
 class LaneSeamScopeTests(unittest.TestCase):
     """BG0391. `lane_dispatch` computed seams over the ids passed to THAT call, and the shipped
     docs dispatch one unit at a time (`lane brief --units <id>`). So the seam map worked only

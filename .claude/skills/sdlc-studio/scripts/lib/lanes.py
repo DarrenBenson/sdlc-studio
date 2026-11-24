@@ -22,6 +22,8 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
 6. record each unit's self-check on the root with `critic.py self-check record`;
 7. write each unit's QA brief with `critic.py brief --seat qa` to
    `sdlc-studio/.local/briefs/<unit>-qa.txt`, printing its review tier and fingerprint. A unit
+   whose latest verdict is an unanswered REJECT has its brief open with a line naming that
+   reviewer, to be resumed for round two, and the landing prints the line beside the path. A unit
    left with no brief has `<unit>-qa.none` beside it instead, naming this landing and why it
    wrote none;
 8. from a worktree named `agent-<id>`, the harness's name for a builder agent's worktree,
@@ -387,7 +389,7 @@ def _carry(wt_top: Path, target: str) -> bool:
         return True
     replay = _git(wt_top, "rebase", target)
     if replay.returncode:
-        conflicts = _git(wt_top, "diff", "--name-only", "--diff-filter=U").stdout.split()
+        conflicts = _paths(wt_top, "diff", "--name-only", "--diff-filter=U", "-z")
         _git(wt_top, "rebase", "--abort")
         _git(wt_top, "reset", "--soft", head)
         named = ", ".join(conflicts) if conflicts else "none reported by git"
@@ -472,7 +474,7 @@ def _rebase(wt_top: Path, branch: str, target: str) -> None:
     rebased = _git(wt_top, "rebase", target)
     if not rebased.returncode:
         return
-    conflicts = _git(wt_top, "diff", "--name-only", "--diff-filter=U").stdout.split()
+    conflicts = _paths(wt_top, "diff", "--name-only", "--diff-filter=U", "-z")
     _git(wt_top, "rebase", "--abort")
     named = ", ".join(conflicts) if conflicts else "none reported by git"
     # git's own hints say to continue a rebase this has just aborted, so they are dropped
@@ -513,6 +515,37 @@ def report_hand_in_name(unit: str) -> str:
     return f"{sdlc_md.norm_id(unit)}-mutation-edits.json"
 
 
+#: What a repair's saved QA brief opens with: the reviewer whose REJECT the repair answers, then a
+#: blank line. `critic.py record` refuses a round-two verdict from any other reviewer.
+REVIEWER_LINE = "RESUME REVIEWER: "
+_REVIEWER_LINE_RE = re.compile(r"\A" + re.escape(REVIEWER_LINE) + r"[^\n]*\n\n")
+
+
+def saved_brief_fingerprint(text: str) -> str:
+    """The fingerprint of a saved QA brief as `critic.py brief` noted it: `critic.brief_fingerprint`
+    of the text without the reviewer line a repair's landing put at its head."""
+    import critic  # noqa: PLC0415 - sibling; only a brief reader needs it
+    return critic.brief_fingerprint(_REVIEWER_LINE_RE.sub("", text, count=1))
+
+
+def _reviewer_line(root_top: Path, unit: str) -> str | None:
+    """The line telling the orchestrator which reviewer to resume for `unit`'s repair, or None
+    when the unit has no unanswered REJECT (a first round) or the ledger cannot be read."""
+    import critic  # noqa: PLC0415 - sibling; only a brief writer needs it
+    try:
+        row = critic.verdict_for(root_top, unit)
+    except (OSError, ValueError):
+        return None
+    if not row or not str(row.get("verdict") or "").upper().startswith(critic.REJECT):
+        return None
+    who = str(row.get("reviewer") or "").strip()
+    if not who:
+        return None
+    return (f"{REVIEWER_LINE}{who} - this repair answers {who}'s REJECT: resume {who} for round "
+            f"two rather than spawning a new reviewer, since a round-two verdict from any other "
+            f"reviewer is refused at record")
+
+
 def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tuple[bool, str]:
     """Record one unit's self-check on the root and write its QA brief; (ok, the unit's line).
     A hand-in carrying the runner's report (`report_hand_in_name`) is recorded through
@@ -542,14 +575,15 @@ def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tup
     if brief.returncode or not brief.stdout.strip():
         return False, f"{unit}: self-check recorded; QA brief REFUSED - {_tail(brief.stderr)}"
     rel = BRIEFS / f"{unit}-qa.txt"
+    resume = _reviewer_line(root_top, unit)
     (root_top / rel).parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(root_top / rel, brief.stdout)
+    sdlc_md.atomic_write(root_top / rel, f"{resume}\n\n{brief.stdout}" if resume else brief.stdout)
     (root_top / BRIEFS / NO_BRIEF.format(unit=unit)).unlink(missing_ok=True)
     tier = re.search(r"^review tier: (\S+)", brief.stderr, re.M)
     fp = re.search(r"^brief fingerprint: (\S+)", brief.stderr, re.M)
     return True, (f"{unit}: self-check recorded; QA brief {rel}, review tier: "
                   f"{tier.group(1) if tier else 'UNKNOWN'}, fingerprint: "
-                  f"{fp.group(1) if fp else 'UNKNOWN'}")
+                  f"{fp.group(1) if fp else 'UNKNOWN'}" + (f"\n  {resume}" if resume else ""))
 
 
 def _unbrief(root_top: Path, unit: str, why: str) -> None:
@@ -581,7 +615,9 @@ LAND_RECORD = "{name}.land.json"
 #: the one message a landing of several worktrees commits with, kept with the first's hand-in
 LANDING_MSG = "landing-msg.txt"
 _SUBJECT = re.compile(r"^(?P<head>[\w-]+)\((?P<scope>[^)]*)\)(?P<rest>!?: .*)$")
-_TRAILER = re.compile(r"^[A-Za-z][A-Za-z0-9-]*: \S")
+#: the trailers a landing's commit message gathers into its one trailer block: a last paragraph of
+#: any other `Key: value` lines is body text, as `Note: keep this` is
+_TRAILER = re.compile(r"^(?:Refs|Mentions): \S", re.I)
 #: the steps that work in a worktree, so a resume of any of them needs it in place
 _IN_WORKTREE = ("commit", "rebase", "fast-forward")
 
@@ -662,7 +698,9 @@ def _combined_message(lanes_: list[_Lane]) -> str:
     """The one message a landing of several worktrees commits with: the first worktree's
     subject, its scope naming every landed unit it did not; each message's body in the order the
     worktrees were named, the later ones led by their own subject; then the trailers they carry,
-    once each, and a `Refs:` trailer for each landed unit that none of them refs."""
+    once each, and a `Refs:` trailer for each landed unit that none of them refs. A message's last
+    paragraph is its trailers only when every line is a `Refs:` or `Mentions:` line; any other
+    last paragraph stays in its body."""
     subject, body, trailers = "", [], []
     for n, lane in enumerate(lanes_):
         paras = _paragraphs((lane.keep / COMMIT_MSG).read_text(encoding="utf-8"))
@@ -1165,7 +1203,7 @@ def land(root: Path | str, worktrees: list[Path | str] | Path | str | None, unit
     the landing of them that stopped; the exit status, with every step and refusal printed.
     `price` records each unit's priced return from an `agent-<id>` worktree's transcript
     (`_price`)."""
-    units = [u.strip() for u in units or [] if u and u.strip()]
+    units = [sdlc_md.display_id(root, u.strip()) for u in units or [] if u and u.strip()]
     named = [worktrees] if isinstance(worktrees, (str, Path)) else list(worktrees or [])
     named = [Path(path) for path in named if str(path).strip()]
     try:
@@ -1183,11 +1221,11 @@ def land(root: Path | str, worktrees: list[Path | str] | Path | str | None, unit
 def _script(root: Path, script: str, *args: str,
             timeout: int = COMMIT_TIMEOUT) -> subprocess.CompletedProcess:
     """A sibling script through its own entry point, the command an operator would run by hand.
-    A run past `timeout` is a LandError: what it did by then is unknown, so nothing follows."""
+    A run past `timeout` is a LandError: what it did by then is unknown, so nothing follows. Past
+    it the script's whole process group, what it started included, is stopped first (`_bounded`)."""
     try:
-        return subprocess.run([sys.executable, str(SCRIPTS / script), *args, "--root", str(root)],
-                              cwd=str(root), capture_output=True, text=True, timeout=timeout,
-                              check=False)
+        return _bounded([sys.executable, str(SCRIPTS / script), *args, "--root", str(root)],
+                        timeout, cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.TimeoutExpired:
         raise LandError(f"`{script} {' '.join(args[:2])}` ran past {timeout}s and was stopped, "
                         f"so nothing after it ran") from None
@@ -1197,7 +1235,8 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
               said: str = "") -> tuple[str, str]:
     """The fingerprint and tier of the brief the verdict `said` (read from `verdict`) answers:
     by default the QA brief `lane land` wrote for `unit`, whose fingerprint is hashed from the
-    saved text as `critic.py record --brief-file` hashes a first-round brief, and whose tier is
+    saved text (less the reviewer line a repair's brief opens with) as `critic.py record
+    --brief-file` hashes a first-round brief, and whose tier is
     the one `critic.py brief` noted beside that fingerprint when it printed the brief. A verdict
     opening with a `BRIEF:` line names the file a `critic.py brief` issued; the note of the brief
     that issued it for `unit` gives the fingerprint and tier instead, a second seat's
@@ -1218,7 +1257,7 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
         saved = (root / rel).read_text(encoding="utf-8")
-        fp = critic.brief_fingerprint(saved)
+        fp = saved_brief_fingerprint(saved)
     except OSError:
         try:
             why = (root / BRIEFS / NO_BRIEF.format(unit=unit)).read_text(encoding="utf-8")
@@ -1335,6 +1374,9 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
     if not target:
         raise LandError(f"{unit} is a {found[1]}: lane accept moves only a "
                         f"{' or a '.join(sorted(terminal))}", 2)
+    # the brief and its note are named for the artefact's own spelling of the id, as the landing
+    # that wrote them named them
+    unit = sdlc_md.display_id(root, unit)
     try:
         said = verdict.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -1382,7 +1424,10 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
     moved = _script(root, "transition.py", "set", "--id", unit, "--status", target)
     if moved.returncode:
         _say(f"{unit}: NOT moved to {target}: `transition.py set` exited {moved.returncode}:"
-             f"\n{_tail(moved.stderr + moved.stdout)}", err=True)
+             f"\n{_tail(moved.stderr + moved.stdout)}\nThe verdict is recorded and the criteria "
+             f"are green: once the move is possible, run `transition.py set --id {unit} --status "
+             f"{target}`, then `sprint.py lane return --units {unit}` to clear its lane",
+             err=True)
         return 1
     _say(f"{unit}: moved to {target}")
     back = _script(root, "sprint.py", "lane", "return", "--units", unit, "--claimed",
@@ -1547,18 +1592,73 @@ def _first_call_context(harness: str, stdout: str) -> tuple[int | None, str | No
         return None, "the output carries no usage.iterations entry"
 
 
+#: The lock, in the git common dir, that one `git worktree add` at a time holds: two adds run
+#: together against one repository can refuse one of them with a commondir error.
+WORKTREE_LOCK = "sdlc-lane-worktree.lock"
+#: Seconds a lane waits for that lock before it is refused.
+WORKTREE_LOCK_WAIT = 120.0
+
+
+@contextlib.contextmanager
+def _worktree_lock(common: Path, timeout: float | None = None):
+    """Hold the exclusive lock `WORKTREE_LOCK` in `common` for the block, waiting up to `timeout`
+    seconds (`WORKTREE_LOCK_WAIT` when None) for another holder, in this process or another, and
+    releasing it however the block ends. A holder that dies releases it with the process. Past
+    the wait it is a LandError and the block does not run. A no-op where `flock` is unavailable
+    (Windows)."""
+    timeout = WORKTREE_LOCK_WAIT if timeout is None else timeout
+    try:
+        import fcntl  # noqa: PLC0415 - POSIX only
+    except ImportError:
+        yield
+        return
+    lock = common / WORKTREE_LOCK
+    try:
+        fh = open(lock, "a")  # noqa: SIM115 - closed in finally
+    except OSError as exc:
+        raise LandError(f"the lane worktree lock {lock} cannot be opened: {exc}", 2) from None
+    try:
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() > deadline:
+                    raise LandError(f"the lane worktree lock {lock} was still held after "
+                                    f"{timeout:g}s: another lane is adding a worktree",
+                                    2) from None
+                time.sleep(0.02)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+    finally:
+        fh.close()
+
+
 def _lane_worktree(root_top: Path, unit: str) -> Path:
     """The lane's worktree under `RUN_WORKTREES`, `lane-<unit>` with the id lowercased: reused
     when present, else checked out on the branch of that name where a lane whose worktree was
-    removed without landing left one, else created on a new branch from the root's HEAD."""
+    removed without landing left one, else created on a new branch from the root's HEAD. The add
+    is made holding `_worktree_lock`, so lanes started together add one at a time; a worktree
+    already there is reused with no lock taken."""
     name = f"lane-{unit.lower()}"
     path = root_top / RUN_WORKTREES / name
     if path.is_dir():
         return path.resolve()
-    if _run_git(root_top, "rev-parse", "--verify", "--quiet", f"refs/heads/{name}").returncode:
-        made = _run_git(root_top, "worktree", "add", "-q", "-b", name, str(path), "HEAD")
-    else:
-        made = _run_git(root_top, "worktree", "add", "-q", str(path), name)
+    found = _run_git(root_top, "rev-parse", "--git-common-dir")
+    # with no common dir to lock in (not a repository), the add below says why it cannot be made
+    held = (_worktree_lock((root_top / found.stdout.strip()).resolve())
+            if not found.returncode else contextlib.nullcontext())
+    with held:
+        if path.is_dir():  # another lane for this unit added it while this one waited
+            return path.resolve()
+        if _run_git(root_top, "rev-parse", "--verify", "--quiet",
+                    f"refs/heads/{name}").returncode:
+            made = _run_git(root_top, "worktree", "add", "-q", "-b", name, str(path), "HEAD")
+        else:
+            made = _run_git(root_top, "worktree", "add", "-q", str(path), name)
     if made.returncode:
         raise LandError(f"the lane worktree {path} could not be created: "
                         f"{_tail(made.stderr)}", 2)
@@ -1843,7 +1943,8 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
                                     reason=f"the CLI ran past its {timeout}s timeout and was "
                                            f"stopped")
     first, first_why = _first_call_context(harness, stdout) if usage.metered else (None, None)
-    staged = _run_git(wt, "diff", "--cached", "--name-only").stdout.split()
+    staged = [p for p in _run_git(wt, "diff", "--cached", "--name-only", "-z").stdout.split("\0")
+              if p]
     session = _session_key()
     out_path = root_top / RUN_RECORDS / unit / f"{session}.out"
     sdlc_md.atomic_write(out_path, stdout)

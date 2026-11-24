@@ -33,6 +33,8 @@ from lib import drive  # noqa: E402
 
 A = base.A
 _git = base._git
+#: a path holding a space, as a release notes page may be named
+SPACED = "docs/release notes.md"
 SCRIPTS = Path(__file__).resolve().parent.parent
 SKILL_REL = ".claude/skills/sdlc-studio"
 PAGE = f"{SKILL_REL}/reference-scripts-surface.md"
@@ -101,6 +103,56 @@ class LaneLandReplayTests(base._LaneFixture):
             self.assertFalse(path.exists(), f"the replay was left mid-rebase: {left}")
         self.assertIn(base.BRANCH, self._branches())
         self.assertEqual([], base.critic.read_self_checks(self.root))
+
+    """BG1695: a conflicting path is read from a NUL-separated listing, so one holding a space is
+    named once, as git names it, by both refusals."""
+
+    def _moved_main(self, rel: str) -> str:
+        """Main moves `rel` after the lane branched; its head."""
+        return self._move_main(rel, "main's line\n")
+
+    def _replay_refusal(self, rel: str) -> str:
+        """The land of a staged change to `rel` that main also moved: the replay refuses."""
+        self._moved_main(rel)
+        self._stage(rel, "the lane's line\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("rebasing the staged change onto main", r.stderr)
+        return r.stderr
+
+    def _rebase_refusal(self, rel: str) -> str:
+        """The land of a lane committed on its branch to `rel` that main also moved: the rebase
+        refuses."""
+        self._moved_main(rel)
+        self._stage(rel, "the lane's line\n")
+        gitutil.git(["commit", "-q", "-m", f"feat({A}): the lane's line"], self.wt)
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"rebasing {base.BRANCH} onto main failed", r.stderr)
+        return r.stderr
+
+    def test_a_replay_conflict_names_a_path_holding_a_space_once(self) -> None:
+        """MUTANT: the replay's conflict listing split on whitespace, naming `docs/release` and
+        `notes.md`."""
+        err = self._replay_refusal(SPACED)
+        self.assertIn(f"Conflicting files: {SPACED}. The lane stays", err)
+        self.assertEqual([SPACED], drive._CONFLICT.search(err).group(1).split(", "))  # noqa: SLF001
+
+    def test_a_rebase_conflict_names_a_path_holding_a_space_once(self) -> None:
+        """MUTANT: `_rebase`'s conflict listing split on whitespace."""
+        err = self._rebase_refusal(SPACED)
+        self.assertIn(f"Conflicting files: {SPACED}. The lane stays", err)
+
+    def test_a_replay_conflict_still_names_an_ordinary_path(self) -> None:
+        """Positive control, both refusals: `plain.md` alone, no empty name after the split."""
+        self.assertIn("Conflicting files: plain.md. The lane stays",
+                      self._replay_refusal("plain.md"))
+
+    def test_a_rebase_conflict_still_names_an_ordinary_path(self) -> None:
+        self.assertIn("Conflicting files: plain.md. The lane stays",
+                      self._rebase_refusal("plain.md"))
 
     def test_the_refusal_claims_only_the_commits_hooks_did_not_run(self) -> None:
         """AC1's message against a replay that runs a hook of its own: the rebase picks the

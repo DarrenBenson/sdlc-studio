@@ -10147,7 +10147,8 @@ def close_goal_judgement(root, state: dict, seats: list | None = None,
                      "whether any lane never returned is UNKNOWN, not none")
     for row in in_flight:
         lines.append(f"IN FLIGHT at close: {row['unit']} was briefed at {row['started_at']} and "
-                     f"never returned - its work may be in this tree unattributed")
+                     f"never returned - its work may be in this tree unattributed"
+                     f"{_lane_return_hint(root, row['unit'])}")
     return lines
 
 
@@ -10316,6 +10317,17 @@ def _at_terminal_status(root: Path, uid: str) -> bool:
     raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or ""
     status = sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root)) or raw.strip()
     return sdlc_md.is_terminal_status(hit[1], status)
+
+
+def _lane_return_hint(root: Path, uid: str) -> str:
+    """The clause naming the command that clears the lane of a unit already at a terminal status,
+    or "" for one that is not: a unit finished by hand (`transition.py set`) after `lane accept`
+    refused its move is still in flight, and `lane return` is what clears it."""
+    if not _at_terminal_status(root, uid):
+        return ""
+    shown = sdlc_md.display_id(root, uid)
+    return (f"; {shown} is already terminal, so `sprint.py lane return --units {shown}` "
+            f"clears its lane")
 
 
 def cmd_cost(args: argparse.Namespace) -> int:
@@ -11337,7 +11349,7 @@ def cmd_close(args: argparse.Namespace) -> int:
     for uid in sorted(unreturned & set(_batch_story_units(root, state.get("batch") or []))):
         if ((state.get(run_state.UNIT_ACTUALS) or {}).get(uid) or {}).get("open"):
             print(f"close: {uid}'s lane was briefed and never returned - its span is left "
-                  f"open and reads NOT MEASURED")
+                  f"open and reads NOT MEASURED{_lane_return_hint(root, uid)}")
     # THE COST CHECK, before the chain: its retro-validate step reads the run's cost issue to
     # decide whether the retro owes a `## Cost` cause, so the record holds this close's finding,
     # never the last one's. A known issue, never a refusal: the close completes either way.
