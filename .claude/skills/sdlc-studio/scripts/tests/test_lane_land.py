@@ -790,10 +790,10 @@ class LaneLandTests(_LaneFixture):
         self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
         return _git(self.root, "rev-parse", "HEAD")
 
-    def _brief_repair(self) -> subprocess.CompletedProcess:
+    def _brief_repair(self, *extra: str) -> subprocess.CompletedProcess:
         env = {**self._env(), run_state.TRANSCRIPTS_ENV: str(Path(self._tmp.name) / "transcripts")}
         return subprocess.run(
-            [sys.executable, "-B", str(SPRINT), "lane", "brief", "--units", A,
+            [sys.executable, "-B", str(SPRINT), "lane", "brief", "--units", A, *extra,
              "--root", str(self.root)],
             capture_output=True, text=True, timeout=600, cwd=str(self.root), env=env,
             check=False)
@@ -835,11 +835,44 @@ class LaneLandTests(_LaneFixture):
         self.assertIn(f"the worktree {self.wt} is already in place on {BRANCH}", again.stdout)
         self.assertEqual(landed, _git(self.wt, "rev-parse", "HEAD"))
 
+    def test_a_repair_brief_with_repair_recreates_the_landed_worktree(self) -> None:
+        """The runbook's own command, `lane brief --units <id> --repair`, recreates the worktree
+        as the bare brief does, beside the REJECT it quotes; a land record that cannot be read
+        and is older than the unit's landing is passed over. MUTANTS: the `--repair` arm
+        recreating nothing; any record that cannot be read refusing the recreation; a record
+        that cannot be read weighed against the OLDEST landing naming the unit, not the newest
+        (an older landing of it lies before the unreadable one here)."""
+        landed = self._landed_and_rejected()
+        landed_dir = self.root / LANE / "landed"
+        record = next(landed_dir.glob("*.land.json"))
+        older = Path(self._tmp.name).resolve() / "lane-older"
+        (landed_dir / "lane-older.land.json").write_text(json.dumps(
+            {**json.loads(record.read_text(encoding="utf-8")), "worktrees": ["lane-older"],
+             "paths": [str(older)], "branches": ["lane-older"], "owners": {A: "lane-older"}}),
+            encoding="utf-8")
+        os.utime(landed_dir / "lane-older.land.json", (900_000_000, 900_000_000))
+        stale = landed_dir / "lane-stale.land.json"
+        stale.write_text('{"units": [', encoding="utf-8")
+        os.utime(stale, (1_000_000_000, 1_000_000_000))
+        r = self._brief_repair("--repair")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"--- REPAIR: what this repair of {A} answers", r.stdout)
+        self.assertIn(f"recreated the worktree {self.wt} on {BRANCH} at {landed[:12]}", r.stdout)
+        self.assertNotIn("lane-stale", r.stdout)
+        self.assertFalse(older.exists(), "an older landing was recreated")
+        self.assertTrue(self.wt.is_dir(), "no worktree at the path the unit was built in")
+        self.assertEqual(landed, _git(self.wt, "rev-parse", "HEAD"))
+        self.assertEqual(BRANCH, _git(self.wt, "symbolic-ref", "--short", "HEAD"))
+        self.assertEqual("", _git(self.wt, "status", "--porcelain"))
+
     def test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints(self) -> None:
         """BG1311 AC2. Each case prints the brief, exits 0 and names why no worktree was
         recreated, and nothing is overwritten. MUTANTS: an occupied path written over; a
         missing record, a record of a landing that removed nothing or named no branch, or a
-        branch git will not add read as a worktree to recreate, or failing the brief."""
+        branch git will not add read as a worktree to recreate, or failing the brief; a land
+        record that cannot be read (cut short, not UTF-8), as new as one naming the unit or
+        newer, skipped so an older landing's worktree is recreated in its place, or the only
+        record said to name nothing."""
         self._landed_and_rejected()
         record = next((self.root / LANE / "landed").glob("*.land.json"))
         kept = record.read_text(encoding="utf-8")
@@ -867,6 +900,34 @@ class LaneLandTests(_LaneFixture):
             record.write_text(json.dumps(data), encoding="utf-8")
             says("its land record could not be read (KeyError: 'paths')")
             self.assertFalse(self.wt.exists())
+        older = Path(self._tmp.name).resolve() / "lane-older"
+        older_record = record.parent / "lane-older.land.json"
+        unread = (f"the land record(s) {record.name} under {LANE}/landed cannot be read, so the "
+                  f"newest landing of {A} is not known")
+        for case, damaged, tied in (
+                ("the newest record is cut short, an older one names the unit",
+                 kept[:40].encode("utf-8"), False),
+                ("the newest record is not UTF-8, an older one names the unit",
+                 b"\xff\xfe{", False),
+                ("a record cut short is as new as one naming the unit",
+                 kept[:40].encode("utf-8"), True)):
+            with self.subTest(case):
+                record.write_bytes(damaged)
+                older_record.write_text(json.dumps(
+                    {**json.loads(kept), "worktrees": ["lane-older"], "paths": [str(older)],
+                     "branches": ["lane-older"], "owners": {A: "lane-older"}}),
+                    encoding="utf-8")
+                st = record.stat()
+                os.utime(older_record, ns=(st.st_atime_ns, st.st_mtime_ns) if tied else
+                         (1_000_000_000 * 10**9, 1_000_000_000 * 10**9))
+                says(unread)
+                self.assertFalse(older.exists(), "an older landing was recreated in its place")
+                self.assertFalse(self.wt.exists())
+        older_record.unlink()
+        with self.subTest("the one record there cannot be read"):
+            record.write_bytes(kept[:40].encode("utf-8"))
+            r = says(unread)
+            self.assertNotIn(f"no land record under {LANE}/landed names it", r.stdout)
         with self.subTest("no land record names the unit"):
             record.unlink()
             says(f"no land record under {LANE}/landed names it")

@@ -20,7 +20,9 @@ goal with no clause is dropped, so the page reads `none open` over open defects.
 
 BG1692: the clause half is judged from the bug file itself. `_open_defects` reads a bug's
 `Falsifies` header field, so the close runs unpatched; MUTANTS: the field never read (the bug
-ruled leavable, `0 BLOCKING`); read from a bug that is not open; read when empty.
+ruled leavable, `0 BLOCKING`); read from a bug that is not open; read when empty, above another
+header line whose `>` `extract_field` reads on into; read when it holds only `>`, `·` or another
+field.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -196,29 +198,52 @@ class CloseGoalJudgementInReportTests(unittest.TestCase):
 
 class OpenDefectsFalsifiesTests(unittest.TestCase):
 
-    def test_open_defects_reads_falsifies_only_where_declared(self) -> None:
-        """BG1692 AC2. An Open bug declaring `Falsifies`, an Open one with none, a Fixed one
-        declaring it, and an In Progress one whose field is empty: only the first carries
-        `falsifies`, with the field's text, and the Fixed bug is not listed."""
+    @staticmethod
+    def _defects(*bugs: tuple[str, str, str]) -> dict[str, dict]:
+        """`_open_defects` over a project holding each `(id, status, field line)` bug, the field
+        line written between its Status and its Severity, as a filer writes a header."""
         sprint = lean._live("sprint")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            bugs = root / "sdlc-studio" / "bugs"
-            bugs.mkdir(parents=True)
-            for uid, status, extra in (
-                    ("BG0911", "Open", "> **Falsifies:** the parser keeps every tab\n"),
-                    ("BG0912", "Open", ""),
-                    ("BG0913", "Fixed", "> **Falsifies:** the parser keeps every tab\n"),
-                    ("BG0914", "In Progress", "> **Falsifies:**\n")):
-                (bugs / f"{uid}-x.md").write_text(
-                    f"# {uid}: x\n\n> **Status:** {status}\n> **Severity:** Low\n{extra}",
-                    encoding="utf-8")
-            got = {x["id"]: x for x in sprint._open_defects(root)}
+            folder = root / "sdlc-studio" / "bugs"
+            folder.mkdir(parents=True)
+            for uid, status, extra in bugs:
+                (folder / f"{uid}-x.md").write_text(
+                    f"# {uid}: x\n\n> **Status:** {status}\n{extra}> **Severity:** Low\n\n"
+                    f"## Summary\n\nThe parser drops a tab.\n", encoding="utf-8")
+            return {x["id"]: x for x in sprint._open_defects(root)}
+
+    def test_open_defects_reads_falsifies_only_where_declared(self) -> None:
+        """BG1692 AC2. An Open bug declaring `Falsifies`, an Open one with none, a Fixed one
+        declaring it, and an In Progress one whose field is empty above its Severity line: only
+        the first carries `falsifies`, with the field's text, and the Fixed bug is not listed.
+        The empty field sits above another header line, where `extract_field` reads on into
+        that line and returns its `>`."""
+        got = self._defects(
+            ("BG0911", "Open", "> **Falsifies:** the parser keeps every tab\n"),
+            ("BG0912", "Open", ""),
+            ("BG0913", "Fixed", "> **Falsifies:** the parser keeps every tab\n"),
+            ("BG0914", "In Progress", "> **Falsifies:**\n"))
         self.assertEqual(["BG0911", "BG0912", "BG0914"], sorted(got))
         self.assertEqual("the parser keeps every tab", got["BG0911"]["falsifies"])
         self.assertNotIn("falsifies", got["BG0912"])
         self.assertNotIn("falsifies", got["BG0914"])
         self.assertEqual("Low", got["BG0911"]["priority"])
+        self.assertEqual("Low", got["BG0914"]["priority"])
+
+    def test_a_falsifies_field_holding_only_header_text_declares_nothing(self) -> None:
+        """A field whose value is only header punctuation or another field declares no clause,
+        while a clause on a `·` run is still read. MUTANTS: the punctuation guard dropped (`>`
+        and `·` read as clauses); the field guard dropped (the next field read as the clause)."""
+        got = self._defects(
+            ("BG0921", "Open", "> **Falsifies:** >\t>\n"),
+            ("BG0922", "Open", "> **Points:** 1 · **Falsifies:** · **Epic:** EP0001\n"),
+            ("BG0923", "Open", "**Falsifies:** **Epic:** EP0001\n"),
+            ("BG0924", "Open", "> **Points:** 1 · **Falsifies:** every tab is kept\n"),
+            ("BG0925", "Open", "> **Falsifies:**\n> the parser keeps every tab\n"))
+        self.assertEqual({"BG0924": "every tab is kept"},
+                         {uid: d["falsifies"] for uid, d in got.items() if "falsifies" in d})
+        self.assertEqual(5, len(got))
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@ project's folder, which `lane return --agent` searches after the lane repository
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import shutil
@@ -268,6 +270,25 @@ class LanePricedTests(meter._Case):
         self.assertEqual(str(other.subagents / "agent-b7.jsonl"), rec["transcript"])
         self.assertIn(f"--agent b7 was read from another project's transcripts, in "
                       f"{other.subagents}", out)
+
+    def test_the_foreign_directory_is_named_on_stderr_so_json_stays_one_document(self) -> None:
+        """AC1's fixture under `--format json`, its two streams read apart (`ws.lane` merges
+        them): stdout parses as one JSON document naming the unit, and the line naming the
+        directory read is on stderr alone. MUTANT: that line printed to stdout, ahead of the
+        document."""
+        ws, projects, _slug = self._store()
+        other = self._built(projects / self.OTHER)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = meter._live("sprint").main(["lane", "return", "--units", "US0101", "--agent",
+                                             "b7", "--format", "json", "--root", str(ws.root)])
+        self.assertEqual(0, rc, out.getvalue() + err.getvalue())
+        line = f"--agent b7 was read from another project's transcripts, in {other.subagents}"
+        self.assertIn(line, err.getvalue())
+        self.assertNotIn("another project", out.getvalue())
+        doc = json.loads(out.getvalue())
+        self.assertIn("US0101", json.dumps(doc))
+        self.assertEqual(meter._priced(meter._sum(BUILD_X, BUILD_Y)), self._priced(ws)["priced"])
 
     def test_the_lane_repository_s_own_transcript_wins_over_another_project_s(self) -> None:
         """AC2. Agent b7 has a transcript under the lane repository's own folder and another,

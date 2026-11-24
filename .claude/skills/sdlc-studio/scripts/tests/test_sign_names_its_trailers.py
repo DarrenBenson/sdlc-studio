@@ -8,7 +8,9 @@ seal, one `Refs: <id>` line per unit it moved, and nothing when it moved none.
 These run the real `sprint sign` (`_seal_units` unstubbed) on BG0848's close-and-sign fixture
 (`test_lean_sign._SignMovesRun`). MUTANTS, each failed here: no trailer printed (AC1); the whole
 batch printed, the unit already terminal included (AC1, AC3); the header printed over an empty
-block (AC3); the printed ids not the ones the attribution reads (AC2).
+block (AC3); the printed ids not the ones the attribution reads (AC2); a unit the close's retro
+carries, which the seal leaves where it stands, named among the trailers (BG1025's carried run,
+`test_sign_respects_carried_units._CarriedRun`).
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -24,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_lean_sign as signing  # noqa: E402 - BG0848's close-and-sign fixture, shared
+import test_sign_respects_carried_units as carrying  # noqa: E402 - BG1025's carried run
 
 import engagement_floor  # noqa: E402
 
@@ -103,6 +106,18 @@ class SignNamesItsTrailersTests(unittest.TestCase):
         self.assertIn("sign: 0 moved to their terminal status, 2 already there", out)
         self.assertNotIn(HEADER, out)
         self.assertEqual([], _refs(out), out)
+
+    def test_a_unit_the_retro_carries_is_not_named(self) -> None:
+        """The close's retro carries BG0101, which the seal leaves Open: the trailers name the
+        story and the uncarried bug it moved, in the batch's order, and no `Refs:` line names
+        BG0101. MUTANT: each carried unit appended to `moved` beside the ones moved."""
+        run, out = self._signed(carrying._CarriedRun)
+        self.assertEqual(("Done", "Open", "Fixed"),
+                         tuple(run.status(u) for u in ("US0101", "BG0101", "BG0102")), out)
+        self.assertIn("BG0101 is carried as a known issue by RETRO0001", out)
+        self.assertIn(HEADER, out.splitlines(), out)
+        self.assertEqual(["Refs: US0101", "Refs: BG0102"], _refs(out),
+                         f"the trailers are not exactly the units the seal moved:\n{out}")
 
 
 if __name__ == "__main__":

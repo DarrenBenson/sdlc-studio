@@ -3315,9 +3315,11 @@ def lane_repair_scope(root: Path | str, unit: str) -> dict | None:
 
 
 def _lane_restore_worktree(root: Path | str, unit: str) -> str:
-    """`lanes.restore_for_repair`'s line for a repair of `unit`; a land record it cannot read
-    (a damaged one, or a root git cannot answer for) is named in the line, never raised, so the
-    repair brief is printed whatever the record holds."""
+    """`lanes.restore_for_repair`'s line for a repair of `unit`. A land record that cannot be
+    parsed is named in that line by `restore_for_repair` itself; one that parses but is damaged
+    (a key it reads missing or of the wrong shape), or a root git cannot answer for, raises
+    there and is named in the line here, never raised, so the repair brief is printed whatever
+    the record holds."""
     from lib import lanes  # noqa: PLC0415 - only a repair brief needs it
     try:
         return lanes.restore_for_repair(root, unit)
@@ -9882,11 +9884,12 @@ def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) 
             lambda res=res, reading=reading: run_state.record_delegated_tokens(
                 root, reading["tokens"], agent=f"lane-run-{reading['harness']}",
                 note=f"sprint lane run return ({res['outcome']})", unit=res["unit"],
-                reading=reading, provenance=lanes.HARNESS_OUTPUT,
-                # A Claude Code lane run is a `claude -p` session of its own, which no Claude
-                # reading of the run holds, so it stays untagged: a mixed run whose Claude
-                # readings hold their own subagents still adds it.
-                harness=None if reading["harness"] == run_state.CLAUDE else reading["harness"]),
+                # Untagged under every harness: no reading of the run holds a lane run's
+                # session (a `claude -p` lane is a session of its own, the Codex reader leaves
+                # threads under the lane worktrees out, and the OpenCode reader matches only
+                # the repository root's own directory), so the run's total adds the record
+                # even where a harness's readings hold their own subagents.
+                reading=reading, provenance=lanes.HARNESS_OUTPUT),
             unreadable,
             f"{res['unit']}'s lane run usage could not be recorded (the run state is "
             f"unreadable), so its cost will not reach the page")
@@ -10194,11 +10197,29 @@ def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
     return out or None
 
 
+#: A value that opens on a `**Name:**` field: another field, never a goal clause.
+_FIELD_VALUE_RE = re.compile(r"\*\*[^*\n]+:\*\*")
+
+
+def _declared_falsifies(text: str) -> str:
+    """The goal clause a bug's `Falsifies` field declares, or "" when it declares none.
+
+    Read by `sdlc_md.metadata_fields`, which leaves out a field with nothing after its name on
+    its own line, where `extract_field` would read on into the next line and return its `>` or
+    its text. A value that is still only header punctuation (`>`, `·`) or that opens on another
+    `**Name:**` field is no clause either, so it is not declared."""
+    value = sdlc_md.metadata_fields(text).get("falsifies", "")
+    if not value.strip(" \t>·") or _FIELD_VALUE_RE.match(value):
+        return ""
+    return value
+
+
 def _open_defects(root) -> list[dict]:
     """Every open bug (Open or In Progress), as `judge_defects_against_goal` reads them: its id,
-    title and Severity as `priority`, and `falsifies`, the text of its header's `Falsifies`
-    field, where that field is present and not empty, so the bug is judged on the clause basis
-    it declares."""
+    title and Severity as `priority`, and `falsifies`, the clause its header's `Falsifies` field
+    declares (`_declared_falsifies`), so the bug is judged on the clause basis it declares. A
+    field that is empty on its own line, or holds only header punctuation or another field,
+    declares none, and the bug carries no `falsifies`."""
     out: list[dict] = []
     for path in sdlc_md.artifact_files("bug", Path(root)):
         text = sdlc_md.read_text_safe(path)
@@ -10208,7 +10229,7 @@ def _open_defects(root) -> list[dict]:
         defect = {"id": sdlc_md.extract_record_id(path.stem),
                   "title": sdlc_md.extract_h1_title(text) or path.stem,
                   "priority": (sdlc_md.extract_field(text, "Severity") or "").strip()}
-        if falsifies := (sdlc_md.extract_field(text, "Falsifies") or "").strip():
+        if falsifies := _declared_falsifies(text):
             defect["falsifies"] = falsifies
         out.append(defect)
     return out

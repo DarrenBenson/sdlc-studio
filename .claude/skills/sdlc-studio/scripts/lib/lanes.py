@@ -795,21 +795,31 @@ def restore_for_repair(root: Path | str, unit: str) -> str:
     """Recreate, for a repair of `unit`, the worktree its landing removed: at the path it was
     built in, on the branch it was built on, at the landed commit, so the builder that built it
     can be resumed there. The record read is the newest land record naming the unit. Returns
-    the line saying what was done, or why no worktree was recreated: no land record names the
-    unit, its landing did not remove the worktree or recorded no commit, the record names no
-    branch (a landing recorded before branches were), the path is occupied, or git would not
-    add the worktree there. Nothing is overwritten: an occupied path is left as it is, and a
-    branch that already exists is not moved. The same worktree already in place on its branch
-    is said to be, so a second brief of the repair, or of another unit of the same lane, is not
-    read as a failure."""
+    the line saying what was done, or why no worktree was recreated: a land record that cannot
+    be read (not JSON, not UTF-8, or not a land record) is as new as any that names the unit,
+    or newer, so it may be the unit's newest landing (each such record is named, and no older
+    landing is recreated in its place); no land record names the unit; its landing did not
+    remove the worktree or recorded no commit; the record names no branch (a landing recorded
+    before branches were); the path is occupied; or git would not add the worktree there. A
+    record that cannot be read and is older than the newest naming the unit is passed over,
+    since it cannot be that landing. Nothing is overwritten: an occupied path is left as it
+    is, and a branch that already exists is not moved. The same worktree already in place on
+    its branch is said to be, so a second brief of the repair, or of another unit of the same
+    lane, is not read as a failure."""
     root_top = _top(Path(root), "the root")
     uid = sdlc_md.norm_id(unit)
     none = f"no worktree was recreated for {unit}'s repair"
-    found = []
+    found, unread = [], []
     for f in (root_top / LANDED).glob(LAND_RECORD.format(name="*")):
         rec = _read_record(f)
-        if rec and uid in {sdlc_md.norm_id(u) for u in rec.get("units") or []}:
+        if rec is None:
+            unread.append((f.stat().st_mtime, f.name))
+        elif uid in {sdlc_md.norm_id(u) for u in rec.get("units") or []}:
             found.append((f.stat().st_mtime, f.name, rec))
+    newest = max(found)[0] if found else None
+    if blind := sorted(name for at, name in unread if newest is None or at >= newest):
+        return (f"{none}: the land record(s) {', '.join(blind)} under {LANDED.as_posix()} "
+                f"cannot be read, so the newest landing of {unit} is not known")
     if not found:
         return f"{none}: no land record under {LANDED.as_posix()} names it"
     rec = max(found)[2]
