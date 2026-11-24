@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG0996.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG0996.md
 > **Evidence:** Found in a consuming project's run (RUN-01M4BHCT), 2026-10-08; reproduced against this repo's main e77cd2d5. That project's BG0509 AC1 was filed reading '(`API_KEY_2`, `TOKEN_V2)` is reported'.
 > **Created:** 2026-10-08
 > **Created-by:** sdlc-studio file
@@ -44,3 +44,4 @@ End the wrapped token at the identifier's last word character: strip trailing `.
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: reproduced on current code; private project names generalised; relations recorded |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at HEAD; added the balanced-call negative control as AC2 so the fix cannot strip every `)` |
+| 2026-11-24 | orchestrator | Affects gains tests/test_filing_markdown_safe_title.py: two LinkDestinationTests pin the old span with the closing parenthesis inside it (the SAFE builder's full-suite run) |

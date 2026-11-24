@@ -27,8 +27,6 @@ Clean the bytecode directory from an atexit hook or a parent-death signal as wel
 
 - [ ] **AC1** Given a `migrate.py run` whose collection guard has made its `sdlc-migrate-pyc-*` directory, when the process is killed with SIGKILL, then a later `migrate.py` start under the same TMPDIR removes the stale directory (a dead owner's) and leaves a live run's directory alone. Fails on: the directory left behind: SIGTERM is handled at migrate.py line 1132 but no hook runs on SIGKILL or on the timeout wrapper being killed by verify_ac.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run
-- [ ] **AC2** Given BG1183's AC1 bound of 300 s, when its Verify line is read, then it declares the ceiling verify_ac honours so `verify_ac run --id BG1183` does not read it red at the 120 s default. Fails on: an AC1 Verify with no declared ceiling, red at the default for a run inside its own bound.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_bg1183_ac1_declares_its_own_ceiling
 
 ## Impact
 
@@ -42,3 +40,4 @@ QA note at HEAD: not reproduced as a leak by a clean SIGTERM, which `test_a_term
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: the one criterion ran a whole module and named no failure; split into the SIGKILL sweep and the undeclared ceiling, and noted that an atexit hook cannot cover SIGKILL (class and test names are the builder's to create) |
+| 2026-11-24 | orchestrator | AC2 retired: verify_ac has no per-line ceiling for BG1183's Verify to declare, so it needs a verify_ac feature in another unit's artefact; AC1's sweep removes the directory whatever kills the run, which is this unit's defect. BG1183 (Fixed) bounds itself with `timeout 300` |

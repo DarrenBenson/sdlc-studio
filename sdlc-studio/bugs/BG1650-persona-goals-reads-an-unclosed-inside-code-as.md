@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/persona_goals.py, .claude/skills/sdlc-studio/scripts/reference-persona.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py, changelog.d/BG1650.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/persona_goals.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py, changelog.d/BG1650.md
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -36,3 +36,4 @@ Track fence and code-span state before opening a comment; attach a nested line o
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: Points 2 to 3: three defects in one reader, plus a rule-table row (RuleTableTests); all three reproduced at HEAD through `persona_goals.end_goals`; reference-persona.md added to Affects |
+| 2026-11-24 | orchestrator | Affects corrected: the rule table is .claude/skills/sdlc-studio/reference-persona.md, not a path under scripts/ (the SAFE builder) |
