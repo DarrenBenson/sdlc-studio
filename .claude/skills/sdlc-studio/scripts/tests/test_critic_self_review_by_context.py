@@ -398,14 +398,18 @@ class SelfReviewByContextTests(unittest.TestCase):
 
     def test_a_path_under_a_loop_of_links_costs_only_itself(self) -> None:
         """A transcript path running through a loop of symbolic links, which Python before 3.13
-        refuses to resolve with RuntimeError, is skipped; the clean edit after it still counts."""
+        refuses to resolve with RuntimeError, is skipped; the clean edit after it still counts. The
+        looped path ends in the Affects name, so its record passes the raw-byte prefilter and
+        reaches the guard. Mutant: RuntimeError dropped from the guard, which fails on 3.10 to
+        3.12 (a newer Python resolves the loop without raising, and the patched-resolve test
+        above pins the guard there)."""
         with tempfile.TemporaryDirectory() as d:
             loop = Path(d) / "loop"
             loop.mkdir()
             (loop / "a").symlink_to(loop / "b")
             (loop / "b").symlink_to(loop / "a")
             unit = str(Path(d) / "proj" / "src" / "unit.py")
-            rec, got = self._nul_case(d, [str(loop / "a" / "unit.py"), unit])
+            rec, got = self._nul_case(d, [str(loop / "a" / "src" / "unit.py"), unit])
             self.assertEqual(0, rec.returncode, rec.stdout + rec.stderr)
             self.assertSelfReview(got["root"], "US0001", got["rows"][-1])
 
