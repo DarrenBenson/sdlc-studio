@@ -1,0 +1,6 @@
+UNIT: BG1513
+BRIEF: 202a10eef6fc-87a39457
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED: "the claim that `lane return` names the foreign directory on stderr". `test_the_foreign_directory_is_named_on_stderr_so_json_stays_one_document` runs `lane return --agent b7 --format json` with stdout and stderr captured apart. It asserts the line is on stderr, that stdout does not name another project, and that stdout parses as one JSON document naming US0101. My round-one survivor, `file=sys.stderr` dropped from the print, applied once to 15810f4d7, now fails it (1 failed). A second mutant printing the line to both streams fails it too. The repair changes only test_lane_priced.py, and none of the repair commit's sprint.py hunks touch `_lane_agent_totals`. run_state.py, verdict_provenance.py and changelog.d/BG1513.md are unchanged since round one, so it adds no code to judge. Every run was made under a throwaway HOME with a guard plugin loaded by `PYTEST_PLUGINS` in every pytest process. The guard refuses and logs any `Path.iterdir` or `Path.glob` under the real home's projects store, and it logged no attempt. verify_ac run --id BG1513 --dry-run: 5 of 5 pass. test_lane_priced, test_meter_reads_true and test_critic_verdict_provenance all pass at 15810f4d7, within 54 passed across six modules. The author's three replayed mutants are all killed.

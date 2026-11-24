@@ -1,0 +1,6 @@
+UNIT: BG1062
+BRIEF: b79133542c57-94120f20
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED: "the changelog's claim that a unit the close's retro carries is not named in the trailers has no test". `test_a_unit_the_retro_carries_is_not_named` signs BG1025's carried run and asserts the trailers are exactly `Refs: US0101` and `Refs: BG0102`, with BG0101 left Open. My round-one survivor, each carried unit appended to `moved` in the `kept` loop of `_seal_units`, applied once to 15810f4d7, now fails it (1 failed). A second mutant, the trailers printed in sorted order, fails it too, so it also pins the batch's order. The repair changes only the test module (a docstring line, the import of the carried run, one test), and none of the repair commit's sprint.py hunks touch `_seal_units` or `cmd_sign`, so it adds no code to judge. verify_ac run --id BG1062 --dry-run: 3 of 3 pass. test_sign_names_its_trailers, test_sign_respects_carried_units and test_lean_sign all pass at 15810f4d7, within 54 passed across six modules. The author's three replayed mutants are all killed.

@@ -1,6 +1,6 @@
 # BG1692: The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py, .claude/skills/sdlc-studio/reference-bug.md, changelog.d/BG1692.md
@@ -28,10 +28,13 @@ Have `_open_defects` read the bug's `Falsifies` header field into `falsifies` wh
 
 - [ ] **AC1** Given a run whose goal is one clause and an open Low bug whose file carries `> **Falsifies:** <that clause>`, when `sprint close` runs with `_open_defects` unpatched, then the close prints `BLOCKS THE GOAL CLAIM <id>: falsifies the goal clause: <clause>`, the report's goal judgement row reads `blocks the goal claim` for it, and the close exits 0. Fails on: the bug ruled leavable, `falsifies no goal clause`, with `0 BLOCKING`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_a_falsifies_field_in_the_bug_file_blocks_the_goal_claim
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given three bugs, one Open with a `Falsifies` field, one Open with none and one Fixed with a `Falsifies` field, when `sprint._open_defects` reads the project, then only the first carries `falsifies`, with the field's text, and the Fixed bug is not listed. Fails on: no defect ever carrying `falsifies`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_open_defects_reads_falsifies_only_where_declared
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given `critic.judge_defects_against_goal`'s docstring, when it is read, then it no longer says a defect blocks because it names a clause, which no code checks. Fails on: the docstring's `it names one, or an explicit` clause still present.
   - **Verify:** shell ! grep -q "it names one, or" .claude/skills/sdlc-studio/scripts/critic.py
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

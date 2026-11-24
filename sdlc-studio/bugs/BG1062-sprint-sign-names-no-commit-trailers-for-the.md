@@ -1,6 +1,6 @@
 # BG1062: sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py, changelog.d/BG1062.md
@@ -28,10 +28,13 @@ Have `sign` print, after it seals, the trailer block its paperwork commit needs:
 
 - [ ] **AC1** Given a run whose seal moves one story to Done and one bug to Fixed, and a third unit already terminal, when `sprint sign` seals it, then its stdout carries one trailer block naming exactly `Refs: <id>` for the two units it moved. Fails on: the sign printing no trailer at all, so the operator has to work the ids out from the batch.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_sign_prints_a_refs_trailer_per_unit_it_moved
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the moved units' files staged in a git fixture and a commit message naming another bug, when `engagement_floor.unnamed_unit_attribution` reads that message with the printed trailers appended, then it returns no note for a moved unit, and the same message without them (the control) returns one note per moved unit. Fails on: one `engagement floor (attribution)` advisory per unit the sign moved.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_the_printed_trailers_satisfy_the_attribution_advisory
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a run whose every unit is already terminal before the sign, when `sprint sign` seals it, then it prints no trailer block and no bare `Refs:` line. Fails on: a mutant printing the whole batch, or an empty block, as the trailers.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_seal_that_moves_nothing_prints_no_trailers
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

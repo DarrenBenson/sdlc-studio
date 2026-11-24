@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 94 |
+| Open | 90 |
 | In Progress | 0 |
-| Fixed | 1173 |
+| Fixed | 1177 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -137,7 +137,7 @@
 | [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Fixed | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Fixed | Medium | 2026-10-16 | 2026-10-16 |
-| [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Open | Low | 2026-10-18 | 2026-10-18 |
+| [BG1062](BG1062-sprint-sign-names-no-commit-trailers-for-the.md) | sprint sign names no commit trailers for the paperwork it writes, so its commit draws one engagement-floor attribution advisory per unit it moved | Fixed | Low | 2026-10-18 | 2026-10-18 |
 | [BG1063](BG1063-require-ac-verification-is-documented-as-a-gate.md) | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Fixed | Medium | 2026-10-19 | 2026-10-19 |
@@ -386,7 +386,7 @@
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1309](BG1309-a-cursor-composer-or-grok-session-in-fast.md) | A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1310](BG1310-tools-skill-tests-sh-the-unittest-runner-npm.md) | `tools/skill-tests.sh`, the unittest runner `npm test` uses, loads no conftest, so the harness-variable scrub BG1197 added never runs there and the meter tests fail under a Cursor session | Fixed | Medium | 2026-11-09 | 2026-11-09 |
-| [BG1311](BG1311-sprint-py-lane-land-removes-the-builder-s.md) | `sprint.py lane land` removes the builder's worktree, so the builder cannot be resumed for a repair after a REJECT and a fresh builder must re-read the unit from cold | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1311](BG1311-sprint-py-lane-land-removes-the-builder-s.md) | `sprint.py lane land` removes the builder's worktree, so the builder cannot be resumed for a repair after a REJECT and a fresh builder must re-read the unit from cold | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1312](BG1312-the-resume-brief-s-known-issues-scan-matches.md) | The resume brief's known-issues scan matches only a `Raised-in-batch` stamp naming the run id, so a brief written mid-run says no known issues while findings filed during the run are open | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1313](BG1313-the-resume-brief-has-three-edges-its-tests.md) | The resume brief has three edges its tests do not pin: a batch listed out of plan order, a `-qa.none` landing marker read as in flight, and a Sprint Goal holding a newline that breaks `parse` | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1314](BG1314-two-us1146-persona-checks-cannot-catch-a-swapped.md) | Two US1146 persona checks cannot catch a swapped Primary, and `validate.py personas` compares the whole Interface cell, so a card reverted to Primary passes AC2's own Verify | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
@@ -588,7 +588,7 @@
 | [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Fixed | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Fixed | Low | 2026-11-16 | 2026-11-16 |
 | [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Fixed | High | 2026-11-17 | 2026-11-17 |
@@ -767,7 +767,7 @@
 | [BG1689](BG1689-bg1624-did-not-converge-in-review-round-2.md) | BG1624 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1690](BG1690-bg1627-did-not-converge-in-review-round-2.md) | BG1627 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1691](BG1691-bg1609-did-not-converge-in-review-round-2.md) | BG1609 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |

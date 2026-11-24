@@ -33,6 +33,8 @@ Fix each finding above, then deliver BG1204 again in a later run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_untagged_records_are_added_as_before
 - [ ] **AC5** BG1204 AC4, as re-ruled on 2026-11-24, passes: Given `sprint.py lane return` recording a lane run's usage under any harness (`claude`, `codex`, `opencode`), when the delegated record is written, then it carries no harness and the run's total adds it, because no shipped reader counts a lane worktree's session. Fails on: the call site tagging the lane's harness, which `subagent_readers` then drops.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged
+- [ ] **AC6** BG1204 AC5 passes: Given `retro.py` recording a delegated total with `--delegated-tokens 300 --delegated-harness opencode` in a run whose opencode session's reading holds its subagents, when the run's total is read (`_run_tokens_actual`, the page's Tokens figure and retro's accuracy total), then the 300 is not added; the same record without `--delegated-harness` is added as before; a `--delegated-harness` naming no known harness is refused with nothing recorded; and help/sprint.md names the flag beside `--delegated-tokens`. Fails on: no shipped command writing a harness-tagged record, so AC1's exclusion is reachable only through the Python API and the double count in this bug's title still happens (round three's qa probe: a 300-token record beside such a session read 4900 at HEAD and at base).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_delegated_total_recorded_with_its_harness_is_not_added_twice
 
 ## Revision History
 
@@ -40,3 +42,4 @@ Fix each finding above, then deliver BG1204 again in a later run.
 | --- | --- | --- |
 | 2026-11-24 | sdlc-studio | Filed |
 | 2026-11-24 | orchestrator (delegate under D0545) | AC5 follows BG1204's re-ruled AC4 (committed in b092b3e1d): every lane-run record stays untagged, verified by the round-three test; the copied AC4 named a test the re-ruling retires (the SP2 builder) |
+| 2026-11-24 | orchestrator (delegate under D0545) | AC6 mirrors BG1204's new AC5: round three's qa found no shipped command writes a harness-tagged record (retro.py, sprint.py's two lane returns all pass none), so the title's double count was unfixed on every path a user reaches. The fix is completed through `retro.py --delegated-harness` rather than the fragment reworded to a Fixed that is not true |

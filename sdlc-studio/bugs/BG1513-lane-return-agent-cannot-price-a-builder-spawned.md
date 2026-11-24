@@ -1,6 +1,6 @@
 # BG1513: lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py, changelog.d/BG1513.md
@@ -33,14 +33,19 @@ Give `run_state` one finder for a session's folder across the harness's projects
 
 - [ ] **AC1** Given a builder whose transcript lies under another project's directory in the harness's projects store, and none under the lane repository's own, when `sprint.py lane return --agent` names it, then the lane is priced from that transcript and the output names the directory it was read from. Fails on: a cross-repository lane left unpriced with a warning that no transcript exists.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_agent_spawned_from_another_project_s_session_is_priced
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a transcript for the agent under the lane repository's own project directory and another of the same name under a second project, when `lane return --agent` runs, then the lane repository's own is the one read. Fails on: the wider search preferring a foreign transcript over the local one.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_lane_repository_s_own_transcript_wins_over_another_project_s
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given an agent id with no transcript under any project directory, and a second project directory in the store beside the lane repository's own, when `lane return --agent` runs, then it warns naming the agent, the lane repository's directory and the other project's directory it searched, and records no priced cost. Fails on: a warning that names only the lane repository's directory (today's), or a missing agent priced as nought.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given a throwaway HOME whose session store holds the session's main thread and reviewer `r1`'s transcript, with its Write of the verdict file, under project A's folder only, and a verdict file a brief issued for a unit in repository B, when `critic.py record --from-verdict <path> --root B` runs with `CLAUDE_CODE_SESSION_ID` naming that session and `SDLC_STUDIO_TRANSCRIPTS` unset, then the row's Source cell carries `session:<id> agent:r1` and the printed note names agent r1 and A's folder. Fails on: `provenance:unknown` with `session <id> has no transcript in <B's folder>`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_reviewer_in_another_project_s_session_is_named
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC5** Given the same session under repository B's own folder, and a decoy transcript of the same session id under project A's folder in which another agent wrote the file, when `critic.py record` runs for B, then the Source cell carries `session:<id> agent:r1` read from B's folder, as today, and the decoy is not read. Fails on: the wider search reading another project's session ahead of the repository's own.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_same_project_reviewer_resolves_from_its_own_folder
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 
