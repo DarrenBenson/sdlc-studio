@@ -364,6 +364,13 @@ cmd_remote() {
       kill -TERM -- "-$gate_pid" 2>/dev/null
       wait "$gate_pid" 2>/dev/null
     fi
+    # A run stopped before its own bounded wait for the copy to the log ended: a process the gate
+    # orphaned may still hold the pipe, so the tee is ended here, or it would hold the pusher's
+    # channel open for that process's life. The pipe goes with the run's directory below.
+    if [ -n "$tee_pid" ]; then
+      kill "$tee_pid" 2>/dev/null
+      wait "$tee_pid" 2>/dev/null
+    fi
     cd "$base" || return
     [ -L "$wt/node_modules" ] && unlink "$wt/node_modules"
     [ -L "$wt/sdlc-studio/.local" ] && unlink "$wt/sdlc-studio/.local"

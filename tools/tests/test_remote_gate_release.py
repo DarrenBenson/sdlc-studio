@@ -60,8 +60,11 @@ RELEASE_GATE = textwrap.dedent('''
         record["verifier"] = {"rc": ran.returncode, "skipped": "skipped=1" in ran.stderr}
     Path(os.environ["STUB_GATE_LOG"]).open("a").write(json.dumps(record) + "\\n")
     if Path("orphan").exists():
-        # a process the gate leaves behind, outside its session, still holding its output
-        orphan = subprocess.Popen(["sleep", "15"], start_new_session=True)
+        # a process the gate leaves behind, outside its session, still holding its output for
+        # 15 s, that marks its own exit beside the log
+        done = Path(os.environ["STUB_GATE_LOG"]).with_name("orphan.done")
+        orphan = subprocess.Popen(["sh", "-c", 'sleep 15; : > "$1"', "orphan", str(done)],
+                                  start_new_session=True)
         Path(os.environ["STUB_GATE_LOG"]).with_name("orphan.pid").write_text(str(orphan.pid))
     print("  stub-stderr-line", file=sys.stderr)
     print(f"  [{'FAIL' if verdict else 'PASS'}] stub-release STUBBED")
@@ -337,9 +340,84 @@ class RemoteReleaseGateTests(unittest.TestCase):
             self.assertIn("[FAIL] stub-release STUBBED", log)
         finally:
             try:
-                os.kill(pid, 9)
+                os.killpg(pid, 9)
             except ProcessLookupError:
                 pass
+
+    def test_a_killed_run_leaves_no_copy_to_the_log_behind(self) -> None:
+        """BG1514 AC3. The pusher goes a second after the gate exited, while a process the gate
+        orphaned still holds its output for 15 s, so the host stops the run in its bounded wait
+        for the copy to the log. The cleanup ends that copy and removes the pipe it read: the
+        push's channel closes while the orphan still runs, not when it exits, and the log keeps
+        what was copied. MUTANT: the cleanup leaves the copy running (the channel then stays open
+        until the orphan has exited)."""
+        import signal  # noqa: PLC0415
+        import time  # noqa: PLC0415
+        fx = self.fx
+        red = fx.commit("a refused candidate that leaves a process behind", verdict="1\n",
+                        orphan="1\n")
+        pid_file = fx.tmp / "orphan.pid"
+        push = subprocess.Popen(["bash", "tools/remote-gate.sh", "push", "--commit", red,
+                                 "--boundary", "push"], cwd=fx.clone,
+                                env=fx.env(STUB_SSH_FAIL=""), stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        pid = None
+        try:
+            waited = time.monotonic() + 120
+            while pid is None and push.poll() is None and time.monotonic() < waited:
+                text = pid_file.read_text(encoding="utf-8") if pid_file.is_file() else ""
+                pid = int(text) if text.strip() else None
+                time.sleep(0.1)
+            self.assertIsNotNone(pid, "the gate left no process behind")
+            time.sleep(1.0)
+            self.assertIsNone(push.poll(), "the run ended before the pusher went")
+            push.send_signal(signal.SIGTERM)
+            _out, err = push.communicate(timeout=60)
+            self.assertFalse((fx.tmp / "orphan.done").exists(),
+                             "the push's channel stayed open until the orphan exited: the copy to "
+                             "the log outlived the killed run")
+            self.assertEqual([], list((fx.host_home / "sdlc-gate" / "runs").iterdir()),
+                             "the run's directory, and the pipe in it, outlived the cleanup")
+            kept = next((fx.host_home / "sdlc-gate" / "local").glob("*/boundary-last.log"))
+            self.assertIn("[FAIL] stub-release STUBBED", kept.read_text(encoding="utf-8"), err)
+        finally:
+            if push.poll() is None:
+                push.kill()
+                push.communicate()
+            if pid is not None:
+                try:
+                    os.killpg(pid, 9)
+                except ProcessLookupError:
+                    pass
+
+    def test_only_a_boundary_run_replaces_the_kept_log(self) -> None:
+        """BG1514 AC3. The kept log is the last boundary run's: a suite run and a commit's
+        selection that follow a refused boundary run, each printing what the boundary run did
+        not, leave it as it was. MUTANTS: the suite run, or the selection, copies its own output
+        to the kept log, so the refusal names a log another run has since rewritten."""
+        fx = self.fx
+        suite = "#!/usr/bin/env bash\necho \"  stub suite $1 ran\"\nexit 1\n"
+        red = fx.commit("a refused candidate", verdict="1\n", **{"tools/run-suite.sh": suite})
+        r = self._boundary(red)
+        self.assertEqual(r.returncode, 1, r.stderr)
+        kept = next((fx.host_home / "sdlc-gate" / "local").glob("*/boundary-last.log"))
+        refused = kept.read_text(encoding="utf-8")
+        self.assertIn("[FAIL] stub-release STUBBED", refused)
+        r = subprocess.run(["bash", "tools/remote-gate.sh", "push", "--commit", red, "--suite",
+                            "tools"], cwd=fx.clone, env=fx.env(STUB_SSH_FAIL=""),
+                           capture_output=True, text=True, timeout=300)
+        self.assertEqual(r.returncode, 1, r.stderr)
+        self.assertIn("stub suite tools ran", r.stderr, "the suite did not run on the host")
+        self.assertEqual(refused, kept.read_text(encoding="utf-8"), "a suite run replaced the log")
+        (fx.clone / "verdict").write_text("0\n", encoding="utf-8")
+        _git(fx.clone, "add", "verdict")
+        r = subprocess.run(["bash", "tools/remote-gate.sh", "staged", "--test", "verifier_test.py"],
+                           cwd=fx.clone, env=fx.env(STUB_SSH_FAIL=""), capture_output=True,
+                           text=True, timeout=300)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("[PASS] stub-release STUBBED", r.stderr, "the selection did not run")
+        self.assertEqual(refused, kept.read_text(encoding="utf-8"),
+                         "a commit's selection replaced the log")
 
     def test_the_host_and_local_routes_agree_on_boundary_only_verifiers(self) -> None:
         """AC4. Mutants: the host exports SDLC_STUDIO_BOUNDARY_SUITE=1 for the release gate while

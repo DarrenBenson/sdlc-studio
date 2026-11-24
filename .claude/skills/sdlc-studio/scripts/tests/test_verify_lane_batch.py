@@ -90,6 +90,10 @@ def _ran(root: Path) -> list[tuple[str, str, str]]:
     return [tuple(line.split(" ", 2)) for line in text.splitlines() if line]
 
 
+class _AskedPastTheDeadline(Exception):
+    """Stops a wait that asks the batch again after its deadline has run out."""
+
+
 def _env(**extra: str) -> dict:
     """This process's environment for a nested pytest: an outer xdist worker's identity removed,
     so a test reading PYTEST_XDIST_WORKER sees only its own run's, and two workers a fixture."""
@@ -447,12 +451,36 @@ class ProjectConfigurationTests(unittest.TestCase):
         self.assertEqual(("", ("parallel", "serial_only")), (cache.reason, cache.phases))
         self.assertEqual({"test_plain": True, "test_marked": True},
                          {n.rsplit("::", 1)[1]: ok for n, ok in cache.items()})
+        # The phase that never reports: the batch is asked again only while the deadline, and the
+        # pause after the answer that found it unpassed, have not run out. An ask later than that
+        # stops the wait at once, so a wait with no bound fails here rather than hangs, and an
+        # answer that came before the deadline must be followed by another ask.
+        deadline, pause, late = 3.0, 0.5, 3.0
+        real, asked, answered = verify_ac.pytest_batch_cache, [], []
+
+        def ask(*args, **kwargs):
+            asked.append(time.monotonic() - started)
+            if asked[-1] > deadline + pause + late:
+                raise _AskedPastTheDeadline
+            cache = real(*args, **kwargs)
+            answered.append(time.monotonic() - started)
+            return cache
+
         started = time.monotonic()
-        with mock.patch.dict(os.environ, _env(NEVER_REPORTS="1"), clear=True):
-            with self.assertRaises(AssertionError) as caught:
-                self._batch_once_reported(nodes, deadline=1.5)
+        with mock.patch.dict(os.environ, _env(NEVER_REPORTS="1"), clear=True), \
+                mock.patch.object(verify_ac, "pytest_batch_cache", ask):
+            try:
+                with self.assertRaises(AssertionError) as caught:
+                    self._batch_once_reported(nodes, deadline=deadline)
+            except _AskedPastTheDeadline:
+                self.fail(f"the batch was asked again {asked[-1]:.1f}s in, past the "
+                          f"{deadline}s deadline")
         message = str(caught.exception)
-        self.assertGreaterEqual(time.monotonic() - started, 1.5, "the wait ended before its deadline")
+        self.assertGreaterEqual(time.monotonic() - started, deadline,
+                                "the wait ended before its deadline")
+        self.assertTrue(len(asked) > 1 or answered[0] >= deadline,
+                        f"the batch answered {answered[0]:.1f}s in, before the {deadline}s "
+                        f"deadline, and was not asked again")
         self.assertIn("the parallel phase exited 1 with no usable report", message)
         self.assertIn("error: the phase was starved of cores", message,
                       "the phase's own error line is missing from the failure")
