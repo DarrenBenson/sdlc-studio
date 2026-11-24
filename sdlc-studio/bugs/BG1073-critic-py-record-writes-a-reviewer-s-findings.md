@@ -1,6 +1,6 @@
 # BG1073: critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py, changelog.d/BG1073.md
@@ -27,10 +27,13 @@ Extend critic.py's ledger-cell escape (`_code_urls`, called from the record path
 
 - [ ] **AC1** Given a fresh project, when `critic.py record` writes a REJECT whose finding quotes `boundary-push@gatehost.test` outside a code span, then the ledger passes markdownlint under the repository's config with no MD034 finding, and the recorded finding still names the token. Fails on: the token is written bare and markdownlint reports MD034/no-bare-urls.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_an_email_shaped_finding_lints
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a fresh project, when `critic.py record` writes a finding quoting `www.example.com` outside a code span, then the ledger passes markdownlint with no MD034 finding. Fails on: the address is written bare and markdownlint reports MD034.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_a_www_address_finding_lints
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given findings quoting an email inside a code span, an email in angle brackets and an `https://` URL, when `critic.py record` writes them, then each is written exactly as it is written today and the ledger lints clean. Fails on: a widened escape that wraps an already spanned or bracketed token again, writing nested backticks that break the row (this guard holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_a_spanned_or_bracketed_token_is_left_as_written
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

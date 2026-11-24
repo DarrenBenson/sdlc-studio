@@ -1,59 +1,32 @@
 {
   "unit": "BG1062",
-  "digest": "40e12ef0a15d9220 at 376d7b53be65",
-  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1062-mutation-edits.json",
+  "digest": "544c532d11c355fb at 15810f4d7dff",
+  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1062-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the seal records no moved unit",
+      "mutant": "M1 a carried unit appended to moved",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if moved is not None:\n            moved.append(unit)\n",
-      "new": "        if False:\n            moved.append(unit)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_sign_prints_a_refs_trailer_per_unit_it_moved",
+      "old": "        print(f\"sign: {unit} is carried as a known issue by {retro_id} - it stays {status}, \"\n              f\"not moved\")",
+      "new": "        print(f\"sign: {unit} is carried as a known issue by {retro_id} - it stays {status}, \"\n              f\"not moved\")\n        if moved is not None:\n            moved.append(unit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_unit_the_retro_carries_is_not_named",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the sign passes no list to the seal",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        rc = _seal_units(root, state, moved)\n",
-      "new": "        rc = _seal_units(root, state)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_sign_prints_a_refs_trailer_per_unit_it_moved",
+      "mutant": "T1 the test signs a run that carries nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py",
+      "old": "run, out = self._signed(carrying._CarriedRun)",
+      "new": "run, out = self._signed(_MovesTwo)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_unit_the_retro_carries_is_not_named",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the whole batch printed as the trailers",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        for unit in moved:\n            print(f\"Refs: {unit}\")\n",
-      "new": "        for unit in state.get(\"batch\") or []:\n            print(f\"Refs: {unit}\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_sign_prints_a_refs_trailer_per_unit_it_moved",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the header printed over an empty block",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if moved:\n        # The paperwork commit stages",
-      "new": "    if True:\n        # The paperwork commit stages",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_seal_that_moves_nothing_prints_no_trailers",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the trailer line not a Refs trailer",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            print(f\"Refs: {unit}\")\n",
-      "new": "            print(f\"Refs {unit}\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_the_printed_trailers_satisfy_the_attribution_advisory",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the trailers printed before the seal",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    moved: list[str] = []   # the units the seal moves, each a `Refs:` trailer for the commit\n",
-      "new": "    moved: list[str] = list(state.get(\"batch\") or [])\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_seal_that_moves_nothing_prints_no_trailers",
+      "mutant": "T2 the test expects the carried unit among the trailers",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py",
+      "old": "self.assertEqual([\"Refs: US0101\", \"Refs: BG0102\"], _refs(out),",
+      "new": "self.assertEqual([\"Refs: BG0101\", \"Refs: US0101\", \"Refs: BG0102\"], _refs(out),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_names_its_trailers.py::SignNamesItsTrailersTests::test_a_unit_the_retro_carries_is_not_named",
       "result": "killed",
       "answer": ""
     }

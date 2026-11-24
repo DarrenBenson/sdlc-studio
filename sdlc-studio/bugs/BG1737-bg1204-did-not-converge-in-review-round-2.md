@@ -31,11 +31,12 @@ Fix each finding above, then deliver BG1204 again in a later run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_record_carries_its_harness
 - [ ] **AC4** BG1204 AC3 still passes: Given a mixed run whose delegated records are all untagged, when the total is read, then they are added as before. Fails on: a fix that stops adding untagged records understates a Claude-only fan-out.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_untagged_records_are_added_as_before
-- [ ] **AC5** BG1204 AC4 still passes: Given `sprint.py lane return` recording a lane run's usage from a harness other than Claude Code, when the delegated record is written, then it carries that harness (the lane run's `reading['harness']`), so AC1's exclusion reaches a real record rather than one only a test constructs. Fails on: the lane-run return call site passing no harness, so every recorded delegated total is untagged.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness
+- [ ] **AC5** BG1204 AC4, as re-ruled on 2026-11-24, passes: Given `sprint.py lane return` recording a lane run's usage under any harness (`claude`, `codex`, `opencode`), when the delegated record is written, then it carries no harness and the run's total adds it, because no shipped reader counts a lane worktree's session. Fails on: the call site tagging the lane's harness, which `subagent_readers` then drops.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-24 | sdlc-studio | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | AC5 follows BG1204's re-ruled AC4 (committed in b092b3e1d): every lane-run record stays untagged, verified by the round-three test; the copied AC4 named a test the re-ruling retires (the SP2 builder) |

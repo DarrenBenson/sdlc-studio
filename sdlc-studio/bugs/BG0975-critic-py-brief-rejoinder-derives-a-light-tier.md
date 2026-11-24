@@ -1,6 +1,6 @@
 # BG0975: critic.py brief --rejoinder derives a light tier from the risk band even when the round it answers was taken at an explicit full tier
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py, changelog.d/BG0975.md
@@ -27,10 +27,13 @@ In `cmd_brief`'s rejoinder branch, when `--tier` is not given, take the tier rec
 
 - [ ] **AC1** Given a light-band unit whose standing REJECT was recorded with `--tier full --tier-explicit`, when `critic.py brief --rejoinder <verdict file>` runs without `--tier`, then stderr reads `review tier: full` naming the REJECT it answers as the source, the printed record command carries `--tier full`, and the brief carries CLAIM INVENTORY. Fails on: `review tier: light (derived from the unit's risk band)` and a light brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py::RejoinderTierTests::test_a_rejoinder_from_a_verdict_file_inherits_the_full_tier
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given the same unit and REJECT, when `critic.py brief --rejoinder` quotes the prior verdict from the ledger, then the tier is full as in AC1. Fails on: the derived light tier.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py::RejoinderTierTests::test_a_rejoinder_from_the_ledger_inherits_the_full_tier
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given the same REJECT, when the rejoinder is briefed with an explicit `--tier light`, then it is light and printed as chosen; and a rejoinder answering a light-tier REJECT on a light-band unit stays light. Fails on: a fix that overrides the operator's explicit tier or forces every rejoinder to full (this guard holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py::RejoinderTierTests::test_an_explicit_tier_and_a_light_round_are_kept
+  - **Verified:** yes (2026-11-24)
 
 ## Triage
 

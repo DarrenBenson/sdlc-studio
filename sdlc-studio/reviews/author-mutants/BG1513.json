@@ -1,194 +1,32 @@
 {
   "unit": "BG1513",
-  "digest": "a3b5d2b770f4b5f3 at 376d7b53be65",
-  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1513-mutation-edits.json",
+  "digest": "c649387023e16e4a at 15810f4d7dff",
+  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1513-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no other project's folder searched",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    others = [] if pinned or not plain else store_folders(repo_root)[1:]\n",
-      "new": "    others = []\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_agent_spawned_from_another_project_s_session_is_priced",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the repository's own folder searched again as another project's",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    others = [] if pinned or not plain else store_folders(repo_root)[1:]\n",
-      "new": "    others = [] if pinned or not plain else store_folders(repo_root)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the wider search read ahead of the repository's own",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    if (path is None or not path.is_file()) and others:\n",
-      "new": "    if others:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_lane_repository_s_own_transcript_wins_over_another_project_s",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an own folder with no session ends the search",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    elif main is None and not others:\n",
-      "new": "    elif main is None:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an own folder with no session named as no directory",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        own = folder if folder is not None else f\"{d}, which holds no session transcript (*.jsonl)\"\n",
-      "new": "        own = folder\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the other folders searched left unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        also = (f\", nor in a session of another project's folder searched \"\n                f\"({', '.join(map(str, others))})\" if others else \"\")\n",
-      "new": "        also = \"\"\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a foreign reading not marked as read elsewhere",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "            \"source\": str(path), **({ELSEWHERE: str(folder)} if elsewhere is not None else {})}\n",
-      "new": "            \"source\": str(path)}\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_agent_spawned_from_another_project_s_session_is_priced",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every reading marked as read elsewhere",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "            \"source\": str(path), **({ELSEWHERE: str(folder)} if elsewhere is not None else {})}\n",
-      "new": "            \"source\": str(path), **{ELSEWHERE: str(folder)}}\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_lane_repository_s_own_transcript_wins_over_another_project_s",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the oldest foreign match read",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    return max(hits)[2] if hits else None\n",
-      "new": "    return min(hits)[2] if hits else None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_newest_of_two_foreign_transcripts_is_read",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a stray file in the store listed as a project folder",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "        others = sorted(f for f in projects.iterdir() if f.is_dir() and f != own)\n",
-      "new": "        others = sorted(f for f in projects.iterdir() if f != own)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an absent store raises",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    except OSError:\n        others = []\n    return [own, *others]\n",
-      "new": "    except ValueError:\n        others = []\n    return [own, *others]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_names_every_directory_searched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the directory read left unsaid by lane return",
+      "mutant": "M1 the foreign directory line printed to stdout",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        elif reading.get(run_state.ELSEWHERE):\n",
-      "new": "        elif False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_agent_spawned_from_another_project_s_session_is_priced",
+      "old": "f\"{reading[run_state.ELSEWHERE]}\", file=sys.stderr)",
+      "new": "f\"{reading[run_state.ELSEWHERE]}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_foreign_directory_is_named_on_stderr_so_json_stays_one_document",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the reviewer's session looked for in the repository's folder alone",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)\n",
-      "new": "    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)[:1]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_reviewer_in_another_project_s_session_is_named",
+      "mutant": "T1 the test merges the two streams as ws.lane does",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py",
+      "old": "contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):",
+      "new": "contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_foreign_directory_is_named_on_stderr_so_json_stays_one_document",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the named transcripts folder ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)\n",
-      "new": "    folders = run_state.store_folders(repo_root)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_the_briefed_agent_that_wrote_the_file_is_named_on_the_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "another project's folder read ahead of the repository's own",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)\n",
-      "new": "    folders = [Path(pinned)] if pinned else run_state.store_folders(repo_root)[::-1]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_same_project_reviewer_resolves_from_its_own_folder",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a folder holding only the session's subagents passed over",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    folder = next((f for f in folders if (f / f\"{session}.jsonl\").is_file()\n                   or (f / session / run_state.SUBAGENTS_DIR).is_dir()), folders[0])\n",
-      "new": "    folder = next((f for f in folders if (f / f\"{session}.jsonl\").is_file()), folders[0])\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_same_project_reviewer_resolves_from_its_own_folder",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the folder read left out of the note",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "        got[\"note\"] += f\" (read from another project's folder, {folder})\"\n",
-      "new": "        pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_reviewer_in_another_project_s_session_is_named",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a named transcripts folder said to be another project's",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    if not env.get(run_state.TRANSCRIPTS_ENV) and folder != run_state.store_folders(repo_root)[0]:\n",
-      "new": "    if folder != run_state.store_folders(repo_root)[0]:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_the_briefed_agent_that_wrote_the_file_is_named_on_the_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the repository's own folder said to be another project's",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py",
-      "old": "    if not env.get(run_state.TRANSCRIPTS_ENV) and folder != run_state.store_folders(repo_root)[0]:\n",
-      "new": "    if not env.get(run_state.TRANSCRIPTS_ENV):\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_same_project_reviewer_resolves_from_its_own_folder",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the named transcripts folder searched past",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    others = [] if pinned or not plain else store_folders(repo_root)[1:]\n",
-      "new": "    others = [] if not plain else store_folders(repo_root)[1:]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_a_named_transcripts_folder_is_the_only_one_read",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an id that is not a plain name looked for in other projects' folders",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
-      "old": "    others = [] if pinned or not plain else store_folders(repo_root)[1:]\n",
-      "new": "    others = [] if pinned else store_folders(repo_root)[1:]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_a_named_transcripts_folder_is_the_only_one_read",
+      "mutant": "T2 the test runs without --format json",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py",
+      "old": "\"b7\", \"--format\", \"json\", \"--root\", str(ws.root)])",
+      "new": "\"b7\", \"--root\", str(ws.root)])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_foreign_directory_is_named_on_stderr_so_json_stays_one_document",
       "result": "killed",
       "answer": ""
     }

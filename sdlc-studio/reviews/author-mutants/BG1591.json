@@ -1,32 +1,113 @@
 {
   "unit": "BG1591",
-  "digest": "8deb0dc0b979c5c1 at f4078d109b20",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1591-mutation-edits.json",
+  "digest": "6a4f2b42b8222772 at 8e56af17e9cf",
+  "report": "sdlc-studio/.local/lane/landed/agent-aee9df53e3bed34cc/BG1591-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the list copied, the pages omitted",
+      "mutant": "the declared pages left out of the ruling line",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
-      "new": "surfaces = [f\"the {required[0]}\", *CLAIM_SURFACES, *required[1:]]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "old": "             *([\"in each declared page\"] if pages else [])]",
+      "new": "             ]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the fragments before the prose surfaces",
+      "mutant": "the page clause keyed on the fragments",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
-      "new": "surfaces = [f\"the {required[0]}\", *required[1:], *optional]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "old": "             *([\"in each declared page\"] if pages else [])]",
+      "new": "             *([\"in each declared page\"] if fragments else [])]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a fragment named twice",
+      "mutant": "the pages counted from the Affects, not claim_surfaces",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "surfaces = [f\"the {required[0]}\", *optional, *required[1:]]",
-      "new": "surfaces = [f\"the {required[0]}\", *optional, *required]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py",
+      "old": "    pages = [s for s in optional if s not in CLAIM_SURFACES]\n",
+      "new": "    pages = [a for a in affects if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the fragment clause always printed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "ruled = [f\"in the {COMMIT_SURFACE}\", *([\"in each changelog fragment\"] if fragments else []),",
+      "new": "ruled = [f\"in the {COMMIT_SURFACE}\", *([\"in each changelog fragment\"] if True else []),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "two clauses read as one",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "new": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 2 else ruled[0]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one clause joined as several",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "new": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) >= 1 else ruled[0]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the no-page line given a page clause",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "             *([\"in each declared page\"] if pages else [])]",
+      "new": "             \"in each declared page\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_unit_declaring_no_page_prints_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page clause before the fragment clause",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "ruled = [f\"in the {COMMIT_SURFACE}\", *([\"in each changelog fragment\"] if fragments else []),\n             *([\"in each declared page\"] if pages else [])]",
+      "new": "ruled = [f\"in the {COMMIT_SURFACE}\", *([\"in each declared page\"] if pages else []),\n             *([\"in each changelog fragment\"] if fragments else [])]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the prose surfaces read as declared pages",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    pages = [s for s in optional if s not in CLAIM_SURFACES]\n",
+      "new": "    pages = [s for s in optional if s in CLAIM_SURFACES]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "three clauses joined with semicolons",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "new": "rule = \"; \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the last clause joined with a comma",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "rule = \", \".join(ruled[:-1]) + f\" and {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "new": "rule = \", \".join(ruled[:-1]) + f\", {ruled[-1]}\" if len(ruled) > 1 else ruled[0]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_ruling_line_covers_the_declared_pages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line no longer reads the clauses",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"   Rule each claim {rule} the same way.\",",
+      "new": "f\"   Rule each claim in the {COMMIT_SURFACE} the same way.\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_unit_declaring_no_page_prints_as_before",
       "result": "killed",
       "answer": ""
     }

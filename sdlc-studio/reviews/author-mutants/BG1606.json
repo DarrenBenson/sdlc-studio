@@ -1,68 +1,23 @@
 {
   "unit": "BG1606",
-  "digest": "a16d0e3316e3e7f1 at f4078d109b20",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1606-mutation-edits.json",
+  "digest": "8177fbafbbb9a8b3 at 8e56af17e9cf",
+  "report": "sdlc-studio/.local/lane/landed/agent-aee9df53e3bed34cc/BG1606-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "an .mdx page read as code",
+      "mutant": "the globs matched by PurePosixPath.match, where * stops at a /",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "return rel.endswith(CLAIM_PAGE_SUFFIXES) or any(",
-      "new": "return rel.endswith(\".md\") or any(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
+      "old": "any(fnmatch.fnmatchcase(rel, g) for g in rendered)",
+      "new": "any(PurePosixPath(rel).match(g) for g in rendered)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_a_declared_rendered_path_is_consumed_by_the_build",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the globs never matched",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "or any(fnmatch.fnmatchcase(rel, g) for g in rendered)",
-      "new": "or False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the caller check passes no globs",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "mech = mechanism_files(text, rendered)",
-      "new": "mech = mechanism_files(text)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the named code list ignores the globs",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "not _not_a_mechanism(f.strip().strip(\"`\"),\n                                                                     rendered)]",
-      "new": "not _not_a_mechanism(f.strip().strip(\"`\"),\n                                                                     ())]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a list of non-strings read",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if not isinstance(raw, list) or not all(isinstance(g, str) for g in raw):",
-      "new": "if not isinstance(raw, list):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "any value read as globs",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if not isinstance(raw, list) or not all(isinstance(g, str) for g in raw):",
-      "new": "if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no key read as every file",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    if raw is None:\n        return []\n    if not isinstance(raw, list)",
-      "new": "    if raw is None:\n        return ['*']\n    if not isinstance(raw, list)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
+      "mutant": "test: the nested page moved outside every glob, so the check must report it",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py",
+      "old": "        _unit(self.root, \"US0106\", \"src/pages/blog/post.astro\")\n",
+      "new": "        _unit(self.root, \"US0106\", \"src/pagesx/blog/post.astro\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_a_declared_rendered_path_is_consumed_by_the_build",
       "result": "killed",
       "answer": ""
     }

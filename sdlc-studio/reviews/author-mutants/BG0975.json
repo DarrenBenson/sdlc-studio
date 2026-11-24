@@ -1,68 +1,23 @@
 {
   "unit": "BG0975",
-  "digest": "7037d201bf216737 at f4078d109b20",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG0975-mutation-edits.json",
+  "digest": "f4eb3c26a1a3e660 at 8e56af17e9cf",
+  "report": "sdlc-studio/.local/lane/landed/agent-aee9df53e3bed34cc/BG0975-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "any tiered REJECT taken, a shallower one too",
+      "mutant": "the standing REJECT read for a fixed qa seat",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if taken in TIERS and TIERS.index(taken) < TIERS.index(band):",
-      "new": "if taken in TIERS:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
+      "old": "    band = tier_for(root, unit)\n    try:\n        row = seat_standing_reject(root, unit, seat)",
+      "new": "    band = tier_for(root, unit)\n    try:\n        row = seat_standing_reject(root, unit, \"qa\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py::RejoinderTierTests::test_the_tier_is_read_from_the_briefed_seats_own_reject",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a REJECT as deep as the band named as the source",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "if taken in TIERS and TIERS.index(taken) < TIERS.index(band):",
-      "new": "if taken in TIERS and TIERS.index(taken) <= TIERS.index(band):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the tier cell read past its first word",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "taken = str(row.get(\"tier\") or \"\").split(\" \", 1)[0]",
-      "new": "taken = str(row.get(\"tier\") or \"\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the footer names no source",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "f\"inherited from {source}, the verdict this re-review answers\" if source else",
-      "new": "f\"inherited from {source}, the verdict this re-review answers\" if False else",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an explicit tier overridden by the REJECT's",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "tier, source = ((args.tier, None) if explicit\n",
-      "new": "tier, source = ((args.tier, None) if False\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the rejoinder tier never consulted",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                            else rejoinder_tier(args.root, args.unit, args.seat))",
-      "new": "                            else (tier_for(args.root, args.unit), None))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unreadable ledger read as a full tier",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    except (OSError, ValueError):\n        return band, None\n    taken",
-      "new": "    except (OSError, ValueError):\n        return TIERS[0], None\n    taken",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
+      "mutant": "test: the engineering REJECT recorded by a qa reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py",
+      "old": "                     \"engineering-seat\", \"--author\", \"eng-builder\", \"--issues\",",
+      "new": "                     \"qa-seat\", \"--author\", \"eng-builder\", \"--issues\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_tier.py::RejoinderTierTests::test_the_tier_is_read_from_the_briefed_seats_own_reject",
       "result": "killed",
       "answer": ""
     }

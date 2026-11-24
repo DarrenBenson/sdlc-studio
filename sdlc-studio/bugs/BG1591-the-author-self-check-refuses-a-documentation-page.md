@@ -1,6 +1,6 @@
 # BG1591: The author self-check refuses a documentation page the unit's Affects declares as a claim surface, so a docs unit's claims in its own page cannot be recorded and the land refuses its self-check
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py, changelog.d/BG1591.md
@@ -30,10 +30,13 @@ Build `author_self_check`'s step 1 surfaces from `claim_surfaces(affects)`, requ
 
 - [ ] **AC1** Given a unit whose Affects declare `docs/evidence.md`, `docs/guide.mdx` and its changelog fragment, when `critic.py brief --unit <id> --seat qa` runs, then the AUTHOR SELF-CHECK section's `1. Claim inventory, over:` line names both pages. Fails on: the line lists only the commit message, the four prose surfaces and the fragment.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_declared_page_is_named_in_the_inventory
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given units declaring no page, an `.md` page, an `.mdx` page, and a page beside a fragment, when `author_self_check` prints step 1, then its surfaces, each read as `_surface_key` reads a claim's surface, are exactly the commit message, then `claim_surfaces(affects)`'s optional surfaces in order, then its fragments; and with `claim_surfaces` patched to return one more optional surface, the line names it. Fails on: the section's list is copied from `CLAIM_SURFACES` and the fragments, so it omits the pages `claim_surfaces` returns and ignores the patch.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_inventory_is_read_from_claim_surfaces
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a unit declaring `src/widget.py, tests/test_widget.py, changelog.d/US0802.md` and no page, when `critic.py brief` runs, then step 1 reads exactly `1. Claim inventory, over: the commit message; Resolutions; docstrings; comments; CHANGELOG; changelog.d/US0802.md.` as today. Fails on: a fix that lists the changelog fragment again as a page, or reorders or renames the existing surfaces (this control holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_a_unit_declaring_no_page_prints_as_before
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

@@ -1,50 +1,41 @@
 {
   "unit": "BG1073",
-  "digest": "845ff6aef03643ae at f4078d109b20",
-  "report": "sdlc-studio/.local/lane/landed/agent-ae0b3f3ff9ae0fb6a/BG1073-mutation-edits.json",
+  "digest": "f6a80c863fb4737e at 8e56af17e9cf",
+  "report": "sdlc-studio/.local/lane/landed/agent-aee9df53e3bed34cc/BG1073-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "an email left bare",
+      "mutant": "the www pass running on through a backslash",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                           r\"|[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+\"\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
+      "old": "r\"|(?<![\\w.])(?i:www)\\.[^\\s<>`\\\\]+\")",
+      "new": "r\"|(?<![\\w.])(?i:www)\\.[^\\s<>`]+\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_an_escaped_semicolon_after_an_address_stays_one_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a www address left bare",
+      "mutant": "the www pass matching lower case alone",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "                           r\"|(?<![\\w.])www\\.[^\\s<>`]+\")",
-      "new": "                           )",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
+      "old": "r\"|(?<![\\w.])(?i:www)\\.[^\\s<>`\\\\]+\")",
+      "new": "r\"|(?<![\\w.])www\\.[^\\s<>`\\\\]+\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_a_www_address_in_any_case_lints",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the www look-behind dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "r\"|(?<![\\w.])www\\.[^\\s<>`]+\")",
-      "new": "r\"|www\\.[^\\s<>`]+\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the autolink and link destination not kept",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "return m.group(0) if m.group(\"keep\") else file_finding._code_url(m)",
-      "new": "return file_finding._code_url(m)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the pass run inside code spans",
+      "mutant": "the address pass run before the URL pass",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
       "old": "    return _outside_spans(file_finding._code_urls(text or \"\"),\n                          lambda part: _BARE_ADDRESS.sub(span, part))",
-      "new": "    return _BARE_ADDRESS.sub(span, file_finding._code_urls(text or \"\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
+      "new": "    return file_finding._code_urls(_outside_spans(text or \"\",\n                          lambda part: _BARE_ADDRESS.sub(span, part)))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_a_url_holding_an_address_is_one_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the escaped semicolon left out of the finding",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py",
+      "old": "cell = _record(self.root, \"[new] see www.example.com\\\\; mail ops@example.com\\\\; \"",
+      "new": "cell = _record(self.root, \"[new] see www.example.com; mail ops@example.com; \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::CriticLedgerBareUrlTests::test_an_escaped_semicolon_after_an_address_stays_one_finding",
       "result": "killed",
       "answer": ""
     }

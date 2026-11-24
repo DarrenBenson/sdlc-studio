@@ -1,31 +1,85 @@
 {
   "unit": "BG1692",
-  "digest": "3c9f1af7f5f40e0f at 376d7b53be65",
-  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1692-mutation-edits.json",
+  "digest": "3b46889b476ff952 at 15810f4d7dff",
+  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1692-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the Falsifies field not read",
+      "mutant": "M1 the field read by extract_field, as shipped",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip():\n",
-      "new": "        if falsifies := \"\":\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_a_falsifies_field_in_the_bug_file_blocks_the_goal_claim",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an empty Falsifies field kept",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip():\n",
-      "new": "        if (falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip()) or True:\n",
+      "old": "if falsifies := _declared_falsifies(text):",
+      "new": "if falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip():",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_open_defects_reads_falsifies_only_where_declared",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the Falsifies text kept unstripped",
+      "mutant": "M2 the guard kept, the field read by extract_field",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip():\n",
-      "new": "        if falsifies := (sdlc_md.extract_field(text, \"Falsifies\") or \"\") + \" \":\n",
+      "old": "value = sdlc_md.metadata_fields(text).get(\"falsifies\", \"\")",
+      "new": "value = (sdlc_md.extract_field(text, \"Falsifies\") or \"\").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 the punctuation guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if not value or _FIELD_VALUE_RE.match(value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 a lone > kept as a clause",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if not value.strip(\" \\t\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 a lone middle dot kept as a clause",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if not value.strip(\" \\t>\") or _FIELD_VALUE_RE.match(value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 the field guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if not value.strip(\" \\t>\u00b7\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 every value refused",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_open_defects_reads_falsifies_only_where_declared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 a tab between the marks kept as a clause",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if not value.strip(\" \\t>\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "new": "if not value.strip(\" >\u00b7\") or _FIELD_VALUE_RE.match(value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_a_falsifies_field_holding_only_header_text_declares_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 the fixture writes no field line",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py",
+      "old": "f\"# {uid}: x\\n\\n> **Status:** {status}\\n{extra}> **Severity:** Low\\n\\n\"",
+      "new": "f\"# {uid}: x\\n\\n> **Status:** {status}\\n> **Severity:** Low\\n\\n\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::OpenDefectsFalsifiesTests::test_open_defects_reads_falsifies_only_where_declared",
       "result": "killed",
       "answer": ""

@@ -1,0 +1,6 @@
+UNIT: BG1606
+BRIEF: 97c7c1e190ad-84d6a910
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two, judged on the repair in 8e56af17e (AC2's test gains the nested `src/pages/blog/post.astro` unit, US0106, and its docstring names the `PurePosixPath.match` mutant). The repair changes no BG1606 code, page or default. CLOSED: "the documented glob contract that `*` crosses a `/`". The nested page is now judged under `src/pages/*`, and the module passes at HEAD. My mutation pass: `PurePosixPath(rel).match(g)` in place of `fnmatchcase` is now killed by AC2's test, and so is a match capped at the glob's own depth. The control, the same test with the nested fixture removed, passes, so the nested fixture is what kills both. Oracle: `verify_ac.py run --id BG1606 --dry-run` gives ac=4 pass=4. Claim inventory: the test docstring's new mutant sentence and the commit message's BG1606 paragraph are TRUE by those runs. Round one's two uncounted survivors (a case-insensitive match and a literal-prefix match) are unchanged and still claimed by no shipped text.

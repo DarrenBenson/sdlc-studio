@@ -1,149 +1,86 @@
 {
   "unit": "BG1311",
-  "digest": "79b18a59b5c23139 at 376d7b53be65",
-  "report": "sdlc-studio/.local/lane/landed/agent-a17fdd89cdcd136da/BG1311-mutation-edits.json",
+  "digest": "079cfb7b40833aae at 15810f4d7dff",
+  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1311-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no worktree recreated for a repair",
+      "mutant": "M1 the --repair arm recreates nothing",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            if (b.get(\"repair\") if repairs is not None else lane_repair_scope(root, b[\"id\"])):\n",
-      "new": "            if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
+      "old": "if (b.get(\"repair\") if repairs is not None else lane_repair_scope(root, b[\"id\"])):",
+      "new": "if (None if repairs is not None else lane_repair_scope(root, b[\"id\"])):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_repair_recreates_the_landed_worktree",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the restore line not printed",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                    print(\"\")\n                    print(brief[\"worktree\"])\n",
-      "new": "                    print(\"\")\n                    pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the restore line run on from the BLOCKING findings",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                    print(\"\")\n                    print(brief[\"worktree\"])\n",
-      "new": "                    print(brief[\"worktree\"])\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a damaged record fails the brief",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    except (lanes.LandError, OSError, LookupError, TypeError, ValueError, AttributeError) as exc:\n",
-      "new": "    except lanes.LandError as exc:\n",
+      "mutant": "M2 an unreadable record skipped, as shipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if blind := sorted(name for at, name in unread if newest is None or at >= newest):",
+      "new": "if blind := []:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no branch kept in the land record",
+      "mutant": "M3 a tie read as older",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "              \"branches\": [lane.branch for lane in lanes_],\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
+      "old": "if newest is None or at >= newest",
+      "new": "if newest is None or at > newest",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the oldest land record read",
+      "mutant": "M4 any unreadable record refuses",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if newest is None or at >= newest",
+      "new": "if True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_repair_recreates_the_landed_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 an unreadable record named only when a record names the unit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if newest is None or at >= newest",
+      "new": "if newest is not None and at >= newest",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 an unreadable record not collected",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            unread.append((f.stat().st_mtime, f.name))\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 an unreadable record weighed against the oldest landing",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "newest = max(found)[0] if found else None",
+      "new": "newest = min(found)[0] if found else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_repair_recreates_the_landed_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 the first record naming the unit read, not the newest",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
       "old": "    rec = max(found)[2]\n",
       "new": "    rec = min(found)[2]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_repair_recreates_the_landed_worktree",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the record's first worktree taken for the unit's own",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    at = names.index(owner) if owner in names else 0\n",
-      "new": "    at = 0\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a landing that removed nothing read as one to recreate",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if \"remove\" not in rec[\"completed\"] or not commit:\n",
-      "new": "    if not commit:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a record with no branch recreated detached",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if not branch:\n        return (f\"{none}: its land record names no branch",
-      "new": "    if False:\n        return (f\"{none}: its land record names no branch",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an occupied path written over",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        return f\"{none}: {path} is occupied, and nothing there is overwritten\"\n",
-      "new": "        shutil.rmtree(path)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the worktree in place read as occupied",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if (str(path), branch) in _worktrees(root_top):\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "any worktree at the path read as in place",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if (str(path), branch) in _worktrees(root_top):\n",
-      "new": "        if path.is_dir() and (path / \".git\").exists():\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the worktree added detached",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    added = _git(root_top, \"worktree\", \"add\", \"-q\", \"-b\", branch, str(path), commit)\n",
-      "new": "    added = _git(root_top, \"worktree\", \"add\", \"-q\", \"--detach\", str(path), commit)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the worktree added off the landed commit",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    added = _git(root_top, \"worktree\", \"add\", \"-q\", \"-b\", branch, str(path), commit)\n",
-      "new": "    added = _git(root_top, \"worktree\", \"add\", \"-q\", \"-b\", branch, str(path), commit + \"~1\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_recreates_the_landed_worktree_at_its_path",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "git's refusal reported as a recreation",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if added.returncode:\n        return f\"{none}: git could not add",
-      "new": "    if False:\n        return f\"{none}: git could not add",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a missing record named as a damaged one",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if not found:\n        return f\"{none}: no land record under",
-      "new": "    if False:\n        return f\"{none}: no land record under",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_no_land_record_or_an_occupied_path_still_prints",
+      "mutant": "T1 the --repair test briefs without --repair",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py",
+      "old": "r = self._brief_repair(\"--repair\")",
+      "new": "r = self._brief_repair()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_with_repair_recreates_the_landed_worktree",
       "result": "killed",
       "answer": ""
     }

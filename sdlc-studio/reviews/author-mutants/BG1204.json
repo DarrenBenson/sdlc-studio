@@ -1,50 +1,41 @@
 {
   "unit": "BG1204",
-  "digest": "4e4fecef9643866e at 0de7cc652b09",
-  "report": "sdlc-studio/.local/lane/landed/agent-a0004ccb58a8cd4e9/BG1204-mutation-edits.json",
+  "digest": "0c61c4b19c8b7011 at 15810f4d7dff",
+  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1204-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "M1 tag every harness, claude included (the round-one call site)",
+      "mutant": "M1 the lane run tagged with its harness",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
-      "new": "harness=reading[\"harness\"]),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
+      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
+      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT, harness=reading[\"harness\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M2 invert the Claude test: tag only claude",
+      "mutant": "M2 every harness but claude tagged, as round two shipped",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
-      "new": "harness=None if reading[\"harness\"] != run_state.CLAUDE else reading[\"harness\"]),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness",
+      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
+      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT,\n                harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M3 tag no harness at all",
+      "mutant": "M3 only codex tagged",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
-      "new": "harness=None),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_tags_its_harness",
+      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
+      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT,\n                harness=\"codex\" if reading[\"harness\"] == \"codex\" else None),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M4 the untagged harness named as another than claude",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
-      "new": "harness=None if reading[\"harness\"] == run_state.CURSOR else reading[\"harness\"]),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "T1 test: the mixed run's Claude closing stamp holds no subagents, so Claude is no subagent reader and the premise goes",
+      "mutant": "T1 the mixed run's harness holds no subagents",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py",
-      "old": "{\"tokens\": 5000, \"source\": claude, \"subagents\": True, \"at\": \"2026-09-23T01:00:00Z\",",
-      "new": "{\"tokens\": 5000, \"source\": claude, \"at\": \"2026-09-23T01:00:00Z\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_claude_code_lane_run_is_added_in_a_mixed_run",
+      "old": "mine, theirs = ({\"subagents\": True}, {}) if own else ({}, {\"subagents\": True})",
+      "new": "mine, theirs = {}, {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
       "result": "killed",
       "answer": ""
     }

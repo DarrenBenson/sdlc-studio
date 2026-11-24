@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 99 |
+| Open | 94 |
 | In Progress | 0 |
-| Fixed | 1168 |
+| Fixed | 1173 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -50,7 +50,7 @@
 | [BG0972](BG0972-artifact-py-retitle-quotes-the-old-title-verbatim.md) | `artifact.py retitle` quotes the old title verbatim in its revision row, so a retitle made to remove an em dash or a bare identifier puts it straight back | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
 | [BG0973](BG0973-artifact-py-new-type-review-warns-its-acceptance.md) | artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0974](BG0974-the-filing-tools-do-not-markdown-safe-the.md) | The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI | Fixed | Low | 2026-10-07 | 2026-10-07 |
-| [BG0975](BG0975-critic-py-brief-rejoinder-derives-a-light-tier.md) | critic.py brief --rejoinder derives a light tier from the risk band even when the round it answers was taken at an explicit full tier | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0975](BG0975-critic-py-brief-rejoinder-derives-a-light-tier.md) | critic.py brief --rejoinder derives a light tier from the risk band even when the round it answers was taken at an explicit full tier | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0976](BG0976-the-pre-push-hook-prints-its-ssh-keepalive.md) | The pre-push hook prints its ssh keepalive warning on every push, even when the clone already carries a keepalive | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0977](BG0977-help-status-md-documents-sdlc-studio-status-brief.md) | help/status.md documents '/sdlc-studio status --brief' but status.py has no --brief, so the documented one-line summary errors | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0978](BG0978-test-pre-push-hook-s-stub-path-symlinks.md) | `test_pre_push_hook`'s stub PATH symlinks python3, which drops a virtualenv's packages, so the push gate cannot pass where pytest lives in a venv | Fixed | Low | 2026-10-07 | 2026-10-07 |
@@ -148,7 +148,7 @@
 | [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1071](BG1071-the-project-seat-card-s-design-persona-check.md) | The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1072](BG1072-test-persona-coherence-s-id-check-reads-a.md) | test_persona_coherence's id check reads a fixed list of id prefixes, so a card citing a handoff or test-spec id that resolves to nothing passes | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
-| [BG1073](BG1073-critic-py-record-writes-a-reviewer-s-findings.md) | critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1073](BG1073-critic-py-record-writes-a-reviewer-s-findings.md) | critic.py record writes a reviewer's findings verbatim into a ledger the repository's markdownlint refuses, so a finding quoting an email-shaped name blocks the next commit | Fixed | Low | 2026-10-19 | 2026-10-19 |
 | [BG1074](BG1074-no-test-pins-that-a-red-gate-host.md) | No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1075](BG1075-tools-remote-gate-sh-s-local-side-needs.md) | tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Superseded | Low | 2026-10-19 | 2026-10-19 |
@@ -196,7 +196,7 @@
 | [BG1118](BG1118-six-behaviours-the-self-check-record-its-brief.md) | Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews) | Won't Fix | Low | 2026-10-22 | 2026-10-22 |
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Won't Fix | Low | 2026-10-22 | 2026-10-22 |
 | [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Fixed | Medium | 2026-10-22 | 2026-10-22 |
-| [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
+| [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Fixed | Low | 2026-10-22 | 2026-10-22 |
 | [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Won't Fix | Low | 2026-10-22 | 2026-10-22 |
 | [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Fixed | Medium | 2026-10-22 | 2026-10-22 |
@@ -666,7 +666,7 @@
 | [BG1588](BG1588-the-hand-copied-list-guard-misses-known-mirrors.md) | The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1589](BG1589-a-run-closed-to-await-the-operator-s.md) | A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Fixed | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1591](BG1591-the-author-self-check-refuses-a-documentation-page.md) | The author self-check refuses a documentation page the unit's Affects declares as a claim surface, so a docs unit's claims in its own page cannot be recorded and the land refuses its self-check | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1591](BG1591-the-author-self-check-refuses-a-documentation-page.md) | The author self-check refuses a documentation page the unit's Affects declares as a claim surface, so a docs unit's claims in its own page cannot be recorded and the land refuses its self-check | Fixed | Low | 2026-11-18 | 2026-11-18 |
 | [BG1592](BG1592-us1317-s-enterprise-page-tests-cannot-tell-a.md) | US1317's enterprise-page tests cannot tell a forecast figure from an actual, miss four network-call shapes, plant no failure for the http address check, and pin no link or key outside the controls section | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1593](BG1593-tools-check-links-py-does-not-read-docs.md) | tools/check_links.py does not read docs/enterprise.md, so a broken link or anchor on the page exits 0 | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1594](BG1594-sprint-lane-land-records-the-builder-s-agent.md) | sprint lane land records the builder's agent id as the self-check author instead of the building seat, so lane accept writes a verdict row the retro cannot score as a seat's | Open | Low | 2026-11-18 | 2026-11-18 |
@@ -681,7 +681,7 @@
 | [BG1603](BG1603-tools-lint-style-sh-scans-gitignored-scratch-files.md) | tools/lint-style.sh scans gitignored scratch files, so an untracked note under .local/ blocks a commit that does not touch it | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1604](BG1604-sprint-plan-takes-the-stories-of-an-untriaged.md) | sprint plan takes the stories of an untriaged inbox CR, and only the close refuses to derive the CR Complete | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1605](BG1605-a-run-driven-from-a-session-started-in.md) | A run driven from a session started in another repository records no token stamp, so its report states no cost at all | Fixed | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1608](BG1608-goal-review-brief-and-a-first-round-record.md) | goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1609](BG1609-a-high-risk-unit-s-second-review-seat.md) | A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review | Fixed | Medium | 2026-11-19 | 2026-11-19 |

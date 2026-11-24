@@ -1,6 +1,6 @@
 # BG1606: The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py, changelog.d/BG1606.md
@@ -28,12 +28,16 @@ Read an `.mdx` file as a page, as `.md` is (`CLAIM_PAGE_SUFFIXES`). Add `review.
 
 - [ ] **AC1** Given a unit whose Affects are `src/content/blog/post.mdx` and its changelog fragment, when `critic.py caller-check --unit <id>` runs, then it reports no finding and exits 0. Fails on: `[caller-unnamed]` naming `post.mdx` as a mechanism, exit 1.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_an_mdx_page_is_not_a_mechanism
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a project whose `sdlc-studio/.config.yaml` sets `review.rendered_paths` to globs covering `src/pages/`, `src/components/` and `src/data/`, when `critic.py caller-check` runs over units changing only `src/pages/index.astro`, `src/components/Card.astro` and `src/data/nav.json`, then it reports no finding and exits 0. Fails on: `[caller-unnamed]` for each unit, exit 1.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_a_declared_rendered_path_is_consumed_by_the_build
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given the same config, a unit changing `src/lib/util.ts` is still reported `[caller-unnamed]`; and given no `review.rendered_paths`, a unit changing `src/pages/index.astro` is still reported. Fails on: a fix that exempts by file suffix or exempts every unit, so the check stops catching an unconsumed mechanism (this guard holds today).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_code_outside_the_rendered_paths_is_still_asked_for_a_caller
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given the shipped defaults, when a reader looks up `review.rendered_paths`, then config-defaults.yaml sets it to an empty list and reference-config.md documents it with that default. Fails on: the key exists in neither.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_caller_check_rendered_paths.py::CallerCheckRenderedPathsTests::test_the_key_is_documented_with_an_empty_default
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

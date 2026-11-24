@@ -1,6 +1,6 @@
 # BG1121: An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-config.md, sdlc-studio/reviews/author-self-checks.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, changelog.d/BG1121.md
@@ -31,12 +31,16 @@ Bind the record to the unit's own change: the diff of its uncommitted and commit
 
 - [ ] **AC1** Given US0101's self-check recorded over its uncommitted edit to `src/shared.py`, then US0102's commit of only its own hunk to that file, then US0101's commit of the recorded edit, when US0101 is briefed under `review.author_self_check: block`, then the brief is admitted. Fails on: the per-file view reads US0101's newest commit, which holds US0102's hunk, so the brief exits 2 as stale.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py::HunkBindingTests::test_a_record_before_the_units_commit_survives_a_sibling_landing_first
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given US0101's self-check recorded at its commit on a side branch, and that commit cherry-picked onto main, where US0102 then commits its own hunk to `src/shared.py`, when US0101 is briefed on main under `block`, then the brief is admitted. Fails on: the record's commit is not an ancestor of HEAD, so the gate falls back to the content as it stands and exits 2 as stale.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py::HunkBindingTests::test_a_cherry_picked_commit_keeps_its_record
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given either order above followed by one more edit of US0101's own to `src/shared.py` (uncommitted, or committed under US0101's id), or a side-branch record whose commit never reached main, when US0101 is briefed under `block`, then it is refused as stale. Fails on: a binding that checks only that the recorded hunks are present admits work the author never checked (this guard holds today and must still hold after the fix).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py::HunkBindingTests::test_an_unrecorded_hunk_of_the_units_own_still_stales_the_record
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC4** Given the fix, when a reader reads help/review.md, reference-review.md's author self-check section, reference-config.md's `review.author_self_check` row and the self-check log header (`_SELF_CHECK_HEADER` and `sdlc-studio/reviews/author-self-checks.md`), then each describes the binding to the unit's own change and none says uncommitted recorded work is staled by another unit's commit landing first. Fails on: help/review.md:48-49 says a record of uncommitted work can still read as stale, reference-review.md:494-495 says it is staled by another unit's commit landing first, and reference-config.md:238 and the header describe the per-file view.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py::HunkBindingTests::test_the_pages_and_the_log_header_describe_the_hunk_binding
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

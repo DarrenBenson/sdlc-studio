@@ -1,0 +1,6 @@
+UNIT: BG0975
+BRIEF: 261c2895caa9-5ca22ded
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED "Nothing pins that the inherited tier comes from the briefed seat's own REJECT": `test_the_tier_is_read_from_the_briefed_seats_own_reject` (`test_critic_rejoinder_tier.py:134`) briefs the engineering seat twice, once with only the qa seat's full REJECT standing (the band's light tier, derived) and once answering its own full REJECT with no qa REJECT (full, naming that REJECT). Run one at a time, my mutants fixing the seat passed to `seat_standing_reject` in `rejoinder_tier` as `"qa"` and as `"engineering"` are each killed. The repair changes no code of BG0975's and leaves its fragment as it was, which stays TRUE. AC1-AC3 pass (`verify_ac.py run --id BG0975 --dry-run`: pass=3) and `test_critic_rejoinder_tier.py` passes (6 passed) in a detached worktree at 8e56af17e.
