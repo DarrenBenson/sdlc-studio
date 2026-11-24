@@ -100,8 +100,9 @@ def _create_status(type_: str, root: Path) -> str:
 def _text(f: dict, key: str, placeholder: str) -> str:
     """Caller-supplied content for one section, else the scaffold placeholder the agent fills.
     Free text is prose-safed (markdown-safe plus the metadata-line guard), so a creator never
-    mints a lint-red artefact nor a body line a reader takes for provenance; the commands in a
-    Steps to Reproduce value are fenced rather than back-ticked (`file_finding._field_safe`)."""
+    mints a lint-red artefact nor a body line a reader takes for provenance; a Steps to
+    Reproduce value is written as its author gave it, so its commands stay runnable
+    (`file_finding._field_safe`)."""
     val = f.get(key)
     return file_finding._field_safe(key, val) if isinstance(val, str) and val.strip() else placeholder
 
@@ -681,10 +682,10 @@ def _probe(value) -> str:
 
 
 def _content(text: str) -> str:
-    """Text as the drop guards compare it: its lower-cased letters and digits, less the `text`
-    label the steps safing gives a fence (`file_finding._unlabelled`), which the caller never
-    wrote and which would otherwise part the letters of a value with a command in its middle."""
-    return re.sub(r"[^a-z0-9]+", "", file_finding._unlabelled(text).lower())
+    """Text as the drop guards compare it: its lower-cased letters and digits. Both guards run
+    before `sdlc_md.normalise_fence_languages` labels a bare fence, so no label the caller never
+    wrote is in the body they read."""
+    return re.sub(r"[^a-z0-9]+", "", text.lower())
 
 
 def _land_supplied(body: str, type_: str, f: dict) -> str:
@@ -793,9 +794,8 @@ _REV_SECTION_RE = re.compile(r"^##\s+Revision History\b.*$", re.M | re.I)
 
 def _rendered(key: str, f: dict) -> str:
     """One field's content as the markdown its section takes: a bullet list for the list
-    fields, markdown-safed prose otherwise (`file_finding._field_safe`, which fences the commands
-    in a Steps to Reproduce value rather than back-ticking them). Empty when the caller supplied
-    nothing."""
+    fields, markdown-safed prose otherwise (`file_finding._field_safe`, which writes a Steps to
+    Reproduce value as its author gave it). Empty when the caller supplied nothing."""
     if key in ("options", "acs"):
         items = _list(f, key)
         return "".join(f"- **{o}**\n" for o in items) if items else ""
@@ -1428,7 +1428,7 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             f["author"] = sdlc_md.authorship_name(f["_raised_by"])  # index cell: the name
             p["path"].parent.mkdir(parents=True, exist_ok=True)
             body = _land_supplied(render(type_, p["disp"], it["title"], today, f), type_, f)
-            # labelled as `new` labels it: a bare fence (a command in the steps) is MD040
+            # labelled as `new` labels it: a bare fence an author wrote in a field is MD040
             sdlc_md.atomic_write(p["path"], sdlc_md.normalise_fence_languages(body))
             header = _header_cells(root, type_)
             link = f"[{p['disp']}]({p['file_id']}-{p['slug']}.md)"
@@ -1822,7 +1822,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "--affects path but its tests and changelog fragments, else the first "
                         "listed); an unregistered name is warned about (refused under --strict)")
     n.add_argument("--summary", help="the Summary/Overview section")
-    n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
+    n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry), written as given: fence a command so markdown renders it as code")
     n.add_argument("--fix", help="bug: proposed fix")
     n.add_argument("--impact", help="cr: who this affects and what breaks")
     # No argparse `choices`: a bare "invalid choice" teaches nothing, and the reason the scale

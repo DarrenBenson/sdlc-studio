@@ -142,7 +142,8 @@ class QuietSuccessTests(unittest.TestCase):
             fields = self._write("finding.json", json.dumps(
                 {"type": "bug", "title": "the probe fails", "severity": "low",
                  "summary": f"The probe at {URL} answers 500.",
-                 "steps": f"1. Call {URL}.\n2. Read the status.",
+                 # the Steps are written as given, so their author spans the URL
+                 "steps": f"1. Call `{URL}`.\n2. Read the status.",
                  "fix": f"Serve {URL} again.", "affects": "src/a.py", "points": 1}))
             rc, lines = self._run("file_finding.py", "file", "--fields-file", str(fields),
                                   "--root", str(self.root))

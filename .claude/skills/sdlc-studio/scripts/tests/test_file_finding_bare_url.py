@@ -25,8 +25,11 @@ CONFIG = SKILL / ".markdownlint.json"
 
 SUMMARY = ("The page at http://127.0.0.1:8080/x_y answers 500, see `https://ok.example/a` and "
            "<https://auto.example/b>, or [the doc](https://link.example/c).")
-STEPS = "1. Open http://127.0.0.1:8080.\n2. Read xhttps://not.example and _https://mirror.example/g."
-FIX = "Serve (https://paren.example/d)."
+#: The Steps are written as the author gave them, so their URL is in the author's own code span;
+#: the bare URL shapes the Steps used to carry are in the Proposed Fix, which is safed.
+STEPS = "1. Open `http://127.0.0.1:8080/s` and read the status."
+FIX = ("Serve (https://paren.example/d).\n\n"
+       "1. Open http://127.0.0.1:8080.\n2. Read xhttps://not.example and _https://mirror.example/g.")
 AC = "the page at https://ac.example/e answers 200"
 EVIDENCE = "the log at https://ev.example/f"
 
@@ -50,7 +53,9 @@ def _markdownlint() -> str | None:
 
 
 class FiledBareUrlTests(unittest.TestCase):
-    """One bug filed through `file_finding.py file`, carrying a URL in every prose field."""
+    """One bug filed through `file_finding.py file`, carrying a URL in every prose field: a
+    bare one in each field the filer safes, and one the author spanned in the Steps, which are
+    written as given."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -76,8 +81,8 @@ class FiledBareUrlTests(unittest.TestCase):
 
     def test_the_filed_file_passes_the_markdown_lane(self) -> None:
         """AC1, through the tool that refused BG1225's commit, under the skill's own config.
-        MUTANTS: (1) `_md_safe` without the `_code_urls` pass - MD034 on the summary, steps,
-        fix and criterion lines; (2) `_evidence_line` without it - MD034 on the Evidence line."""
+        MUTANTS: (1) `_md_safe` without the `_code_urls` pass - MD034 on the summary, fix
+        and criterion lines; (2) `_evidence_line` without it - MD034 on the Evidence line."""
         mdl = _markdownlint()
         if mdl is None:
             self.skipTest("markdownlint is not installed (npm install) - the lint lane enforces this")
