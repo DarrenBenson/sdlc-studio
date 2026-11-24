@@ -24,8 +24,10 @@ End the wrapped token at the identifier's last word character: strip trailing `.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** An identifier followed by `)`, `.`, `,` or `;` is wrapped without the punctuation, and a call like `resolve_canonical(x)` keeps its balanced parentheses
+- [ ] **AC1** Given the text `keys carry digits (API_KEY_2, TOKEN_V2) is reported` and `ends with keep_alive.`, when `file_finding._md_safe` wraps it, then each identifier is wrapped without the trailing `)` or `.`. Fails on: `TOKEN_V2)` and `keep_alive.` wrapped with the punctuation inside the span (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py -k trailing_punctuation_outside_span
+- [ ] **AC2** Given `uses resolve_canonical(x) and f(a_b).`, when `_md_safe` wraps it, then a call keeps its balanced parentheses and the sentence's full stop stays outside the span. Fails on: a fix that strips every `)` and so breaks a call's own parentheses.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py -k balanced_call_keeps_its_parentheses
 
 ## Triage
 
@@ -41,3 +43,4 @@ End the wrapped token at the identifier's last word character: strip trailing `.
 | 2026-10-08 | Claude Opus 5.5 | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | Triaged: reproduced on current code; private project names generalised; relations recorded |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at HEAD; added the balanced-call negative control as AC2 so the fix cannot strip every `)` |

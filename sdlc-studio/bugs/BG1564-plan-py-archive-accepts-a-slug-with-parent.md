@@ -28,9 +28,9 @@ Refuse a slug that is not a single path component: no path separator, no parent 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a scratch directory holding a file beside the plans directory, when `plan.py archive` runs with a slug that begins with a parent-directory segment and names that file, then it exits 1 with a message naming the slug and the file is still where it was, with nothing created under the archive folder. Fails on: a file outside the plans directory moved into the plans archive.
+- [ ] **AC1** Given a scratch directory holding a file beside the plans directory, when `plan.py archive` runs with a slug that begins with a parent-directory segment and names that file, then it exits 1 with a message naming the slug, the file is still where it was, and nothing is created under the archive folder. Fails on: exit 0, the file moved to `plans/archive/<name>.md` beside the month folder (reproduced at HEAD with slug `../CLAUDE`).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_slug_with_a_parent_segment
-- [ ] **AC2** Given a plans directory with a plan in a subfolder, when the slug holds a path separator or is absolute, then each is refused with exit 1 and no file moved. Fails on: a traversal that survives by a spelling the first check missed.
+- [ ] **AC2** Given a plans directory holding a plan, when the slug holds a path separator or is absolute, then each is refused with exit 1 and no file moved. Fails on: a traversal that survives by a spelling the first check missed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug
 - [ ] **AC3** Given a plain slug naming an active plan, when `plan.py archive` runs, then the plan moves into the month folder as before. Fails on: the validation refusing a legitimate slug.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_happy_path
@@ -40,3 +40,4 @@ Refuse a slug that is not a single path component: no path separator, no parent 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at HEAD in a throwaway tree (slug `../CLAUDE` moved a file from beside the plans directory, exit 0); AC2 no longer says 'in a subfolder' |

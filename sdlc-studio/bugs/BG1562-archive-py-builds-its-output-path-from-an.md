@@ -28,7 +28,7 @@ Validate the release label before any path is built: accept only a single path s
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a fixture workspace with one Closed bug in the live index, when `archive.py archive` runs with a `--release` label made of parent-directory segments, then it exits non-zero with a message naming the label, creates no file or directory inside or outside the workspace, and leaves the live index byte-identical. Fails on: the sub-index written outside the type's archive folder and the row removed from the live table.
+- [ ] **AC1** Given a fixture workspace with one terminal row in the live story index, when `archive.py archive` runs with a `--release` label made of parent-directory segments, then it exits non-zero with a message naming the label, creates no file or directory inside or outside the workspace, and leaves the live index byte-identical. Fails on: exit 0, `escaped/story.md` written above the workspace and the row removed from the live table (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_label_with_parent_segments_is_refused_and_nothing_is_written
 - [ ] **AC2** Given the same fixture, when the label holds a path separator, is absolute, or is a bare dot or double-dot, then each is refused the same way with nothing written. Fails on: a traversal that survives by a spelling the first check missed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused
@@ -40,3 +40,4 @@ Validate the release label before any path is built: accept only a single path s
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at HEAD in a throwaway tree (label `../../../../escaped` wrote `escaped/story.md` above the root and exited 0); criteria now say the fixture type and the observed failure |

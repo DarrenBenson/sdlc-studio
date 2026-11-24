@@ -25,15 +25,20 @@ Clean the bytecode directory from an atexit hook or a parent-death signal as wel
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A killed dry run leaves no sdlc-migrate-pyc directory.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py
+- [ ] **AC1** Given a `migrate.py run` whose collection guard has made its `sdlc-migrate-pyc-*` directory, when the process is killed with SIGKILL, then a later `migrate.py` start under the same TMPDIR removes the stale directory (a dead owner's) and leaves a live run's directory alone. Fails on: the directory left behind: SIGTERM is handled at migrate.py line 1132 but no hook runs on SIGKILL or on the timeout wrapper being killed by verify_ac.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run
+- [ ] **AC2** Given BG1183's AC1 bound of 300 s, when its Verify line is read, then it declares the ceiling verify_ac honours so `verify_ac run --id BG1183` does not read it red at the 120 s default. Fails on: an AC1 Verify with no declared ceiling, red at the default for a run inside its own bound.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_bg1183_ac1_declares_its_own_ceiling
 
 ## Impact
 
 TMPDIR fills with stale bytecode, and the transition gate reads a passing criterion red at its default.
+
+QA note at HEAD: not reproduced as a leak by a clean SIGTERM, which `test_a_terminated_run_removes_its_bytecode_directory` pins and the code handles; the open part is SIGKILL (the wrapper `verify_ac` kills) and the undeclared ceiling. An atexit hook cannot run on SIGKILL, so the fix is a sweep of dead owners' directories at the next start (name the directory with the owner's pid) rather than the atexit hook the Proposed Fix names.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: the one criterion ran a whole module and named no failure; split into the SIGKILL sweep and the undeclared ceiling, and noted that an atexit hook cannot cover SIGKILL (class and test names are the builder's to create) |
