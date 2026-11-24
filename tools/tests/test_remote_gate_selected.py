@@ -417,6 +417,94 @@ class RemoteGateSelectedTests(unittest.TestCase):
         self.assertEqual("free\n", fx.gate_runs()[-1]["staged"], "a free lock did not run the selection on the host")
         self.assertEqual([], fx.host_leftovers())
 
+    def _ssh_on_path(self, fx: _StagedClone) -> Path:
+        """Replace the configured transport with a `ssh` on remote-gate's PATH, so the script's own
+        default is what runs. It records each call's argv, then behaves as a dropped-packet host
+        does to a call WITHOUT the bound ssh would honour: it hangs. HANG=connect gives a call
+        carrying ConnectTimeout the connect failure (255) that bound produces; HANG=run does the
+        same for the run's own call when both keepalive options are present. Anything else is the
+        stub transport."""
+        _git(fx.clone, "config", "--unset", "sdlc.gateSsh")
+        log = fx.tmp / "opts.log"
+        ssh = fx.path() / "ssh"
+        ssh.write_text(textwrap.dedent(f'''
+            #!/usr/bin/env bash
+            args="$*"; printf '%s\\n' "$args" >> {log}
+            connect=""; alive=""
+            case "$args" in *"-o ConnectTimeout="*) connect=1 ;; esac
+            case "$args" in *"-o ServerAliveInterval="*"-o ServerAliveCountMax="*) alive=1 ;; esac
+            case "${{HANG:-}}" in
+              connect) [ -n "$connect" ] && {{ sleep 0.2; exit 255; }}; sleep 120; exit 255 ;;
+              run) case "$args" in *" remote --clone "*)
+                     [ -n "$connect" ] && [ -n "$alive" ] && {{ sleep 0.2; exit 255; }}; sleep 120; exit 255 ;;
+                   esac ;;
+            esac
+            exec {fx.ssh} "$@"
+        ''').lstrip(), encoding="utf-8")
+        ssh.chmod(0o755)
+        return log
+
+    def test_a_silent_host_is_bounded_and_is_not_a_verdict(self) -> None:
+        """A host that drops packets reaches the caller's local run, never a pass. The bounds are
+        the script's named constants, read here; every ssh the script makes carries the connect
+        bound, a commit's selection carries the short keepalive and a push the patient one.
+        Mutants: ConnectTimeout missing from the default, from the staged call or from one of its
+        calls; the staged keepalive left at the push's, or the push's changed; a hung connect or a
+        connection that dies mid-run read as a pass (0), a red (1) or no end."""
+        shipped = REMOTE_GATE.read_text(encoding="utf-8")
+        const = {k: int(v) for k, v in re.findall(r"^([A-Z_]+)=(\d+)$", shipped, re.M)}
+        self.assertEqual((10, 15, 4, 60, 10), tuple(const[k] for k in (
+            "CONNECT_TIMEOUT", "STAGED_ALIVE_INTERVAL", "STAGED_ALIVE_COUNT",
+            "PUSH_ALIVE_INTERVAL", "PUSH_ALIVE_COUNT")))
+        self.assertLessEqual(const["STAGED_ALIVE_INTERVAL"] * const["STAGED_ALIVE_COUNT"], 60,
+                             "a dead connection is given up after more than a minute of silence")
+        fx = _StagedClone()
+        self.addCleanup(fx.cleanup)
+        log = self._ssh_on_path(fx)
+        fx.stage(**{"staged.txt": "staged\n"})
+
+        def seen() -> list[str]:
+            return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+
+        staged_opts = ("-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 "
+                       "-o ServerAliveCountMax=4")
+        r = fx.staged("staged", *_picked(MODULES[0]), timeout=120)
+        self.assertEqual(0, r.returncode, r.stderr)
+        calls = seen()
+        self.assertGreaterEqual(len(calls), 3, "the prepare, the send and the run did not all connect")
+        for call in calls:
+            self.assertIn(staged_opts, call, "a staged call's ssh lacks its bounds")
+
+        log.unlink()
+        head = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+        fx.staged("push", "--commit", head, timeout=120)
+        calls = seen()
+        self.assertGreaterEqual(len(calls), 3)
+        for call in calls:
+            self.assertIn("-o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=60 "
+                          "-o ServerAliveCountMax=10", call, "a push's ssh lost the connect bound")
+
+        log.unlink()
+        fx.commit("a prerequisite list for doctor to send", **{"requirements-dev.txt": "pytest\n",
+                                                                 "tools/gate_prereqs.py": "print()\n"})
+        fx.staged("doctor", timeout=120)
+        self.assertTrue(seen(), "doctor made no ssh call")
+        for call in seen():
+            self.assertIn("-o ConnectTimeout=10", call, "doctor's ssh has no connect bound")
+
+        # A host that never answers the connect: the bound ends it, 3, the caller's run follows.
+        before = len(fx.gate_runs())
+        r = fx.staged("staged", *_picked(MODULES[0]), HANG="connect", timeout=60)
+        self.assertEqual(3, r.returncode, r.stdout + r.stderr)
+        self.assertIn("it could not be reached", r.stderr)
+        self.assertIn(f"gate.py --run-tests {MODULES[0]}", r.stderr)
+
+        # A connection that dies after the gate began: the keepalive ends it, 3, never a pass.
+        r = fx.staged("staged", *_picked(MODULES[0]), HANG="run", timeout=60)
+        self.assertEqual(3, r.returncode, r.stdout + r.stderr)
+        self.assertIn("the connection failed while it ran", r.stderr)
+        self.assertEqual(before, len(fx.gate_runs()), "a hung host produced a test run")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -59,7 +59,8 @@
 # The host needs git on the PATH an ssh command sees, because the commit is received and checked
 # out before anything else runs. Configuration, all in this clone's git config:
 #   sdlc.gateHost     the host, as ssh names it (unset: the gate runs locally)
-#   sdlc.gateSsh      the transport (default: ssh with BatchMode and a keepalive)
+#   sdlc.gateSsh      the transport (default: ssh with BatchMode, a connect bound and a keepalive;
+#                     a transport of your own carries its own bounds)
 #   sdlc.gateCloneId  this clone's key on the host, written on first use
 # A host may hold `~/sdlc-gate/gate-env.sh`, sourced before the gate runs, to put the Python and
 # Node the gate needs on PATH. `SDLC_GATE_LOCAL=1` makes the pre-push hook run the gate locally instead.
@@ -74,7 +75,21 @@
 set -uo pipefail
 
 GATE_DIR="sdlc-gate"
-DEFAULT_SSH="ssh -o BatchMode=yes -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+# The longest one connection waits to be made, in seconds: every ssh this script runs carries it,
+# so a host that drops packets silently fails a call (exit 3) after this, not after the kernel's
+# own connect timeout of about two minutes.
+CONNECT_TIMEOUT=10
+# A connection that dies mid-run is given up after interval x count seconds of silence: a
+# push's gate may run for a long while, so it keeps a patient 60 x 10; a commit's selection
+# (`staged`) gives up after 15 x 4 = 60 seconds, then the caller runs the selection here.
+PUSH_ALIVE_INTERVAL=60
+PUSH_ALIVE_COUNT=10
+STAGED_ALIVE_INTERVAL=15
+STAGED_ALIVE_COUNT=4
+default_ssh() {
+  echo "ssh -o BatchMode=yes -o ConnectTimeout=$CONNECT_TIMEOUT -o ServerAliveInterval=$1 -o ServerAliveCountMax=$2"
+}
+DEFAULT_SSH="$(default_ssh "$PUSH_ALIVE_INTERVAL" "$PUSH_ALIVE_COUNT")"
 TRANSPORT_FAILED=3
 HOST_SETUP_FAILED=4
 HOST_BUSY=5
@@ -178,7 +193,7 @@ cmd_push() {
   [ -n "$host" ] || die "no gate host is configured: git config sdlc.gateHost <host>"
   [[ $host == -* ]] && die "sdlc.gateHost may not start with '-': '$host'"
   ssh_cmd="$(git config --get sdlc.gateSsh || true)"
-  [ -n "$ssh_cmd" ] || ssh_cmd="$DEFAULT_SSH"
+  [ -n "$ssh_cmd" ] || { ssh_cmd="$DEFAULT_SSH"; [ -z "$staged" ] || ssh_cmd="$(default_ssh "$STAGED_ALIVE_INTERVAL" "$STAGED_ALIVE_COUNT")"; }
   commit="$(git rev-parse --verify -q "$commit^{commit}")" || die "no such commit in this clone: $commit"
   id="$(git config --get sdlc.gateCloneId || true)"
   if [ -z "$id" ]; then
