@@ -160,6 +160,39 @@ class ArchiveTests(unittest.TestCase):
             self.assertIn("Archived copy",
                           existing.read_text(encoding="utf-8"))
 
+    def test_archive_refuses_a_slug_with_a_parent_segment(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            plans = base / "plans"
+            plans.mkdir()
+            victim = base / "CLAUDE.md"
+            victim.write_text("keep me\n", encoding="utf-8")
+            rc, out, err = _run(["archive", "../CLAUDE", "--plans-dir", str(plans)])
+            self.assertEqual(rc, 1)
+            self.assertIn("'../CLAUDE'", err)
+            self.assertEqual(out, "")
+            self.assertEqual(victim.read_text(encoding="utf-8"), "keep me\n")
+            self.assertFalse((plans / "archive").exists())
+
+    def test_archive_refuses_a_separator_and_an_absolute_slug(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            plans = base / "plans"
+            src = _make_plan(plans, "ship-it")
+            _make_plan(plans / "sub", "inner")
+            outside = base / "outside.md"
+            outside.write_text("x\n", encoding="utf-8")
+            for slug in ("sub/inner", "sub\\inner", str(base / "outside"), "/abs", ".", "..",
+                         "C:", "C:x", "", "a\0b"):
+                with self.subTest(slug=slug):
+                    rc, _, err = _run(["archive", slug, "--plans-dir", str(plans)])
+                    self.assertEqual(rc, 1)
+                    self.assertIn(f"slug '{slug}'", err)
+                    self.assertTrue(src.exists())
+                    self.assertTrue(outside.exists())
+                    self.assertTrue((plans / "sub" / "inner.md").exists())
+                    self.assertFalse((plans / "archive").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

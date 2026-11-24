@@ -21,7 +21,7 @@ import json
 import posixpath
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
@@ -63,12 +63,27 @@ def _range_label(ids: list) -> str:
     return f"{prefix}{nums[0]:04d}-{prefix}{nums[-1]:04d}" if nums[0] != nums[-1] else ids[0]
 
 
+def _check_release_label(release: str) -> None:
+    """Refuse a release label that is not one plain path segment.
+
+    The label becomes a directory name under `<type>/archive/`, so a label with a
+    separator, a drive form or an absolute path (which holds a separator), a bare `.` or `..`, or an empty or NUL-bearing
+    value could write outside that folder.
+    """
+    bad = (not release or release in (".", "..") or any(c in release for c in "/\\\0")
+           or bool(PureWindowsPath(release).drive))
+    if bad:
+        raise ValueError(f"release label {release!r} must be one plain path segment "
+                         "(no separator, no '.' or '..', not absolute)")
+
+
 def archive(repo_root: Path | str, type_: str, release: str,
             statuses: set | None = None, dry_run: bool = False) -> dict:
     """Move `type_`'s terminal rows into archive/{release}/{type}.md. Returns
     {archived: [ids], count, release, archive_path}."""
     if type_ not in sdlc_md.ARTIFACT_TYPES:
         raise ValueError(f"unknown type {type_!r}")
+    _check_release_label(release)
     root = Path(repo_root)
     terminal = statuses or sdlc_md.terminal_statuses(type_)
     rel, prefix = sdlc_md.ARTIFACT_TYPES[type_]

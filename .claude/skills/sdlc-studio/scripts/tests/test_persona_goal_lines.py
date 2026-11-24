@@ -26,7 +26,7 @@ import test_lean_goal_trace as s1  # noqa: E402 - the plannable project the brie
 
 validate = loader.load_script("validate")
 sprint = loader.load_script("sprint")
-from lib import sdlc_md  # noqa: E402
+from lib import persona_goals, sdlc_md  # noqa: E402
 
 SKILL = loader.SCRIPTS_DIR.parent
 TEMPLATE = SKILL / "templates" / "personas" / "persona-template.md"
@@ -246,6 +246,81 @@ class RuleTableTests(unittest.TestCase):
         scope = rows["persona-goal-scope"]
         for stated in ("ending `/`", "`**`", "segment"):
             self.assertIn(stated, scope, "the Applies-to dialect is not stated beside its rule")
+
+
+class CommentInsideCodeTests(unittest.TestCase):
+
+    def _goals(self, above: str) -> list:
+        return persona_goals.end_goals(
+            f"# Card\n\n{above}\n\n## End Goals\n\n1. first\n2. second\n")
+
+    def test_an_unclosed_comment_opener_in_code_hides_no_goal(self) -> None:
+        """Mutants: scan comments before fences; ignore inline code spans; a fence that does not
+        end at its closer."""
+        for above in ("```html\n<!-- an example\n```", "~~~\n<!--\n~~~", "Use `<!--` to open one.",
+                      "Use ``<!-- a ` b`` to open one."):
+            with self.subTest(above=above):
+                self.assertEqual([g.number for g in self._goals(above)], ["1", "2"])
+
+    def test_a_real_comment_and_a_fence_inside_a_comment_still_hide(self) -> None:
+        text = ("## End Goals\n\n1. kept\n<!--\n```\n2. hidden\n-->\n3. after\n"
+                "<!-- 4. one line --> 5. same line\n6. `<!--` span then text\n")
+        self.assertEqual([g.number for g in persona_goals.end_goals(text)], ["1", "3", "5", "6"])
+        # an opener after a closed span on the same line is a comment
+        text = "## End Goals\n\n1. kept `x` <!-- 2. hidden\n-->\n3. after\n"
+        self.assertEqual([g.number for g in persona_goals.end_goals(text)], ["1", "3"])
+        # a fenced block between a goal and its nested line is invisible to the reader
+        text = "## End Goals\n\n1. one\n\n```\ncode\n```\n   - **Verify:** pytest a.py\n"
+        self.assertEqual([(g.number, g.verify) for g in persona_goals.end_goals(text)],
+                         [("1", "pytest a.py")])
+        # a fence opened above an End Goals heading and left open drops what follows, as before
+        text = "## End Goals\n\n1. a\n```\n2. in code\n```\n3. b\n"
+        self.assertEqual([g.number for g in persona_goals.end_goals(text)], ["1", "3"])
+
+
+class NestedLineAttachmentTests(unittest.TestCase):
+
+    def test_a_nested_line_under_a_note_attaches_to_no_goal(self) -> None:
+        """Mutants: no reset on a paragraph; reset on a blank line alone; reset on an indented
+        line; reset on a line with no blank line above it."""
+        text = ("## End Goals\n\n1. one\n   - **Verify:** pytest a.py\n\n2. two\n\n"
+                "Notes:\n  - **Verify:** npm test\n  - **Applies-to:** `x/`\n")
+        goals = persona_goals.end_goals(text)
+        self.assertEqual([(g.number, g.verify, g.applies_to) for g in goals],
+                         [("1", "pytest a.py", ()), ("2", None, ())])
+        # controls: a nested line after a blank line, a wrapped continuation (no blank line,
+        # unindented) and an indented second paragraph all stay with their goal
+        text = ("## End Goals\n\n1. one\n\n   - **Verify:** pytest a.py\n"
+                "2. two wraps\ncontinued here\n   - **Verify:** pytest b.py\n"
+                "3. three\n\n   more words\n   - **Verify:** pytest c.py\n")
+        self.assertEqual([(g.number, g.verify) for g in persona_goals.end_goals(text)],
+                         [("1", "pytest a.py"), ("2", "pytest b.py"), ("3", "pytest c.py")])
+
+    def test_a_second_verify_on_one_goal_is_a_finding(self) -> None:
+        """Mutants: the second replaces the first; the first is dropped; no finding; a finding
+        naming the wrong goal or no check."""
+        text = ("## End Goals\n\n1. one\n   - **Verify:** pytest a.py\n"
+                "2. two\n   - **Verify:** pytest b.py\n   - **Verify:** pytest c.py\n"
+                "   - **Verify:** pytest d.py\n")
+        goals = persona_goals.end_goals(text)
+        self.assertEqual([(g.verify, g.extra_verifies) for g in goals],
+                         [("pytest a.py", ()), ("pytest b.py", ("pytest c.py", "pytest d.py"))])
+        found = persona_goals.findings(goals, lambda expr: None)
+        self.assertEqual([(rule, n) for rule, n, _m in found],
+                         [("persona-goal-verify", "2")] * 2)
+        self.assertIn("pytest c.py", found[0][2])
+        self.assertIn("pytest b.py", found[0][2])
+        self.assertIn("pytest d.py", found[1][2])
+        row = next(line for line in REFERENCE.read_text(encoding="utf-8").splitlines()
+                   if line.startswith("| `persona-goal-verify`"))
+        self.assertIn("second nested Verify on one goal is also warned of", row)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            card = _card(root, "maya-okafor", "Maya Okafor",
+                         "1. one\n   - **Verify:** pytest a.py\n   - **Verify:** pytest b.py")
+            self.assertEqual([(Path(f["file"]).name, f["goal"], f["severity"])
+                              for f in _goal_findings(root, "persona-goal-verify")],
+                             [(card.name, "1", "warning")])
 
 
 if __name__ == "__main__":

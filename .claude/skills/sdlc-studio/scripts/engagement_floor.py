@@ -729,8 +729,9 @@ def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, st
     does not block on a heuristic. Any message this cannot parse returns (0, None): the hook must
     never block a legitimate commit on its own confusion.
     """
-    body = _strip_comments(message)
-    subject = _subject_line(message)
+    authored = _authored(message)
+    body = _strip_comments(authored)
+    subject = _subject_line(authored)
     # Compare on the NORMALISED id (so `CR-0257` in the subject and `CR0257` in the trailer are
     # one id, not a gap), but report the id AS WRITTEN. The remedy this prints is meant to be
     # pasted, and a v3 id's dash is load-bearing: `Refs: BG01JQK3F8` parses as nothing, so a
@@ -924,8 +925,9 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
     Reported, never refused, by either signal. Whether a swept-in file is really that unit's work
     is the author's call, and the remedy is one `Refs:` line."""
     root = Path(repo_root)
-    body = _strip_comments(message)
-    declared = {sdlc_md.norm_id(i) for i in sdlc_md.ID_SEARCH_RE.findall(_subject_line(message))}
+    authored = _authored(message)
+    body = _strip_comments(authored)
+    declared = {sdlc_md.norm_id(i) for i in sdlc_md.ID_SEARCH_RE.findall(_subject_line(authored))}
     declared |= _refs_ids(body)
     if not any(_JUDGED_NORM_ID_RE.fullmatch(i) for i in declared):
         # The message claims no judged unit at all - a `docs:`, `chore:` or planning commit. There
@@ -957,24 +959,34 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
         files = sorted({f for fs in by_why.values() for f in fs})
         why = "named-file" if "named-file" in by_why else "declared-affects"
         how = ("carry its id in their own filenames" if why == "named-file"
-               else f"only {rid} declares in its Affects")
+               else f"only {sdlc_md.display_id(root, rid)} declares in its Affects")
+        shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it
         out.append({"id": rid, "signal": why, "files": files,
                     "note": (f"this commit stages {', '.join(files)}, which {how}, but the "
-                             f"message never names {rid}. If that work is {rid}'s, add "
-                             f"`Refs: {rid}` so the attribution is stated rather than guessed.")})
+                             f"message never names {shown}. If that work is {shown}'s, add "
+                             f"`Refs: {shown}` so the attribution is stated rather than guessed.")})
     return out
 
 
 #: A trailer line as git reads one: a token, a colon, then the value.
 _TRAILER_LINE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*:[ \t]")
 #: The line below which a verbose commit's message file carries git's diff, never the author's.
-_SCISSORS_RE = re.compile(r"^# -+ >8 -+$")
+#: git writes it as its comment character (`#` unless `core.commentChar` says otherwise: `;`,
+#: `@`, `!`, ... or a longer `core.commentString`) then dashes, `>8` and dashes.
+_SCISSORS_RE = re.compile(r"^[^\w\s]+ -+ >8 -+$")
 #: The review ledgers a paperwork commit stages. Each row opens with the unit it records, so a
-#: row the commit adds is that unit's paperwork.
+#: row the commit adds or edits is that unit's paperwork.
 _RECORD_LEDGERS = ("sdlc-studio/reviews/critic-verdicts.md",
                    "sdlc-studio/reviews/author-self-checks.md")
-#: An added table row in `git diff` output, capturing its first cell.
+#: An added or edited table row in `git diff` output (an edit is a `-` line and a `+` line),
+#: capturing its first cell.
 _ADDED_ROW_RE = re.compile(r"^\+\|\s*([^|]+?)\s*\|")
+
+
+def _authored(message: str) -> str:
+    """The author's text of `message`: everything above git's scissors line."""
+    lines = message.splitlines()
+    return "\n".join(lines[:_scissors_cut(lines)])
 
 
 def _scissors_cut(lines: list[str]) -> int:
@@ -985,10 +997,11 @@ def _scissors_cut(lines: list[str]) -> int:
 
 
 def _ledger_rows(root: Path, paths: list[str]) -> dict[str, set[str]]:
-    """{staged review ledger -> the normalised unit ids whose rows this commit ADDS to it}.
+    """{staged review ledger -> the normalised unit ids whose rows this commit ADDS or EDITS in it}.
 
-    Only the added rows count: a unit with an older row in the ledger owns nothing of this
-    commit. A ledger git cannot diff contributes no owner."""
+    A row the commit adds, or edits (the `+` line of the diff), owns the ledger for its unit.
+    A unit whose row the commit leaves as it was owns nothing of this commit. A ledger git
+    cannot diff contributes no owner."""
     rows: dict[str, set[str]] = {}
     for path in (p for p in paths if p in _RECORD_LEDGERS):
         try:
@@ -1023,7 +1036,7 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
     An id OWNS a staged file when its `Affects` covers the file (`declaration_covers`: the path,
     a directory it sits under or a glob it matches), the file carries its id in its own name
     (its artefact, its changelog fragment), or the file is a review ledger
-    (`critic-verdicts.md`, `author-self-checks.md`) the commit adds that unit's row to. Each
+    (`critic-verdicts.md`, `author-self-checks.md`) the commit adds or edits that unit's row in. Each
     named id no trailer accounts for gets `Refs:` when it owns one and `Mentions:` when it owns
     none. Nothing is derived when no id the message names owns a staged file, nothing is staged,
     or git cannot be asked: the map then attributes the commit to nobody, and the author states
@@ -1035,8 +1048,7 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
     never contradicted. Returns {"refs": [...], "mentions": [...], "contradicted": [...]}, each
     id as the message wrote it."""
     root = Path(repo_root)
-    lines = message.splitlines()
-    authored = "\n".join(lines[:_scissors_cut(lines)])
+    authored = _authored(message)
     body = _strip_comments(authored)
     written: dict[str, str] = {}
     for i in _JUDGED_ID_RE.findall(_subject_line(authored)):
@@ -1069,12 +1081,14 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
 def with_trailers(message: str, lines: list[str]) -> str:
     """`message` with `lines` added as trailers: joined to the closing paragraph when that is
     already a trailer block (so git reads one block, not two), else after a blank line, and in
-    either case above git's comment scaffolding and any verbose diff."""
+    either case above git's comment scaffolding (in its comment character) and any verbose diff."""
     all_lines = message.splitlines()
     cut = _scissors_cut(all_lines)
     head, tail = all_lines[:cut], all_lines[cut:]
+    # git's comment character is the one its scissors line opens with (`#` when there is none).
+    mark = tail[0].split(" ", 1)[0] if tail else "#"
     last = max((n for n, ln in enumerate(head)
-                if ln.strip() and not ln.lstrip().startswith("#")), default=-1)
+                if ln.strip() and not ln.lstrip().startswith(mark)), default=-1)
     body, rest = head[:last + 1], head[last + 1:]
     start = max((n + 1 for n, ln in enumerate(body) if not ln.strip()), default=0)
     joins = start > 0 and all(_TRAILER_LINE_RE.match(ln) for ln in body[start:])

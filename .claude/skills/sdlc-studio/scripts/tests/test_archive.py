@@ -306,6 +306,56 @@ class CrashResumeIdempotentTests(unittest.TestCase):
             self.assertEqual(atext.count("[US0003]"), 1)
 
 
+class ReleaseLabelTraversalTests(unittest.TestCase):
+    def _run(self, root: Path, label: str):
+        import subprocess
+        return subprocess.run(
+            [sys.executable, str(SCRIPT), "archive", "--type", "story", "--release", label,
+             "--root", str(root)], capture_output=True, text=True)
+
+    def _tree(self, base: Path) -> list:
+        return sorted(str(p.relative_to(base)) for p in base.rglob("*"))
+
+    def test_a_label_with_parent_segments_is_refused_and_nothing_is_written(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            root = _repo(base / "ws")
+            before, tree = _idx(root), self._tree(base)
+            label = "../../../escaped"
+            r = self._run(root, label)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn(label, r.stderr)
+            self.assertEqual(_idx(root), before)
+            self.assertEqual(self._tree(base), tree)
+
+    def test_a_separator_an_absolute_label_and_a_dot_segment_are_refused(self) -> None:
+        for label in ("a/b", "a\\b", str(Path(tempfile.gettempdir()) / "abs"), "/abs", ".", "..",
+                      "C:", "C:x", "", "r\0x"):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as d:
+                base = Path(d)
+                root = _repo(base / "ws")
+                before, tree = _idx(root), self._tree(base)
+                with self.assertRaises(ValueError) as cm:
+                    arc.archive(root, "story", label)
+                self.assertIn(repr(label), str(cm.exception))
+                self.assertEqual(_idx(root), before)
+                self.assertEqual(self._tree(base), tree)
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d) / "ws")
+            r = self._run(root, "a/b")
+            self.assertNotEqual(r.returncode, 0)
+
+    def test_a_plain_label_still_archives(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            r = self._run(root, "r2.5")
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue((root / "sdlc-studio" / "stories" / "archive" / "r2.5" / "story.md").exists())
+            self.assertEqual(rc.detect_type("story", root)["drift"], [])
+            self.assertEqual(set(rc.parse_index("story", root)["rows"]),
+                             {"US0001", "US0002", "US0003"})
+
+
 if __name__ == "__main__":
     unittest.main()
 

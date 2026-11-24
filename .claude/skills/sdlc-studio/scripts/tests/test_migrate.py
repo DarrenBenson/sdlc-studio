@@ -1146,5 +1146,68 @@ class SignedRecordMigrationTests(unittest.TestCase):
         self.assertEqual(0, rc, out)
 
 
+class QuietCollectionTests(unittest.TestCase):
+
+    def test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run(self) -> None:
+        """A run killed with SIGKILL runs no handler, so its directory stays; the next guard
+        removes a dead owner's, and leaves a running owner's, a link, a file and a name with
+        no pid in it. Fails on a guard that sweeps nothing, sweeps a running owner's directory,
+        or follows a link out of the temporary directory."""
+        import os  # noqa: PLC0415
+        import signal  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            env = dict(os.environ, TMPDIR=str(tmp))
+            child = subprocess.Popen(
+                [sys.executable, "-c",
+                 "import os, sys, time; sys.path.insert(0, sys.argv[1]); import migrate; "
+                 "g = migrate._QuietCollection(); g.on(); "
+                 "print(os.environ['PYTHONPYCACHEPREFIX'], flush=True); time.sleep(60)",
+                 str(_SCRIPTS)],
+                stdout=subprocess.PIPE, text=True, env=env)
+            try:
+                left = Path(child.stdout.readline().strip())
+                self.assertTrue(left.is_dir())
+                (left / "x.pyc").write_bytes(b"x")
+                child.send_signal(signal.SIGKILL)
+                child.wait()
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+            self.assertTrue(left.is_dir(), "SIGKILL runs no handler, so the directory stays")
+            live = tmp / f"sdlc-migrate-pyc-{os.getpid()}-live"
+            live.mkdir()
+            nopid = tmp / "sdlc-migrate-pyc-oldformat"
+            nopid.mkdir()
+            afile = tmp / f"sdlc-migrate-pyc-{child.pid}-file"
+            afile.write_text("x", encoding="utf-8")
+            target = tmp / "elsewhere"
+            target.mkdir()
+            link = tmp / f"sdlc-migrate-pyc-{child.pid}-link"
+            link.symlink_to(target, target_is_directory=True)
+            huge = tmp / f"sdlc-migrate-pyc-{'9' * 40}-big"
+            huge.mkdir()
+            init = tmp / "sdlc-migrate-pyc-1-init"   # a process another user runs: signal refused
+            init.mkdir()
+            guard = migrate._QuietCollection()
+            with mock.patch.object(tempfile, "tempdir", str(tmp)):
+                guard.on()
+            try:
+                self.assertFalse(left.exists(), "a dead owner's directory is swept")
+                self.assertTrue(live.is_dir(), "a running owner's directory is left alone")
+                self.assertTrue(nopid.is_dir())
+                self.assertTrue(afile.is_file())
+                self.assertTrue(link.is_symlink() and target.is_dir())
+                self.assertTrue(huge.is_dir())
+                self.assertTrue(init.is_dir())
+                self.assertTrue(Path(os.environ["PYTHONPYCACHEPREFIX"]).name.startswith(
+                    f"sdlc-migrate-pyc-{os.getpid()}-"))
+            finally:
+                guard.off()
+
+
 if __name__ == "__main__":
     unittest.main()

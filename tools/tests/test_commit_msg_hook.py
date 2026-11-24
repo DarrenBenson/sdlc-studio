@@ -814,6 +814,28 @@ class DerivedTrailerTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n{scaffold}")
 
+    def test_the_scissors_line_is_found_under_a_non_default_comment_character(self):
+        # BG1323 AC1. With `core.commentChar=;` git writes `; ---- >8 ----`. The hook reads
+        # nothing below it (a diff context ` Refs: US0005` is git's text) and writes its trailers
+        # above it. Fails on a scissors pattern fixed to `#`.
+        units = (("stories", "US0001", "src/a.py"), ("bugs", "BG0002", "bin/gate"),
+                 ("stories", "US0005", "docs/x.md"))
+        files = ("src/a.py", "bin/gate", "docs/x.md")
+        subject = "fix(US0001, BG0002): verbose"
+        scaffold = ("\n; Please enter the commit message for your changes.\n"
+                    "; ------------------------ >8 ------------------------\n"
+                    "; Do not modify or remove the line above.\n"
+                    "diff --git a/src/a.py b/src/a.py\n"
+                    " Refs: US0005\n"
+                    "-x = 1\n"
+                    "+x = 2\n")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=("src/a.py",), units=units, files=files)
+            gitutil.git(["config", "core.commentChar", ";"], cwd=repo)
+            r, after = self._hook(repo, f"{subject}\n{scaffold}")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n{scaffold}")
+
 class ChangelogFragmentRequiredTests(unittest.TestCase):
     """BG1574: a commit that names a unit and stages code is refused until the unit's
     `changelog.d/<ID>.md` is staged or tracked, so the paperwork rule is a gate and not a habit."""

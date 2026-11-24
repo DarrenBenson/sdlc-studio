@@ -24,7 +24,7 @@ import re
 import shutil
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
@@ -138,7 +138,17 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_archive(args: argparse.Namespace) -> int:
-    """Move `<plans-dir>/<slug>.md` into `archive/<yyyy-mm>/`."""
+    """Move `<plans-dir>/<slug>.md` into `archive/<yyyy-mm>/`.
+
+    The slug must be one plain filename stem: a separator, a `.` or `..` segment, an
+    absolute path or a NUL is refused with exit 1 before anything is read or moved.
+    """
+    slug = args.slug
+    if (not slug or slug in (".", "..") or any(c in slug for c in "/\\\0")
+            or PureWindowsPath(slug).drive):
+        print(f"error: slug '{slug}' must be one plain plan name "
+              "(no path separator, no '.' or '..', not absolute)", file=sys.stderr)
+        return 1
     plans_dir = Path(args.plans_dir).expanduser()
     src = plans_dir / f"{args.slug}.md"
     archive_dir = plans_dir / "archive"

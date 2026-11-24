@@ -1677,9 +1677,19 @@ def _md_safe(text) -> str:
     parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
-        pieces[0::2] = [_MD_TOKEN_RE.sub(r"`\1`", p) for p in pieces[0::2]]
+        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p) for p in pieces[0::2]]
         parts[i] = "".join(pieces)
     return "`".join(parts)
+
+
+def _wrap_token(m: re.Match) -> str:
+    """One identifier token as a code span, its trailing full stops and any `)` that closes no
+    `(` inside it left outside, where they were the sentence's punctuation. A call keeps the
+    parentheses it opens and closes itself (`resolve_canonical(x)`)."""
+    token, tail = m.group(1), ""
+    while token[-1] == "." or (token[-1] == ")" and token.count(")") > token.count("(")):
+        token, tail = token[:-1], token[-1] + tail
+    return f"`{token}`{tail}"
 
 
 #: A markdown link or image destination after its link text's `]`: either one in angle brackets,

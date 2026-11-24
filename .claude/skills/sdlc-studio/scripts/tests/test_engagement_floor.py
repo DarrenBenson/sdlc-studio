@@ -875,6 +875,29 @@ class RefsTrailerAttributionTests(unittest.TestCase):
                             f"{target} lowered below baseline: subject={subject!r} "
                             f"body={body!r} got={got} baseline={baseline}")
 
+    def test_an_edited_ledger_row_owns_and_an_untouched_one_does_not(self):
+        # BG1323 AC3. A row the commit edits is a `+` line in the -U0 diff, so its unit owns the
+        # ledger; the row left as it was owns nothing; the docstring says so.
+        ledger = "sdlc-studio/reviews/critic-verdicts.md"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._init_repo(root)
+            (root / ledger).parent.mkdir(parents=True)
+            (root / ledger).write_text(
+                "| Unit | Verdict |\n| --- | --- |\n| US0001 | PENDING |\n| BG0002 | APPROVE |\n",
+                encoding="utf-8")
+            self._git(root, "add", "-A")
+            self._git(root, "commit", "-q", "-m", "seed")
+            (root / ledger).write_text(
+                "| Unit | Verdict |\n| --- | --- |\n| US0001 | APPROVE |\n| BG0002 | APPROVE |\n",
+                encoding="utf-8")
+            self._git(root, "add", "-A")
+            mod = _load()
+            self.assertEqual(mod._ledger_rows(root, [ledger]), {ledger: {"US0001"}})
+            self.assertEqual(mod._ledger_rows(root, ["src/not-a-ledger.md"]), {})
+            self.assertIn("ADDS or EDITS", mod._ledger_rows.__doc__)
+            self.assertNotIn("Only the added", mod._ledger_rows.__doc__)
+
 
 class CommitMsgCheckTests(unittest.TestCase):
     """CR0239 commit-msg hook brain: `check_commit_message` warns when a subject names more than
@@ -1113,6 +1136,57 @@ class CommitMsgCheckTests(unittest.TestCase):
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
         self.assertIn("Refs: US0002 names a unit that owns none", r.stderr)
         self.assertEqual(after, wrong)
+
+    def test_a_refs_line_below_the_scissors_accounts_for_no_subject_id(self):
+        # BG1323 AC2. `git commit -v` puts git's diff below the scissors line, and a diff context
+        # line reading ` Refs: ...` is git's text. Fails on a check that reads the whole message.
+        for mark in ("#", ";", "@"):
+            with self.subTest(comment_char=mark):
+                scaffold = (f"\n{mark} Please enter the commit message.\n"
+                            f"{mark} ------------------------ >8 ------------------------\n"
+                            f"{mark} Everything below it will be ignored.\n"
+                            "diff --git a/x b/x\n Refs: US0301, US0302\n+x\n")
+                code, warning = self._check("US0301 US0302: batch fix\n" + scaffold)
+                self.assertEqual(code, 0)
+                self.assertIsNotNone(warning)
+                self.assertIn("US0301", warning)
+                self.assertIn("US0302", warning)
+        # control: the same trailer ABOVE the scissors accounts for both ids
+        code, warning = self._check("US0301 US0302: batch fix\n\nRefs: US0301, US0302\n"
+                                    "# ------------------------ >8 ------------------------\n")
+        self.assertEqual((code, warning), (0, None))
+
+    def test_a_subject_below_the_scissors_is_not_the_subject(self):
+        # A message that opens with the scissors line has no author text: the first line of git's
+        # diff is not a subject naming two ids, here or for the unnamed-unit note.
+        for mark in ("#", ";"):
+            text = f"{mark} ------------------------ >8 ------------------------\nUS0301 US0302: not one\n"
+            self.assertEqual(self._check(text, strict=True), (0, None))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q", "."], cwd=root)
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            for mark in ("#", ";"):
+                self.assertEqual(
+                    _load().unnamed_unit_attribution(
+                        root, f"{mark} ------------------------ >8 ------------------------\n"
+                              "fix(BG0276): x\n", staged=["src/sprint.py"]), [])
+
+    def test_a_refs_line_below_the_scissors_does_not_silence_an_unnamed_unit_note(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q", "."], cwd=root)
+            _write_unit(root, "bug", 276, status="Fixed", affects=["src/conformance.py"])
+            _write_unit(root, "bug", 268, status="Fixed", affects=["src/sprint.py"])
+            below = ("fix(BG0276): x\n\n; ------------------------ >8 ------------------------\n"
+                     "diff --git a/x b/x\n Refs: BG0268\n")
+            mod = _load()
+            notes = mod.unnamed_unit_attribution(root, below, staged=["src/sprint.py"])
+            self.assertEqual([n["id"] for n in notes], ["BG0268"])
+            above = ("fix(BG0276): x\n\nRefs: BG0268\n"
+                     "; ------------------------ >8 ------------------------\n")
+            self.assertEqual(mod.unnamed_unit_attribution(root, above, staged=["src/sprint.py"]),
+                             [])
 
 
 class ForwardCutoffTests(unittest.TestCase):
@@ -1882,6 +1956,35 @@ class UnnamedUnitAttributionTests(unittest.TestCase):
             self.assertEqual(rc, 0, err.getvalue())
             self.assertIn("BG0268", err.getvalue())
             self.assertIn("attribution", err.getvalue())
+
+    def test_the_note_spells_a_schema_3_id_dashed(self):
+        # BG1736 AC1. `norm_id` is a comparison key that drops a v3 id's dash; the note is meant
+        # to be pasted, and `Refs: BG01JQK3F8` names no artefact.
+        root, td = self._repo()
+        with td:
+            folder = root / "sdlc-studio" / "bugs"
+            folder.mkdir(parents=True)
+            (folder / "BG-01JQK3F8-sample.md").write_text(
+                "# BG-01JQK3F8: sample\n\n> **Status:** Open\n> **Affects:** src/v3.py\n",
+                encoding="utf-8")
+            notes = _load().unnamed_unit_attribution(
+                root, "fix(BG9002): b", staged=["src/v3.py"])
+            self.assertEqual([(n["id"], n["signal"]) for n in notes],
+                             [("BG01JQK3F8", "declared-affects")])
+            self.assertIn("Refs: BG-01JQK3F8`", notes[0]["note"])
+            self.assertNotIn("BG01JQK3F8", notes[0]["note"])
+            self.assertIn("only BG-01JQK3F8 declares", notes[0]["note"])
+
+    def test_the_note_keeps_a_sequential_id_unchanged(self):
+        # BG1736 AC2. The sequential spelling is already the artefact's.
+        root, td = self._repo()
+        with td:
+            _write_unit(root, "bug", 42, status="Open", affects=["src/v3.py"])
+            notes = _load().unnamed_unit_attribution(
+                root, "fix(BG9002): b", staged=["src/v3.py"])
+            self.assertEqual([n["id"] for n in notes], ["BG0042"])
+            self.assertIn("Refs: BG0042`", notes[0]["note"])
+            self.assertIn("only BG0042 declares", notes[0]["note"])
 
 
 def _write_v3_unit(root, rid, *, status, affects=None):

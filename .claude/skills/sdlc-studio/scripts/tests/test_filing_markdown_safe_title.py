@@ -215,7 +215,7 @@ class LinkDestinationTests(unittest.TestCase):
     def test_a_destination_ends_at_its_line(self) -> None:
         """An unclosed `](` exempts nothing on the lines after it."""
         self.assertEqual(file_finding._md_safe("an open ](here\nand my_var)"),
-                         "an open ](here\nand `my_var)`")
+                         "an open ](here\nand `my_var`)")
 
     def test_a_parenthetical_holding_whitespace_is_no_destination(self) -> None:
         """The reviewer's two titles, and a parenthetical whose first word reads as a path."""
@@ -223,7 +223,7 @@ class LinkDestinationTests(unittest.TestCase):
                          "arr[0](`_a` and `_b`) differs")
         self.assertEqual(file_finding._md_safe("handlers[kind](_row, _seat) drops the seat"),
                          "handlers[kind](`_row`, `_seat`) drops the seat")
-        self.assertEqual(file_finding._md_safe("f[k](a.b and c_d)"), "f[k](a.b and `c_d)`")
+        self.assertEqual(file_finding._md_safe("f[k](a.b and c_d)"), "f[k](a.b and `c_d`)")
 
     def test_a_destination_must_read_as_a_path_or_url(self) -> None:
         self.assertEqual(file_finding._md_safe("handlers[kind](_row)"), "handlers[kind](`_row`)")

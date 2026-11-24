@@ -346,7 +346,12 @@ class _QuietCollection:
     every module it imported that no earlier run had left bytecode for beside the source. `on`
     and `off` save and restore `PYTEST_ADDOPTS`, `PYTHONDONTWRITEBYTECODE` and
     `PYTHONPYCACHEPREFIX`. A guard turned on while another is on changes nothing, so the
-    collections already running keep the directory they write to."""
+    collections already running keep the directory they write to.
+
+    The directory is named for the process that owns it, `sdlc-migrate-pyc-<pid>-...`. A kill
+    that no handler sees (SIGKILL, or a timeout wrapper killed beside it) leaves the directory
+    behind, so `on` first removes each such directory under the temporary directory whose
+    owner is no longer running, and leaves a running owner's alone."""
 
     _KEYS = ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")
     _active = False
@@ -359,13 +364,32 @@ class _QuietCollection:
         if _QuietCollection._active:
             return
         import tempfile  # noqa: PLC0415 - needed only here
-        self._prefix = tempfile.mkdtemp(prefix="sdlc-migrate-pyc-")
+        self._sweep_stale(Path(tempfile.gettempdir()))
+        self._prefix = tempfile.mkdtemp(prefix=f"sdlc-migrate-pyc-{os.getpid()}-")
         self._saved = {k: os.environ.get(k) for k in self._KEYS}
         _QuietCollection._active = True
         opts = self._saved["PYTEST_ADDOPTS"] or ""
         os.environ["PYTEST_ADDOPTS"] = f"{opts} -p no:cacheprovider".strip()
         os.environ.pop("PYTHONDONTWRITEBYTECODE", None)
         os.environ["PYTHONPYCACHEPREFIX"] = self._prefix
+
+    @staticmethod
+    def _sweep_stale(tmp: Path) -> None:
+        """Remove each `sdlc-migrate-pyc-<pid>-*` directory in `tmp` whose pid is not a
+        running process. A name with no pid in it and a directory whose owner another user runs
+        (the signal is refused, not absent) are left alone, and `rmtree` leaves a link or a plain
+        file as it was."""
+        import shutil  # noqa: PLC0415 - needed only here
+        for path in sorted(tmp.glob("sdlc-migrate-pyc-*")):
+            owner = re.match(r"sdlc-migrate-pyc-(\d+)-", path.name)
+            if not owner:
+                continue
+            try:
+                os.kill(int(owner.group(1)), 0)
+            except ProcessLookupError:
+                shutil.rmtree(path, ignore_errors=True)
+            except (OverflowError, OSError):
+                continue
 
     def seed(self, directories) -> None:
         """Copy the bytecode already beside the sources in each directory (its `__pycache__`)
