@@ -122,8 +122,8 @@ two_backlog:
 
 # Project constitution. When `sdlc-studio/constitution.md` exists, its
 # machine-checkable principles are asserted by `constitution check`. Advisory by
-# default - set enforce: true to make a violation fail the check (exit non-zero), the
-# same incremental-adoption pattern as the Done gate. See reference-doctrine.md.
+# default, so a project adopts it incrementally - set enforce: true to make a violation
+# fail the check (exit non-zero). See reference-doctrine.md.
 constitution:
   enforce: false
 

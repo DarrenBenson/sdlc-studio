@@ -8,9 +8,9 @@ vocabulary below, which the gate asserts across the artifact graph - or advisory
 existing deterministic checks (integrity / conformance / validate / reconcile) plus a
 small structural vocabulary, so this adds a single consolidated gate, not a new engine.
 
-Enforcement is advisory by default; a project sets `constitution.enforce: true` in
-`.config.yaml` to make violations errors (exit non-zero) - the same incremental-adoption
-pattern as the Done gate's opt-out. Read-only; pure stdlib core.
+Enforcement is advisory by default, so a project adopts it incrementally: it sets
+`constitution.enforce: true` in `.config.yaml` to make violations errors (exit non-zero).
+Read-only; pure stdlib core.
 
 Subcommand:
   check  Assert the declared checkable principles; report violations.

@@ -241,6 +241,10 @@ class AcceptedRfcDecisionTests(unittest.TestCase):
         self.assertEqual(lint_corpus.RFC_DECISION_RULE, first.rule)
         self.assertEqual(12, first.line, "the line of the Outcome, as a value")
         self.assertEqual("**Outcome:** pending `rfc decide`", first.context)
+        # The whole-corpus entry point carries the rule beside markdownlint's findings.
+        linted = lint_corpus.lint_corpus(root, linter=LINTER)
+        self.assertEqual([f.path for f in found],
+                         [f.path for f in linted if f.rule == lint_corpus.RFC_DECISION_RULE])
         # Through the lane: the finding is in the run's result, unattributed with no baseline.
         result = lint_corpus.analyse(root, baseline=None, linter=LINTER)
         rows = [f for f in result["findings"] if f["rule"] == lint_corpus.RFC_DECISION_RULE]
@@ -258,6 +262,25 @@ class AcceptedRfcDecisionTests(unittest.TestCase):
               if f["rule"] == lint_corpus.RFC_DECISION_RULE}
         self.assertEqual(lint_corpus.PRE_EXISTING, by["RFC0001"])
         self.assertEqual(lint_corpus.INTRODUCED, by["RFC0009"])
+
+    def test_only_a_heading_reading_decision_alone_opens_the_decision_section(self) -> None:
+        """A `## Decisions (...)` heading, such as RFC0020's list of resolved decisions, is not
+        the Decision section: a pending Outcome under it is not reported, and it does not hide a
+        pending Outcome in the `## Decision` section below it."""
+        resolved_list = "## Decisions (resolved later)\n\n**Outcome:** pending\n\n"
+        root = self._fixture({
+            "RFC0001-decisions-heading-alone": _rfc("0001", "Accepted", "x").replace(
+                "## Decision\n\nx\n\n", resolved_list),
+            "RFC0002-decisions-above-decision": _rfc("0002", "Accepted", PENDING).replace(
+                "## Decision\n", "## Decisions (resolved by the consultation)\n\nD1 B\n\n"
+                "## Decision\n"),
+        })
+        alone = root / "sdlc-studio/rfcs/RFC0001-decisions-heading-alone.md"
+        self.assertNotIn("\n## Decision\n", alone.read_text(encoding="utf-8"))
+        found = lint_corpus.accepted_rfc_decision_findings(root)
+        self.assertEqual(["sdlc-studio/rfcs/RFC0002-decisions-above-decision.md"],
+                         [f.path for f in found])
+        self.assertEqual("**Outcome:** pending `rfc decide`", found[0].context)
 
     def test_a_non_utf8_or_non_rfc_file_is_not_a_finding_and_not_a_crash(self) -> None:
         root = self._fixture({"RFC0001-bad-bytes": "x"})
@@ -322,6 +345,12 @@ class CorpusLaneRunsOnThisRepo(unittest.TestCase):
                        if f"sdlc-studio/rfcs/RFC{number}-" in p)
             history = rfc.split("## Revision History", 1)[1]
             self.assertRegex(history, r"\| Decision section filled", number)
+        # RFC0063's row records the workstream rewrite too: each row that read `CR (new)`.
+        row = re.search(r"^\|[^\n]*\| Decision section filled[^\n]*$", text, re.M).group(0)
+        self.assertIn("`CR (new)`", row)
+        for ws in ("WS1", "WS2", "WS3", "WS5", "WS6", "WS7"):
+            self.assertRegex(row, rf"\b{ws}\b", f"the revision row does not name {ws}")
+        self.assertNotRegex(row, r"\bWS[48]\b", "WS4 and WS8 were not rewritten")
 
 
 if __name__ == "__main__":

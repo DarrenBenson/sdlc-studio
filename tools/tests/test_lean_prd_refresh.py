@@ -1735,11 +1735,15 @@ class PrdRulesTests(unittest.TestCase):
         named, the tree as it is not. No criterion is held now (the Verify AC gate criterion was
         ticked when BG1063 was fixed), so the held clause is put on that criterion in a copy:
         the tree as it is stays clean, the clause is clean on the bug its words describe, and
-        reassigned it is named. (The floor's mutant was dropped when BG0959 was fixed.)"""
+        reassigned it is named. (The floor's mutant was dropped when BG0959 was fixed.) BG1063
+        AC4: the criterion names the live gate key, `quality.done_requires_verified`, and not
+        the retired one; mutant: the criterion naming `require_ac_verification` again."""
         self.assertEqual([], holder_problems(self.prd))
         self.assertNotIn("Held by BG", self.prd)
         crit = next(text for _, text in detail_blocks(self.prd)["Verify AC"]["criteria"]
                     if text.startswith("Supports a verify gate"))
+        self.assertIn("(`quality.done_requires_verified`, on by default)", crit)
+        self.assertNotIn("require_ac_verification", crit)
         held = f"- [x] {crit}"
         verify = ("- [ ] Supports a verify gate. Held by BG1063: no code reads the key, and the live "
                   "Done gate is `quality.done_requires_verified`.")
