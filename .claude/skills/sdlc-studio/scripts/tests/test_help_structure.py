@@ -14,6 +14,7 @@ import importlib.util
 import re
 import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent.parent
@@ -288,6 +289,9 @@ class SprintInFlightControlDocsTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "sprint", self.SKILL / "scripts" / "sprint.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["sprint"] = mod
         spec.loader.exec_module(mod)
         parser = mod.build_parser()

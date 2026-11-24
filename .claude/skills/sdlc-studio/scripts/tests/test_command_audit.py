@@ -13,6 +13,7 @@ import contextlib
 import io
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent.parent
@@ -852,6 +853,9 @@ class UnjudgedRatchetTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "command_audit", Path(__file__).resolve().parent.parent / "command_audit.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["command_audit"] = mod
         spec.loader.exec_module(mod)
         return mod

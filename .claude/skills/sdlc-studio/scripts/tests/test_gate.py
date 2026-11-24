@@ -2518,6 +2518,9 @@ class WindowCheckTests(unittest.TestCase):
         import importlib.util as _il
         spec = _il.spec_from_file_location("mutation", SCRIPT.parent / "mutation.py")
         mod = _il.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["mutation"] = mod
         spec.loader.exec_module(mod)
         mod.open_window(root, owner, list(paths), note="hand-applying mutants")
@@ -4208,6 +4211,9 @@ class LaneCheckLaneTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "verify_ac", Path(__file__).resolve().parent.parent / "verify_ac.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac"] = mod
         spec.loader.exec_module(mod)
         with tempfile.TemporaryDirectory() as d:
@@ -4230,6 +4236,9 @@ class LaneCheckLaneTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "verify_ac", Path(__file__).resolve().parent.parent / "verify_ac.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac"] = mod
         spec.loader.exec_module(mod)
         self.assertIn("/.local/", mod._LANE_YIELD_REL,
@@ -4252,6 +4261,9 @@ class ReviewCadenceTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "gate", Path(__file__).resolve().parent.parent / "gate.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["gate"] = mod
         spec.loader.exec_module(mod)
         return mod
@@ -4337,6 +4349,9 @@ class ReviewCadenceLaneVerdictTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "gate", Path(__file__).resolve().parent.parent / "gate.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["gate"] = mod
         spec.loader.exec_module(mod)
         return mod
@@ -4406,6 +4421,9 @@ class LoaderRouteTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "gate", Path(__file__).resolve().parent.parent / "gate.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["gate"] = mod
         spec.loader.exec_module(mod)
         return mod
@@ -4484,6 +4502,9 @@ class ReleaseVerifyScopeTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "gate_scope_bg0530", Path(__file__).resolve().parents[1] / "gate.py")
         g = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["gate_scope_bg0530"] = g
         spec.loader.exec_module(g)
 

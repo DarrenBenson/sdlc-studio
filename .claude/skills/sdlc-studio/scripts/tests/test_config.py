@@ -69,11 +69,13 @@ class LoadTests(unittest.TestCase):
 
 @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
 class IntegrationTests(unittest.TestCase):
-    @staticmethod
-    def _status():
+    def _status(self):
         spec = importlib.util.spec_from_file_location(
             "status", SCRIPT.parent / "status.py")
         status = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["status"] = status
         spec.loader.exec_module(status)
         return status

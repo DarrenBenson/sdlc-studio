@@ -188,6 +188,9 @@ class FileTests(unittest.TestCase):
         rc_spec = importlib.util.spec_from_file_location(
             "reconcile", SCRIPT.parent / "reconcile.py")
         rc = importlib.util.module_from_spec(rc_spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["reconcile"] = rc
         rc_spec.loader.exec_module(rc)
         with tempfile.TemporaryDirectory() as d:
@@ -206,6 +209,9 @@ class FileTests(unittest.TestCase):
         rc_spec = importlib.util.spec_from_file_location(
             "reconcile", SCRIPT.parent / "reconcile.py")
         rc = importlib.util.module_from_spec(rc_spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["reconcile"] = rc
         rc_spec.loader.exec_module(rc)
         with tempfile.TemporaryDirectory() as d:
@@ -2966,6 +2972,9 @@ class WriterMatchesParserTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "verify_ac_bg0530", Path(__file__).resolve().parents[1] / "verify_ac.py")
         va = importlib.util.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac_bg0530"] = va
         spec.loader.exec_module(va)
 
@@ -2988,6 +2997,9 @@ class WriterMatchesParserTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "verify_ac_bg0530b", Path(__file__).resolve().parents[1] / "verify_ac.py")
         va = importlib.util.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac_bg0530b"] = va
         spec.loader.exec_module(va)
         # Fields with real substance: the derivation refuses to invent a criterion from fewer

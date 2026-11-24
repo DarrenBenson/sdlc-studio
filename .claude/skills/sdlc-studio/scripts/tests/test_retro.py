@@ -3739,6 +3739,9 @@ class VelocityOverheadTermAgreesWithTheCloseTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "mutation", Path(__file__).resolve().parents[1] / "mutation.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["mutation"] = mod
         spec.loader.exec_module(mod)
         mod.append_series(self.root, {

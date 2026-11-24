@@ -1552,6 +1552,9 @@ class VerifierGroomingTests(unittest.TestCase):
         import importlib.util as _il  # noqa: PLC0415
         _s = _il.spec_from_file_location("verify_ac", SCRIPT.parent / "verify_ac.py")
         verify_ac = _il.module_from_spec(_s)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac"] = verify_ac
         _s.loader.exec_module(verify_ac)
 

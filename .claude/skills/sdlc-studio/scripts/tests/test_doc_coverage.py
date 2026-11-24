@@ -5,6 +5,7 @@ import importlib.util
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "doc_coverage.py"
@@ -119,6 +120,9 @@ class HelpPageCoverageTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "doc_coverage", Path(__file__).resolve().parent.parent / "doc_coverage.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["doc_coverage"] = mod
         spec.loader.exec_module(mod)
         return mod

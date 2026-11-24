@@ -8,6 +8,7 @@ import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
@@ -1481,6 +1482,9 @@ class GroomingDemandTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "sprint", Path(__file__).resolve().parent.parent / "sprint.py")
         sprint = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["sprint"] = sprint
         spec.loader.exec_module(sprint)
         return sprint.breakdown(repo, [{"id": path.stem.split("-")[0], "type": type_,
@@ -1904,6 +1908,9 @@ class ProseWriterSweepTests(unittest.TestCase):
         safe path would still read as safe."""
         spec = importlib.util.spec_from_file_location(f"_sweep_{name[:-3]}", SCR / name)
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules[spec.name] = mod
         spec.loader.exec_module(mod)
         return _parser_options(mod.build_parser())

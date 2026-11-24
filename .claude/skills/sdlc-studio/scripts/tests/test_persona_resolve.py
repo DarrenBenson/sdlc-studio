@@ -5,6 +5,7 @@ import importlib.util
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "persona_resolve.py"
@@ -239,6 +240,9 @@ class IndependenceFloorTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "critic", SCRIPT.parent / "critic.py")
         critic = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["critic"] = critic
         spec.loader.exec_module(critic)
         # two instances of the one seat -> independent

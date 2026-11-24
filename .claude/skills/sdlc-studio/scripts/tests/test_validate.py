@@ -15,6 +15,7 @@ import sys
 import tempfile
 import pathlib
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
@@ -3144,6 +3145,9 @@ class FreshArtefactPlaceholderTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "artifact", Path(__file__).resolve().parent.parent / "artifact.py")
         artifact = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["artifact"] = artifact
         spec.loader.exec_module(artifact)
         with tempfile.TemporaryDirectory() as d:

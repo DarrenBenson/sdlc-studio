@@ -6,6 +6,7 @@ import io
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -207,6 +208,9 @@ class ParentMintTests(unittest.TestCase):
         spec = ilu.spec_from_file_location(
             "file_finding", Path(__file__).resolve().parent.parent / "file_finding.py")
         ff = ilu.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["file_finding"] = ff
         spec.loader.exec_module(ff)
         with tempfile.TemporaryDirectory() as d:
@@ -232,6 +236,9 @@ class ParentMintTests(unittest.TestCase):
         spec = ilu.spec_from_file_location(
             "file_finding", Path(__file__).resolve().parent.parent / "file_finding.py")
         ff = ilu.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["file_finding"] = ff
         spec.loader.exec_module(ff)
         with tempfile.TemporaryDirectory() as d:
@@ -258,6 +265,9 @@ class ParentMintCliTests(unittest.TestCase):
         spec = ilu.spec_from_file_location(
             "file_finding", Path(__file__).resolve().parent.parent / "file_finding.py")
         ff = ilu.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["file_finding"] = ff
         spec.loader.exec_module(ff)
         out, err = io.StringIO(), io.StringIO()

@@ -1065,6 +1065,9 @@ class SignatureDetectorCoverageTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "readiness", Path(__file__).resolve().parent.parent / "readiness.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["readiness"] = mod
         spec.loader.exec_module(mod)
         return mod

@@ -282,6 +282,9 @@ class IndependenceTests(unittest.TestCase):
         cpath = SCRIPT.parent / "conformance.py"
         spec = _ilu.spec_from_file_location("conformance", cpath)
         conf = _ilu.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["conformance"] = conf
         spec.loader.exec_module(conf)
         with tempfile.TemporaryDirectory() as d:
@@ -300,6 +303,9 @@ class IndependenceTests(unittest.TestCase):
         cpath = SCRIPT.parent / "conformance.py"
         spec = _ilu.spec_from_file_location("conformance", cpath)
         conf = _ilu.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["conformance"] = conf
         spec.loader.exec_module(conf)
         with tempfile.TemporaryDirectory() as d:
@@ -485,6 +491,9 @@ class BriefTierTests(unittest.TestCase):
         import importlib.util as _ilu
         spec = _ilu.spec_from_file_location("route", SCRIPT.parent / "route.py")
         route = _ilu.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["route"] = route
         spec.loader.exec_module(route)
         path = next((root / "sdlc-studio" / "stories").glob(f"{uid}-*.md"))
@@ -626,6 +635,9 @@ class BriefTierTests(unittest.TestCase):
             import importlib.util as _ilu
             spec = _ilu.spec_from_file_location("conformance", SCRIPT.parent / "conformance.py")
             conf = _ilu.module_from_spec(spec)
+            swap = unittest.mock.patch.dict(sys.modules)
+            swap.start()
+            self.addCleanup(swap.stop)
             sys.modules["conformance"] = conf
             spec.loader.exec_module(conf)
             self.assertFalse(conf.verdict_half_ok(root, "US0002", sprint_covers=False),
@@ -640,6 +652,9 @@ class BriefTierTests(unittest.TestCase):
         import importlib.util as _ilu
         spec = _ilu.spec_from_file_location("route", SCRIPT.parent / "route.py")
         route = _ilu.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["route"] = route
         spec.loader.exec_module(route)
         mod = _load()

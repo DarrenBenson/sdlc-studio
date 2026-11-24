@@ -1228,6 +1228,9 @@ class RootResolverTests(unittest.TestCase):
         scripts = Path(__file__).resolve().parent.parent
         spec = importlib.util.spec_from_file_location("verify_ac_sut", scripts / "verify_ac.py")
         va = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["verify_ac_sut"] = va
         spec.loader.exec_module(va)
         # IDENTITY against the sdlc_md verify_ac ITSELF imported - a second copy would behave

@@ -14,6 +14,7 @@ import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 SCR = Path(__file__).resolve().parent.parent
@@ -397,6 +398,9 @@ class QuotedHazardExemptionTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "file_finding", Path(__file__).resolve().parent.parent / "file_finding.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["file_finding"] = mod
         spec.loader.exec_module(mod)
         return mod

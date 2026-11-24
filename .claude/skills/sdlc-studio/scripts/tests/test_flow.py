@@ -192,6 +192,9 @@ class AgeingFlagTests(unittest.TestCase):
             spec = _ilu.spec_from_file_location(
                 "status", SCRIPT_PATH.parent / "status.py")
             status_mod = _ilu.module_from_spec(spec)
+            swap = mock.patch.dict(sys.modules)
+            swap.start()
+            self.addCleanup(swap.stop)
             sys.modules["status"] = status_mod
             spec.loader.exec_module(status_mod)
             adv = status_mod.ageing_advisory(root, today=dt.date(2026, 7, 16))

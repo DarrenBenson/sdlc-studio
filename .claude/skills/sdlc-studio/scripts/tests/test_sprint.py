@@ -625,6 +625,9 @@ class CloseBlockerAttributionTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "gate_mod_bg0516", Path(__file__).resolve().parents[1] / "gate.py")
         gate = importlib.util.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["gate_mod_bg0516"] = gate
         spec.loader.exec_module(gate)
         stamp = gate.lane_stamp({"seconds": 0.4})
@@ -12839,11 +12842,13 @@ class BlockingScopeTests(unittest.TestCase):
     that passes every unit.
     """
 
-    @staticmethod
-    def _load_critic():
+    def _load_critic(self):
         spec = importlib.util.spec_from_file_location(
             "critic", SCRIPT.parent / "critic.py")
         mod = importlib.util.module_from_spec(spec)
+        swap = unittest.mock.patch.dict(sys.modules)
+        swap.start()
+        self.addCleanup(swap.stop)
         sys.modules["critic"] = mod
         spec.loader.exec_module(mod)
         return mod
