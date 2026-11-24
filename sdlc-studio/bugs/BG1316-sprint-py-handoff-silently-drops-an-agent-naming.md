@@ -1,6 +1,6 @@
 # BG1316: `sprint.py handoff` silently drops an `--agent` naming a unit outside the batch, both new verbs crash on an unreadable run state, and the next-step line's stream is unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1316.md
@@ -33,8 +33,13 @@ Refuse an `--agent` whose unit is not in the batch, naming it; read the run stat
 - [ ] **AC3** Given `sprint.py plan --write` in text mode, when its stdout and stderr are captured apart, then the next-step line is on stdout and not on stderr. Fails on: the line moved to stderr passing a test that merges the two streams.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::PlanNextStepTests::test_the_next_step_line_is_printed_to_stdout
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Handoff edge cases on bad input; workaround is to pass the right unit.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

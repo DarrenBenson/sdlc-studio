@@ -1,6 +1,6 @@
 # BG1564: plan.py archive accepts a slug with parent segments and moves a file from outside the plans directory
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/plan.py, .claude/skills/sdlc-studio/scripts/tests/test_plan.py, changelog.d/BG1564.md
@@ -30,10 +30,13 @@ Refuse a slug that is not a single path component: no path separator, no parent 
 
 - [ ] **AC1** Given a scratch directory holding a file beside the plans directory, when `plan.py archive` runs with a slug that begins with a parent-directory segment and names that file, then it exits 1 with a message naming the slug, the file is still where it was, and nothing is created under the archive folder. Fails on: exit 0, the file moved to `plans/archive/<name>.md` beside the month folder (reproduced at HEAD with slug `../CLAUDE`).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_slug_with_a_parent_segment
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a plans directory holding a plan, when the slug holds a path separator or is absolute, then each is refused with exit 1 and no file moved. Fails on: a traversal that survives by a spelling the first check missed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a plain slug naming an active plan, when `plan.py archive` runs, then the plan moves into the month folder as before. Fails on: the validation refusing a legitimate slug.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_happy_path
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

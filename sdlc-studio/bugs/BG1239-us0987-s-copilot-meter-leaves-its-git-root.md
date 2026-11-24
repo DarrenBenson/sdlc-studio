@@ -1,6 +1,6 @@
 # BG1239: US0987's Copilot meter leaves its git-root-over-cwd preference unpinned and counts `includes_subagents: False` on trust
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_copilot.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py, changelog.d/BG1239.md
@@ -29,8 +29,13 @@ Add a fixture session whose `cwd` sits below its `gitRoot` and assert it is book
 - [ ] **AC2** Given that no captured Copilot session delegated to a subagent, when the `meter_copilot.py` docstring and `reference-sprint.md` describe the reading, then both state `includes_subagents: False` as an assumption no capture has settled. Fails on: either page presenting the value as observed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_the_subagent_exclusion_is_stated_as_an_assumption
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. An unpinned preference and a trusted flag.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

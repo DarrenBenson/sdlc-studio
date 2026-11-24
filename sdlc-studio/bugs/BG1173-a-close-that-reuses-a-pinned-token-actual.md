@@ -1,6 +1,6 @@
 # BG1173: A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the run's priced cost
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG1173.md
@@ -35,8 +35,13 @@ When the token actual is reused, read the priced components afresh for the price
 
 A reader of the retro is told the run's priced cost is unknown when the report beside it states it.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A lower-case reason string in the retro.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

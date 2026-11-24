@@ -1,6 +1,6 @@
 # BG1561: Three 6.4 epics read Done while their own completion-bar criteria are undelivered, unticked and point nowhere
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/epics/EP0308-a-change-board-can-approve-a-release-from.md, sdlc-studio/epics/EP0309-an-escaped-defect-is-traced-to-the-unit.md, sdlc-studio/epics/EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md, tools/tests/test_epic_completion_bar_carried.py, changelog.d/BG1561.md
@@ -33,8 +33,13 @@ In each of the three epics, tick the epic-level criteria that were delivered, ma
 - [ ] **AC2** Given a fixture epic at Done with an unticked epic-level criterion and no carrying id, a second with the criterion marked carried by an existing request, and a third with every box ticked, when the same check runs, then only the first is reported; a carrying id that resolves to no artefact is reported as well. Fails on: a check that passes the unticked bar, or one that accepts a carrier that does not exist.
   - **Verify:** pytest tools/tests/test_epic_completion_bar_carried.py::EpicCompletionBarTests::test_an_uncarried_criterion_is_reported_and_a_carried_or_ticked_one_passes
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's own epics.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

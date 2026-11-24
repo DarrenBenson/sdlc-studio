@@ -1,6 +1,6 @@
 # BG1313: The resume brief has three edges its tests do not pin: a batch listed out of plan order, a `-qa.none` landing marker read as in flight, and a Sprint Goal holding a newline that breaks `parse`
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/resume_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1313.md
@@ -35,8 +35,13 @@ Add a fixture whose batch order differs from its plan, read a `-qa.none` marker 
 - [ ] **AC4** Given a run with a recorded start, and an open finding stamped with a run id that only begins with the open run's id, when the brief is built, then that finding is left out and no 'cannot be placed' note is printed. Fails on: a prefix match listing another run's finding, or the note shown for a run that has a start.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_a_longer_run_id_is_not_matched_and_a_started_run_prints_no_placement_note
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Three untested resume-brief edges.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

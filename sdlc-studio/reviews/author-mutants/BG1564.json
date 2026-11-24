@@ -1,0 +1,88 @@
+{
+  "unit": "BG1564",
+  "digest": "50c9b8cc393b2540 at b34879706b54",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1564-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no check",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "    slug = args.slug\n    if (",
+      "new": "    slug = args.slug\n    if False and (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_slug_with_a_parent_segment",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "if (not slug or slug in",
+      "new": "if (slug in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dot allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "slug in (\".\", \"..\")",
+      "new": "slug in (\"..\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dotdot allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "slug in (\".\", \"..\")",
+      "new": "slug in (\".\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "slash allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "any(c in slug for c in \"/\\\\\\0\")",
+      "new": "any(c in slug for c in \"\\\\\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "backslash allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "any(c in slug for c in \"/\\\\\\0\")",
+      "new": "any(c in slug for c in \"/\\0\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nul allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "any(c in slug for c in \"/\\\\\\0\")",
+      "new": "any(c in slug for c in \"/\\\\\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drive allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "            or PureWindowsPath(slug).drive):",
+      "new": "            or False):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_separator_and_an_absolute_slug",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal exits 0",
+      "file": ".claude/skills/sdlc-studio/scripts/plan.py",
+      "old": "not absolute)\", file=sys.stderr)\n        return 1",
+      "new": "not absolute)\", file=sys.stderr)\n        return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan.py::ArchiveTests::test_archive_refuses_a_slug_with_a_parent_segment",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

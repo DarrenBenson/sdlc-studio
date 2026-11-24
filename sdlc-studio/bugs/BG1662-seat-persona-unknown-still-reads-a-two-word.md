@@ -1,6 +1,6 @@
 # BG1662: seat-persona-unknown still reads a two-word product surface marked with a role, such as Ship the Admin Console (Primary), as an unknown persona
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
@@ -27,8 +27,13 @@ Read a bracketed role after a run as a persona claim only when the run is introd
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a cast of Maya Okafor, give a seat card the line 'Ship the Admin Console (Primary) before the reports page' and run validate.py seats: it warns...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Read a bracketed role after a run as a persona claim only when the run is introduced as a persona (the word persona, or a cast role phrase, nearby), or report...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A two-word surface marked Primary warns once; workaround is to reword.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

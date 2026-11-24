@@ -1,6 +1,6 @@
 # BG1430: verify_ac's signal relay raises its running count outside the try, so a raise in that window leaves every later returning handler refused, and no test pins the per-signal refresh of the settle bound
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_bounded_wait.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_count.py, changelog.d/BG1430.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -29,8 +29,13 @@ Move the increment inside the try (or decrement in a finally that covers it), an
 - [ ] **AC2** Given a caller signalled twice about 5 s apart whose handler returns after 0.5 s, when each signal arrives, then the queued verifier runs on both. Fails on: the deadline set only by the first signal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_count.py::PerSignalBoundTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A raise inside a two-line window; no known trigger.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

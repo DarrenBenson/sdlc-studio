@@ -1,6 +1,6 @@
 # BG1309: A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, changelog.d/BG1309.md
@@ -33,8 +33,13 @@ Carry the speed with the reading where a harness exposes it (a `--fast` flag, a 
 - [ ] **AC3** Given the shipped price table, when its notes are read, then the Cursor Fast caveat sits on the Cursor slugs alone and no `xai/` entry carries it. Fails on: the caveat left on `xai/grok-4.7`, `xai/grok-4.6` and `xai/grok-4.5`, whose provider offers no Fast on its public API.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_the_fast_caveat_sits_on_the_cursor_slugs_alone
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Fast mode priced at standard; a price estimate with an override.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

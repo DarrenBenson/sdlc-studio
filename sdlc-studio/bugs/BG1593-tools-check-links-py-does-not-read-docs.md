@@ -1,6 +1,6 @@
 # BG1593: tools/check_links.py does not read docs/enterprise.md, so a broken link or anchor on the page exits 0
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/check_links.py, tools/tests/test_check_links.py, changelog.d/BG1593.md
@@ -28,8 +28,13 @@ Have `check_links.py` read every page under docs/ (or derive its list from the t
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Add a link to a missing file in docs/enterprise.md and run `python3 tools/check_links.py`: it exits 0.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Have `check_links.py` read every page under docs/ (or derive its list from the tree), with a test that a broken link on a new docs page fails.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's tools/check_links.py.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1070: conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/conformance.py, tools/tests/test_lint_corpus.py, tools/tests/test_lint_corpus_attribution.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, tools/tests/test_conformance_fresh_checkout.py, changelog.d/BG1070.md
@@ -31,6 +31,10 @@ Make the two corpus test modules skip, not raise, at collection when markdownlin
 
 A whole-workspace conformance verdict is not a function of the commit, so a review or a second machine can see a failure the author's clone cannot reproduce (LL0029).
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's fresh-worktree conformance read without markdownlint.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -38,3 +42,4 @@ A whole-workspace conformance verdict is not a function of the commit, so a revi
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | sdlc-studio | Retitled: was "conformance reads US0357 and US0358 as missing their verified stage in a fresh checkout, though both carry Verified stamps, so the lane's verdict depends on the clone's .local state" |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

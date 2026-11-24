@@ -1,6 +1,6 @@
 # BG1433: The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/scripts/tests/test_report_template_forecast_text.py, changelog.d/BG1433.md
@@ -27,8 +27,13 @@ Say in both templates that the span has a forecast and ratio on pages carrying t
 - [ ] **AC1** Given the two report templates, when a reader reads the Estimates text, then neither says the wall-clock span has no ratio, and the text above the table says forecasts are descriptive. Fails on: either template still saying 'no ratio' for the span.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_template_forecast_text.py::TemplateForecastTextTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Templates say the wall-clock span has no ratio.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1461: lane brief warns a landed unit under review never returned, and that the tree may already carry its work
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1461.md
@@ -37,8 +37,13 @@ Treat a unit `lane land` committed as returned for this warning (or word it as '
 - [ ] **AC2** Given a unit briefed with no land and no return, when another unit is briefed, then the 'never returned' warning still names it. Fails on: the fix silencing the warning for a lane that did die.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_lane_with_no_land_and_no_return_is_still_warned
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A conservative warning about a landed unit.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

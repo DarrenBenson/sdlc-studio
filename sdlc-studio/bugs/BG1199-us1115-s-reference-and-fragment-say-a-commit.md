@@ -1,6 +1,6 @@
 # BG1199: US1115's reference and fragment say a commit whose every id is a mention is attributed no files, but a one-id subject whose only id is a Mentions: id is attributed its files
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-scripts-verify.md, CHANGELOG.md, changelog.d/BG1199.md
@@ -32,8 +32,13 @@ Scope both sentences to a commit whose subject names several ids, each only a me
 
 A reader relies on a Mentions: line to keep a one-id commit's files off that id, and the floor counts them anyway.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Reference and fragment over-state a skip rule.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1028: There is no supported way to run only the release verify lane: `gate.py --release --only verify` is refused for deselecting the bound lanes, and the refusal's advice (drop --release) leads to `unknown check name(s): verify`
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_verify_lane_alone.py, .claude/skills/sdlc-studio/help/gate.md, changelog.d/BG1028.md
@@ -37,9 +37,14 @@ Corpus repair loops have to run the whole release gate or a private function; an
 - Reproduced at 4932cf5d: `gate.py --release --allow-external --only verify` fails selection ('deselecting the bound lane(s) review-legs, versions, changelog-fragments proves nothing ...'), and following its advice, `gate.py --only verify` fails 'unknown check name(s): verify', because the verify lane is registered only under `--release`. Pre-existing.
 - Severity Low stands; the private project name is generalised; criteria split in two on a new test module (BG0980), so the refusal's advice is tested on its own.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Running only the release verify lane is refused; workaround is the allow-extra flag the report names.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | sdlc-studio | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: reproduced; project name generalised; criteria on a new test module; changelog fragment named for the unit |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

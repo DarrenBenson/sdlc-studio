@@ -1,6 +1,6 @@
 # BG1596: critic.py record calls a repair builder whose prompt names the verdict path the agent 'briefed with' the verdict, and reports the verdict's provenance as unknown
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/lib/verdict_provenance.py, changelog.d/BG1596.md
@@ -28,8 +28,13 @@ Attribute a verdict to the agent whose prompt carries its review brief (the BRIE
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Name a verdict file's path in a repair builder's prompt, then `critic.py record` that verdict: it reports the repair builder as briefed with it and the...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Attribute a verdict to the agent whose prompt carries its review brief (the BRIEF line or the brief file), not to every agent whose prompt mentions the verdict...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Record message says briefed with.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

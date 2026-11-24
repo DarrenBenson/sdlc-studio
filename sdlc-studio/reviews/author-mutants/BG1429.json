@@ -1,0 +1,43 @@
+{
+  "unit": "BG1429",
+  "digest": "13f0d23597a60d80 at 3ca0174cc3d4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1429-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "read_cli drops the repo root",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/meter_cursor.py",
+      "old": "        return read_ledger(ledger, repo_root)",
+      "new": "        return read_ledger(ledger)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_a_project_threshold_moves_the_booking",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "read_ledger books by the shipped table",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/meter_cursor.py",
+      "old": "token_meters.book(requests, _rates(repo_root))",
+      "new": "token_meters.book(requests, _rates())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_a_project_threshold_moves_the_booking",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_rates loads the shipped table",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/meter_cursor.py",
+      "old": "        return prices.load(repo_root)",
+      "new": "        return prices.load()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_a_project_threshold_moves_the_booking",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the project table booked for a project with no block as long",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/meter_cursor.py",
+      "old": "        return prices.load(repo_root)",
+      "new": "        return prices.load(repo_root, pricing={'models': {}}) if repo_root is None else prices.load(repo_root)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_no_project_block_books_by_the_shipped_threshold",
+      "result": "survived",
+      "answer": "equivalent: an empty models block lays nothing over the shipped table, and repo_root is never None from read_cli"
+    }
+  ]
+}

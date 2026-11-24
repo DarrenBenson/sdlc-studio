@@ -1,0 +1,6 @@
+UNIT: BG1429
+BRIEF: 7e0101b91afc-7ea417e1
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged on the meter_cursor.py hunks (`read_cli`, `read_ledger`, `_rates`), the new test module and the fragment. verify_ac --dry-run: ac=2 pass=2. The new module: 4 passed. The four modules that import meter_cursor: 34 passed. `read_ledger` has one caller (meter_cursor.py:143), and no other meter books by a price table, so the threading is complete. Claim inventory: the fragment's three sentences and the `read_ledger` and `_rates` docstrings are TRUE by execution. "read the figure as exact" is the bug's reproduction, taken on trust and not re-run at base. My mutants, each applied once and seen red: fall back to the shipped table when the project block is refused (KILLED by the malformed-config test), and load with an empty `pricing` block instead of the project's (KILLED by AC1). The author's survivor is equivalent, as stated. Remark, not a finding: AC1 and its boundary test skip without PyYAML, the same guard 13 other test modules use for the project config. PyYAML 6.0.3 is present here, so both ran.

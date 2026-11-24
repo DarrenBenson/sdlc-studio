@@ -1,6 +1,6 @@
 # BG1444: sprint plan reports a malformed risk map as 'no component map is declared', says nothing when a unit's risk tag is outside the vocabulary, and no test pins which component the flag names when prefixes overlap
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/risk_class.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag_edges.py, changelog.d/BG1444.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,8 +27,13 @@ Name a malformed map value and an unknown tag in one line each; pin the overlapp
 - [ ] **AC1** Given a malformed risk map or a unit tag outside the vocabulary, when `sprint plan` runs, then one line names each and nothing refuses. Fails on: the no-map line for a malformed value, or silence on an unknown tag.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag_edges.py::PlanRiskEdgeTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A malformed risk map is reported with the wrong sentence.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

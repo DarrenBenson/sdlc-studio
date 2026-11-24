@@ -1,6 +1,6 @@
 # BG1230: lane return --agent: one agent priced onto two units, stale --tokens wording, and undocumented help
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced_followups.py, changelog.d/BG1230.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -31,9 +31,14 @@ Warn when an agent already priced on another unit is returned again, correct the
 
 The per-unit priced figures can double count, and the docs mislead.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. One agent returned for two units books twice; workaround is to return it once.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
 | 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Evidence added: help/sprint.md:779 says "`--minutes` with no `--tokens` is not recorded and says so", which is false since `lane return --agent` with `--minutes` is recorded (reported by the BG1629 repair builder in run twenty-one) |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1241: US1122's price table leaves ten defensive branches unpinned, promises a date format its parser does not hold to, and prices a bare `cost()` call without the project's overrides
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, changelog.d/BG1241.md
@@ -33,8 +33,13 @@ Add one test per surviving branch. Refuse any effective date that is not literal
 - [ ] **AC4** Given the shipped table, when it is loaded, then Claude Mythos 5, Opus 4.5 and Sonnet 4.5 each price with a source and an effective date, the `claude-opus-5-5` note names its 0.05x cache read, and a `claude-haiku-5-5` total priced without a prompt size is marked a lower bound. Fails on: a reading on any of the three reporting not priced, or a long-prompt haiku figure shown as exact.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_the_shipped_table_prices_the_older_models_and_bounds_long_prompt_haiku
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Ten unpinned defensive branches in prices.py.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

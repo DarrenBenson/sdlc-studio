@@ -1,6 +1,6 @@
 # BG1637: gate.py's PyYAML refusal says a config is read as defaults, and its release and json routes are unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG1633.md
@@ -29,8 +29,13 @@ Reword the refusal and both docstrings to say a config-reading command refuses w
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read gate.py:3366-3367 and run gate.main over a fixture with a .config.yaml and yaml hidden, with `pyyaml_refusal` stubbed to None: it ends in PyYamlRequired...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Reword the refusal and both docstrings to say a config-reading command refuses without PyYAML, import `PYYAML_INSTALL` from `sdlc_md`, assert stdout is...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. PyYAML refusal text.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

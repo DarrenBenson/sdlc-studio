@@ -1,6 +1,6 @@
 # BG1042: The push preflight's tests leak SDLC_COVERAGE_PYTHON and leave its REFUSES mark and pytest's class unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .githooks/pre-push, tools/tests/test_pre_push_prereqs.py, changelog.d/BG1042.md
@@ -33,9 +33,14 @@ Set `SDLC_COVERAGE_PYTHON` to empty in the module's push env. Hide coverage and 
 - [ ] **AC4** The tag-push test hides coverage and PyYAML together and asserts the install route and the bypass the refusal names
   - **Verify:** pytest tools/tests/test_pre_push_prereqs.py::PushPrerequisiteTests::test_a_tag_push_names_the_install_route_and_the_bypass
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's push preflight tests.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

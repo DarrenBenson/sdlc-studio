@@ -1,6 +1,6 @@
 # BG1363: The US1000 report's price rows cite the config while their values come from the page's own price table
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py, changelog.d/BG1363.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -27,8 +27,13 @@ Reword to what the code does.
 - [ ] **AC1** Given the page or output named, its wording states only what the code does. Fails on: the over-claim the review quoted.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A price row cites the config for the page table.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1571: US1314's tests never pin a raise to a middle class, a story with several Affects files, the open-status scope, or the silent skip of a stamp apply cannot rewrite
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG1571.md
@@ -32,8 +32,13 @@ Add one test per edge; make apply print the stamp it could not rewrite.
 
 A later change to the drift kind could raise to the wrong class or rewrite a closed story with the tests still green.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Four untested edges.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

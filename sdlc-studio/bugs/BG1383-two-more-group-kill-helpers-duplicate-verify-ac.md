@@ -1,6 +1,6 @@
 # BG1383: Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Supersedes:** BG1419
 > **Severity:** Low
 > **Points:** 1
@@ -28,8 +28,13 @@ Route both through `_kill_group`.
 - [ ] **AC1** Given a mutation probe or a `_run_phase` child that ignores SIGTERM, when it times out, then the shared `_kill_group` ends it with SIGTERM first and then SIGKILL. Fails on: either site sending SIGKILL directly through its own copy.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_group_kill_shared.py::GroupKillSharedTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it is the residue of a fix that has already shipped. Duplicate group-kill closures left after the shipped fix.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

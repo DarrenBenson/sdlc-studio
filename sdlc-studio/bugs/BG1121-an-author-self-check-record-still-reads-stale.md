@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-config.md, sdlc-studio/reviews/author-self-checks.md, changelog.d/BG1121.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_hunk_binding.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py, .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-config.md, sdlc-studio/reviews/author-self-checks.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, changelog.d/BG1121.md
 > **Evidence:** BG1117 QA review round 1, qa-seat-BG1117-r1, at 57a2bb7a: blocking finding 1's cases and the pre-existing US1089 case. Reproduced at cecc9dfe through `critic.py brief` in a throwaway repository, 2026-11-24.
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio file
@@ -49,3 +49,4 @@ Authors re-record unchanged evidence in these orders, the churn BG1117 set out t
 | 2026-10-22 | Claude Opus 5.5 | Filed |
 | 2026-10-22 | sdlc | BG1117 round-2 QA review: help/review.md:48-49, the critic.py comment at 2690-2691 and the self-check log header (critic.py `_SELF_CHECK_HEADER` and author-self-checks.md) still say a record of committed work survives, which a cherry-pick after another unit's commit contradicts; the fix corrects them, and Affects gains the two doc files (critic.py is already declared) |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced both orders at cecc9dfe through `critic.py brief`; the order where another unit's hunk lands after the author's commit is already handled; criteria made executable with a guard against admitting an unrecorded hunk and a pages criterion; Affects gains reference-review.md and reference-config.md and drops test_critic.py; Points stay 3 |
+| 2026-11-24 | orchestrator | Affects gains tests/test_confinement.py: the fix's merge sides are written to a TemporaryDirectory for `git merge-file`, and the shared-write sweep needs its allowlist entry (the CR builder's full-suite run) |

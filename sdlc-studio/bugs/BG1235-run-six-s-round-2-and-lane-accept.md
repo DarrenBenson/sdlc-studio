@@ -1,6 +1,6 @@
 # BG1235: Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .githooks/pre-commit, changelog.d/BG1226.md, .claude/skills/sdlc-studio/scripts/tests/test_run_six_round_two_followups.py, changelog.d/BG1235.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -31,8 +31,13 @@ Pin each, correct the over-claimed sentence and the BG1226 fragment, validate ac
 
 Low: pins that cannot fail and late refusals.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. An unfailing help pin and unpinned counts.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1656: The consult's load step never classifies a flat Served card, and BG1535's tests accept the stakeholder declaration anywhere on the card
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_gen.py, tools/tests/test_persona_coherence.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_gen.py
@@ -27,8 +27,13 @@ Scan flat cards carrying the served declaration in `persona_gen`'s paths, and an
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Mark a flat persona card provisional and run `persona_gen.py` classify --root .: it is not listed.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Scan flat cards carrying the served declaration in `persona_gen`'s paths, and anchor both tests to the declaration line and the bullet.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A flat Served card is not classified by the consult; the operator can classify it by hand.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

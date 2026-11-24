@@ -1,6 +1,6 @@
 # BG1294: `sprint lane accept`'s stale-self-check refusal tells the operator to land the unit again, which `lane land` refuses after an out-of-band repair, and its refusal prints a doubled full stop
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1294.md
@@ -29,8 +29,13 @@ Name a remedy that works for an out-of-band repair: either re-record the self-ch
 - [ ] **AC2** Given a unit whose latest landing wrote no brief and whose no-brief note ends in a full stop, when `lane accept` refuses it, then the refusal holds no doubled full stop. Fails on: 'Nothing was written.. A verdict is recorded only'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_no_brief_refusal_prints_no_doubled_full_stop
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Refusal tells the operator to land again.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

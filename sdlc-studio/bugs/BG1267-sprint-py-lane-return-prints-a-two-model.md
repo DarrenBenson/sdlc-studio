@@ -1,6 +1,6 @@
 # BG1267: `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1267.md
@@ -30,8 +30,13 @@ Price the printed line from the reading's `by_model` when present, through the s
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_one_model_session_prints_its_model_and_figure
 - [ ] **AC3** Given the BG1244 entry in `CHANGELOG.md`, when it is read, then it says an empty `modelUsage` array was read as absent and a non-empty one raised. Fails on: the entry still saying every `modelUsage` array was formerly read as absent.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Printed lane run cost uses the larger model rate; an estimate line the final report prices correctly.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1134: US1095's cost check is pinned only on the older retro shape, cost-baseline add reports a row the median never uses, and its latest-five window has no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_baseline_rules.py, changelog.d/BG1134.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
@@ -35,8 +35,13 @@ Add a Keep/Stop/Try retro case to RetroCostCauseTests; make cost-baseline add re
 
 The cost check can regress on the retro shape every new run writes, and an operator can seed a row that does nothing while being told it was recorded.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. A correct cost check pinned on one retro shape.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-26 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

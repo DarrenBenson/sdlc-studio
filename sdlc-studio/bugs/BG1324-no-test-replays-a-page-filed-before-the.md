@@ -1,6 +1,6 @@
 # BG1324: No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1324.md
@@ -32,8 +32,13 @@ Add a replay test of a pre-basis page that the :3867 mutant fails; carry the bil
 - [ ] **AC3** Given a Copilot lane under request billing, when its return is recorded through `sprint.py lane return`, then the recorded reason is the request-billing one. Fails on: a test that copies the call it exercises staying green while the shipped verb is wrong.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_lane_return_run_through_the_verb_records_the_request_billing_reason
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. An unpinned replay and a missing reason line.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

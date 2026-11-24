@@ -1,6 +1,6 @@
 # BG1611: gate.py --red-run's regression path over-claims: a failing id that names no file files no bug, and a second red on a different test reuses the first bug without naming that test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py, changelog.d/BG1611.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -28,8 +28,13 @@ File the regression bug for any failing id, naming the id verbatim when it is no
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: `gate.py --red-run 9 --failed TestFoo` exits 2 with 'file it with `file_finding.py`'.
 - [ ] **AC3** The proposed fix lands, pinned by a test: File the regression bug for any failing id, naming the id verbatim when it is not a path, and record each further failing test of the same run on its bug; or...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Red-run over-claims in help.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

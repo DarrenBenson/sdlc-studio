@@ -1,6 +1,6 @@
 # BG1617: lane land --resume compares unit ids as raw strings, a landing stopped at rebase records no commit, and two refusals have no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_resume.py, changelog.d/BG1617.md
@@ -28,8 +28,13 @@ Normalise ids through `sdlc_md` before comparing, record the commit a rebase sto
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Stop a landing at its rebase, then read its land record: no commit is named.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Normalise ids through `sdlc_md` before comparing, record the commit a rebase stopped on, and test both refusals.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Resume id compare and untested refusals.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

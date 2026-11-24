@@ -1,0 +1,115 @@
+{
+  "unit": "BG1473",
+  "digest": "307aa47955e35ec1 at 3ca0174cc3d4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1473-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "read_tracked catches only JSONDecodeError",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    except (OSError, ValueError) as exc:  # ValueError: a JSONDecodeError or a UnicodeDecodeError",
+      "new": "    except (OSError, json.JSONDecodeError) as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::TrackedRecordTests::test_a_non_utf8_record_is_named_as_unreadable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record_unreadable answers None for a damaged record",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "        return str(exc)\n    return None\n\n\ndef awaiting_signature",
+      "new": "        return None\n    return None\n\n\ndef awaiting_signature",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::TrackedRecordTests::test_a_record_that_does_not_parse_is_named_and_one_that_does_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record_unreadable answers a reason for a readable record",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "        read_tracked(repo_root, run_id)\n    except RunStateError as exc:\n        return str(exc)",
+      "new": "        read_tracked(repo_root, run_id)\n        return 'x'\n    except RunStateError as exc:\n        return str(exc)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::TrackedRecordTests::test_a_record_that_does_not_parse_is_named_and_one_that_does_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a damaged record reads as unsigned",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "        return \"unreadable\" if run_state.record_unreadable(root, run) else \"unsigned\"",
+      "new": "        return \"unsigned\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unsigned or absent record reads as unreadable",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "        return \"unreadable\" if run_state.record_unreadable(root, run) else \"unsigned\"",
+      "new": "        return \"unreadable\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_an_unsigned_or_absent_record_still_awaits_its_signature",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable count is not kept",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "        if held in (\"unsigned\", \"unreadable\", \"unlisted\"):",
+      "new": "        if held in (\"unsigned\", \"unlisted\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the damaged path repeated per learning",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "            if damaged not in out[\"damaged\"]:\n                out[\"damaged\"].append(damaged)",
+      "new": "            out[\"damaged\"].append(damaged)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_several_learnings_of_one_damaged_record_name_its_path_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the damaged path not named",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "                     f\"carried: the run record at {', '.join(d.get('damaged') or [])} is \"",
+      "new": "                     f\"carried: the run record at {'?'} is \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the plural of the unreadable line is always singular",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "        one = d[\"unreadable\"] == 1",
+      "new": "        one = True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_several_learnings_of_one_damaged_record_name_its_path_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable line always plural",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "        one = d[\"unreadable\"] == 1",
+      "new": "        one = False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable line never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_memory.py",
+      "old": "    if d.get(\"unreadable\"):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record_unreadable without its run-id guard",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    if not run_id:\n        return None\n    try:\n        read_tracked(repo_root, run_id)\n    except RunStateError as exc:",
+      "new": "    try:\n        read_tracked(repo_root, run_id)\n    except RunStateError as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::TrackedRecordTests::test_a_record_that_does_not_parse_is_named_and_one_that_does_is_not",
+      "result": "survived",
+      "answer": "equivalent: with no run id the record path names no file, which reads as absent and answers None as the guard does"
+    }
+  ]
+}

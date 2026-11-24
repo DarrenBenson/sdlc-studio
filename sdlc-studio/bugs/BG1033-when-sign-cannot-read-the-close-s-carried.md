@@ -1,6 +1,6 @@
 # BG1033: When sign cannot read the close's carried rows it moves every unit, and the warning it prints has no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_unreadable_carried_rows.py, changelog.d/BG1033.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -30,9 +30,14 @@ Decide the branch (refuse to seal while the carried rows the page names cannot b
 
 Low: unreachable through the CLI today; if a later change makes it reachable, a carried unit would be moved with only a stderr line saying so.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. A correct warning has no test.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1712: Nine whole-file rewrites of tracked workspace files still truncate in place instead of going through sdlc_md.atomic_write, so an interrupted write can leave the file half-written
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/close_owed.py, .claude/skills/sdlc-studio/scripts/command_audit.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_close_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -28,8 +28,13 @@ Move each site onto `sdlc_md.atomic_write` (keeping its encoding and newline), e
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read `NOT_YET_MOVED` in .claude/skills/sdlc-studio/scripts/tests/`test_confinement.py` and the shared-file exceptions in sdlc-studio/trd.md; each named site...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Move each site onto `sdlc_md.atomic_write` (keeping its encoding and newline), empty `NOT_YET_MOVED`, and drop the not-yet-moved bullet from the TRD's...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Nine non-atomic rewrites; only an interrupted write at the wrong instant.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1651: The End-goal scope lint misdescribes `**` and suggests a replacement for a bare `**` that names no file
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/persona_goals.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py
@@ -29,8 +29,13 @@ Describe `**` as a single-segment wildcard, and for a bare `**` suggest the dire
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run validate.py personas on a card whose End goal says 'Applies-to: **': the suggested replacement is '/', and `sprint._component_names(`'/') matches nothing.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Describe `**` as a single-segment wildcard, and for a bare `**` suggest the directory form the card means (or name no replacement).
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Lint message misdescribes **.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1317: A Copilot `credit_usd` of 0 is accepted and prices every Copilot reading at $0, and reference-sprint.md's list of price sources omits the newer ones
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1317.md
@@ -30,8 +30,13 @@ Refuse a `credit_usd` that is not greater than 0 at load, naming the key, with a
 - [ ] **AC2** Given `templates/model-prices.json` and the sentence of `reference-sprint.md` that lists the table's sources, when the providers the table cites are compared with the sentence, then xAI, Cursor and GitHub Copilot are named with the rest. Fails on: a provider whose page the table cites being absent from the reference.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_the_reference_names_every_provider_the_shipped_table_cites
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A zero Copilot credit price is a misconfiguration; workaround is to set it.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

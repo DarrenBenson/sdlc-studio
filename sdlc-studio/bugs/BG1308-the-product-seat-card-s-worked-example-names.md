@@ -1,6 +1,6 @@
 # BG1308: The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/personas/seats/product.md, tools/tests/test_persona_coherence.py, changelog.d/BG1308.md
@@ -30,8 +30,13 @@ Re-point the worked example to the Primary the registry declares (Abena Osei) an
 - [ ] **AC2** Given a copy of the seat cards in which one calls a Secondary persona the Primary, when the check runs, then it fails naming the card and the persona, and the cards as committed pass. Fails on: a later change of Primary leaving a seat card behind with the suite green.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::SeatCardPrimaryTests::test_a_seat_card_calling_another_role_primary_is_refused
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's seat card.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

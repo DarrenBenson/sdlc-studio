@@ -1,6 +1,6 @@
 # BG1202: US0989's Cursor reader leaves two guards unpinned and names an empty usage for a malformed answer
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, changelog.d/BG1202.md
@@ -32,8 +32,13 @@ Assert the key alone does not signal Cursor, assert a negative count is refused,
 
 A later edit can make an exported Cursor key blank every Claude run's tokens, with the suite green.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Two guards unpinned.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

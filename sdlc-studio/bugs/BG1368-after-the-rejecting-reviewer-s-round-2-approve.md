@@ -1,6 +1,6 @@
 # BG1368: After the rejecting reviewer's round-2 APPROVE, rebrief_notice names a bare --rejoinder that exits 2
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py, changelog.d/BG1368.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -27,8 +27,13 @@ Correct the behaviour and pin it.
 - [ ] **AC1** Given the case the review named, the behaviour matches the documented rule. Fails on: the case as the review probed it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py::Run10FollowUpTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Notice names a bare flag.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,0 +1,34 @@
+{
+  "unit": "BG1598",
+  "digest": "a255824049beff14 at 3ca0174cc3d4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1598-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "NOT MEASURED dropped from _NO_MODEL",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "_NO_MODEL = (retro.MODEL_MIXED, retro.MODEL_UNRECORDED, UNMEASURED, NOT_MEASURED)",
+      "new": "_NO_MODEL = (retro.MODEL_MIXED, retro.MODEL_UNRECORDED, UNMEASURED)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_a_not_measured_model_figure_names_no_model",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the README row reads Copilot",
+      "file": "README.md",
+      "old": "| GitHub Copilot | `copilot` |",
+      "new": "| Copilot | `copilot` |",
+      "test": "tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_copilot_row_is_labelled_github_copilot",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the README row reads Copilot (the control pin)",
+      "file": "README.md",
+      "old": "| GitHub Copilot | `copilot` |",
+      "new": "| Copilot | `copilot` |",
+      "test": "tools/tests/test_install_copilot_global.py::CopilotGlobalTests::test_docs_do_not_call_copilot_repo_scoped",
+      "result": "survived",
+      "answer": "survives by design: the control pin matches the row by either label, so a relabel in either direction stays green"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1211: The shell-hazard check flags unittest's own assertion separator (the spaced colon after an assertion's operands) when a reviewer's finding quoting it is carried into a bug
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_shell_hazard_rate.py, changelog.d/BG1211.md
@@ -32,8 +32,13 @@ Exempt unittest's spaced-colon message separator after an assertion's operands f
 
 Every carry or finding that quotes a unittest failure turns the push gate red on a legitimate field.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Shell-hazard false positive on a quoted assertion; workaround is to rephrase the finding.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

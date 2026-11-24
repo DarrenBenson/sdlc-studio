@@ -1,6 +1,6 @@
 # BG1428: The per-unit dollars cell prices a unit's Grok agent read from a session total with no lower-bound label, and BG1391's changelog says the label holds wherever models are summed
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_usd_lower_bound.py, changelog.d/BG1391.md, changelog.d/BG1428.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -27,8 +27,13 @@ Carry the from-total model list into the per-unit pricing (`unit_agent_totals` k
 - [ ] **AC1** Given a unit with a booked Cursor agent and a Grok agent read from a session total, when the report's Estimates table prints, then that unit's dollars cell carries the lower-bound label. Fails on: the cell reading 'estimated' with no lower-bound reach.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_unit_usd_lower_bound.py::UnitUsdLowerBoundTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A lower-bound label on a per-unit dollar cell.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

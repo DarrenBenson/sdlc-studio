@@ -1,6 +1,6 @@
 # BG1602: sprint batch add takes an untriaged inbox bug without saying lane accept will refuse it Fixed until it is triaged
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_batch.py, changelog.d/BG1602.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -28,8 +28,13 @@ Have batch add refuse an inbox bug, or name the owed triage among the unit's unm
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a project on v3 ids, file a bug with `file_finding.py` file, `sprint.py batch add <id> --reason x`, land it and run `sprint lane accept` on an APPROVE: the...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Have batch add refuse an inbox bug, or name the owed triage among the unit's unmet close requirements as `sprint plan` does for `verify_ac`, so it is met when...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Batch add does not mention the inbox hold.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

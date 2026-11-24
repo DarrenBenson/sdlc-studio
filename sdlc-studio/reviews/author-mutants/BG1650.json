@@ -1,0 +1,151 @@
+{
+  "unit": "BG1650",
+  "digest": "42434f992d69a8d9 at b34879706b54",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1650-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "span ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        if not any(lo <= start < hi for lo, hi in spans):\n            return start",
+      "new": "        if True:\n            return start",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_an_unclosed_comment_opener_in_code_hides_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence checked inside comment",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        if not in_comment:\n            was_open",
+      "new": "        if True:\n            was_open",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_a_real_comment_and_a_fence_inside_a_comment_still_hide",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence content kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            if is_fence or was_open:\n                continue\n        while",
+      "new": "            if is_fence:\n                continue\n        while",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_a_real_comment_and_a_fence_inside_a_comment_still_hide",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence lines kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            if is_fence or was_open:\n                continue\n        while",
+      "new": "            if was_open:\n                continue\n        while",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_a_real_comment_and_a_fence_inside_a_comment_still_hide",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "span regex never matches",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "_CODE_SPAN_RE = re.compile(r\"(?<!`)(`+)(?!`).+?(?<!`)\\1(?!`)\")",
+      "new": "_CODE_SPAN_RE = re.compile(r\"(?!)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_an_unclosed_comment_opener_in_code_hides_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "multi-tick spans unmatched",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "(`+)(?!`)",
+      "new": "(`)(?!`)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::CommentInsideCodeTests::test_an_unclosed_comment_opener_in_code_hides_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "paragraph never ends goal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        elif was_blank and not line[0].isspace():",
+      "new": "        elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any line ends goal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        elif was_blank and not line[0].isspace():",
+      "new": "        elif not line[0].isspace():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "indented paragraph ends goal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        elif was_blank and not line[0].isspace():",
+      "new": "        elif was_blank:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank not tracked",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            after_blank = True\n            continue",
+      "new": "            after_blank = False\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank resets goal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            after_blank = True\n            continue",
+      "new": "            after_blank = True\n            current = None\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_nested_line_under_a_note_attaches_to_no_goal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "second replaces first",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "                    if current[\"verify\"] is None:",
+      "new": "                    if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "extras dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "                        current[\"extra_verifies\"] += (nested.group(2),)",
+      "new": "                        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "extra finding wrong rule",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "out.append((GOAL_VERIFY, n, f\"End goal {n}: a second Verify \"",
+      "new": "out.append((GOAL_SCOPE, n, f\"End goal {n}: a second Verify \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "extra finding skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        for extra in g.extra_verifies:",
+      "new": "        for extra in ():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference sentence dropped",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "A second nested Verify on one goal is also warned of (the first stands). ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::NestedLineAttachmentTests::test_a_second_verify_on_one_goal_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

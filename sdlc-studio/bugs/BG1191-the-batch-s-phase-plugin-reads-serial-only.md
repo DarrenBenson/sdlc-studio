@@ -1,6 +1,6 @@
 # BG1191: The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, changelog.d/BG1191.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -33,8 +33,13 @@ Read the mark in a hookwrapper around `pytest_collection_modifyitems`, after eve
 
 A project that marks a test `serial_only` from a late hook gets it run beside other tests in the batch, which is the isolation the mark exists to prevent.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A conftest trylast mark runs on a worker; rare and the test still runs.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-03 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

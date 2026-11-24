@@ -1,6 +1,6 @@
 # BG1421: verify_ac's revert check reads a missing runner binary as red rather than as no verdict
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_revert_check_missing_runner.py, changelog.d/BG1421.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -27,8 +27,13 @@ Tell a missing runner (the shell's 127 for the runner itself, not for a script i
 - [ ] **AC1** Given a Verify line whose runner binary is not on PATH, when the revert check runs it, then the line is reported as not judged, naming the missing runner, not as red. Fails on: a missing runner read as red.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_missing_runner.py::MissingRunnerTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A missing runner reads red; workaround is to install the runner.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

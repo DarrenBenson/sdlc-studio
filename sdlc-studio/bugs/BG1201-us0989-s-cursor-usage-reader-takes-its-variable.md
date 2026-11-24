@@ -1,6 +1,6 @@
 # BG1201: US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Ruling:** D0536 (operator, 2026-11-19): deferred - kept open but out of the next runs until a Cursor user reports a reading; the reader fails safe meanwhile.
 > **Severity:** Low
 > **Points:** 1
@@ -34,8 +34,13 @@ Confirm the names and the shape on a real Cursor cloud run, and adopt Cursor's o
 
 A Cursor cloud run may read NOT MEASURED until the operator sets the agent id by hand, which is the gap CR0611 exists to close.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Cursor reader uses documented API shape; unmetered readings show as unpriced and the operator can state tokens.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

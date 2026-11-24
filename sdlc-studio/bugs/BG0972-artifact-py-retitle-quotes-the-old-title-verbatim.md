@@ -1,6 +1,6 @@
 # BG0972: `artifact.py retitle` quotes the old title verbatim in its revision row, so a retitle made to remove an em dash or a bare identifier puts it straight back
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_revision_row.py, changelog.d/BG0972.md
@@ -29,8 +29,13 @@ Write the old title into the row in a form that passes the same lanes as a title
 - [ ] **AC2** Retitling one whose old title holds a bare `snake_case` identifier leaves a file markdownlint passes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_revision_row.py -k retitle_row_passes_markdownlint
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. The revision row quotes the old title as typed; a cosmetic record.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

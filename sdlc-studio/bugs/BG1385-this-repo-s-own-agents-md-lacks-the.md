@@ -1,6 +1,6 @@
 # BG1385: This repo's own AGENTS.md lacks the template's 'Integrate continuously' line, so validate.py check warns here
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** AGENTS.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_own_agents_md_integration_line.py, changelog.d/BG1385.md
@@ -27,8 +27,13 @@ Add the line in under the character cap, or record the exemption.
 - [ ] **AC1** Given this repo's AGENTS.md, when `validate.py check` runs, then it raises no integration-rule warning and AGENTS.md stays within 7,000 characters. Fails on: the warning printed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_own_agents_md_integration_line.py::OwnAgentsMdIntegrationLineTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's AGENTS.md.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

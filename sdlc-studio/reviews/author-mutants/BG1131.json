@@ -1,0 +1,52 @@
+{
+  "unit": "BG1131",
+  "digest": "52a46b2176d67221 at 3ca0174cc3d4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1131-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the legacy branch never reads the closing transcript",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if run and not (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):",
+      "new": "    if False and run and not (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_checklist_cost_paths.py::CloseChecklistCostPathsTests::test_a_legacy_baseline_only_run_reads_as_the_page_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the closing transcript is read only for a run holding stamps",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if run and not (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):",
+      "new": "    if run and (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_checklist_cost_paths.py::CloseChecklistCostPathsTests::test_a_legacy_baseline_only_run_reads_as_the_page_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rebased note dropped from the cost detail",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    rebased = (f\"; {run_state.rebased_note(total)}\" if run_state.rebased_note(total) else \"\")",
+      "new": "    rebased = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_checklist_cost_paths.py::CloseChecklistCostPathsTests::test_the_cost_detail_names_the_re_derivation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rebased note always printed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    rebased = (f\"; {run_state.rebased_note(total)}\" if run_state.rebased_note(total) else \"\")",
+      "new": "    rebased = \"; \" + run_state.rebased_note({\"rebased\": 1})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_checklist_cost_paths.py::CloseChecklistCostPathsTests::test_a_total_that_re_derived_nothing_names_no_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the legacy branch taken for a run with no baseline at all",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if run and not (run.get(run_state.TOKEN_STAMPS) or []) and run.get(run_state.TOKEN_BASELINE):",
+      "new": "    if run and not (run.get(run_state.TOKEN_STAMPS) or []):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_checklist_cost_paths.py::CloseChecklistCostPathsTests::test_a_legacy_baseline_only_run_reads_as_the_page_does",
+      "result": "survived",
+      "answer": "equivalent here: run_token_total reads no closing reading when no baseline is held, so only a wasted transcript read differs"
+    }
+  ]
+}

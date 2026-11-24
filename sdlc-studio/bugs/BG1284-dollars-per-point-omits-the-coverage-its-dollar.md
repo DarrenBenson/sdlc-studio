@@ -1,6 +1,6 @@
 # BG1284: Dollars per point omits the coverage its dollar figure has, and the Priced cost row's reach sentence uses Claude-transcript wording for every harness
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1284.md
@@ -29,8 +29,13 @@ Append `_usd_reach(got)` to the Dollars per point basis. Phrase the Priced cost 
 - [ ] **AC2** Given a run a harness other than Claude metered (a Codex reading), when the report renders the Priced cost row, then its reach is phrased from that harness's meter and does not say a subagent's transcript was not read, while a run Claude alone metered keeps the wording it has. Fails on: Claude-transcript wording on a Copilot, OpenCode, Codex or Cursor run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_the_priced_cost_reach_names_the_harness_that_metered_the_run
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Basis and reach sentence wording on the dollar report.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

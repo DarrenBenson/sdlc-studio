@@ -1,6 +1,6 @@
 # BG0992: BG0989's approved repair leaves three branches unpinned, and its docs over-claim which commands move the legacy lessons log
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_committed.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/help/lessons.md, changelog.d/BG0989.md, changelog.d/BG0992.md
@@ -35,6 +35,10 @@ Add the three tests, each with its named mutant; say in the docstring that a gis
 - [ ] **AC5** `default_project_file`'s read fallback (a legacy log and no committed one returns the legacy path, so an unmigrated project's gate lanes and plan digest still read it) is pinned by a test of its own, which fails when the fallback is dropped
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_log_followups.py -k legacy_log_is_read_until_moved
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Three branches of a correct repair lack a test and a doc over-claims.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -42,3 +46,4 @@ Add the three tests, each with its named mutant; say in the docstring that a gis
 | 2026-10-08 | sdlc-studio | Filed |
 | 2026-10-08 | Claude Opus 5.5 (triage) | AC5 added from BG0994's QA review: the read fallback has no test of its own once test_lessons.py seeds the committed path, and is caught only as a side effect of other modules' legacy fixtures. Points 2 -> 3 |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

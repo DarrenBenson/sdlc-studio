@@ -1,6 +1,6 @@
 # BG1285: A non-UTF-8 legacy OpenCode message file is refused as 'raised UnicodeDecodeError', and a Cursor cloud reading's stamps are given the wrong unpriced reason
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_opencode.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG1285.md
@@ -29,8 +29,13 @@ Catch ValueError beside OSError in messages() and refuse naming the message. Giv
 - [ ] **AC2** Given a run whose stamps come from a harness reading that carries no components (a Cursor cloud reading), when the run total is formed, then `priced` is None and `priced_reason` says the harness's reading carries no components, while a stamp written before the meter priced each component keeps the reason it has. Fails on: a current harness reading reported as a stamp 'written before the meter priced each component'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_a_reading_without_components_is_not_called_a_legacy_stamp
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Refusal reason text for a non-UTF-8 legacy file.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

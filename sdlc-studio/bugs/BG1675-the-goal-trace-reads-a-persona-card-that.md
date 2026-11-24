@@ -1,6 +1,6 @@
 # BG1675: The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,8 +27,13 @@ Read cards in the goal trace with replacement (`validate.read_card)`, so the car
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Put a 0xe9 byte in a traced persona card (Jonah Reyes) and run sprint.py goal-review brief --goal 'Jonah Reyes upgrades without a surprise': the brief names no...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Read cards in the goal trace with replacement (`validate.read_card)`, so the card still names its persona and the card-not-utf8 hold refuses the brief; pin it...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A non-UTF-8 persona card reads as empty; workaround is to save it as UTF-8.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

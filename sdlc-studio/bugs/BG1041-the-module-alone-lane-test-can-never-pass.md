@@ -1,6 +1,6 @@
 # BG1041: The module-alone lane test can never pass on a host with fewer than four cores, and blames the pool for it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG1041.md
@@ -30,9 +30,14 @@ Require the overlap to reach min(`n_sleepers`, the pool's size as the lane repor
 
 Low: a contributor on a two-core machine sees the push gate red for a reason that is not true.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's gate test on hosts under four cores.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

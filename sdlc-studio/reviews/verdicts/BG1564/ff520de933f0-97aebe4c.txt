@@ -1,0 +1,6 @@
+UNIT: BG1564
+BRIEF: ff520de933f0-97aebe4c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Light-tier pass. test_plan.py runs green once (16 passed, 10 subtests) and verify_ac dry-run is 3/3. The two new tests run against the base code fail (11 failed, the happy path green as its positive control), so they can fail. Claim inventory, each run in a throwaway fixture: the changelog's "Before, `../CLAUDE` moved a file beside the plans directory into the archive folder" is TRUE (at the base ref it exited 0 and the file landed at `plans/archive/CLAUDE.md`)\; at HEAD the same call exits 1 with `error: slug '../CLAUDE' must be one plain plan name ...`, the file stays put and no archive folder is made\; a plain slug still moves into `archive/2026-11/` and exits 0\; the docstring's "refused with exit 1 before anything is read or moved" is TRUE, the guard is the first statement of cmd_archive. The author's nine replayed mutants were killed. The change touches only cmd_archive's slug, its tests and the fragment.

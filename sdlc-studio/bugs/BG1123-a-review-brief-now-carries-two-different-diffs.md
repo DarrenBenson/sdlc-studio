@@ -1,6 +1,6 @@
 # BG1123: A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD)
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_base_ref.py, changelog.d/BG1123.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -31,8 +31,13 @@ Make the scope line print the same base-to-HEAD command the section holds, and u
 
 A reviewer can judge a different diff from the one the brief embeds.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Brief shows two diff commands; both are correct for their purpose.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

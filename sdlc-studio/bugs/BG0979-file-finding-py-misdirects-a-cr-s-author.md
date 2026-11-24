@@ -1,6 +1,6 @@
 # BG0979: `file_finding.py` misdirects a CR's author: `--recommendation` is documented as RFC-only though a CR carries it, and the no-verifier warning cites a `sprint plan` refusal that never applies to a CR
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_cr_filing_guidance.py, changelog.d/BG0979.md
@@ -29,8 +29,13 @@ Document `--recommendation` for both CR and RFC, and for a CR replace the warnin
 - [ ] **AC2** Filing a CR with prose criteria does not print the sprint-plan refusal warning, and filing a bug without verifiers still does
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cr_filing_guidance.py -k cr_criteria_warning_points_to_refine
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Help text calls a flag RFC-only and a warning cites the wrong file.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

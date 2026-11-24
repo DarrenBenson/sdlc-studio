@@ -1,6 +1,6 @@
 # BG1142: doc-freshness is described as a LATEST.md check everywhere, though it now censuses the TRD, PRD and TSD; one hook comment lists it as a per-commit lane
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/doc_freshness.py, .claude/skills/sdlc-studio/reference-scripts-verify.md, .githooks/pre-commit, tools/tests/test_lean_spec_restatements.py, changelog.d/BG1142.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py
@@ -37,8 +37,13 @@ Label each finding by the document it came from. Describe the census in the refe
 
 Readers of the gate, the docs and the hook are told a narrower story than the code runs, which is the drift the census exists to catch (LC-018).
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Doc-freshness described as LATEST.md-only in four places.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-31 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

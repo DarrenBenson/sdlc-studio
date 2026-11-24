@@ -1,6 +1,6 @@
 # BG1232: The lane brief's budget and hand-in: no-Points untested, one shared hand-in for a multi-unit lane, and US1093's stale story text
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_followups.py, changelog.d/BG1232.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -31,8 +31,13 @@ Pin the no-Points branch, give a multi-unit lane one budget and per-unit hand-in
 
 A multi-unit lane following the brief literally lands every unit under one subject.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Untested no-Points branch and a stale story text.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

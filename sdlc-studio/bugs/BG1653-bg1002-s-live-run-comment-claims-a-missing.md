@@ -1,6 +1,6 @@
 # BG1653: BG1002's _live_run comment claims a missing run state is handled, and four branches of the live-run read have no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -29,8 +29,13 @@ Make the comment say what the code catches, and add a test per branch.
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read `_live_run` in sprint.py at a011a415 against its comment; mutate each of the four branches the verdict names and run...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Make the comment say what the code catches, and add a test per branch.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. A comment and four untested branches.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

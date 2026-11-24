@@ -1,6 +1,6 @@
 # BG1315: `help/sprint.md` still names a lane hand-in `<unit>-claims.json` under the id as typed, which BG1303's landing now keys by the normalised id, and `refine seams` still pairs a schema-3 unit with itself
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1315.md
@@ -30,8 +30,13 @@ Say in help/sprint.md that the hand-in names use the normalised id (`lanes.hand_
 - [ ] **AC2** Given the two passages of `help/sprint.md` that describe a lane's hand-in, when they are read beside `lanes.hand_in_names` for a hyphenated schema-3 id, then each says the file names use the normalised id, and the names the help gives are the ones `lane land` reads. Fails on: the help naming `<unit>-claims.json` under the id as typed, so a builder writes a file the landing does not read.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_help_names_the_hand_in_files_by_the_normalised_id
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Help names a hand-in file by the id as typed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1573: The second-seat refusal past the round cap names a seat that does not exist when the reviewer id carries no seat word
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1573.md
@@ -32,8 +32,13 @@ When no seat can be read from the reviewer id, say so and print the id as given.
 
 The operator reads a seat name that does not exist and cannot tell which seat was refused.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Refusal names a seat for an id with no seat word.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

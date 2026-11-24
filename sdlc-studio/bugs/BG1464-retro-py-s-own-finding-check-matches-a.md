@@ -1,6 +1,6 @@
 # BG1464: retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, changelog.d/BG1464.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
@@ -33,8 +33,13 @@ Treat a bug as the approval's own finding only when the approving row's finding 
 - [ ] **AC3** Given a bug whose Evidence names a review but not the charged unit, and one whose Evidence names the unit but no review, when `retro.py seats` runs, then each is charged as missed. Fails on: either guard of `_own_finding` removed with every test still green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_evidence_missing_the_unit_or_the_review_is_a_miss
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. An own-finding check and two untested guards.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

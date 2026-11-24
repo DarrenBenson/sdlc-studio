@@ -1,6 +1,6 @@
 # BG1150: sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, changelog.d/BG1150.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -33,8 +33,13 @@ Reword the three strings to name what holds today: the series that .githooks/com
 
 A plan's printed cost basis and two comments describe a lane that no longer exists, and readers quote them as fact (LC-018).
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A string mentions a deleted budget lane.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1231: lane land: exit 1 documented too narrowly, two test gaps, a false --units help line, and an unscrubbed git environment
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_followups.py, changelog.d/BG1231.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -31,8 +31,13 @@ Document every exit-1 case, pin the refused-commit stop and the tier, correct th
 
 Misleading docs and two behaviours no test holds.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Exit-code doc and two test gaps.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

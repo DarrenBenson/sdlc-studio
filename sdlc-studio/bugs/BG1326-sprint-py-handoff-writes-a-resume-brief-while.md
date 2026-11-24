@@ -1,6 +1,6 @@
 # BG1326: `sprint.py handoff` writes a resume brief while a lane is still in flight, so the wave boundary reference-sprint.md defines is stated but not enforced, and four files still say no command writes a handoff
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/help/handoff.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py, changelog.d/BG1326.md
@@ -32,8 +32,13 @@ Have `sprint.py handoff` refuse (or, under a flag, warn) when `at_wave_boundary`
 - [ ] **AC3** Given `help/handoff.md`, `reference-scripts-domain.md` and `handoff.py`'s docstring and parser description, when each sentence saying no command writes a handoff is read, then it names `sprint.py handoff` and the resume brief beside the retired handoff record. Fails on: a page telling a reader nothing writes a handoff while `sprint.py handoff` does.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py::WaveBoundaryDocTests::test_no_page_says_no_command_writes_a_handoff_without_naming_the_resume_brief
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Handoff mid-wave is stated not enforced; workaround is to wait for the wave.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

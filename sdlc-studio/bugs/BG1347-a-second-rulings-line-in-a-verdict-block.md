@@ -1,6 +1,6 @@
 # BG1347: A second RULINGS: line in a verdict block is silently dropped
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_rulings_lines.py, changelog.d/BG1347.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -27,8 +27,13 @@ Add the pin.
 - [ ] **AC1** Given the behaviour named, a test fails when it is broken. Fails on: the surviving mutant the review named.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_rulings_lines.py::RulingsLinesTests::test_a_second_rulings_line_is_kept_or_refused
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A second RULINGS line is dropped; workaround is one line.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1676: reconcile stops on an index that is not UTF-8 without naming the file or how to fix it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_index_not_utf8.py, changelog.d/BG1676.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
@@ -28,8 +28,13 @@ Read index files through `sdlc_md.read_text_safe`, or catch UnicodeDecodeError i
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a fresh git repository, write sdlc-studio/bugs/_index.md with a table row whose title holds the byte 0xe9, then run reconcile.py detect --root <repo>.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Read index files through `sdlc_md.read_text_safe`, or catch UnicodeDecodeError in `_dead_row_links`, and refuse naming the index path, the line and the remedy...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Reconcile stops on a non-UTF-8 index without the file name; workaround is the error's byte offset.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

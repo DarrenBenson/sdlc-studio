@@ -1,6 +1,6 @@
 # BG1218: A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_corpus_cache.py, changelog.d/BG1218.md, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -32,9 +32,14 @@ Memoise the affect keys per corpus walk, and run the self-check gate before rend
 
 Every review brief costs 5 to 13 s of a run, and a refused one costs the same for nothing.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A brief takes 5 to 13 s; slow but correct.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
 | 2026-11-04 | sdlc-studio | Retitled: was "A critic brief spends most of its 5 to 13 s in `unit_corpus`'s per-unit `_affect_key` parse, and a refused brief still renders before the self-check gate" |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

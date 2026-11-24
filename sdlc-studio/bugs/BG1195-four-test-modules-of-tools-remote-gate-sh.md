@@ -1,6 +1,6 @@
 # BG1195: Four test modules of tools/remote-gate.sh name no test-census-subject, so a commit to the script runs only one of the five
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_remote_gate_push.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_run_suite_remote.py, changelog.d/BG1195.md
@@ -32,8 +32,13 @@ Add the script as a `test-census-subject` in each of the four modules.
 
 A defect in remote-gate.sh that only those four modules catch passes the commit and is first seen at the push gate.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's test census for tools/remote-gate.sh.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

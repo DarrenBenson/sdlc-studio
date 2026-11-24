@@ -1,6 +1,6 @@
 # BG1457: The seat record reads any bracketed word as a seat, lane brief --seat accepts any value, and retro seats counts rounds across deliveries
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_seat_record_edges.py, changelog.d/BG1457.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -28,8 +28,13 @@ Read a seat only from the project's declared seats (`persona_resolve)`; refuse a
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_seat_record_edges.py::SeatRecordEdgeTests
 - [ ] **AC2** Given `lane brief --seat` naming an undeclared seat, when it runs, then it refuses naming the declared seats. Fails on: acceptance.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Seat record reads any bracketed word; a reporting edge.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

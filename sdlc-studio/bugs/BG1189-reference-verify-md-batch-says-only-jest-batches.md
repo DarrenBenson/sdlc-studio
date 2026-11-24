@@ -1,6 +1,6 @@
 # BG1189: reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-verify.md, changelog.d/BG1189.md
@@ -32,8 +32,13 @@ Rewrite the section to say which runners batch today, which command uses each, a
 
 A consuming project reading the reference believes its pytest criteria spawn one by one and plans its gate budget on that.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Reference says only jest batches; the doc under-describes a working feature.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-03 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

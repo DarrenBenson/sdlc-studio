@@ -1,6 +1,6 @@
 # BG0980: Filing refuses a `-k` selector for a test the fix will add to an existing module without naming the node-id form it would accept, so authors scatter one-test files
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG0980.md
@@ -29,6 +29,10 @@ Judge a selector the same way whatever is installed, and treat a test the unit w
 - [ ] **AC2** A selector naming a near-miss of an existing test is still refused
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_selector_for_a_new_test.py -k near_miss_is_refused
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Refusal could name the accepted node-id form; the refusal itself is correct.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -36,3 +40,4 @@ Judge a selector the same way whatever is installed, and treat a test the unit w
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-21 | sdlc-studio | Retitled: was 'Filing refuses a Verify selector for a test the fix will add to an existing module, accepts the same selector into a new file, and judges neither without pytest' |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

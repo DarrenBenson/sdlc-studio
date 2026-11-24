@@ -1,6 +1,6 @@
 # BG1110: backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_backlog_triage.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_distinct_pairs.py, changelog.d/BG1110.md
@@ -31,8 +31,13 @@ Let a unit declare the distinct pair, for example a `Distinct from: US1037` fiel
 
 Every triage pays to re-judge the same pairs, and the lens's real findings are diluted by notes nobody can clear.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A triaged distinct pair is re-reported; workaround is to ignore the repeat line.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1597: docs/harnesses.md's install-path check accepts the global and project folders in either order, its Claude Code live-reload cell rests on one CLAUDE.md sentence, and two cells cite a file that does not hold the claim
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** docs/harnesses.md, tools/tests/test_harness_matrix_doc.py, changelog.d/BG1597.md
@@ -30,8 +30,13 @@ Compare the install paths in order; mark the live-reload cell as from maintainer
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Swap the two install paths in the Claude Code row of docs/harnesses.md and run tools/tests/`test_harness_matrix_doc.py`: it passes.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Compare the install paths in order; mark the live-reload cell as from maintainer use or untested; cite `run_state.py` and sprint.py where the claims live.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's docs/harnesses.md test.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

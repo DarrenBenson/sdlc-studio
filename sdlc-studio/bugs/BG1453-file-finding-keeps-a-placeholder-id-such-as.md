@@ -1,6 +1,6 @@
 # BG1453: file_finding keeps a placeholder id such as changelog.d/BGXXXX.md in Affects verbatim instead of substituting the minted id or refusing it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_placeholder.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1453.md
@@ -27,8 +27,13 @@ Substitute the minted id for an XXXX placeholder in Affects, or refuse the place
 - [ ] **AC1** Given a fields file whose Affects names changelog.d/BGXXXX.md, when the finding is filed, then its Affects names changelog.d/<minted id>.md or the filing is refused. Fails on: the placeholder kept.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_placeholder.py::FileFindingPlaceholderTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A placeholder id left in Affects; workaround is to write the real id.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

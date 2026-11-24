@@ -1,6 +1,6 @@
 # BG1100: gate.py's verify ceiling still calls 300 s CI's figure, though corpus-verify now runs every criterion under 450 s
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/templates/workflows/release-gate.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_release_verify_ceiling_ci.py, changelog.d/BG1100.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -31,9 +31,14 @@ Read the default from the workflow's figure, or set it to 450 and pin the two eq
 
 A slow developer machine reads red at release what CI reads green, the drift the default was set to prevent.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. A comment calls 300 s CI's figure.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

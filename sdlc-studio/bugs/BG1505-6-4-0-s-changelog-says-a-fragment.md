@@ -1,6 +1,6 @@
 # BG1505: 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** CHANGELOG.md, .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, changelog.d/BG1505.md
@@ -30,8 +30,13 @@ Say in the CHANGELOG sentence that a dash, star or plus item folds unchanged (or
 - [ ] **AC2** Given a prose fragment whose first line is prose and whose later lines carry a list item at column 0, when compose folds it, then the entry opens with one dash and every later line, the list item included, is indented under it. Fails on: a matcher that searches every line for a list item and so leaves the prose entry without its bullet.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::ComposeBulletTests::test_a_prose_entry_with_a_later_column_0_list_item_still_gets_its_bullet
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Changelog line over-claims.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1219: migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/migrate.py, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, changelog.d/BG1219.md
@@ -27,6 +27,7 @@ Clean the bytecode directory from an atexit hook or a parent-death signal as wel
 
 - [ ] **AC1** Given a `migrate.py run` whose collection guard has made its `sdlc-migrate-pyc-*` directory, when the process is killed with SIGKILL, then a later `migrate.py` start under the same TMPDIR removes the stale directory (a dead owner's) and leaves a live run's directory alone. Fails on: the directory left behind: SIGTERM is handled at migrate.py line 1132 but no hook runs on SIGKILL or on the timeout wrapper being killed by verify_ac.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

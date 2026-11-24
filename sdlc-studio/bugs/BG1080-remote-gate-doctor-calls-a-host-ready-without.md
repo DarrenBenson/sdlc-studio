@@ -1,6 +1,6 @@
 # BG1080: remote-gate doctor calls a host ready without checking flock and setsid, which every push run on it needs
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_doctor_runtime.py, changelog.d/BG1080.md
@@ -31,8 +31,13 @@ Check every executable `cmd_remote` calls on the host (flock, setsid, and the re
 
 The one command that says a host is ready can say so of a host that cannot judge a push.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. Tools/remote-gate.sh doctor.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

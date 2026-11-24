@@ -1,6 +1,6 @@
 # BG1604: sprint plan takes the stories of an untriaged inbox CR, and only the close refuses to derive the CR Complete
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1604.md
@@ -28,8 +28,13 @@ Have `refine` (or `sprint plan`, for a batch whose units descend from an inbox r
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: File a CR with `file_finding` (inbox), refine it into an epic and stories, plan and deliver them, then run `sprint close --dry-run`: the close names the CR as...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Have `refine` (or `sprint plan`, for a batch whose units descend from an inbox request) say that the request's triage is owed and print the transition command...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Plan does not mention the inbox CR hold.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

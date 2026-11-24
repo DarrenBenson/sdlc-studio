@@ -1,6 +1,6 @@
 # BG1233: The Cursor hook ledger: mid-run creation or deletion misreads the run, deep nesting is fatal, and the text cut is untested
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/cursor_usage_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor_ledger_edges.py, changelog.d/BG1233.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
@@ -31,8 +31,13 @@ Read a ledger that appears or shrinks mid-run as uncovered rather than as spend,
 
 A Cursor run's measured figure can be wrong in these cases.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Cursor hook ledger edge cases; Cursor only and the reading degrades to unpriced.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

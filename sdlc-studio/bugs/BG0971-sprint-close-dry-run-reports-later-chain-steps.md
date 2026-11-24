@@ -1,6 +1,6 @@
 # BG0971: sprint close --dry-run reports later chain steps in the past tense ('lessons lifted', 'summary regenerated', 'anchor refreshed') although nothing was written
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_wording.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0971.md
@@ -31,6 +31,10 @@ Render dry-run step results conditionally: 'would lift N lessons', 'would gradua
 
 - Reproduced at 8b844a80 by the code path: the step functions return fixed past-tense messages (sprint.py:4735, 4778) and the dry run reuses them. Since US0887 (2026-09-24). Reconcile's BG0557 advisory dismissed: BG0557 fixed a dry-run STOP the real close did not raise, not this wording.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Dry-run step lines use past tense; the dry run is already labelled and correct.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -38,3 +42,4 @@ Render dry-run step results conditionally: 'would lift N lessons', 'would gradua
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

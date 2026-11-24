@@ -1,6 +1,6 @@
 # BG1271: `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start budget as none, and leaves three boundaries and an AC2 pin loose
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG1271.md
@@ -33,8 +33,13 @@ Record `started_at` with the precision the transcripts carry, or attribute a cal
 - [ ] **AC4** Given `reference-epic.md`'s wave prose, when the spawn-site test reads it, then it holds the sentence that launches the first agent alone and the rest once it has started. Fails on: that sentence replaced with 'Launch every agent of the wave together.' passing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::SpawnSiteTests::test_the_epic_prose_launches_the_first_agent_alone
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Anatomy edge cases at the second; a diagnostic view only.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

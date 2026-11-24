@@ -1,6 +1,6 @@
 # BG1488: reference-outputs.md still calls Deferred a story terminal status at lines 134, 745 and 755, against its own Story row and sdlc_md.TERMINAL_STATUS
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py, changelog.d/BG1488.md
@@ -29,8 +29,13 @@ Move Deferred out of the terminal list on the page, and say that the epic cascad
 - [ ] **AC2** Given a copy of the corrected page with Deferred put back in the cascade's terminal list, when the same comparison runs over the copy, then it fails naming story and Deferred. Fails on: a check that reads only the status table and so passes the old prose.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_deferred_restored_to_the_cascade_prose_is_named
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Reference-outputs still calls Deferred a story terminal status.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG0996: The finding filer's identifier wrapper pulls trailing punctuation into the code span: (`API_KEY_2`, `TOKEN_V2)` and `keep_alive.`
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG0996.md
@@ -26,8 +26,10 @@ End the wrapped token at the identifier's last word character: strip trailing `.
 
 - [ ] **AC1** Given the text `keys carry digits (API_KEY_2, TOKEN_V2) is reported` and `ends with keep_alive.`, when `file_finding._md_safe` wraps it, then each identifier is wrapped without the trailing `)` or `.`. Fails on: `TOKEN_V2)` and `keep_alive.` wrapped with the punctuation inside the span (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py -k trailing_punctuation_outside_span
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given `uses resolve_canonical(x) and f(a_b).`, when `_md_safe` wraps it, then a call keeps its balanced parentheses and the sentence's full stop stays outside the span. Fails on: a fix that strips every `)` and so breaks a call's own parentheses.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py -k balanced_call_keeps_its_parentheses
+  - **Verified:** yes (2026-11-24)
 
 ## Triage
 

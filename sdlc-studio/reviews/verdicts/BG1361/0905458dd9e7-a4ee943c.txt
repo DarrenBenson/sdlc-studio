@@ -1,0 +1,6 @@
+UNIT: BG1361
+BRIEF: 0905458dd9e7-a4ee943c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged on the one-line `_lane_yield_section` hunk, the two new LaneYieldTests, the widened pin in test_lane_yield_frozen.py and the fragment. verify_ac --dry-run: ac=2 pass=2. Both modules: 12 passed. Claim inventory: both fragment sentences are TRUE by execution. The `_lane_yield_section` docstring already said the frozen note names the closing clone's log, and it is now TRUE. Signed pages: RPT0029-RPT0033 carry the old "this clone's" wording, and `sprint_report.py check --report RPT0033` reads VALID at both base 3994fa77 and HEAD, because the section is outside the digest. My mutants: reword the frozen sentence away from "closing clone's" (KILLED). Add a "this clone's refusal log" sentence to the live branch: SURVIVED in isolation, but it adds no closing-clone sentence, which is all AC2 forbids, and the sentence is true of a live tally, so it is not a finding. The remaining "this clone's" uses (sprint.py:11516, sprint_report.py:5517 and 5576) describe the close reading its own clone, which is accurate there.

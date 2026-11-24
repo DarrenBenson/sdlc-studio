@@ -1,6 +1,6 @@
 # BG1408: sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_land_refusal_text.py, changelog.d/BG1408.md
@@ -27,8 +27,13 @@ Correct the text and pin the discard.
 - [ ] **AC1** Given a hook refusal after the replay, when the text prints, then it states what is left. Fails on: the as-they-were claim.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_land_refusal_text.py::LandRefusalTextTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Docstring says worktree and main are as they were.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

@@ -1,0 +1,70 @@
+{
+  "unit": "BG0996",
+  "digest": "9b3234c84840bb64 at b34879706b54",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG0996-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "old wrapper",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "_MD_TOKEN_RE.sub(_wrap_token, p)",
+      "new": "_MD_TOKEN_RE.sub(r\"`\\1`\", p)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_trailing_punctuation_outside_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dot kept in span",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "while token[-1] == \".\" or (",
+      "new": "while (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_trailing_punctuation_outside_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "paren never moved",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(token[-1] == \")\" and token.count(\")\") > token.count(\"(\")):",
+      "new": "False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_trailing_punctuation_outside_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every paren moved",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(token[-1] == \")\" and token.count(\")\") > token.count(\"(\")):",
+      "new": "(token[-1] == \")\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_balanced_call_keeps_its_parentheses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unbalanced compare >=",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "token.count(\")\") > token.count(\"(\")",
+      "new": "token.count(\")\") >= token.count(\"(\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_balanced_call_keeps_its_parentheses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tail lost",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return f\"`{token}`{tail}\"",
+      "new": "return f\"`{token}`\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_trailing_punctuation_outside_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tail order",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "token, tail = token[:-1], token[-1] + tail",
+      "new": "token, tail = token[:-1], tail + token[-1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_md_safe_punctuation.py::MdSafePunctuationTests::test_trailing_punctuation_outside_span",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

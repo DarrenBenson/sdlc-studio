@@ -1,6 +1,6 @@
 # BG1699: lane land's commit bound is a fixed 1800 seconds that no setting or flag changes, so a lane whose commit selects most of the suite is stopped whenever the host is loaded
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,8 +27,13 @@ Read the bound from a setting (for example `lanes.commit_timeout` in config-defa
 - [ ] **AC1** The behaviour described is corrected: sprint lane land commits through the repository's hooks under `COMMIT_TIMEOUT`, a constant 1800 s in lib/lanes.py that no config key or flag overrides.
 - [ ] **AC2** The proposed fix lands, pinned by a test: Read the bound from a setting (for example `lanes.commit_timeout` in config-defaults.yaml, default 1800) and a --commit-timeout flag on lane land, and name...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. The commit bound is fixed at 1800 s; workaround is to commit by hand.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-22 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

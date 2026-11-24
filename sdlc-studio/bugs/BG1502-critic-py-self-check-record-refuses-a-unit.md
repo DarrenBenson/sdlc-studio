@@ -1,6 +1,6 @@
 # BG1502: critic.py self-check record refuses a unit until it claims its changelog.d fragment, though the release cut has already merged that fragment into CHANGELOG.md
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, changelog.d/BG1502.md
@@ -33,8 +33,13 @@ When a unit's fragment is absent from changelog.d but its id appears in a releas
 - [ ] **AC3** Given a unit whose declared fragment is absent from changelog.d and whose id appears in no released CHANGELOG.md section, when `self-check record` runs without a fragment claim, then it is refused as it is today. Fails on: a missing fragment waved through because the file is absent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_absent_fragment_no_release_holds_is_still_refused
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's changelog.d fragment practice.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

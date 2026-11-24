@@ -1,6 +1,6 @@
 # BG1022: A stale TSD still says the batch does not deliver Unit Testing
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_stale_tsd_gaps.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1022.md
@@ -32,6 +32,10 @@ When `tsd_staleness` says the document is stale, do not print those gaps as cove
 - Reproduced in this repository on 2026-10-09: the EP0274 plan preview printed `the TSD is STALE` and then `coverage the TSD demands that this batch does NOT deliver: Coverage Targets, Eval Scenarios, Integration Testing ...`. Pre-existing.
 - Severity Medium stands: a stale document's gaps are printed as the batch's failures. Fragment renamed to the unit id.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Stale-TSD plan warning is advisory; workaround is to ignore it.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -39,3 +43,4 @@ When `tsd_staleness` says the document is stale, do not print those gaps as cove
 | 2026-10-09 | Grok 4.7 | Filed |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Triaged: confirmed on current code; changelog fragment named for the unit; Verify on a new test module (BG0980) |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

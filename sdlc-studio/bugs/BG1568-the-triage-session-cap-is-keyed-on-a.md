@@ -1,6 +1,6 @@
 # BG1568: The triage session cap is keyed on a run that is already closed and signed
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Supersedes:** BG1067
 > **Severity:** Low
 > **Points:** 2
@@ -35,8 +35,13 @@ When the latest run is closed, key the counter on a session that is not that run
 - [ ] **AC3** Given the cap reached under the calendar-day key, when a further filing is refused, then the refusal names the key in use and says it is the day because no run is open, and no id is minted. Fails on: a refusal telling the operator to close a run that is already closed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionCapTests::test_the_refusal_names_the_day_key_when_no_run_is_open
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. The triage cap counter keys on a closed run; workaround is to open or ignore.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

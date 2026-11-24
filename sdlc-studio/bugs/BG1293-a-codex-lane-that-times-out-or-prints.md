@@ -1,6 +1,6 @@
 # BG1293: A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its spend reaches a Codex-metered run zero times
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py, changelog.d/BG1293.md
@@ -30,8 +30,13 @@ When a lane-worktree thread spent in the run and no delegated record names its l
 - [ ] **AC2** Given a lane-worktree thread whose lane does have a delegated record, when the meter reads the workspace, then that thread is left out of the reading and its spend reaches the run once, through the record. Fails on: the fix counting a metered lane twice, the defect BG1288 closed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_lane_worktree_thread_is_counted_once
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A timed-out Codex lane leaves its spend unrecorded; workaround is lane return with a total.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

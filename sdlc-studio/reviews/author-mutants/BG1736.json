@@ -1,0 +1,34 @@
+{
+  "unit": "BG1736",
+  "digest": "0ec5959483063111 at b34879706b54",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1736-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "note id unspelt",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it",
+      "new": "shown = rid",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_spells_a_schema_3_id_dashed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "how id unspelt",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "else f\"only {sdlc_md.display_id(root, rid)} declares in its Affects\")",
+      "new": "else f\"only {rid} declares in its Affects\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_spells_a_schema_3_id_dashed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sequential respelt",
+      "file": ".claude/skills/sdlc-studio/scripts/engagement_floor.py",
+      "old": "shown = sdlc_md.display_id(root, rid)  # the id as its artefact spells it",
+      "new": "shown = rid[:2] + \"-\" + rid[2:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::UnnamedUnitAttributionTests::test_the_note_keeps_a_sequential_id_unchanged",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

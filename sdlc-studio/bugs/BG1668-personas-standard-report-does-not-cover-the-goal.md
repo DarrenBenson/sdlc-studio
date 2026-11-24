@@ -1,6 +1,6 @@
 # BG1668: personas.standard: report does not cover the goal review's refusal of a traced persona card, which still refuses under report mode
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -27,8 +27,13 @@ Have the goal review's persona-card check read personas.standard and, in report 
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a fixture project set personas.standard: report, give a traced persona card a demographic token, and run sprint.py goal-review brief --seat qa: it refuses...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Have the goal review's persona-card check read personas.standard and, in report mode, name the card with its remedy and continue, as `persona_resolve` does...
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Report mode does not cover one goal-review refusal; workaround is to fix the card.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

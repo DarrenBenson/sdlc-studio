@@ -1,0 +1,34 @@
+{
+  "unit": "BG1361",
+  "digest": "9bc18a4a036430cb at 3ca0174cc3d4",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac8081a837d91dd7e/BG1361-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the frozen note keeps saying this clone's log",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "The tally is the closing clone's refusal log as the close read it.",
+      "new": "The tally is this clone's refusal log as the close read it.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py::LaneYieldTests::test_a_frozen_tally_names_the_closing_clones_log",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the closing-clone sentence on a live tally",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        held = \"\"\n    if not isinstance(tally, dict):",
+      "new": "        held = \" The tally is the closing clone's refusal log as the close read it.\"\n    if not isinstance(tally, dict):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py::LaneYieldTests::test_a_live_tally_names_no_closing_clone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the frozen note keeps this clone's wording (the close's own pin)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "The tally is the closing clone's refusal log as the close read it.",
+      "new": "The tally is this clone's refusal log as the close read it.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_yield_frozen.py::FrozenLaneYieldTests::test_close_freezes_the_tally_on_the_run_record",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

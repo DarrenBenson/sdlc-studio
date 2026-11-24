@@ -1,6 +1,6 @@
 # BG1402: The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_integration_rule_negation.py, changelog.d/BG1402.md
@@ -27,8 +27,13 @@ Anchor the phrase to a line start.
 - [ ] **AC1** Given an AGENTS.md whose only mention negates the rule, when validate runs, then it warns. Fails on: the negation passing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_integration_rule_negation.py::IntegrationRuleNegationTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A sentence negating the rule passes the check; nobody writes that.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

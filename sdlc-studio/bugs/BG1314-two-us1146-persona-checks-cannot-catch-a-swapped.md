@@ -1,6 +1,6 @@
 # BG1314: Two US1146 persona checks cannot catch a swapped Primary, and `validate.py personas` compares the whole Interface cell, so a card reverted to Primary passes AC2's own Verify
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_persona_coherence.py, tools/tests/test_lean_prd_refresh.py, sdlc-studio/personas/jonah-reyes-team-lead.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, changelog.d/BG1314.md
@@ -34,8 +34,13 @@ Pin each Primary to its own interface by name in both checks, and have validate.
 - [ ] **AC4** Given a PRD copy whose O5 is reworded with its two citations kept, and a `sprint.py plan --serves O10` output carrying two `goal serves: O10 -` lines, when the outcome checks read each, then each is reported. Fails on: O5 pinned by its citations alone, or `o10_trace_problems` loosened to 'at least one' line.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_a_reworded_o5_and_a_second_o10_line_are_each_reported
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Persona coherence tests that cannot catch a swap.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

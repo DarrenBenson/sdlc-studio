@@ -1,6 +1,6 @@
 # BG1434: The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/risk_class.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/help/refine.md, .claude/skills/sdlc-studio/scripts/tests/test_risk_class_pins.py, changelog.d/BG1434.md, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
@@ -29,8 +29,13 @@ Report an empty-prefix entry and a non-mapping `risk` value in one line each; sc
 - [ ] **AC2** Given a map listing a high-class prefix before a lower one, when a story's Affects touch both, then its class is high; and stories minted by `apply --into` and by `add` carry the class. Fails on: a last-match classifier, or either path minting without the field.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_risk_class_pins.py::StampPathTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. A bad risk map entry is dropped silently; workaround is to correct the map.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

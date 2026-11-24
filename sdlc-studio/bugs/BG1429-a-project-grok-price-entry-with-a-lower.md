@@ -1,6 +1,6 @@
 # BG1429: A project Grok price entry with a lower long-context threshold is still booked at the shipped 200,000 threshold, so a long prompt is priced at the short rate and reads exact
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py, changelog.d/BG1429.md
@@ -26,8 +26,10 @@ Book the Cursor ledger against the project's price table (the same `run_state.pr
 
 - [ ] **AC1** Given a project `pricing.models` grok-4.7 entry with a long-context threshold of 128000 and a Cursor hook ledger holding one 150,000-token prompt, when `meter_cursor.read` meters it for that repo root, then the prompt is booked under the long-context id. Fails on: `read_cli` calls `read_ledger(ledger)`, whose `_rates()` loads the shipped table only, so the prompt is booked at the short rate and the figure reads exact.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_a_project_threshold_moves_the_booking
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given a Cursor ledger and no project pricing block, when it is metered, then the booking is the shipped table's, unchanged. Fails on: a threading of repo_root that breaks the default table.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py::CursorProjectThresholdTests::test_no_project_block_books_by_the_shipped_threshold
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

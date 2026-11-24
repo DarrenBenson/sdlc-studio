@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py, changelog.d/BG1698.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/scripts/tests/test_carry_discharge_rejoins_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_run_end_to_end.py, changelog.d/BG1698.md
 > **Evidence:** sdlc-studio/.local/run-state.json batch_changes: 14 'carried at the review cap' drops; 13 re-added by sprint.py batch add after their D0565-D0578 approvals; reference-review.md:509-516 (carry and discharge) names no re-add. Recurred in run twenty-four: RUN-01M84Z8Z's batch_changes drop BG1548 and BG1574 as carried, both were approved in round three and moved to Fixed, and its batch holds neither. Reproduced at cecc9dfe through `critic.py record` in a throwaway run, 2026-11-24.
 > **Created:** 2026-11-22
 > **Created-by:** sdlc-studio file
@@ -44,3 +44,4 @@ When `critic.py record` writes a carried unit's discharging APPROVE inside the o
 | 2026-11-22 | sdlc-studio | Filed |
 | 2026-11-22 | Claude Opus 5.5 (run twenty-one orchestrator) | Related to BG1277 but distinct: BG1277 is the closing-review row crediting a carried unit whose carry bug was delivered; this is the approved carried unit itself never returning to the batch |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-five: reproduced at cecc9dfe through `critic.py record` in a throwaway run, and seen again in run twenty-four (BG1548, BG1574); generated criteria replaced by four executable ones (plain and ruled discharge, a guard outside the carrying run, and the output and page); closing the carry bug left to `transition.py`, the output naming it; Affects drops sprint.py, test_critic.py and test_sprint.py; Points stay 2 |
+| 2026-11-24 | orchestrator | Affects gains tests/test_lean_signed_run_end_to_end.py: line 313 pins a discharged unit as carried, which AC1 changes to delivered; the carry bug keeps its Known issues row (the CR builder's full-suite run) |

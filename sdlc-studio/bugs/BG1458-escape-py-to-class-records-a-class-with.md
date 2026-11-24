@@ -1,6 +1,6 @@
 # BG1458: escape.py to-class records a class with no files for a hand-edited bug with no Affects, collapses whitespace inside Affects paths, and the catalogue pages lag the new verb and flags
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_escape_class_edges.py, changelog.d/BG1458.md
@@ -27,8 +27,13 @@ Refuse a bug with no Affects, keep path whitespace as written, and document to-c
 - [ ] **AC1** Given an escaped bug with no Affects, when to-class runs, then it refuses with the reason and writes nothing. Fails on: a class with empty files.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_class_edges.py::EscapeClassEdgeTests
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Escape.py edge cases on hand-edited bugs.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen orchestrator) | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

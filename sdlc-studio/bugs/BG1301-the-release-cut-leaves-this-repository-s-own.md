@@ -1,6 +1,6 @@
 # BG1301: The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py
@@ -29,8 +29,13 @@ Have the cut restamp this repository's sdlc-studio/.version as part of the relea
 - [ ] **AC2** Given a project whose stamp already names the shipped skill version, when `changelog-cut` runs, then the section is cut as today and `sdlc-studio/.version` is byte-identical. Fails on: a cut that rewrites or refuses over a current stamp.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_current_stamp_is_left_as_it_was_and_the_cut_succeeds
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. This repository's own .version at the release cut.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

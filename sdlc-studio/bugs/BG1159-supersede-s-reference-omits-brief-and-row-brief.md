@@ -1,6 +1,6 @@
 # BG1159: supersede's reference omits --brief and row-brief, two of its new guarantees are unpinned, and a no-match refusal contradicts itself
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_supersede_by_brief.py, changelog.d/BG1159.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -38,8 +38,13 @@ Document --brief and row-brief in reference-review.md. Add a three-candidate ref
 
 The reference undersells the tool, two guarantees can regress silently, and two refusals mislead.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because the change it asks for is a wording preference, not a defect a user meets. Supersede reference omits flags it supports.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

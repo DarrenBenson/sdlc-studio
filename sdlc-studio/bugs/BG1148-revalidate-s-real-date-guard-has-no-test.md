@@ -1,6 +1,6 @@
 # BG1148: revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, .claude/skills/sdlc-studio/reference-scripts-verify.md, changelog.d/BG1148.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
@@ -37,8 +37,13 @@ Add a fixture with a malformed Revalidated value that must still be listed. Scop
 
 A verifier five stories rely on could pass a record with no date, and two places tell the operator to run a command that is refused.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. A guard has no test and some hint text names --extend.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

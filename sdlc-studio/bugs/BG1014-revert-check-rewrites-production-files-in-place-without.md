@@ -1,6 +1,6 @@
 # BG1014: revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_revert_check_window.py, changelog.d/BG1014.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -35,9 +35,14 @@ Open a window claiming exactly the reverted paths before the first write, owned 
 
 - `mutation.open_window` refuses whenever any window is held (mutation.py:693-706), which is wider than AC2's "a window that claims a path it would revert": decide whether revert-check narrows it or states the wider refusal.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because a user can meet it, but it is rare and harmless and has a workaround, so fixing it costs more than it returns. Revert-check window race; needs a commit during the run; workaround is not to commit while it runs.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | AC3 added from the G7 panel review (D0355); a note on open_window's wider refusal |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |

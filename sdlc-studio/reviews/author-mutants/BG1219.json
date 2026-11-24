@@ -1,0 +1,61 @@
+{
+  "unit": "BG1219",
+  "digest": "03872137520850a9 at b34879706b54",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab3965b44fe5bc76a/BG1219-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no sweep",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "        self._sweep_stale(Path(tempfile.gettempdir()))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prefix without pid",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "prefix=f\"sdlc-migrate-pyc-{os.getpid()}-\"",
+      "new": "prefix=\"sdlc-migrate-pyc-\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-pid names swept",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "if not owner:",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any error sweeps",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "            except ProcessLookupError:\n                shutil.rmtree(path, ignore_errors=True)",
+      "new": "            except OSError:\n                shutil.rmtree(path, ignore_errors=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "overflow raises",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "            except (OverflowError, OSError):",
+      "new": "            except OSError:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sweep never removes",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "                shutil.rmtree(path, ignore_errors=True)\n            except (OverflowError",
+      "new": "                pass\n            except (OverflowError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_migrate.py::QuietCollectionTests::test_a_killed_runs_bytecode_directory_is_swept_by_the_next_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

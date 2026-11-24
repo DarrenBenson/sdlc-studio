@@ -1,6 +1,6 @@
 # BG1086: run-suite.sh's passed count needs bc, which is not a declared prerequisite, and is null with a broken-pipe error where bc is absent
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, tools/tests/test_run_suite_counts.py, changelog.d/BG1086.md
@@ -31,8 +31,13 @@ Sum the counts with awk or bash arithmetic instead of bc.
 
 A verdict cannot say how many tests passed on a machine without bc, and the run prints a spurious error.
 
+## Resolution
+
+Won't Fix under D0613: the operator approved the product seat's second proposal (D0562) because it lies in this repository's own CI, hooks or tools, which the installed skill does not ship. Tools/run-suite.sh needs bc.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0613: the operator approved the product seat's second list (D0562); reason in Resolution |
