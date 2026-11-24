@@ -2894,8 +2894,9 @@ def delegated_total(state: dict, read_by=()) -> int:
     return sum(r["tokens"] for r in delegated_records(state, read_by))
 
 
-def delegated_split(state: dict) -> dict:
-    """The run's delegated records as a dollar figure prices them: `{BY_MODEL, FROM_TOTAL,
+def delegated_split(state: dict, read_by=()) -> dict:
+    """The run's delegated records `delegated_records` keeps for `read_by`, as a dollar figure
+    prices them: `{BY_MODEL, FROM_TOTAL,
     "read", "unpriced"}`, `FROM_TOTAL` the models any one record read from a total. A record read from an agent's transcript carries its per-model split, summed
     into `BY_MODEL`; one with its components and no split books them under no model named,
     which no price covers; `read` counts the records booked either way. A supplied total with
@@ -2906,7 +2907,7 @@ def delegated_split(state: dict) -> dict:
     split: dict[str, dict] = {}
     totalled: set[str] = set()
     read, unpriced = 0, []
-    for r in delegated_records(state):
+    for r in delegated_records(state, read_by):
         got = r.get(BY_MODEL) if isinstance(r.get(BY_MODEL), dict) and r.get(BY_MODEL) else (
             {"": r["components"]} if isinstance(r.get("components"), dict) else None)
         if got is None:

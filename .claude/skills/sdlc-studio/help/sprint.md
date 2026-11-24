@@ -787,6 +787,15 @@ run. A meter whose readings hold the subagent transcripts already counts the bui
 it a supplied `--tokens` total is kept on the record but not added, and the ratio is not
 withheld.
 
+`retro.py accuracy --id RETROxxxx --delegated-tokens N` records one delegated agent's own total
+against the open run, and `--delegated-harness HARNESS` (`claude`, `cursor`, `copilot`,
+`opencode` or `codex`) names the harness the agent ran under. Where that harness's reading in
+the run already holds its subagents' spend, as an opencode session's does beside a Claude main
+thread, the total is kept on the record but left out of the run's Tokens figures and the
+retro's total, so it is not counted twice. Any other name is refused and nothing is recorded,
+and a total with no harness is added as before. A lane return's record names no harness, since
+no reading holds a lane worktree's session.
+
 ## Driving a wave
 
 `sprint drive` walks the open run's current wave with no model between its steps, so the

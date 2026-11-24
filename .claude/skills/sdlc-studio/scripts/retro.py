@@ -89,6 +89,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import run_state, sdlc_md  # noqa: E402  (run_state: the run a close's tokens belong to)
+from lib import token_meters  # noqa: E402  (the harnesses a meter reads, --delegated-harness's)
 import lessons  # noqa: E402  (sibling - the store a retro's lessons are extracted into)
 import telemetry  # noqa: E402  (sibling - the measured actuals an estimate is judged against)
 
@@ -2997,7 +2998,7 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
             # over a reading that leaves agents out: a reading of the subagent transcripts
             # already holds the agents that ran in this session, and pricing them again would
             # count their dollars twice.
-            "delegated_split": (run_state.delegated_split(state)
+            "delegated_split": (run_state.delegated_split(state, readers)
                                 if supplied and not reads_agents else None),
             **_priced_window(redone if rebased else base, cap)}
 
@@ -4377,15 +4378,17 @@ def cmd_accuracy(args) -> int:
     delegated = getattr(args, "delegated_tokens", None)
     unit, minutes = getattr(args, "delegated_unit", ""), getattr(args, "delegated_minutes", None)
     model = getattr(args, "delegated_model", None)
-    if delegated is None and (unit or minutes is not None or model is not None):
-        print("--delegated-unit, --delegated-minutes and --delegated-model describe a "
-              "--delegated-tokens record; nothing was recorded", file=sys.stderr)
+    harness = getattr(args, "delegated_harness", None)
+    if delegated is None and (unit or minutes is not None or model is not None
+                              or harness is not None):
+        print("--delegated-unit, --delegated-minutes, --delegated-model and --delegated-harness "
+              "describe a --delegated-tokens record; nothing was recorded", file=sys.stderr)
         return 2
     if delegated is not None:
         try:
             rec = run_state.record_delegated_tokens(
                 args.root, delegated, agent=getattr(args, "delegated_agent", "") or "",
-                unit=unit or "", minutes=minutes, model=model)
+                unit=unit or "", minutes=minutes, model=model, harness=harness)
         except ValueError as exc:
             print(f"delegated total refused: {exc}", file=sys.stderr)
             return 1
@@ -4394,6 +4397,7 @@ def cmd_accuracy(args) -> int:
                   "supply the sprint's whole figure with `--tokens N` instead")
         else:
             print(f"delegated total recorded (supplied, not measured): {rec['tokens']:,}"
+                  + (f" under {rec['harness']}" if rec.get("harness") else "")
                   + (f" for {rec['agent']}" if rec["agent"] else "")
                   + (f" against {rec['unit']}" if rec.get("unit") else "")
                   + (f", model {rec['model']}" if rec.get("model") else "")
@@ -5066,6 +5070,15 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--delegated-agent", dest="delegated_agent", default="",
                            metavar="NAME",
                            help="which agent reported the --delegated-tokens figure")
+            p.add_argument("--delegated-harness", dest="delegated_harness", default=None,
+                           choices=token_meters.HARNESSES, metavar="HARNESS",
+                           help="the harness the agent ran under, one a meter reads ("
+                                + ", ".join(token_meters.HARNESSES) + "). Where that "
+                                "harness's reading in the run holds its subagents' spend, as "
+                                "an opencode session's does, the total is left out of the "
+                                "run's total, which already counts it; a total with no "
+                                "harness is added as before. Any other name is refused and "
+                                "nothing is recorded")
             p.add_argument("--delegated-unit", dest="delegated_unit", default="",
                            metavar="ID",
                            help="the unit the agent worked on: the report reads a unit's tagged "

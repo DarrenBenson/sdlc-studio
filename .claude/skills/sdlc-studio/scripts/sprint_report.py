@@ -4325,7 +4325,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     # over a meter that read the subagent transcripts it adds none, so none is priced twice.
     if head and usd is not None:
         rows += _usd_rows(run_tokens, delivered, state_rel, usd,
-                          run_state.delegated_split(state) if prices_rule and agents else None)
+                          run_state.delegated_split(state, run_state.subagent_readers(run_tokens))
+                          if prices_rule and agents else None)
     # Under `COST_FORECAST_RULE` the cost rows state the plan's forecasts; a page filed before
     # it keeps each row's literal `not forecast` and `no ratio`.
     if cost_forecast_rule:

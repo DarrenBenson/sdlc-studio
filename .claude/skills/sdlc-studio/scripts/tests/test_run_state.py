@@ -1507,6 +1507,102 @@ class DelegatedHarnessTests(unittest.TestCase):
         section = sprint_report._cost_section(state, "state", total)
         self.assertEqual(4800, section["figures"]["tokens_total"]["value"])
 
+    def _accuracy(self, *flags: str) -> tuple[int, str]:
+        """`retro.py accuracy` over this fixture's retro through the shipped entry point, with
+        its exit code (argparse's own included) and everything it said."""
+        import retro
+        said = io.StringIO()
+        with contextlib.redirect_stdout(said), contextlib.redirect_stderr(said):
+            try:
+                rc = retro.main(["--root", str(self.root), "accuracy", "--id", "RETRO0001",
+                                 *flags])
+            except SystemExit as exc:
+                rc = exc.code
+        return rc, said.getvalue()
+
+    def _three_totals(self) -> tuple:
+        """The run's total three ways over the recorded delegated totals and `_stamps`'s mixed
+        run: `_run_tokens_actual`, the page's Tokens figure, and the retro's accuracy total with
+        the supplied totals its dollars leave unpriced."""
+        import retro
+        import sprint_report
+        state = {**run_state.read(str(self.root)), run_state.TOKEN_STAMPS: self._stamps()}
+        total = run_state.run_token_total(state)
+        page = sprint_report._cost_section(state, "state", total)["figures"]["tokens_total"]
+        held = {**state, run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b"}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        unpriced = [r["tokens"] for r in (got["delegated_split"] or {}).get("unpriced") or []]
+        return sprint_report._run_tokens_actual(state, total), page["value"], got["tokens"], \
+            unpriced
+
+    def test_a_delegated_total_recorded_with_its_harness_is_not_added_twice(self) -> None:
+        """AC5. `retro.py accuracy --delegated-tokens 300 --delegated-harness opencode`, in a run
+        whose opencode session's reading holds its subagents, records the 300 tagged `opencode`
+        and every total leaves it out; the same total without the flag is added as before; a
+        harness the meter does not read, or the flag with no total, is refused with nothing
+        recorded; and help/sprint.md names the flag beside `--delegated-tokens`. MUTANTS: the
+        flag's harness not handed to the record, its choices dropped, its no-total refusal
+        dropped, and the recorded line not naming the harness."""
+        retros = self.root / "sdlc-studio" / "retros"
+        retros.mkdir()
+        (retros / "RETRO0001-r.md").write_text("# RETRO0001: r\n\n> **Batch:** BG0001\n",
+                                               encoding="utf-8")
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        for flags, why in (
+                (("--delegated-tokens", "300", "--delegated-harness", "gemini"), "invalid choice"),
+                (("--delegated-tokens", "300", "--delegated-harness", "OpenCode"),
+                 "invalid choice"),
+                (("--delegated-harness", "opencode"), "--delegated-harness")):
+            with self.subTest(flags=flags):
+                rc, said = self._accuracy(*flags)
+                self.assertEqual(2, rc, said)
+                self.assertIn(why, said)
+                self.assertIn("nothing was recorded" if why != "invalid choice" else "opencode",
+                              said)
+        self.assertEqual([], run_state.read(str(self.root)).get(run_state.DELEGATED) or [])
+        rc, said = self._accuracy("--delegated-tokens", "300", "--delegated-harness", "opencode")
+        self.assertEqual(0, rc, said)
+        self.assertIn("delegated total recorded (supplied, not measured): 300 under opencode",
+                      said)
+        [tagged] = run_state.read(str(self.root))[run_state.DELEGATED]
+        self.assertEqual("opencode", tagged["harness"])
+        self.assertEqual(((4600, 0), 4600, 4000, []), self._three_totals())
+        rc, said = self._accuracy("--delegated-tokens", "300")
+        self.assertEqual(0, rc, said)
+        self.assertNotIn("under", said.splitlines()[0])
+        self.assertNotIn("harness", run_state.read(str(self.root))[run_state.DELEGATED][-1])
+        self.assertEqual(((4900, 1), 4900, 4300, [300]), self._three_totals(),
+                         "the untagged total is added, and only it is named unpriced")
+        page = (Path(__file__).resolve().parents[2] / "help" / "sprint.md").read_text(
+            encoding="utf-8")
+        self.assertTrue(any("--delegated-tokens" in p and "--delegated-harness" in p
+                            for p in page.split("\n\n")),
+                        "help/sprint.md names --delegated-harness beside --delegated-tokens")
+
+    def test_the_dollar_row_leaves_a_tagged_record_out_of_what_it_names_unpriced(self) -> None:
+        """The Estimates Dollar cost row names unpriced only the supplied totals its Tokens row
+        adds: the tagged record the Tokens row leaves out is not among them. MUTANTS: the split
+        read over every record, at the call site or in `delegated_split`."""
+        import sprint_report
+        state = self._state(self._record(300, harness="opencode"), self._record(200))
+        total = run_state.run_token_total(state)
+        self.assertEqual([200, 300], sorted(
+            r["tokens"] for r in run_state.delegated_split(state)["unpriced"]))
+        self.assertEqual([200], [r["tokens"] for r in run_state.delegated_split(
+            state, run_state.subagent_readers(total))["unpriced"]])
+        head = sprint_report._estimate_row("Priced cost", None, 1, "b", "state", "x", "y")
+        with (mock.patch.object(sprint_report, "_priced_row", return_value=head),
+              mock.patch.object(sprint_report, "_usd_rows", return_value=[]) as usd_rows):
+            sprint_report._estimates_section(state, "state", [], total, None, usd={},
+                                             priced_unit_rule=False, cost_forecast_rule=False)
+        named = usd_rows.call_args.args[4]
+        self.assertEqual([200], [r["tokens"] for r in named["unpriced"]])
+
     def test_untagged_records_are_added_as_before(self) -> None:
         """AC3. MUTANT: stop adding untagged records, which understates a Claude-only fan-out."""
         import sprint_report
