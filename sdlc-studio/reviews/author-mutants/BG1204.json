@@ -1,41 +1,113 @@
 {
   "unit": "BG1204",
-  "digest": "0c61c4b19c8b7011 at 15810f4d7dff",
-  "report": "sdlc-studio/.local/lane/landed/agent-a5d4c2470c09fd8b0/BG1204-mutation-edits.json",
+  "digest": "10fdcc59a487a798 at 745c5d5e8b80",
+  "report": "sdlc-studio/.local/lane/landed/agent-aa1433c79da53b2a0/BG1204-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "M1 the lane run tagged with its harness",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
-      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT, harness=reading[\"harness\"]),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
+      "mutant": "R1 the left-out sentence dropped from the reading-holds-subagents branch",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "                    if supplied else \"no delegated total was supplied to add\")\n                 + held_out)",
+      "new": "                    if supplied else \"no delegated total was supplied to add\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M2 every harness but claude tagged, as round two shipped",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
-      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT,\n                harness=None if reading[\"harness\"] == run_state.CLAUDE else reading[\"harness\"]),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
+      "mutant": "R2 the left-out sentence dropped from the supplied branch",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "                 f\"{bound}\" + held_out)",
+      "new": "                 f\"{bound}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M3 only codex tagged",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "reading=reading, provenance=lanes.HARNESS_OUTPUT),",
-      "new": "reading=reading, provenance=lanes.HARNESS_OUTPUT,\n                harness=\"codex\" if reading[\"harness\"] == \"codex\" else None),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
+      "mutant": "R3 the left-out branch never taken, so the no-supply advice returns",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    elif held_out:\n",
+      "new": "    elif False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "T1 the mixed run's harness holds no subagents",
+      "mutant": "R4 the left-out branch states no left-out sentence",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "{spend}: {meter}{held_out}. No other \"",
+      "new": "{spend}: {meter}. No other \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R5 the left-out branch keeps the no-supply wording",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "{spend}: {meter}{held_out}. No other \"\n                 f\"delegated total was supplied, and {bound}\")",
+      "new": "{spend}: {meter}{held_out}. No \"\n                 f\"delegated total was supplied, and {bound}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R6 every tagged record counted as left out, whatever its harness's reading holds",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        if r.get(run_state.HARNESS) in readers:\n            left_out",
+      "new": "        if r.get(run_state.HARNESS):\n            left_out",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R7 the test of the harness inverted, so the kept records are named left out",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        if r.get(run_state.HARNESS) in readers:\n            left_out",
+      "new": "        if r.get(run_state.HARNESS) not in readers:\n            left_out",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R8 each harness counted once however many totals it holds",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "left_out.get(r[run_state.HARNESS], 0) + 1",
+      "new": "1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R9 the sentence names no harness",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "f\"total(s) supplied under {h} are not added: adding them would count that spend twice\"",
+      "new": "f\"total(s) supplied are not added: adding them would count that spend twice\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 the test's left-out sentence miscounted",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py",
-      "old": "mine, theirs = ({\"subagents\": True}, {}) if own else ({}, {\"subagents\": True})",
-      "new": "mine, theirs = {}, {}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_a_lane_run_return_leaves_its_record_untagged",
+      "old": "left = (\"The opencode reading already holds delegated agents' spend, so the 1 delegated \"",
+      "new": "left = (\"The opencode reading already holds delegated agents' spend, so the 0 delegated \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 the test expects the no-supply advice beside a left-out total",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py",
+      "old": "        self.assertNotIn(\"Record one\", tagged)",
+      "new": "        self.assertIn(\"Record one\", tagged)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 the control expects a left-out sentence over a run with nothing supplied",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py",
+      "old": "        self.assertNotIn(\"not added\", none, \"the control: nothing was left out\")",
+      "new": "        self.assertIn(\"not added\", none, \"the control: nothing was left out\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_run_state.py::DelegatedHarnessTests::test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied",
       "result": "killed",
       "answer": ""
     }
