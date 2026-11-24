@@ -1,0 +1,70 @@
+{
+  "unit": "BG1389",
+  "digest": "29cd5f01bc6d2638 at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1389-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "leading whitespace crosses lines",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": ":\\*\\*[^\\S\\n]*(.*?)\\s*{_FIELD_VALUE_END}",
+      "new": ":\\*\\*\\s*(.*?)\\s*{_FIELD_VALUE_END}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_an_empty_field_reads_as_empty_in_both_readers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty read as empty string",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "return (m.group(1) or None) if m else None",
+      "new": "return m.group(1) if m else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_an_empty_field_reads_as_empty_in_both_readers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty first occurrence not marked seen",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        seen.add(name.lower())\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_the_first_occurrence_of_a_name_wins_whatever_its_case",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seen check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        if name.lower() in seen:\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_the_first_occurrence_of_a_name_wins_whatever_its_case",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "name not escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "{re.escape(name)}:",
+      "new": "{name}:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_a_field_with_a_regex_metacharacter_in_its_name_is_read_literally",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "swallowed value not escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "re.match(re.escape(value) + _FIELD_RUN_ON, cell)",
+      "new": "re.match(value + _FIELD_RUN_ON, cell)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::SwallowedRunTests::test_a_value_with_regex_metacharacters_is_matched_literally",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "swallowed search not match",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "re.match(re.escape(value) + _FIELD_RUN_ON, cell)",
+      "new": "re.search(re.escape(value) + _FIELD_RUN_ON, cell)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::SwallowedRunTests::test_the_value_must_open_the_cell",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

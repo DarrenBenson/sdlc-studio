@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1641.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py, .claude/skills/sdlc-studio/scripts/lib/resume_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1641.md
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -29,6 +29,8 @@ When the unit has an unanswered REJECT, have the QA brief open with the reviewer
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_lane_land_prints_the_reviewer_beside_the_brief_path
 - [ ] **AC3** Given a unit with no REJECT, when its first-round QA brief is written, then no reviewer line is added and the brief is byte-identical to `critic.py brief` output (positive control). Fails on: a fix that adds the line to every brief, which also changes the fingerprint `_brief_of` hashes from the saved text.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_first_round_brief_carries_no_reviewer_line
+- [ ] **AC4** Given a landed repair whose saved QA brief opens with the reviewer line and a REJECT recorded against it, when the resume brief reads the lane's state, then it reads the lane as rejected, not landed. Fails on: `resume_brief._approved` hashes the saved brief with its reviewer line, so the fingerprint matches no verdict and the lane reads as landed with the wrong next step.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::RepairBriefApprovalTests::test_a_repair_brief_with_a_reviewer_line_reads_its_reject
 
 ## Revision History
 
@@ -36,3 +38,4 @@ When the unit has an unanswered REJECT, have the QA brief open with the reviewer
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: criteria pin the brief line, the printed line and a first-round control; the builder must keep the fingerprint `lane accept` hashes from the saved text (`_brief_of`) valid |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's LN lane: the reviewer line changes the saved repair brief's hash, which test_lane_accept_second_seat_brief.py:220 and `resume_brief._approved` both read; AC4 added for `_approved` (D0561) |

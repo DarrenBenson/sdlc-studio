@@ -1,0 +1,115 @@
+{
+  "unit": "BG1151",
+  "digest": "e025707e9039107b at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1151-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "slot check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    if \"{{\" in row.group(1):\n        return ()\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_a_row_with_the_template_slot_declares_no_interface",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "escaped pipe ends row",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "((?:[^|\\n\\\\]|\\\\.)*)\\|\"",
+      "new": "([^|\\n]*)\\|\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_an_escaped_pipe_does_not_end_the_interface_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dot slash not dropped (sdlc_md)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "span.removeprefix(\"./\").rstrip(\"/\")",
+      "new": "span.rstrip(\"/\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePrimaryTests::test_a_dot_slash_path_matches_on_both_sides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dot slash not dropped (artifact)",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "path = path.removeprefix(\"./\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePrimaryTests::test_a_dot_slash_path_matches_on_both_sides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailing slash kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "span.removeprefix(\"./\").rstrip(\"/\")",
+      "new": "span.removeprefix(\"./\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_a_leading_dot_slash_and_a_trailing_slash_are_dropped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nested not counted (x under y)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "if x == y or x.startswith(y + \"/\") or y.startswith(x + \"/\")})",
+      "new": "if x == y or x.startswith(y + \"/\")})",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nested not counted (y under x)",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "if x == y or x.startswith(y + \"/\") or y.startswith(x + \"/\")})",
+      "new": "if x == y or y.startswith(x + \"/\")})",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only nested counted, equal ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "if x == y or x.startswith(y + \"/\")",
+      "new": "if x.startswith(y + \"/\") and x != y",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prefix by name only",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "x.startswith(y + \"/\") or y.startswith(x + \"/\")",
+      "new": "x.startswith(y) or y.startswith(x)",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "compared as text always",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "paths = sdlc_md.persona_interface_paths(p) if cell else None",
+      "new": "paths = None",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "text fallback dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "else (\"text\", cell) if cell else None",
+      "new": "else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_two_primaries_same_interface_is_an_error",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mixed kinds compared",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    if a[0] != b[0]:\n        return []\n",
+      "new": "",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

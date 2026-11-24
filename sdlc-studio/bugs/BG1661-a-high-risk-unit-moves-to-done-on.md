@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, changelog.d/BG1661.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-review.md, changelog.d/BG1661.md
 > **Created:** 2026-11-20
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -38,3 +38,4 @@ Hold a high-risk unit's Done until every required seat has judged the same brief
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: four executable criteria (defer, second-seat REJECT is round one, last seat moves, non-high control); Affects gains lib/lanes.py, where `accept` runs the transition, and the second-seat and review-cap test modules; 3 pts to 5 as the fix spans accept, the round count and the seat bookkeeping (still within the cap, no split) |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPB lane: the drive's cap check (lib/drive.py:860) counts delivery_rounds rows, so a held second seat would reach the cap early; reference-sprint.md, help/sprint.md and reference-review.md describe the accept and round numbering the fix changes |

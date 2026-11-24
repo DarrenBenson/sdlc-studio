@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, changelog.d/BG1595.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1595.md
 > **Evidence:** .local/run17/lane-meta.err, 2026-11-18.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -30,6 +30,8 @@ Split --units values on commas as well as spaces, or refuse a comma list by nami
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_mixed_space_and_comma_units_split_in_order
 - [ ] **AC3** Given the space-separated form that works today, when `--units US1315 US1319` runs, then it behaves as before (the control beside AC1). Fails on: a split that breaks the existing form.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_space_separated_units_list_still_briefs_each_unit
+- [ ] **AC4** Given `sprint.py lane land --worktree <w> --units US1315,US1319` naming two units of a landable lane, when it runs, then it lands both units as the space-separated form does. Fails on: the comma list is kept as one id, so the land refuses it as a unit it does not know.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_comma_separated_units_list_lands_each_unit
 
 ## Revision History
 
@@ -37,3 +39,4 @@ Split --units values on commas as well as spaces, or refuse a comma list by nami
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: executable criteria for the comma list, a mixed list and the unchanged space form; the fix splits in `_lane_unit_ids`, not refuses; Affects names the brief test module, which has the lane fixture |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPB lane: AC4 added: `lane land --units` takes the same comma-separated list (D0561, fix in the unit rather than file a sibling) |

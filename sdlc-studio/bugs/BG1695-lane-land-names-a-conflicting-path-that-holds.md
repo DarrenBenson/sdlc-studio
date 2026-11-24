@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, changelog.d/BG1695.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1695.md
 > **Evidence:** lanes.py:387 and :469 split conflict names with .stdout.split(); sdlc-studio/reviews/verdicts/BG1448/0cb4f8185b45-b6d89ec7.txt records it [pre-existing].
 > **Created:** 2026-11-21
 > **Created-by:** sdlc-studio file
@@ -30,6 +30,8 @@ List the conflicting names with git diff --name-only --diff-filter=U -z and spli
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_rebase_conflict_names_a_path_holding_a_space_once
 - [ ] **AC3** Given a conflict in `plain.md`, when either refusal fires, then it names `plain.md` alone (positive control). Fails on: a NUL split that returns an empty trailing name.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_still_names_an_ordinary_path
+- [ ] **AC4** Given a lane run whose worktree stages `docs/release notes.md`, when `sprint.py lane run` records and prints its staged paths, then the path is recorded and printed once. Fails on: `lanes._run` reads `diff --cached --name-only` with `.split()`, the same split AC1 and AC2 remove.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once
 
 ## Revision History
 
@@ -37,3 +39,4 @@ List the conflicting names with git diff --name-only --diff-filter=U -z and spli
 | --- | --- | --- |
 | 2026-11-21 | sdlc-studio | Filed |
 | 2026-11-24 | Sam Eriksson (qa) | Groomed for run twenty-six: the one reproduction is now two criteria (replay and `_rebase`) and a control; both sites (lanes.py:390 and :475) still split on whitespace at HEAD |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's LN lane: AC4 added for the third whitespace split, the lane run's staged-path read in lanes._run (D0561, fix in the unit) |

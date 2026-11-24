@@ -1,0 +1,43 @@
+{
+  "unit": "BG1193",
+  "digest": "2ac0d9a7dfe74728 at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1193-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "yield stored path",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        yield Path(repo_root) / p, text",
+      "new": "        yield root_abs / p, text",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_a_relative_then_an_absolute_root_returns_the_same_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "walk with caller root",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "for p, text in _walk_artifact_files(type_, root_abs, frozenset())]",
+      "new": "for p, text in _walk_artifact_files(type_, Path(repo_root), frozenset())]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_a_relative_then_an_absolute_root_returns_the_same_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "text keyed by raw root",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(\"text\", str(root_abs / p))",
+      "new": "(\"text\", str(Path(repo_root) / p))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_both_spellings_share_one_walk_and_one_read_of_each_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "key not absolute",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "key = (\"files\", type_, str(root_abs))",
+      "new": "key = (\"files\", type_, str(repo_root))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_both_spellings_share_one_walk_and_one_read_of_each_file",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

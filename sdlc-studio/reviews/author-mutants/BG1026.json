@@ -1,0 +1,43 @@
+{
+  "unit": "BG1026",
+  "digest": "62dd9cc1d2035899 at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1026-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "colon only again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:(?::\\s*|\\s+)(.*))?$",
+      "new": "(?::\\s*(.*))?$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_suffixed_heading_opens_its_own_criterion",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "id prefix matches (guard)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(AC\\d+[a-z]?)(?:(?::\\s*|\\s+)(.*))?$",
+      "new": "(AC\\d)\\d*[a-z]?(?:(?::\\s*|\\s+)(.*))?$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_ac10_is_not_ac1_with_a_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "suffix needs no separator",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:(?::\\s*|\\s+)(.*))?$",
+      "new": "(?:(?::\\s*|\\s*)(.*))?$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_heading_that_only_starts_like_an_id_opens_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "letter suffix dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(AC\\d+[a-z]?)(?:(?::",
+      "new": "(AC\\d+)(?:(?::",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_ac10_is_not_ac1_with_a_suffix",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

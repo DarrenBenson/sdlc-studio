@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, changelog.d/BG1328.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/reference-scripts-create.md, changelog.d/BG1328.md
 > **Evidence:** RUN-01M7061X close: US1149, EP0302 and CR0670 (2026-11-09)
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -38,3 +38,4 @@ Reopen a Done epic (and re-derive its parent) when a non-terminal story joins it
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's FA lane: refine apply --into now accepts an epic the request already names, so reference-scripts-create.md's 'a terminal target is refused' sentence changes with it |

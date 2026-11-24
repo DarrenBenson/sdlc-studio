@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1449.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, changelog.d/BG1449.md
 > **Evidence:** Run twelve (RUN-01M7E52T) orchestrator friction log
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Check the self-check's digest only on an APPROVE path; record a REJECT regardles
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPB lane: the stale-self-check refusal lives in lib/lanes.py `_brief_of` |

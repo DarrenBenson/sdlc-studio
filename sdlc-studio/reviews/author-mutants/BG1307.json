@@ -1,0 +1,61 @@
+{
+  "unit": "BG1307",
+  "digest": "9b62828c7d6c9263 at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1307-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "served dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\"customer\", \"served\")",
+      "new": "\"customer\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_a_served_entry_is_returned_beside_the_three_roles",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "supplemental dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\"secondary\", \"supplemental\", \"negative\"",
+      "new": "\"secondary\", \"negative\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_every_declared_cast_role_is_read_and_a_parenthesis_names_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "customer dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\"negative\", \"customer\", \"served\")",
+      "new": "\"negative\", \"served\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_every_declared_cast_role_is_read_and_a_parenthesis_names_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "word boundary dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "+ r\")\\b\", re.I)",
+      "new": "+ r\")\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_every_declared_cast_role_is_read_and_a_parenthesis_names_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role searched anywhere in heading",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "r\"^#{2,}\\s*(\" + \"|\".join(PERSONA_ROLES)",
+      "new": "r\"^#{2,}.*?(\" + \"|\".join(PERSONA_ROLES)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_every_declared_cast_role_is_read_and_a_parenthesis_names_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negative dropped (control)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\"supplemental\", \"negative\", \"customer\"",
+      "new": "\"supplemental\", \"customer\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_registry_parses_each_declared_role",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

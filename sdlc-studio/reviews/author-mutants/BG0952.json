@@ -1,0 +1,61 @@
+{
+  "unit": "BG0952",
+  "digest": "e4fb62ab7d7a312f at 7c6165d2c235",
+  "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG0952-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no dash allowance",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:[-\\u2013\\u2014]\\s*)?(none|n/?a)",
+      "new": "(none|n/?a)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_dash_forms_declare_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hyphen dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "[-\\u2013\\u2014]",
+      "new": "[\\u2013\\u2014]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_dash_forms_declare_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "en dash dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "[-\\u2013\\u2014]",
+      "new": "[-\\u2014]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_dash_forms_declare_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "em dash dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "[-\\u2013\\u2014]",
+      "new": "[-\\u2013]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_dash_forms_declare_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "word boundary loosened (guard)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(none|n/?a)\\b\", re.IGNORECASE)",
+      "new": "(none|n/?a)\", re.IGNORECASE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_word_boundary_still_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none may follow anything (loosened)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "[-\\u2013\\u2014]\\s*)?(none",
+      "new": "[-\\u2013\\u2014]\\s*)?.*(none",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py::DeclaresNoneFormsTests::test_word_boundary_still_holds",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

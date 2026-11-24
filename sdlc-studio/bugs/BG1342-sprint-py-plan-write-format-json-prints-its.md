@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1342.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py, changelog.d/BG1342.md
 > **Evidence:** RUN-01M77177, 2026-11-12: US1149's builder
 > **Created:** 2026-11-12
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Print the run-opening lines to stderr under --format json.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPB lane: test_sprint_handoff.py::FreshSessionTests reads the JSON after the run-opening lines, which is the defect itself, so the fix changes that test |

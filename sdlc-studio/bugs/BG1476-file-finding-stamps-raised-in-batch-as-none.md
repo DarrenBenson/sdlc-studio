@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1476.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/lib/resume_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1476.md
 > **Evidence:** sdlc-studio/bugs/BG1455 to BG1473, filed during RUN-01M7EYR3.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Stamp the open run's id when a run is open, falling back to 'none open' only whe
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's FA lane: the fix changes the mid-run stamp that lib/resume_brief.py reads and test_resume_brief.py pins (KnownIssuesTests) |
