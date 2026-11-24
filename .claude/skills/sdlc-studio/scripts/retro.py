@@ -2821,8 +2821,11 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     retro and the report add the same totals. A harness other than Claude answers through the
     flag its own reader gave, stamped with each reading, and the basis then names that harness
     and quotes its reader's basis in place of the Claude transcript's wording, which is
-    unchanged. Same shape as `harness_tokens`: {"tokens",
-    "source", "basis"} or {"tokens": None, "reason"}.
+    unchanged. A total tagged to a harness (`--delegated-harness`) is decided by this one
+    capture instead: left out only when the capture is that harness's own reading and holds its
+    subagents, and added under any other, which does not read that harness's session, where the
+    report's figures over every session's stamps may leave it out. Same shape as
+    `harness_tokens`: {"tokens", "source", "basis"} or {"tokens": None, "reason"}.
 
     `retro_id` is REQUIRED, and the units are read from that retro, because the delta is only
     this retro's spend if the open run is the run that delivered it. Reading the open run and
@@ -2929,26 +2932,37 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     reads_agents = bool(cap.get("includes_subagents"))
     stamped = run_state.run_token_total(state, cap)
     whole = bool(stamped.get("includes_subagents"))
-    readers = set() if whole else run_state.subagent_readers(stamped)
-    delegated = run_state.delegated_records(state, readers)
-    supplied = 0 if whole else run_state.delegated_total(state, readers)
+    harness = run_state.harness_of(cap)
+    claude = harness == run_state.CLAUDE
+
+    # This figure is ONE capture, this session's own reading, not every session's stamps. A
+    # total tagged to a harness is in it only when the capture is that harness's reading and
+    # holds its subagents; under any other capture it is added, since this reading does not read
+    # that harness's session. An untagged total is in it only over stamps that all hold theirs.
+    def in_capture(r: dict) -> bool:
+        tag = r.get(run_state.HARNESS)
+        return reads_agents and tag == harness if tag else whole
+
+    every = run_state.delegated_records(state)
+    left = [r for r in every if in_capture(r)]
+    delegated = [r for r in every if not in_capture(r)]
+    supplied = sum(r["tokens"] for r in delegated)
     total = delta + supplied
-    # The supplied totals left out above because they are tagged to a harness whose reading
-    # holds its agents, counted per harness and said in the basis: a basis that read as though
-    # nothing was supplied would invite the same total again, untagged, and count it twice.
-    left_out: dict[str, int] = {}
-    for r in run_state.delegated_records(state):
-        if r.get(run_state.HARNESS) in readers:
-            left_out[r[run_state.HARNESS]] = left_out.get(r[run_state.HARNESS], 0) + 1
-    held_out = "".join(
-        f". The {h} reading already holds delegated agents' spend, so the {n} delegated "
-        f"total(s) supplied under {h} are not added: adding them would count that spend twice"
-        for h, n in left_out.items())
+    # The totals tagged to this capture's own harness, left out above, said in the basis of a
+    # reading that holds its subagents beside stamps that do not all hold theirs (the one branch
+    # that states them, where `left` holds only those): a basis that read as though nothing was
+    # supplied would invite the same total again, untagged, and count it twice.
+    mine = len(left)
+    # The added totals the report's figures over every session's stamps leave out: tagged to a
+    # harness whose stamped reading holds its agents, a session this capture does not read.
+    apart = sum(1 for r in delegated
+                if r.get(run_state.HARNESS) in run_state.subagent_readers(stamped))
+    held_out = (f". The {harness} reading already holds delegated agents' spend, so the {mine} "
+                f"delegated total(s) supplied under {harness} are not added: adding them would "
+                f"count that spend twice" if mine else "")
     # The sentences below are the Claude transcript's, kept word for word. Another harness's
     # reading is stated in its reader's own words, and "main thread" appears only where they
     # say it.
-    harness = run_state.harness_of(cap)
-    claude = harness == run_state.CLAUDE
     if claude:
         meter = (f"the current-session total {cap['tokens']:,} less the {baseline:,} on the "
                  f"meter when the run opened " + (
@@ -2970,8 +2984,11 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
         measured, spend = f"by the {harness} reader", f"as the {harness} reader measured it"
     if whole:
         basis = (f"{rid} cost {total:,}: {meter}. {held}"
-                 + (f", so the {len(delegated)} delegated total(s) supplied are not added"
+                 + (f", so the {len(left)} delegated total(s) supplied are not added"
                     + ("" if claude else ": adding them would count that spend twice")
+                    if left else "")
+                 + (f". It adds {supplied:,} SUPPLIED by {len(delegated)} delegated agent(s) "
+                    f"tagged to another harness, whose session this reading does not read"
                     if delegated else ""))
     elif reads_agents:
         # This reading holds the subagent transcripts and the run's stamps do not say theirs
@@ -2983,24 +3000,26 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
                  + (". This reading holds the subagent transcripts" if claude else
                     f". The {harness} reading holds delegated agents' spend")
                  + ", but the run's meter stamps do not say theirs did, so "
-                 + ("the delegated totals supplied are added, as the sprint report adds them, "
-                    "and an agent that ran as a subagent of this session is counted in both"
-                    if supplied else "no delegated total was supplied to add")
+                 + (("the delegated totals supplied are added, as the sprint report adds them, "
+                     if not apart else
+                     f"the delegated totals supplied are added, though the sprint report's "
+                     f"figures over every session's stamps leave out the {apart} tagged to a "
+                     f"harness whose reading holds them, ")
+                    + "and an agent that ran as a subagent of this session is counted in both"
+                    if supplied else "no other delegated total was supplied to add" if mine
+                    else "no delegated total was supplied to add")
                  + held_out)
     elif supplied:
         basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED {measured} "
                  f"({meter}), plus {supplied:,} SUPPLIED by {len(delegated)} delegated "
                  f"agent(s), which is a figure they reported rather than one measured here. "
-                 f"{bound}" + held_out)
-    elif held_out:
-        basis = (f"{rid} cost AT LEAST {delta:,}, {spend}: {meter}{held_out}. No other "
-                 f"delegated total was supplied, and {bound}")
+                 f"{bound}")
     else:
         basis = (f"{rid} cost AT LEAST {delta:,}, {spend}: {meter}. No delegated "
                  f"total was supplied, and {bound}. Record one with "
                  f"`accuracy --delegated-tokens N --delegated-agent NAME`")
     return {"tokens": total, "measured_tokens": delta, "delegated_tokens": supplied,
-            "delegated_records": len(delegated), "lower_bound": not (whole or reads_agents),
+            "delegated_records": len(every if whole else delegated), "lower_bound": not (whole or reads_agents),
             # The model the transcript names for the counted usage, carried through from the
             # capture so the interactive close can book the row in the (project, model) cell
             # rather than the unrecorded-model one. `mixed` when the session spanned two.
@@ -3013,7 +3032,7 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
             # over a reading that leaves agents out: a reading of the subagent transcripts
             # already holds the agents that ran in this session, and pricing them again would
             # count their dollars twice.
-            "delegated_split": (run_state.delegated_split(state, readers)
+            "delegated_split": (run_state.delegated_split({**state, run_state.DELEGATED: delegated})
                                 if supplied and not reads_agents else None),
             **_priced_window(redone if rebased else base, cap)}
 
@@ -5092,8 +5111,10 @@ def build_parser() -> argparse.ArgumentParser:
                                 + ", ".join(token_meters.HARNESSES) + "). Where that "
                                 "harness's reading in the run holds its subagents' spend, as "
                                 "an opencode session's does, the total is left out of the "
-                                "run's total, which already counts it; a total with no "
-                                "harness is added as before. Leave it off for an agent that "
+                                "report's figures over every session's stamps, which already "
+                                "count it, and out of this command's one-capture total only "
+                                "when the capture is that harness's own reading and holds its "
+                                "subagents; a total with no harness is added as before. Leave it off for an agent that "
                                 "ran as a session of its own, which no reading holds. Any "
                                 "other name is refused and nothing is recorded")
             p.add_argument("--delegated-unit", dest="delegated_unit", default="",

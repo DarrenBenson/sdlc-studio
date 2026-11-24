@@ -792,8 +792,12 @@ against the open run, and `--delegated-harness HARNESS` (`claude`, `cursor`, `co
 `opencode` or `codex`) names the harness whose metered session ran the agent as a subagent.
 Where that harness's reading in the run already holds its subagents' spend, as an opencode
 session's does beside a Claude main thread, the total is kept on the record but left out of the
-run's Tokens figures and the retro's total, so it is not counted twice, and the retro's basis
-says so. Any other name is refused and nothing is recorded, and a total with no harness is
+report's Tokens figures, which read every session's stamps, so it is not counted twice. The
+retro's accuracy total is one capture, the closing session's own reading: it leaves the total
+out only when that capture is the tagged harness's reading and holds its subagents, and its
+basis then says adding it would count that spend twice. Under any other capture, such as a
+Claude close, the total is added, since that capture does not read the tagged harness's
+session. Any other name is refused and nothing is recorded, and a total with no harness is
 added as before. Leave the flag off for an agent that ran as a session of its own, which no
 reading holds; a lane return's record names no harness for the same reason.
 

@@ -1387,25 +1387,19 @@ class DelegatedHarnessTests(unittest.TestCase):
                          "the untagged records are kept whatever harness is excluded")
 
     def test_a_record_tagged_to_a_subagent_reading_harness_is_not_added(self) -> None:
-        """AC1. MUTANT: the whole delegated total is added because `includes_subagents` is an
-        all() over the meters, so the opencode session's delegated spend counts twice."""
-        import retro
+        """AC1, over every session's stamps: `_run_tokens_actual` and the page's Tokens figure
+        leave the opencode-tagged record out and add the untagged one. (The retro's one-capture
+        total is AC6's.) MUTANT: the whole delegated total is added because
+        `includes_subagents` is an all() over the meters, so the opencode session's delegated
+        spend counts twice."""
         import sprint_report
         state = self._state(self._record(300, harness="opencode"), self._record(200))
         total = run_state.run_token_total(state)
         self.assertFalse(total["includes_subagents"], "premise: Claude's main thread is in it")
         self.assertEqual({"opencode"}, run_state.subagent_readers(total))
         self.assertEqual((4600 + 200, 1), sprint_report._run_tokens_actual(state, total))
-        held = {**state, run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}}
-        with (mock.patch.object(retro, "retro_units", return_value=[]),
-              mock.patch.object(retro, "_run_covers", return_value=True),
-              mock.patch.object(retro, "harness_tokens", return_value={
-                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b"}),
-              mock.patch.object(run_state, "read", return_value=held)):
-            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
-        self.assertEqual(4000 + 200, got["tokens"])
-        self.assertEqual(200, got["delegated_tokens"])
-        self.assertEqual(1, got["delegated_records"])
+        section = sprint_report._cost_section(state, "state", total)
+        self.assertEqual(4600 + 200, section["figures"]["tokens_total"]["value"])
 
     @staticmethod
     def _mixed_stamps(harness: str) -> list[dict]:
@@ -1520,20 +1514,26 @@ class DelegatedHarnessTests(unittest.TestCase):
                 rc = exc.code
         return rc, said.getvalue()
 
+    #: The opencode session's own reading at the close (`_stamps`'s 100 then 700), which holds
+    #: its subagents, and the baseline it was opened on.
+    OPENCODE_CAPTURE = {"tokens": 700, "source": "oc:1", "harness": "opencode", "basis": "b",
+                        "includes_subagents": True}
+    OPENCODE_BASELINE = {"tokens": 100, "source": "oc:1", "harness": "opencode"}
+
     def _three_totals(self) -> tuple:
         """The run's total three ways over the recorded delegated totals and `_stamps`'s mixed
-        run: `_run_tokens_actual`, the page's Tokens figure, and the retro's accuracy total with
-        the supplied totals its dollars leave unpriced."""
+        run: `_run_tokens_actual` and the page's Tokens figure over every session's stamps, and
+        the retro's accuracy total from a close under opencode, whose one capture is the
+        opencode session's own reading, with the supplied totals its dollars leave unpriced."""
         import retro
         import sprint_report
         state = {**run_state.read(str(self.root)), run_state.TOKEN_STAMPS: self._stamps()}
         total = run_state.run_token_total(state)
         page = sprint_report._cost_section(state, "state", total)["figures"]["tokens_total"]
-        held = {**state, run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}}
+        held = {**state, run_state.TOKEN_BASELINE: self.OPENCODE_BASELINE}
         with (mock.patch.object(retro, "retro_units", return_value=[]),
               mock.patch.object(retro, "_run_covers", return_value=True),
-              mock.patch.object(retro, "harness_tokens", return_value={
-                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b"}),
+              mock.patch.object(retro, "harness_tokens", return_value=self.OPENCODE_CAPTURE),
               mock.patch.object(run_state, "read", return_value=held)):
             got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
         unpriced = [r["tokens"] for r in (got["delegated_split"] or {}).get("unpriced") or []]
@@ -1571,80 +1571,197 @@ class DelegatedHarnessTests(unittest.TestCase):
                       said)
         [tagged] = run_state.read(str(self.root))[run_state.DELEGATED]
         self.assertEqual("opencode", tagged["harness"])
-        self.assertEqual(((4600, 0), 4600, 4000, []), self._three_totals())
+        self.assertEqual(((4600, 0), 4600, 600, []), self._three_totals())
         rc, said = self._accuracy("--delegated-tokens", "300")
         self.assertEqual(0, rc, said)
         self.assertNotIn("under", said.splitlines()[0])
         self.assertNotIn("harness", run_state.read(str(self.root))[run_state.DELEGATED][-1])
-        self.assertEqual(((4900, 1), 4900, 4300, [300]), self._three_totals(),
-                         "the untagged total is added, and only it is named unpriced")
+        self.assertEqual(((4900, 1), 4900, 900, []), self._three_totals(),
+                         "the untagged total is added, and none is priced over that reading")
         page = (Path(__file__).resolve().parents[2] / "help" / "sprint.md").read_text(
             encoding="utf-8")
         self.assertTrue(any("--delegated-tokens" in p and "--delegated-harness" in p
                             for p in page.split("\n\n")),
                         "help/sprint.md names --delegated-harness beside --delegated-tokens")
 
-    def test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied(self) -> None:
-        """`retro.py accuracy --tokens-from-harness` states the capture's basis. Over a run with
-        no delegated total it says none was supplied and how to record one; once a total tagged
-        to opencode, whose reading holds its agents, is left out, it says that total was
-        supplied and is not added, never that none was or that one should be recorded (which
-        would invite the same total again untagged, the double count). Beside an untagged total
-        and over a reading that holds this session's subagents it says the same. MUTANTS: the
-        sentence dropped from each branch, the left-out totals counted over every record or
-        none, and the no-supply advice kept beside a left-out total."""
-        import retro
+    def _retro_fixture(self) -> None:
         retros = self.root / "sdlc-studio" / "retros"
         retros.mkdir()
         (retros / "RETRO0001-r.md").write_text("# RETRO0001: r\n\n> **Batch:** BG0001\n",
                                                encoding="utf-8")
+
+    def _captured(self) -> str:
+        """The capture line `retro.py accuracy --tokens-from-harness` prints."""
+        rc, said = self._accuracy("--tokens-from-harness")
+        self.assertEqual(0, rc, said)
+        [line] = [s for s in said.splitlines() if s.startswith("token actual captured")]
+        return line
+
+    def _tag(self, tokens: int, *harness: str) -> None:
+        flags = ("--delegated-harness", *harness) if harness else ()
+        rc, said = self._accuracy("--delegated-tokens", str(tokens), *flags)
+        self.assertEqual(0, rc, said)
+
+    def test_an_own_capture_holding_its_agents_says_a_tagged_total_would_count_twice(
+            self) -> None:
+        """A close under opencode, whose one capture is the opencode session's own reading and
+        holds its subagents, leaves an opencode-tagged total out and says adding it would count
+        that spend twice, never that none was supplied; an untagged total and one tagged to
+        another harness are added beside it. MUTANTS: the sentence dropped, the tagged total
+        held by any capture or by none, the count fixed at one, and the no-supply wording kept
+        beside a left-out total."""
+        import retro
+        self._retro_fixture()
         run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
-        run_state.update(str(self.root), **{
-            run_state.TOKEN_STAMPS: self._stamps(),
-            run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}})
-
-        def basis(**cap) -> str:
-            with (mock.patch.object(retro, "_run_covers", return_value=True),
-                  mock.patch.object(retro, "harness_tokens", return_value={
-                      "tokens": 5000, "source": "/c/s.jsonl", "basis": "b", **cap})):
-                rc, said = self._accuracy("--tokens-from-harness")
-            self.assertEqual(0, rc, said)
-            [line] = [s for s in said.splitlines() if s.startswith("token actual captured")]
-            return line
-
+        run_state.update(str(self.root), **{run_state.TOKEN_STAMPS: self._stamps(),
+                                            run_state.TOKEN_BASELINE: self.OPENCODE_BASELINE})
         left = ("The opencode reading already holds delegated agents' spend, so the 1 delegated "
                 "total(s) supplied under opencode are not added: adding them would count that "
                 "spend twice")
-        none = basis()
-        self.assertIn("AT LEAST 4,000", none)
-        self.assertIn("No delegated total was supplied", none)
-        self.assertIn("Record one with `accuracy --delegated-tokens N", none)
-        self.assertNotIn("not added", none, "the control: nothing was left out")
-        self.assertEqual(0, self._accuracy("--delegated-tokens", "300", "--delegated-harness",
-                                           "opencode")[0])
-        tagged = basis()
-        self.assertIn("AT LEAST 4,000", tagged)
-        self.assertIn(left, tagged)
-        self.assertIn("No other delegated total was supplied", tagged)
-        self.assertNotIn("No delegated total was supplied", tagged)
-        self.assertNotIn("Record one", tagged)
-        self.assertEqual(0, self._accuracy("--delegated-tokens", "300")[0])
-        both = basis()
-        self.assertIn("AT LEAST 4,300", both)
-        self.assertIn("plus 300 SUPPLIED by 1 delegated agent(s)", both)
-        self.assertIn(left, both)
-        self.assertEqual(0, self._accuracy("--delegated-tokens", "200", "--delegated-harness",
-                                           "claude")[0])
-        added = basis()
-        self.assertIn("plus 500 SUPPLIED by 2 delegated agent(s)", added)
-        self.assertNotIn("under claude", added, "a harness whose reading leaves agents out")
-        self.assertIn(left, added)
-        held = basis(includes_subagents=True)
-        self.assertIn("This reading holds the subagent transcripts", held)
-        self.assertIn(left, held)
-        self.assertEqual(0, self._accuracy("--delegated-tokens", "100", "--delegated-harness",
-                                           "opencode")[0])
-        self.assertIn(left.replace("the 1 delegated", "the 2 delegated"), basis())
+        with (mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value=self.OPENCODE_CAPTURE)):
+            none = self._captured()
+            self.assertIn("cost 600:", none)
+            self.assertIn("so no delegated total was supplied to add", none)
+            self.assertNotIn("not added", none, "the control: nothing was left out")
+            self._tag(300, "opencode")
+            tagged = self._captured()
+            self.assertIn("cost 600:", tagged)
+            self.assertIn(left, tagged)
+            self.assertIn("so no other delegated total was supplied to add", tagged)
+            self.assertNotIn("no delegated total was supplied", tagged)
+            self._tag(300)
+            both = self._captured()
+            self.assertIn("cost 900:", both)
+            self.assertIn("plus 300 SUPPLIED by 1 delegated agent(s)", both)
+            self.assertIn(left, both)
+            self._tag(200, "claude")
+            added = self._captured()
+            self.assertIn("cost 1,100:", added, "Claude's session is not in this capture")
+            self.assertIn("plus 500 SUPPLIED by 2 delegated agent(s)", added)
+            self.assertNotIn("under claude", added)
+            self.assertIn("as the sprint report adds them", added,
+                          "the report adds a claude-tagged total too: claude holds no agents")
+            self.assertIn(left, added)
+            self._tag(100, "opencode")
+            self.assertIn(left.replace("the 1 delegated", "the 2 delegated"), self._captured())
+
+    def test_a_capture_of_another_harness_adds_a_tagged_record(self) -> None:
+        """AC6. A Claude close beside an opencode session whose stamps hold its subagents, read
+        from a real Claude transcript through `retro.py accuracy --tokens-from-harness`: the
+        capture is the Claude session's span alone (1,000 to 5,000), which does not read the
+        opencode session, so an opencode-tagged 300 is added, named as supplied and unpriced,
+        and no sentence calls it already counted. MUTANTS: the tagged total held by a capture of
+        another harness, or by a capture that does not hold its subagents."""
+        import retro
+        self._retro_fixture()
+        transcripts = self.root / "transcripts"
+        transcripts.mkdir()
+
+        def spend(tokens: int) -> None:
+            with (transcripts / "session.jsonl").open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"message": {"model": "m", "usage": {
+                    "input_tokens": tokens, "output_tokens": 0}}}) + "\n")
+        env = mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts),
+                                           "SDLC_STUDIO_HARNESS": "claude"})
+        env.start()
+        self.addCleanup(env.stop)
+        spend(1000)
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        state = run_state.read(str(self.root))
+        self.assertEqual(1000, state[run_state.TOKEN_BASELINE]["tokens"],
+                         "premise: the run opened on the transcript's reading")
+        [opened] = state[run_state.TOKEN_STAMPS]
+        self.assertFalse(opened["subagents"], "premise: the Claude reading holds no subagent")
+        comps = dict(opened["components"], input=5000)
+        run_state.update(str(self.root), **{run_state.TOKEN_STAMPS: [
+            opened, dict(opened, tokens=5000, priced=5000, components=comps,
+                         by_model={"m": comps}, kind="report", at="2099-01-01T00:00:00Z"),
+            *[s for s in self._stamps() if s.get("harness") == "opencode"]]})
+        spend(4000)
+        total = run_state.run_token_total(run_state.read(str(self.root)))
+        self.assertEqual((4600, {"opencode"}), (total["tokens"],
+                                                run_state.subagent_readers(total)),
+                         "premise: the stamps hold both sessions, opencode's with its agents")
+        self._tag(300, "opencode")
+        line = self._captured()
+        self.assertIn("AT LEAST 4,300", line)
+        self.assertIn("plus 300 SUPPLIED by 1 delegated agent(s)", line)
+        for false in ("already holds", "twice", "not added", "No delegated total was supplied"):
+            self.assertNotIn(false, line)
+        got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual((4300, 300, 1),
+                         (got["tokens"], got["delegated_tokens"], got["delegated_records"]))
+        self.assertEqual([300], [r["tokens"] for r in got["delegated_split"]["unpriced"]])
+        self._tag(200, "claude")
+        line = self._captured()
+        self.assertIn("plus 500 SUPPLIED by 2 delegated agent(s)", line,
+                      "a capture that holds no subagent holds no claude-tagged total either")
+        self.assertNotIn("not added", line)
+
+    def test_a_capture_holding_its_own_agents_adds_a_total_tagged_to_another_harness(
+            self) -> None:
+        """AC6 over stamps that all hold their subagents: a Claude capture that holds its own
+        subagents leaves the untagged and the claude-tagged totals out, as before, and adds the
+        opencode-tagged one, whose session it does not read, saying which it added. MUTANTS:
+        every total left out over such stamps, and the added one not named."""
+        import retro
+        stamps = [dict(s, subagents=True) for s in self._stamps()]
+        held = {"run_id": "RUN-X", "outcome": "running", run_state.TOKEN_STAMPS: stamps,
+                run_state.DELEGATED: [self._record(300, harness="opencode"), self._record(200),
+                                      self._record(100, harness="claude")],
+                run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b",
+                  "includes_subagents": True}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual((4300, 300, 3),
+                         (got["tokens"], got["delegated_tokens"], got["delegated_records"]))
+        self.assertIn("cost 4,300:", got["basis"])
+        self.assertIn("The subagents are already in the reading, so the 2 delegated total(s) "
+                      "supplied are not added. It adds 300 SUPPLIED by 1 delegated agent(s) "
+                      "tagged to another harness, whose session this reading does not read",
+                      got["basis"])
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b"}),
+              mock.patch.object(run_state, "read", return_value=held)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual((4400, 400), (got["tokens"], got["delegated_tokens"]),
+                         "a capture holding no subagent adds both tagged totals, not the "
+                         "untagged one the stamps hold")
+        self.assertEqual([300, 100], [r["tokens"] for r in got["delegated_split"]["unpriced"]],
+                         "its dollars name only the totals it adds")
+        alone = {**held, run_state.DELEGATED: [self._record(300, harness="opencode")]}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b",
+                  "includes_subagents": True}),
+              mock.patch.object(run_state, "read", return_value=alone)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual(4300, got["tokens"])
+        self.assertNotIn("not added", got["basis"], "nothing this capture holds was supplied")
+        mixed = {**held, run_state.TOKEN_STAMPS: self._stamps()}
+        with (mock.patch.object(retro, "retro_units", return_value=[]),
+              mock.patch.object(retro, "_run_covers", return_value=True),
+              mock.patch.object(retro, "harness_tokens", return_value={
+                  "tokens": 5000, "source": "/c/s.jsonl", "basis": "b",
+                  "includes_subagents": True}),
+              mock.patch.object(run_state, "read", return_value=mixed)):
+            got = retro.run_attributed_tokens(str(self.root), "RETRO0001")
+        self.assertEqual((4500, 500), (got["tokens"], got["delegated_tokens"]),
+                         "beside stamps that do not all hold theirs, the claude-tagged total "
+                         "this capture holds is left out and the other two are added")
+        self.assertIn("so the delegated totals supplied are added, though the sprint report's "
+                      "figures over every session's stamps leave out the 1 tagged to a harness "
+                      "whose reading holds them, and an agent", got["basis"])
+        self.assertIn("The claude reading already holds delegated agents' spend, so the 1 "
+                      "delegated total(s) supplied under claude are not added", got["basis"])
 
     def test_the_dollar_row_leaves_a_tagged_record_out_of_what_it_names_unpriced(self) -> None:
         """The Estimates Dollar cost row names unpriced only the supplied totals its Tokens row
