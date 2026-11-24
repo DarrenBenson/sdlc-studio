@@ -1152,6 +1152,33 @@ class ChangelogFragmentRequiredTests(unittest.TestCase):
                         gitutil.git(["rm", "-q", "--cached", "--", f"changelog.d/{name}.md"],
                                     cwd=repo)
 
+    def test_a_refusal_names_each_unit_as_its_artefacts_spell_it(self):
+        # A schema 3 id is printed dashed, as its record and its fragment spell it, never as the
+        # dashless comparison key the rule matches on, even with no record in the workspace; a
+        # sequential id keeps its dashless spelling, whichever way the subject wrote it.
+        v3 = "BG-01JQK3F8"
+        units = ((v3, "src/v3.py"), ("BG9002", "src/b.py"))
+        both = ("src/v3.py", "src/b.py")
+        for subject, owners, stage, refused in (
+                (f"fix({v3}, BG9002): two\n", units, both, (v3, "BG9002")),
+                (f"fix({v3}): one\n", units, both, (v3,)),
+                (f"fix({v3}): no record\n", units[1:], ("src/b.py",), (v3,)),
+                ("fix(BG-9002): one\n", units, ("src/b.py",), ("BG9002",)),
+                ("fix(BG9002): one\n", units, ("src/b.py",), ("BG9002",))):
+            with self.subTest(subject=subject):
+                with tempfile.TemporaryDirectory() as d:
+                    repo = self._fixture(d, stage=stage, units=owners)
+                    self.assertEqual(owners == units,
+                                     (repo / f"sdlc-studio/bugs/{v3}-sample.md").is_file())
+                    r, out = self._hook(repo, subject)
+                self.assertNotEqual(r.returncode, 0, out)
+                faults = [ln.strip() for ln in out.splitlines() if "stages code but not" in ln]
+                self.assertEqual(
+                    [f"{rid}: the commit stages code but not changelog.d/{rid}.md"
+                     for rid in refused], faults, out)
+                self.assertNotIn("BG01JQK3F8", out)
+                self.assertNotIn("BG-9002:", out)
+
     def test_a_story_and_a_request_id_are_read_from_the_subject(self):
         # The grammar's US and CR branches are live: each id is asked for its own fragment.
         for rid in ("US9003", "CR9004"):

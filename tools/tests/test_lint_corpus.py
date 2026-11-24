@@ -20,12 +20,14 @@ import glob
 import importlib.util
 import io
 import json
+import os
 import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -47,9 +49,19 @@ lint_corpus = _load(REPO / "tools" / "lint_corpus.py", "lint_corpus")
 #: no second copy of the repo-locating variable list.
 gitutil = _load(REPO / ".claude/skills/sdlc-studio/scripts/tests/gitutil.py", "_lc_gitutil")
 
-#: markdownlint-cli is a devDependency, so `npm install` provides it. Resolution walks up
-#: from the repo, which is what makes this work from an agent worktree as well as a clone.
-LINTER = lint_corpus.find_linter(REPO)
+
+def _linter() -> str:
+    """markdownlint, for a test that runs it; that test is skipped, with the reason, where it
+    cannot be found. Looked up per test and never at import, so the module still collects and
+    its tests that need no linter still run without it.
+
+    markdownlint-cli is a devDependency, so `npm install` provides it. Resolution walks up
+    from the repo, which is what makes this work from an agent worktree as well as a clone."""
+    try:
+        return lint_corpus.find_linter(REPO)
+    except lint_corpus.LinterUnavailable as exc:
+        raise unittest.SkipTest(f"markdownlint is not installed here: {exc}") from exc
+
 
 ROOT_CONFIG = (REPO / ".markdownlint.json").read_text(encoding="utf-8")
 PAYLOAD_CONFIG = (REPO / ".claude/skills/sdlc-studio/.markdownlint.json").read_text(
@@ -116,6 +128,7 @@ class CorpusEnumerationTests(unittest.TestCase):
 
 class StrictRuleSetTests(unittest.TestCase):
     def test_a_rule_the_payload_config_relaxes_is_still_reported_by_the_corpus_lane(self) -> None:
+        linter = _linter()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _init_repo(root)
@@ -128,13 +141,13 @@ class StrictRuleSetTests(unittest.TestCase):
             # The hole, measured rather than asserted: under the config the per-commit
             # payload lane uses, this defect is not a finding at all.
             relaxed = lint_corpus.lint_files(
-                [payload], cwd=root, linter=LINTER,
+                [payload], cwd=root, linter=linter,
                 config=root / ".claude/skills/sdlc-studio/.markdownlint.json")
             self.assertEqual([f.rule for f in relaxed if f.rule in ("MD056", "MD060")], [],
                              "the payload config no longer relaxes the observed defect - "
                              "this test's premise has moved")
 
-            findings = lint_corpus.lint_corpus(root, linter=LINTER)
+            findings = lint_corpus.lint_corpus(root, linter=linter)
 
             table = [f for f in findings if f.rule == "MD056"]
             self.assertEqual(len(table), 1, f"expected one MD056 finding, got {findings}")
@@ -242,11 +255,12 @@ class AcceptedRfcDecisionTests(unittest.TestCase):
         self.assertEqual(12, first.line, "the line of the Outcome, as a value")
         self.assertEqual("**Outcome:** pending `rfc decide`", first.context)
         # The whole-corpus entry point carries the rule beside markdownlint's findings.
-        linted = lint_corpus.lint_corpus(root, linter=LINTER)
+        linter = _linter()
+        linted = lint_corpus.lint_corpus(root, linter=linter)
         self.assertEqual([f.path for f in found],
                          [f.path for f in linted if f.rule == lint_corpus.RFC_DECISION_RULE])
         # Through the lane: the finding is in the run's result, unattributed with no baseline.
-        result = lint_corpus.analyse(root, baseline=None, linter=LINTER)
+        result = lint_corpus.analyse(root, baseline=None, linter=linter)
         rows = [f for f in result["findings"] if f["rule"] == lint_corpus.RFC_DECISION_RULE]
         self.assertEqual(4, len(rows), rows)
         self.assertTrue(all(r["status"] == lint_corpus.UNATTRIBUTED for r in rows))
@@ -257,30 +271,41 @@ class AcceptedRfcDecisionTests(unittest.TestCase):
         base = gitutil.git(["rev-parse", "HEAD"], cwd=root, text=True).stdout.strip()
         _write(root, "sdlc-studio/rfcs/RFC0009-new.md", _rfc("0009", "Accepted", PENDING))
         _commit_all(root, "add")
-        attributed = lint_corpus.analyse(root, baseline=base, linter=LINTER)
+        attributed = lint_corpus.analyse(root, baseline=base, linter=linter)
         by = {f["path"].split("/")[-1][:7]: f["status"] for f in attributed["findings"]
               if f["rule"] == lint_corpus.RFC_DECISION_RULE}
         self.assertEqual(lint_corpus.PRE_EXISTING, by["RFC0001"])
         self.assertEqual(lint_corpus.INTRODUCED, by["RFC0009"])
 
     def test_only_a_heading_reading_decision_alone_opens_the_decision_section(self) -> None:
-        """A `## Decisions (...)` heading, such as RFC0020's list of resolved decisions, is not
-        the Decision section: a pending Outcome under it is not reported, and it does not hide a
-        pending Outcome in the `## Decision` section below it."""
+        """The Decision section is the template's `## Decision`, trailing blanks aside. A heading
+        with a suffix is not it, plural or singular: neither `## Decisions (...)`, such as
+        RFC0020's list of resolved decisions, nor `## Decision (accepted 2026-11-14)`. A pending
+        Outcome under one is not reported, and one does not hide a pending Outcome in the
+        `## Decision` section below it."""
         resolved_list = "## Decisions (resolved later)\n\n**Outcome:** pending\n\n"
+        suffixed = "## Decision (accepted 2026-11-14)\n"
         root = self._fixture({
             "RFC0001-decisions-heading-alone": _rfc("0001", "Accepted", "x").replace(
                 "## Decision\n\nx\n\n", resolved_list),
             "RFC0002-decisions-above-decision": _rfc("0002", "Accepted", PENDING).replace(
                 "## Decision\n", "## Decisions (resolved by the consultation)\n\nD1 B\n\n"
                 "## Decision\n"),
+            "RFC0003-decision-with-a-suffix": _rfc("0003", "Accepted", PENDING).replace(
+                "## Decision\n", suffixed),
+            "RFC0004-trailing-blanks": _rfc("0004", "Accepted", PENDING).replace(
+                "## Decision\n", "## Decision \t\n"),
+            "RFC0005-suffix-above-decision": _rfc("0005", "Accepted", PENDING).replace(
+                "## Decision\n", f"{suffixed}\nAccepted by the operator.\n\n## Decision\n"),
         })
         alone = root / "sdlc-studio/rfcs/RFC0001-decisions-heading-alone.md"
         self.assertNotIn("\n## Decision\n", alone.read_text(encoding="utf-8"))
         found = lint_corpus.accepted_rfc_decision_findings(root)
-        self.assertEqual(["sdlc-studio/rfcs/RFC0002-decisions-above-decision.md"],
+        self.assertEqual(["sdlc-studio/rfcs/RFC0002-decisions-above-decision.md",
+                          "sdlc-studio/rfcs/RFC0004-trailing-blanks.md",
+                          "sdlc-studio/rfcs/RFC0005-suffix-above-decision.md"],
                          [f.path for f in found])
-        self.assertEqual("**Outcome:** pending `rfc decide`", found[0].context)
+        self.assertEqual(["**Outcome:** pending `rfc decide`"] * 3, [f.context for f in found])
 
     def test_a_non_utf8_or_non_rfc_file_is_not_a_finding_and_not_a_crash(self) -> None:
         root = self._fixture({"RFC0001-bad-bytes": "x"})
@@ -289,6 +314,45 @@ class AcceptedRfcDecisionTests(unittest.TestCase):
         _write(root, "sdlc-studio/rfcs/RFC0003-ok.md", _rfc("0003", "Accepted", FILLED))
         _commit_all(root, "more")
         self.assertEqual([], lint_corpus.accepted_rfc_decision_findings(root))
+
+
+class LinterLookupTests(unittest.TestCase):
+    """Where markdownlint cannot be found the module still collects: only a test that runs the
+    linter is skipped, with the reason, and the rule's own tests still run."""
+
+    def test_a_test_that_needs_the_linter_is_skipped_with_the_reason(self) -> None:
+        def absent(root):
+            raise lint_corpus.LinterUnavailable("markdownlint not found")
+
+        with mock.patch.object(lint_corpus, "find_linter", absent):
+            with self.assertRaises(unittest.SkipTest) as caught:
+                _linter()
+        self.assertEqual("markdownlint is not installed here: markdownlint not found",
+                         str(caught.exception))
+        # control: a linter that is found is returned, and nothing is skipped
+        with mock.patch.object(lint_corpus, "find_linter", lambda root: "/opt/bin/markdownlint"):
+            self.assertEqual("/opt/bin/markdownlint", _linter())
+
+    def test_the_module_collects_where_markdownlint_cannot_be_found(self) -> None:
+        # In a child, so the module's own loads never touch this process's sys.modules. The
+        # child hides every route find_linter takes, proves the linter is now unfindable, and
+        # only then reports the module collected.
+        probe = (
+            "import os, pathlib, runpy, shutil, sys\n"
+            "shutil.which = lambda *a, **k: None\n"
+            "is_file = pathlib.Path.is_file\n"
+            "pathlib.Path.is_file = lambda p: p.name != 'markdownlint' and is_file(p)\n"
+            "ns = runpy.run_path(sys.argv[1], run_name='collect_probe')\n"
+            "try:\n"
+            "    ns['lint_corpus'].find_linter(ns['REPO'])\n"
+            "except ns['lint_corpus'].LinterUnavailable:\n"
+            "    print('collected without markdownlint')\n"
+        )
+        env = {k: v for k, v in os.environ.items() if k != "MARKDOWNLINT_BIN"}
+        r = subprocess.run([sys.executable, "-c", probe, str(Path(__file__).resolve())],
+                           capture_output=True, text=True, env=env, timeout=60)
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertEqual("collected without markdownlint", r.stdout.strip())
 
 
 class CorpusLaneRunsOnThisRepo(unittest.TestCase):

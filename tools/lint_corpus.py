@@ -141,7 +141,11 @@ def accepted_rfc_decision_findings(root: Path, files=None) -> list[Finding]:
     that was accepted with the outcome still `pending`. Only the Outcome line is judged: an
     RFC not yet Accepted (Proposed, Draft) is not yet decided, and an RFC with no Outcome line
     makes no pending claim. The Outcome is pending when it is empty, starts with `pending`
-    (any case), or is still a `{{placeholder}}`. `files` defaults to the tracked corpus.
+    (any case), or is still a `{{placeholder}}`. The Decision section is the one the template
+    writes, under a heading reading `## Decision` alone (trailing blanks aside), and runs to the
+    next level-two heading: a heading with a suffix, `## Decision (accepted 2026-11-14)` or
+    `## Decisions (resolved by the consultation)`, opens no Decision section, so an RFC with
+    no such heading is not judged. `files` defaults to the tracked corpus.
     """
     root = Path(root)
     findings = []

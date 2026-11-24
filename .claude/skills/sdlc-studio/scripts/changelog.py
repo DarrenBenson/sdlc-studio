@@ -229,7 +229,8 @@ def required(root, message: str) -> list[str]:
     each owning unit's `changelog.d/<ID>.md` is in the index (staged, or tracked and not staged
     for deletion), or under a `Changelog: none - <reason>` trailer. On a shared commit only a
     `Refs:` id that owns a staged code file is asked (`_code_owners`). A `Changelog: none` with no
-    reason exempts nothing. Raises StagedReadError when git cannot answer."""
+    reason exempts nothing. A refusal names each unit as the fragment it asks for spells it
+    (`fragment_names`). Raises StagedReadError when git cannot answer."""
     root = Path(root)
     if not (root / FRAGMENT_DIR).is_dir():
         return []
@@ -249,7 +250,10 @@ def required(root, message: str) -> list[str]:
     found, reasoned = _exemption(message)
     if reasoned:
         return []
-    faults = [f"{i}: the commit stages code but not {fragment_names(i)[0]}" for i in missing]
+    # Each unit is named as the fragment the refusal asks for spells it, never as the dashless
+    # comparison key: `BG-01JQK3F8` for a schema 3 id, `BG1574` for a sequential one.
+    faults = [f"{PurePosixPath(want).stem}: the commit stages code but not {want}"
+              for want in (fragment_names(i)[0] for i in missing)]
     if found:
         faults.append("`Changelog: none` exempts nothing without a reason: write "
                       "`Changelog: none - <why this commit needs no fragment>`")
