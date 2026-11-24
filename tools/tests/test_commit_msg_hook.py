@@ -821,14 +821,26 @@ class ChangelogFragmentRequiredTests(unittest.TestCase):
     def _fixture(self, d: str, *, keep_dir: bool = True, tracked: tuple[str, ...] = (),
                  stage: tuple[str, ...] = (".claude/skills/x/scripts/a.py",),
                  units: tuple[tuple[str, str], ...] = (("BG9001", ".claude/skills/x/scripts/a.py"),
-                                                      ("BG9002", "src/b.py"))) -> Path:
+                                                      ("BG9002", "src/b.py")),
+                 changelog_py: str = "real") -> Path:
         """BG9001 owns a skill script and BG9002 owns src/b.py, by their Affects; `tracked`
-        fragments are committed in the seed, and every path in `stage` is modified and staged."""
+        fragments are committed in the seed, and every path in `stage` is modified and staged.
+        `changelog_py` is "real" (the scripts directory itself), "absent" (every script but
+        changelog.py), or the source of a changelog.py to put in its place."""
         repo = Path(d)
         gitutil.git(["init", "-q"], cwd=repo)
         skill = repo / ".claude" / "skills" / "sdlc-studio"
         skill.mkdir(parents=True)
-        (skill / "scripts").symlink_to(REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        real = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
+        if changelog_py == "real":
+            (skill / "scripts").symlink_to(real)
+        else:
+            (skill / "scripts").mkdir()
+            for entry in real.iterdir():
+                if entry.name not in ("changelog.py", "__pycache__"):
+                    (skill / "scripts" / entry.name).symlink_to(entry)
+            if changelog_py != "absent":
+                (skill / "scripts" / "changelog.py").write_text(changelog_py, encoding="utf-8")
         for rid, owned in units:
             folder = repo / "sdlc-studio" / "bugs"
             folder.mkdir(parents=True, exist_ok=True)
@@ -978,6 +990,7 @@ class ChangelogFragmentRequiredTests(unittest.TestCase):
                                 ("Changelog: none", False),
                                 ("Changelog: none -", False),
                                 ("Changelog: none -   ", False),
+                                ("Changelog: none- x", False),
                                 ("Changelog: none because I said so", False)):
             with self.subTest(trailer=trailer):
                 with tempfile.TemporaryDirectory() as d:
@@ -1062,6 +1075,122 @@ class ChangelogFragmentRequiredTests(unittest.TestCase):
                 r = self._check(repo, repo / "MSG", b"fix(BG-01JQK3F8): x\n")
                 self.assertEqual(r.returncode, 0, name + r.stderr)
                 gitutil.git(["rm", "-q", "--cached", "--", f"changelog.d/{name}.md"], cwd=repo)
+
+    def test_a_shared_commit_asks_no_fragment_of_an_id_that_owns_no_staged_code(self):
+        # A Refs: id whose only staged file is its own record owns no code: the hook writes its
+        # Refs: line from the record's name, and the fragment rule must not then refuse it.
+        record = "sdlc-studio/bugs/BG9001-sample.md"
+        subject = "docs(BG9001, BG9002): record verdicts\n"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=(record, "src/b.py"))
+            self._stage_fragment(repo, "BG9002")
+            r, out = self._hook(repo, subject)
+            self.assertEqual(r.returncode, 0, out)
+            written = (repo / "COMMIT_EDITMSG").read_text(encoding="utf-8")
+            self.assertIn("Refs: BG9001", written)
+            self.assertIn("Refs: BG9002", written)
+        with tempfile.TemporaryDirectory() as d:
+            # control: the id that owns the code is still asked, and only it
+            repo = self._fixture(d, stage=(record, "src/b.py"))
+            r, out = self._hook(repo, subject)
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9002.md", out)
+            self.assertNotIn("changelog.d/BG9001.md", out)
+        with tempfile.TemporaryDirectory() as d:
+            # a code file carrying an id in its name is that unit's code, as the trailers read it
+            repo = self._fixture(d, stage=(".claude/skills/x/scripts/a.py", "src/BG9002-tool.py"))
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, "fix(BG9001, BG9002): a tool named for its unit\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9002.md", out)
+            self._stage_fragment(repo, "BG9002")
+            r, out = self._hook(repo, "fix(BG9001, BG9002): a tool named for its unit\n")
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a written Refs: id with no artefact in the workspace declares nothing and owns no code
+            repo = self._fixture(d)
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, "fix(BG9001, BG9005): x\n\nRefs: BG9005\n")
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a single-id subject owns everything it stages, declared in its Affects or not
+            repo = self._fixture(d, stage=("src/b.py",))
+            r, out = self._hook(repo, "fix(BG9001): a file another unit declares\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9001.md", out)
+        units = (("BG9001", ".claude/skills/x/scripts/a.py"), ("BG9002", "src/b.py"),
+                 ("BG9003", "src/c.py"))
+        stage = (".claude/skills/x/scripts/a.py", "src/b.py", "src/c.py")
+        with tempfile.TemporaryDirectory() as d:
+            # a Refs: id the subject does not name is not the commit's unit and is not asked
+            repo = self._fixture(d, stage=stage, units=units)
+            self._stage_fragment(repo, "BG9001")
+            self._stage_fragment(repo, "BG9002")
+            r, out = self._hook(repo, "fix(BG9001, BG9002): x\n\nRefs: BG9003\n")
+            self.assertEqual(r.returncode, 0, out)
+        with tempfile.TemporaryDirectory() as d:
+            # a written `refs:` line is read whatever its case, as the trailer check reads it
+            repo = self._fixture(d, stage=stage[:2])
+            self._stage_fragment(repo, "BG9001")
+            r, out = self._hook(repo, "fix(BG9001, BG9002): x\n\nRefs: BG9001\nrefs: BG9002\n")
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("changelog.d/BG9002.md", out)
+
+    def test_a_dashed_sequential_id_and_a_dashed_fragment_name_are_one_unit(self):
+        # The subject's `BG-9001` is BG9001, and a fragment in either spelling is its fragment.
+        for subject in ("fix(BG-9001): change a script\n", "fix(BG9001): change a script\n"):
+            with self.subTest(subject=subject):
+                with tempfile.TemporaryDirectory() as d:
+                    repo = self._fixture(d)
+                    r, out = self._hook(repo, subject)
+                    self.assertNotEqual(r.returncode, 0, out)
+                    self.assertIn("changelog.d/BG9001.md", out)
+                    for name in ("BG-9001", "BG9001"):
+                        self._stage_fragment(repo, name)
+                        r, out = self._hook(repo, subject)
+                        self.assertEqual(r.returncode, 0, name + out)
+                        gitutil.git(["rm", "-q", "--cached", "--", f"changelog.d/{name}.md"],
+                                    cwd=repo)
+
+    def test_a_story_and_a_request_id_are_read_from_the_subject(self):
+        # The grammar's US and CR branches are live: each id is asked for its own fragment.
+        for rid in ("US9003", "CR9004"):
+            with self.subTest(rid=rid):
+                with tempfile.TemporaryDirectory() as d:
+                    repo = self._fixture(d, stage=("tools/c.py",))
+                    r, out = self._hook(repo, f"feat({rid}): a tool\n")
+                    self.assertNotEqual(r.returncode, 0, out)
+                    self.assertIn(f"changelog.d/{rid}.md", out)
+                    self._stage_fragment(repo, rid)
+                    r, out = self._hook(repo, f"feat({rid}): a tool\n")
+                    self.assertEqual(r.returncode, 0, out)
+
+    def test_a_scripts_dir_without_the_verb_or_the_script_skips_the_rule(self):
+        # The clone's hooks path is shared by its linked worktrees, each running this hook over
+        # its own scripts: one from before `required`, or with no changelog.py, is not refused.
+        before = ("import argparse\n"
+                  "p = argparse.ArgumentParser(prog='changelog')\n"
+                  "sub = p.add_subparsers(dest='cmd', required=True)\n"
+                  "for verb in ('compose', 'check', 'structure', 'shape'):\n"
+                  "    sub.add_parser(verb)\n"
+                  "p.parse_args()\n")
+        for label, source in (("no required verb", before), ("no changelog.py", "absent")):
+            for subject in ("chore: tidy\n", "fix(BG9001): change a script\n"):
+                with self.subTest(scripts=label, subject=subject):
+                    with tempfile.TemporaryDirectory() as d:
+                        repo = self._fixture(d, changelog_py=source)
+                        r, out = self._hook(repo, subject)
+                    self.assertEqual(r.returncode, 0, out)
+                    self.assertIn("ok   message-refs", out)
+                    # the probe of a missing script is silent, not an attribution note
+                    self.assertNotIn("No such file", out)
+        with tempfile.TemporaryDirectory() as d:
+            # control: the same copied layout with the real script refuses the unit's commit
+            real = REPO / ".claude/skills/sdlc-studio/scripts/changelog.py"
+            repo = self._fixture(d, changelog_py=real.read_text(encoding="utf-8"))
+            r, out = self._hook(repo, "fix(BG9001): change a script\n")
+        self.assertNotEqual(r.returncode, 0, out)
+        self.assertIn("changelog.d/BG9001.md", out)
 
 
 class HookInvocationHermeticityTests(unittest.TestCase):

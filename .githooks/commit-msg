@@ -37,7 +37,8 @@
 #     replayed that message, the author cannot restructure it, and the work it records was
 #     gated on its original commit
 # Degrades honestly: with no python3, no script, or an unreadable message the check is
-#   skipped and never blocks a legitimate commit.
+#   skipped and never blocks a legitimate commit; the fragment rule alone is skipped where
+#   changelog.py is absent or predates its `required` verb.
 #
 # 2. THE UNIT SUITES. Run only when pre-commit selected them and left its handover record, and
 # on the gate host when this clone names one (`sdlc.gateHost`), here when it names none, when
@@ -79,6 +80,7 @@ git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || exit 0
 cd "$repo_root" || exit 0
 skill=".claude/skills/sdlc-studio/scripts"
 script="$repo_root/$skill/engagement_floor.py"
+changelog="$repo_root/$skill/changelog.py"
 # The repo-writes snapshot pre-commit took: checked by the lane below, dropped on a refusal.
 writes_snapshot="$(git rev-parse --git-path sdlc-repo-writes 2>/dev/null || true)"
 [ -n "$writes_snapshot" ] || writes_snapshot="$git_dir/sdlc-repo-writes"
@@ -208,9 +210,12 @@ message_lane() {
     # Trailers settled: a unit's commit that stages code carries the unit's `changelog.d/<ID>.md`,
     # staged now or tracked from an earlier commit of the unit. Only the message says which unit
     # the commit belongs to, so the rule lives here and not in pre-commit. A shared commit's
-    # owners are its `Refs:` ids; `Changelog: none - <reason>` exempts one commit, a bare one does
-    # not; a project with no `changelog.d/` directory is never asked.
-    if ! frag="$(python3 "$repo_root/$skill/changelog.py" required --root "$repo_root" "$msg_file" 2>&1)"; then
+    # owners are its `Refs:` ids that own a staged code file; `Changelog: none - <reason>`
+    # exempts one commit, a bare one does not; a project with no `changelog.d/` is never asked.
+    # core.hooksPath is shared by every linked worktree, each running this over its OWN scripts,
+    # so a changelog.py that is absent or has no `required` verb skips the rule, never refuses.
+    if grep -q 'add_parser("required"' "$changelog" 2>/dev/null \
+       && ! frag="$(python3 "$changelog" required --root "$repo_root" "$msg_file" 2>&1)"; then
       printf '%s\n%s\n' "$out" "$frag"
       return 1
     fi
@@ -249,7 +254,7 @@ message_lane() {
 msg_out=""
 if [ "$check_message" -eq 1 ]; then
   run "message-refs" \
-    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them; the hook writes both from the staged files' Affects, and refuses a commit no named id owns a staged file of, or a Refs: line naming a unit that owns none; and a commit naming a unit that stages anything outside sdlc-studio/ and changelog.d/ also stages, or already tracks, changelog.d/<ID>.md for each id that owns it (the subject's one id, or each Refs: id of a shared commit; a Mentions: id owns none), unless a Changelog: none - <reason> trailer says why not" \
+    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them; the hook writes both from the staged files' Affects, and refuses a commit no named id owns a staged file of, or a Refs: line naming a unit that owns none; and a commit naming a unit that stages anything outside sdlc-studio/ and changelog.d/ also stages, or already tracks, changelog.d/<ID>.md for each id that owns it (the subject's one id, or each Refs: id of a shared commit that owns a staged file outside them; a Mentions: id owns none), unless a Changelog: none - <reason> trailer says why not" \
     "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, or declare the file in that unit's Affects, then commit again; a subject naming a single id needs no trailer. For a missing fragment, stage the unit's changelog.d/<ID>.md (opening with <!-- section: Added|Changed|Fixed -->), or add the trailer Changelog: none - <reason> when the commit needs no entry" \
     -- message_lane
   msg_out="$last_run_out"

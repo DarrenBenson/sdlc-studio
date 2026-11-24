@@ -25,7 +25,8 @@ the drift, and the commit that wrote the fragment the cheapest.
 
 `required` is the same rule applied one step earlier still: the commit-msg hook asks it whether
 a commit that names a unit and stages code also stages (or already tracks) that unit's fragment,
-since only the message says which unit the commit belongs to.
+since only the message says which unit the commit belongs to. On a shared commit only a unit that
+owns a staged code file is asked.
 """
 from __future__ import annotations
 
@@ -161,31 +162,54 @@ def _message_lines(message: str) -> list[str]:
     return [ln for ln in message.splitlines() if not ln.startswith("#")]
 
 
+def _subject_ids(message: str) -> set[str]:
+    """The unit ids the subject names, normalised: `BG-1574` and `BG1574` are one id."""
+    subject = next((ln for ln in _message_lines(message) if ln.strip()), "")
+    return {sdlc_md.norm_id(i) for i in _UNIT_ID.findall(subject)}
+
+
 def owning_ids(message: str) -> list[str]:
-    """The unit ids a commit message owns the staged code of, normalised and sorted.
+    """The unit ids a commit message attributes the commit to, normalised and sorted.
 
     A subject naming one unit gives that unit the commit. A subject naming several leaves the
-    attribution to the `Refs:` trailers (the hook writes them from the staged files' `Affects`
-    before this runs), and an id only a `Mentions:` trailer names owns nothing. A subject naming
-    no unit owns nothing."""
-    lines = _message_lines(message)
-    subject = next((ln for ln in lines if ln.strip()), "")
-    named = {sdlc_md.norm_id(i) for i in _UNIT_ID.findall(subject)}
+    attribution to the `Refs:` trailers among the ids it names (the hook writes them from the
+    staged files' ownership before this runs, a unit's own record included), and an id only a
+    `Mentions:` trailer names owns nothing. A subject naming no unit owns nothing."""
+    named = _subject_ids(message)
     if len(named) <= 1:
         return sorted(named)
-    refs = {sdlc_md.norm_id(i) for m in _REFS_LINE.finditer("\n".join(lines))
+    refs = {sdlc_md.norm_id(i) for m in _REFS_LINE.finditer("\n".join(_message_lines(message)))
             for i in _UNIT_ID.findall(m.group(1))}
     return sorted(refs & named)
 
 
+def _code_owners(root: Path, ids: list[str], code: list[str]) -> list[str]:
+    """The ids among `ids` that own one of the staged `code` paths, read the way the hook's
+    trailer derivation reads ownership: the unit's `Affects` covers the path (the file, a
+    directory it sits under or a glob it matches), or the path carries the unit's id in its
+    name. An id with no artefact in the workspace declares nothing. A unit whose only staged
+    file is paperwork (its record, its fragment) owns no code, so it owes no fragment."""
+    import engagement_floor  # noqa: PLC0415 - read only for a shared commit; sibling script
+    owners = []
+    for rid in ids:
+        found = sdlc_md.find_by_id(root, rid)
+        declared = (engagement_floor.declared_keys(root, sdlc_md.read_text_safe(found[0]) or "")
+                    if found else set())
+        if any(engagement_floor._path_owner(f) == rid
+               or any(engagement_floor.declaration_covers(f, d) for d in declared)
+               for f in code):
+            owners.append(rid)
+    return owners
+
+
 def fragment_names(unit_id: str) -> list[str]:
-    """The fragment paths that satisfy a normalised unit id, the one a refusal names first. A
-    sequential id (`BG1574`) has one; a schema 3 id has the dashed spelling its artefacts use
-    (`BG-01JQK3F8`) and the dashless one `sdlc_md.norm_id` gives."""
-    names = [f"{FRAGMENT_DIR}/{unit_id}.md"]
-    if not unit_id[2:].isdigit():
-        names.insert(0, f"{FRAGMENT_DIR}/{unit_id[:2]}-{unit_id[2:]}.md")
-    return names
+    """The fragment paths that satisfy a normalised unit id, the one a refusal names first:
+    both the dashless spelling `sdlc_md.norm_id` gives and the dashed one, since a subject's
+    `BG-1574` reads as `BG1574`. A sequential id (`BG1574`) is named dashless first, as this
+    project writes it; a schema 3 id (`BG-01JQK3F8`) dashed first, as its artefacts spell it."""
+    dashless = f"{FRAGMENT_DIR}/{unit_id}.md"
+    dashed = f"{FRAGMENT_DIR}/{unit_id[:2]}-{unit_id[2:]}.md"
+    return [dashless, dashed] if unit_id[2:].isdigit() else [dashed, dashless]
 
 
 def _exemption(message: str) -> tuple[bool, bool]:
@@ -203,7 +227,8 @@ def required(root, message: str) -> list[str]:
     Applies only where the project keeps a `changelog.d/` directory. A commit passes when no unit
     owns it, when everything it stages is paperwork (under `sdlc-studio/` or `changelog.d/`), when
     each owning unit's `changelog.d/<ID>.md` is in the index (staged, or tracked and not staged
-    for deletion), or under a `Changelog: none - <reason>` trailer. A `Changelog: none` with no
+    for deletion), or under a `Changelog: none - <reason>` trailer. On a shared commit only a
+    `Refs:` id that owns a staged code file is asked (`_code_owners`). A `Changelog: none` with no
     reason exempts nothing. Raises StagedReadError when git cannot answer."""
     root = Path(root)
     if not (root / FRAGMENT_DIR).is_dir():
@@ -212,8 +237,11 @@ def required(root, message: str) -> list[str]:
     if not ids:
         return []
     staged = _git_lines(root, ["diff", "--cached", "--name-only", "-z", "--"])
-    if all(p.startswith(_PAPERWORK_ROOTS) for p in staged):
+    code = [p for p in staged if not p.startswith(_PAPERWORK_ROOTS)]
+    if not code:
         return []
+    if len(_subject_ids(message)) > 1:
+        ids = _code_owners(root, ids, code)
     indexed = set(_git_lines(root, ["ls-files", "-z", "--", f"{FRAGMENT_DIR}/*.md"]))
     missing = [i for i in ids if not indexed.intersection(fragment_names(i))]
     if not missing:
