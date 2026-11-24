@@ -31,7 +31,7 @@ codebase. Each AC gains a machine-maintained `Verified:` state so the
 skill can report real, continuously-validated status instead of
 trusting manual checkbox ticks that drift from reality.
 
-<!-- Load when: writing ACs with verifiers, running reconcile --verify, or adopting the require_ac_verification gate -->
+<!-- Load when: writing ACs with verifiers, running reconcile --verify, or adopting the quality.done_requires_verified gate -->
 
 ## Reading Guide
 
@@ -43,7 +43,7 @@ trusting manual checkbox ticks that drift from reality.
 | Writing Good Verifiers | When a verifier flakes or is hard to maintain |
 | Running | When invoking reconcile --verify |
 | Report Format | When consuming the verify-report.json file |
-| Gated Completion | When enabling require_ac_verification |
+| Gated Completion | When setting quality.done_requires_verified |
 | Troubleshooting | When a verifier is failing unexpectedly |
 
 ## Why It Exists {#verify-why}
@@ -232,8 +232,8 @@ python3 "$CLAUDE_SKILL_DIR/scripts/verify_ac.py" run \
 
 1. **`reconcile --scope verify`**: explicit scope filter for CI
    pipelines that only want verification state updated
-2. **Story Completion Cascade** (if `require_ac_verification: true`
-   in config): Step 10 refuses to mark a story Done unless all ACs
+2. **The Done gate** (`quality.done_requires_verified`, on by default):
+   `transition.py` refuses to mark a story Done unless all its ACs
    have `Verified: yes`
 
 ## Batch verification {#batch}
@@ -298,18 +298,15 @@ Counts:
 
 ## Gated Completion {#verify-gate}
 
-Set `require_ac_verification: true` in `templates/config-defaults.yaml`
-or the project-local `sdlc-studio/config.yaml` to prevent a story
-from transitioning to Done unless every AC reports `Verified: yes`.
+`quality.done_requires_verified` in the project's `sdlc-studio/.config.yaml`
+prevents a story from transitioning to Done unless every AC reports
+`Verified: yes`. `transition.py` reads it; see `reference-config.md`.
 
-Default is `false` for backwards compatibility. Teams adopting the
-verifier workflow should leave the flag off while seeding `Verify:`
-lines across their existing stories, then flip it once reconcile
-reports `manual: 0` for the whole repository.
+The default is `true`. Teams still seeding `Verify:` lines across their
+existing stories can set it to `false`, which downgrades the refusal to an
+advisory warning, then remove the override once reconcile reports
+`manual: 0` for the whole repository.
 
-When the gate is on, the Story Completion Cascade in
-`reference-outputs.md#story-completion-cascade` runs an extra
-pre-flight verifier step before step 10 (index and cascade updates).
 A story that fails the gate stays In Progress with a report pointing
 at the failing ACs.
 
@@ -382,4 +379,4 @@ service under test is unstable, move the AC verification to
 - `reference-story.md#story-workflow` - Story generation emits best-effort Verify lines
 - `templates/core/story.md` - Template AC format with its Verify placeholder
 - `help/verify.md` - User-facing help
-- `templates/config-defaults.yaml` - The require_ac_verification flag
+- `reference-config.md` - The `quality.done_requires_verified` key

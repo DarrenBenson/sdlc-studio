@@ -159,6 +159,48 @@ class ConfigKeysReadTests(unittest.TestCase):
         for stale in ("two consumers", "close-attempt"):
             self.assertNotIn(stale, comment, f"the comment still says {stale!r}:\n{comment}")
 
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_require_ac_verification_is_retired_by_migrate(self) -> None:
+        """BG1063 AC1. MUTANTS: (1) leave `require_ac_verification` out of `RETIRED_CONFIG_KEYS`
+        - migrate keeps the line; (2) retire `quality.done_requires_verified` with it - the gate
+        the key claimed to be is lost."""
+        self.assertIn("require_ac_verification", sdlc_md.RETIRED_CONFIG_KEYS)
+        self.assertIn("quality.done_requires_verified",
+                      sdlc_md.RETIRED_CONFIG_KEYS["require_ac_verification"])
+        self.assertNotIn("quality.done_requires_verified", sdlc_md.RETIRED_CONFIG_KEYS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cfg = _w(root, "sdlc-studio/.config.yaml",
+                     "require_ac_verification: true\nquality:\n  done_requires_verified: false\n")
+            r = _cli("migrate.py", "--apply", "--root", str(root))
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            after = yaml.safe_load(cfg.read_text(encoding="utf-8"))
+            self.assertNotIn("require_ac_verification", after,
+                             "migrate kept the retired require_ac_verification key")
+            self.assertIs(False, after["quality"]["done_requires_verified"],
+                          "migrate removed the key that replaced it")
+            self.assertIn("require_ac_verification", r.stdout, "the removal is not reported")
+
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_require_ac_verification_is_not_documented(self) -> None:
+        """BG1063 AC2. MUTANTS: (1) name `require_ac_verification` again in any reference, help
+        page or template; (2) declare it in config-defaults.yaml; (3) leave the gated-completion
+        section naming neither the live key nor `transition.py`."""
+        pages = [*SKILL.glob("reference-*.md"), *(SKILL / "help").rglob("*.md"),
+                 *(SKILL / "templates").rglob("*")]
+        pages = [p for p in pages if p.is_file()]
+        self.assertGreater(len(pages), 100, "premise: the pages were found")
+        for path in pages:
+            with self.subTest(doc=str(path.relative_to(SKILL))):
+                self.assertNotIn("require_ac_verification", path.read_text(encoding="utf-8"))
+        defaults = yaml.safe_load((SKILL / "templates" / "config-defaults.yaml")
+                                  .read_text(encoding="utf-8"))
+        self.assertNotIn("require_ac_verification", defaults)
+        text = (SKILL / "reference-verify.md").read_text(encoding="utf-8")
+        gated = text.split("## Gated Completion", 1)[1].split("\n### ", 1)[0]
+        self.assertIn("quality.done_requires_verified", gated)
+        self.assertIn("transition.py", gated)
+
 
 if __name__ == "__main__":
     unittest.main()

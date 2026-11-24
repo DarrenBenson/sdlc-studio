@@ -769,7 +769,7 @@ When a story reaches any **terminal status** (Done, Won't Implement, Deferred, S
 > close does not cover: the linked plan/test-spec/workflow, the epic-Done judgement, downstream
 > dependency tables, test-scenario checkboxes, and external sync.
 
-0. **AC verification gate (if `require_ac_verification: true`):** `scripts/artifact.py close` runs `scripts/verify_ac.py run --story <path>` and refuses the close if any AC reports `Verified: no` or a failure, leaving the story In Progress. The gate is disabled by default; flip it in `templates/config-defaults.yaml` or a project-local `sdlc-studio/config.yaml`. See `reference-verify.md#verify-gate`.
+0. **AC verification gate (`quality.done_requires_verified`, on by default):** `scripts/transition.py` refuses a move to Done while any AC reports `Verified: no` or a failure, leaving the story In Progress. Set the key to `false` in a project's `sdlc-studio/.config.yaml` to downgrade the refusal to a warning. See `reference-verify.md#verify-gate`.
 1. **Find and update plan:** Search `sdlc-studio/plans/` for the plan linked to this story. Update `> **Status:**` to the target status from the table above. Update `plans/_index.md` entry.
 2. **Find and update test spec:** Search `sdlc-studio/test-specs/` for the spec linked to this story. Update `> **Status:**` to the target status. Update `test-specs/_index.md` entry. For epic-scoped specs, see [Epic-Scoped Coverage](reference-test-spec.md#epic-scoped-coverage) - only cascade when ALL covered stories are terminal.
 3. **Find and update workflow:** Search `sdlc-studio/workflows/WF*` for the workflow linked to this story. Update `> **Status:**` to the target status. Update any non-terminal phase statuses.

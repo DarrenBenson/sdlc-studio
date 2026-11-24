@@ -147,11 +147,11 @@ RFC as the review half of the combination the published case credits.
 
 ## Decision
 
-> *Filled on acceptance.*
-
-**Outcome:** pending `rfc decide`
-**Rationale:** pending
-**Spawned CRs:** pending
+**Outcome:** Accepted: an incident is an issue triaged into the escaped bugs it caused, a root cause reaches only the briefs whose files it matches, change failure rate is read from releases, and a unit carries a risk class that orders the evidence pack and adds a second review seat.
+**Date:** 2026-11-14 (accepted under D0474)
+**Rationale:** RFC0063's evidence pack and escape loop wait on an incident record and a risk class, and each resolved decision reuses an existing artefact type or report rather than adding one, so the process stays small. The operator resolved all five open decisions between 2026-11-10 and 2026-11-14, and accepted the RFC with them.
+**Decisions:** D1 D0457 (an incident is an issue with a root-cause section); D2 D0462 (a root cause becomes a failure class or lesson, matched by files); D3 D0458 (a release is the deploy, change failure rate is releases with a linked incident); D4 D0459 (a declared component map proposes the class); D5 D0460 (the pack lists high-risk changes first and high-risk units get a second review seat, restated by D0523). The acceptance is D0474, forced past the open-children gate.
+**Spawned CRs:** CR0693 (WS1, RFC0063 WS6's escape loop), CR0695 (WS2), CR0696 (WS3's class and second seat) and CR0692 (WS3's grouping, RFC0063 WS4's evidence pack); CR0704 and CR0706 are RFC0063's decomposition of the same work.
 
 ---
 
@@ -181,3 +181,4 @@ RFC as the review half of the combination the published case credits.
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D5 - Decided by the operator (D0460): both; the pack lists high-risk changes first and high-risk units get a second review seat whose yield each retro reports; no approval on every change |
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D2 - Decided by the operator (D0462): a root cause becomes a failure class or lesson; at plan time each unit's files are matched against them and only the matches go into its build and review briefs, under a token cap the engineering seat measures |
 | 2026-11-14 | transition set --force | forced RFC0064 -> Accepted, waiving 1 gate(s): RFC0064 cannot be Accepted: its status is DERIVED from its children, and 2 is/are not yet resolved: CR0695 (Proposed), CR0696 (Proposed). Finish or close them first |
+| 2026-11-23 | Claude Sonnet 5.5 (BG1548) | Decision section filled: the outcome, date, rationale, the decisions that resolved each open question and the spawned CRs, which the acceptance on 2026-11-14 left reading pending |

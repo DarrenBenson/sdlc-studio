@@ -10,7 +10,7 @@ small structural vocabulary, so this adds a single consolidated gate, not a new 
 
 Enforcement is advisory by default; a project sets `constitution.enforce: true` in
 `.config.yaml` to make violations errors (exit non-zero) - the same incremental-adoption
-pattern as `require_ac_verification`. Read-only; pure stdlib core.
+pattern as the Done gate's opt-out. Read-only; pure stdlib core.
 
 Subcommand:
   check  Assert the declared checkable principles; report violations.

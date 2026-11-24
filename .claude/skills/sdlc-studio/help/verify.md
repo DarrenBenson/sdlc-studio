@@ -308,5 +308,5 @@ is correct sharing - the bug's fix is the story's criteria - and is never report
 
 - `reference-verify.md` - Full design, DSL table, gated completion
 - `reference-reconcile.md#verify-scope` - How reconcile invokes verify_ac
-- `reference-outputs.md#story-completion-cascade` - The require_ac_verification gate
+- `reference-outputs.md#story-completion-cascade` - The `quality.done_requires_verified` Done gate
 - `scripts/verify_ac.py` - The implementation

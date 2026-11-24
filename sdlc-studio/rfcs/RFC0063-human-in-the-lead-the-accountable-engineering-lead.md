@@ -142,13 +142,13 @@ O1 to O9 stay; their persona citations are re-pointed if D2 renumbers a card's E
 
 | WS | Workstream | Repo | Becomes | Depends on |
 | --- | --- | --- | --- | --- |
-| WS1 | Persona registry and PRD: the new Primary (D2), the change approver (D3), Maya Secondary, Trevor narrowed; PRD Mission, Target Users and Outcomes O10 to O13 (D4) | sdlc-studio | CR (new) | - |
-| WS2 | Role model and vocabulary: the Three Amigos are the people, seats are the agent personas; an owner field naming the accountable human on the PRD, TRD and TSD | sdlc-studio | CR (new) | WS1 |
-| WS3 | The front door: README cut to about 1,500 words with three routes in (evaluate, try, upgrade); SUPPORT.md current and honest about support; the evidence page generated from the reports with partial verdicts and waiting time explained; a page for engineering leaders (change approval, separation of duties, the signed report, cost); the white paper refreshed with 6.3 cost data; release notes led by plain-English bullets; a guide to running the discovery track beside delivery | sdlc-studio | CR (new) | WS1; WS2 for the role-model wording |
+| WS1 | Persona registry and PRD: the new Primary (D2), the change approver (D3), Maya Secondary, Trevor narrowed; PRD Mission, Target Users and Outcomes O10 to O13 (D4) | sdlc-studio | CR0689 | - |
+| WS2 | Role model and vocabulary: the Three Amigos are the people, seats are the agent personas; an owner field naming the accountable human on the PRD, TRD and TSD | sdlc-studio | Deferred past 6.4 by D0474; no CR until it is planned (2027 Q1) | WS1 |
+| WS3 | The front door: README cut to about 1,500 words with three routes in (evaluate, try, upgrade); SUPPORT.md current and honest about support; the evidence page generated from the reports with partial verdicts and waiting time explained; a page for engineering leaders (change approval, separation of duties, the signed report, cost); the white paper refreshed with 6.3 cost data; release notes led by plain-English bullets; a guide to running the discovery track beside delivery | sdlc-studio | CR0702 for the first items; the rest deferred past 6.4 by D0474 (2027 Q1) | WS1; WS2 for the role-model wording |
 | WS4 | Evidence that stands up: EP0280, EP0276, EP0275 in 6.4; then EP0281 and a change evidence pack per release | sdlc-studio | Existing epics; CR0692 for the evidence pack | RFC0064 D4, D5 (CR0692 only; decided, D0459, D0460) |
-| WS5 | Cost you can predict: RFC0062 with CR0670 and EP0300; CR0685; xAI Grok and Cursor Composer pricing; then CR0672, CR0680 and a monthly team budget view | sdlc-studio | Existing CRs and epics; CR (new) for pricing; CR (new) for the budget view | - |
-| WS6 | Learning that compounds: EP0287 (CR0632, CR0633); then an escape loop (O12) and a model scorecard per seat and model from signed runs (rounds, rejections upheld, escapes, dollars a point) | sdlc-studio | Existing epic; CR0693 for the escape loop; CR (new) for the scorecard | WS4 (EP0280); RFC0064 D1, D2 (CR0693; decided, D0457, D0462) |
-| WS7 | Machinery guardrail: points by area in the plan and on the report; a recorded maintenance declaration over the cap (one third of the run's points); gate yield reviewed at each retro (O5) | sdlc-studio | CR (new) | D8, D9 |
+| WS5 | Cost you can predict: RFC0062 with CR0670 and EP0300; CR0685; xAI Grok and Cursor Composer pricing; then CR0672, CR0680 and a monthly team budget view | sdlc-studio | Existing CRs and epics; CR0690 for pricing; the monthly budget view deferred past 6.4 by D0474, no CR until it is planned (2027 Q1) | - |
+| WS6 | Learning that compounds: EP0287 (CR0632, CR0633); then an escape loop (O12) and a model scorecard per seat and model from signed runs (rounds, rejections upheld, escapes, dollars a point) | sdlc-studio | Existing epic; CR0693 for the escape loop; the model scorecard deferred past 6.4 by D0474, no CR until it is planned (2027 Q1) | WS4 (EP0280); RFC0064 D1, D2 (CR0693; decided, D0457, D0462) |
+| WS7 | Machinery guardrail: points by area in the plan and on the report; a recorded maintenance declaration over the cap (one third of the run's points); gate yield reviewed at each retro (O5) | sdlc-studio | Deferred past 6.4 by D0474; until it is tooled the operator applies the cap at plan approval (D0442) | D8, D9 |
 | WS8 | The dashboard contract: the evidence annex and the committed report as the versioned record the dashboard reads; the dashboard upgrades its workspace and builds its views against it | sdlc-studio + the companion dashboard | EP0275, EP0276 here; the dashboard's existing change requests there | WS4 |
 
 Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5's first items (CR0670, EP0300, CR0685 and the new pricing), EP0287 from WS6, and WS3's README, SUPPORT.md, evidence page and engineering-leaders page. WS2, the rest of WS3, WS5 and WS6, WS7 and the dashboard side of WS8 follow in 2027 Q1. Until WS7 is tooled, the operator applies the one-third cap at plan approval.
@@ -157,11 +157,11 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 
 ## Decision
 
-> *Filled on acceptance.*
-
-**Outcome:** pending `rfc decide` (Option B is already the operator's decision; D2, D3, D4, D8, D9 and D10 remain open)
-**Rationale:** pending
-**Spawned CRs:** pending, one or more per new-CR row in the workstream table
+**Outcome:** Accepted, Option B (an accountable engineering lead is the Primary), with the workstreams above.
+**Date:** 2026-11-14 (Option B decided by the operator on 2026-11-09; accepted under D0474)
+**Rationale:** The shipped skill serves a head of engineering who answers for a release to a change board, so its evidence, cost and learning work comes before more machinery. Option B changes who the product is for without a second edition to keep (Option C), and it keeps Maya as a Secondary rather than dropping her (Option A). The operator chose the full release over a lean one (D0474).
+**Decisions:** D1 Option B (operator, 2026-11-09); D2 D0436 (the new Primary card); D3 D0437 (the change approver as a Served persona); D4 D0438 (outcomes O10 to O13); D5 vocabulary (operator, 2026-11-09); D6 the read-only dashboard (operator, 2026-11-09); D7 the 6.4 goal (operator, 2026-11-09); D8 D0440 (report and declare the machinery share); D9 D0439 (a per-unit area tag with a path map); D10 D0441 (a versioned evidence annex the dashboard pins). The acceptance is D0474, forced past the open-children gate.
+**Spawned CRs:** CR0689 (WS1), CR0690 (WS5 pricing), CR0691, CR0692 (WS4's evidence pack), CR0693 (WS6's escape loop), CR0694, CR0702 (WS3), CR0704 and CR0706 (RFC0064's risk class and incident triage). WS2, WS5's monthly budget view, WS6's model scorecard and WS7 spawn no CR yet: D0474 defers them past 6.4, the workstream table schedules them for 2027 Q1, and each is filed when it is planned.
 
 ---
 
@@ -201,3 +201,4 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D10 - Decided by the operator (D0441): the evidence annex carries a schema version the dashboard pins; the dashboard upgrades its workspace first |
 | 2026-11-10 | Darren Benson (operator); drafted with Claude Opus 5.5 | Corrected Context & Problem: the analyst's case reported a 31% lower change failure rate after moving to agent-driven delivery, credited to reliability, observability and review agents informed by production incident history together, not a 31% cut in defect escapes from feeding root-cause reports back. Linked RFC0064, which WS4's evidence pack (CR0692) and WS6's escape loop (CR0693) now depend on (D0456) |
 | 2026-11-14 | transition set --force | forced RFC0063 -> Accepted, waiving 1 gate(s): RFC0063 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0691 (Proposed), CR0692 (Proposed), CR0693 (Proposed), CR0694 (Proposed). Finish or close them first |
+| 2026-11-23 | Claude Sonnet 5.5 (BG1548) | Decision section filled: the outcome, date, rationale, the decisions that resolved each open question and the spawned CRs, which the acceptance on 2026-11-14 left reading pending |

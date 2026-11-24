@@ -2373,8 +2373,11 @@ def _citation_defect(item: str, own: str, repo_root) -> str:
 #: `None`, `None - <why>`, `n/a`: the template's way of saying there are no questions.
 _DECLARES_NONE_RE = re.compile(r"^(none|n/?a)\b", re.IGNORECASE)
 
-#: A ruling recorded on the item itself, in the forms this corpus actually uses.
-_RULING_RE = re.compile(r"\b(ruled by|ruled:|settled in|resolved by|decided:)\b", re.IGNORECASE)
+#: A ruling recorded on the item itself, in the forms this corpus actually uses. The two colon
+#: forms end at the colon: a word boundary after it would need a word character next, so the
+#: spaced `ruled: yes` and the bold `**Decided:** no` would never match.
+_RULING_RE = re.compile(r"\b(?:ruled by|settled in|resolved by)\b|\b(?:ruled|decided):",
+                        re.IGNORECASE)
 
 #: A decision row id - the project's own form for a recorded ruling.
 _DECISION_ID_RE = re.compile(r"\bD\d{4}\b")
@@ -3470,6 +3473,7 @@ RETIRED_CONFIG_KEYS = {
     "review.repair_design_threshold": "read only by the retired repair-plan gate",
     "quality.depth_parity_gate": "the depth-parity check is retired: a story reaches Done on its "
                                  "criteria",
+    "require_ac_verification": "no code read it: the Done gate is `quality.done_requires_verified`",
     "review.policy": "the carry-forward policy is retired: every project carries a unit whose "
                      "REJECT stands at the round cap (`review.max_rounds`), filing its findings",
 }

@@ -24,6 +24,10 @@ inserted above a finding does not relabel it. A baseline that cannot be read yie
 `unattributed`, never `pre-existing`: failing the other way would forgive every finding on
 a shallow clone.
 
+One check is not markdownlint's: an RFC whose Status is Accepted while its Decision outcome
+still reads pending is reported under the rule `RFC-DECISION`, and attributed against the
+baseline like any other finding.
+
 Usage:
     python3 tools/lint_corpus.py [--root DIR] [--baseline REF] [--all] [--json]
 
@@ -37,6 +41,7 @@ import collections
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +56,14 @@ ROOT_CONFIG = ".markdownlint.json"
 
 #: markdownlint over ~1800 files fits in one argv on Linux, but not on every platform.
 CHUNK = 500
+
+#: The rule id of the one check here that is not markdownlint's: an Accepted RFC whose Decision
+#: section was never filled in.
+RFC_DECISION_RULE = "RFC-DECISION"
+_RFC_PATH_RE = re.compile(r"(?:^|/)sdlc-studio/rfcs/RFC\d{4}-[^/]*\.md$")
+_RFC_STATUS_RE = re.compile(r"^>\s*\*\*Status:\*\*\s*(\S+)", re.MULTILINE)
+_DECISION_HEADING_RE = re.compile(r"^##[ \t]+Decision[ \t]*$", re.MULTILINE)
+_OUTCOME_RE = re.compile(r"^\*\*Outcome:\*\*[ \t]*(.*)$", re.MULTILINE)
 
 INTRODUCED = "introduced"
 PRE_EXISTING = "pre-existing"
@@ -121,6 +134,46 @@ def enumerate_corpus(root: Path) -> list[str]:
     return sorted(p for p in out.split("\0") if p)
 
 
+def accepted_rfc_decision_findings(root: Path, files=None) -> list[Finding]:
+    """An Accepted RFC whose Decision section still reads pending.
+
+    The RFC template says the Decision is filled on acceptance, and nothing refused an RFC
+    that was accepted with the outcome still `pending`. Only the Outcome line is judged: an
+    RFC not yet Accepted (Proposed, Draft) is not yet decided, and an RFC with no Outcome line
+    makes no pending claim. The Outcome is pending when it is empty, starts with `pending`
+    (any case), or is still a `{{placeholder}}`. `files` defaults to the tracked corpus.
+    """
+    root = Path(root)
+    findings = []
+    for rel in (enumerate_corpus(root) if files is None else files):
+        if not _RFC_PATH_RE.search(rel):
+            continue
+        try:
+            text = (root / rel).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        status = _RFC_STATUS_RE.search(text)
+        if not status or status.group(1) != "Accepted":
+            continue
+        heading = _DECISION_HEADING_RE.search(text)
+        if not heading:
+            continue
+        tail = text[heading.end():]
+        end = re.search(r"^##[ \t]", tail, re.MULTILINE)
+        section = tail[:end.start()] if end else tail
+        outcome = _OUTCOME_RE.search(section)
+        if not outcome:
+            continue
+        value = outcome.group(1).strip()
+        if value and not value.lower().startswith("pending") and "{{" not in value:
+            continue
+        line = text.count("\n", 0, heading.end() + outcome.start()) + 1
+        findings.append(Finding(
+            path=rel, rule=RFC_DECISION_RULE, line=line, context=outcome.group(0).strip(),
+            description="an Accepted RFC's Decision outcome still reads pending"))
+    return findings
+
+
 def _parse(payload: str) -> list[Finding]:
     """markdownlint's `--json` output. It is written to stderr, not stdout."""
     findings = []
@@ -158,9 +211,10 @@ def lint_corpus(root: Path, *, config: Path | None = None,
                 linter: str | None = None) -> list[Finding]:
     """The tracked markdown corpus of `root`, under the strict rule set."""
     root = Path(root)
-    return lint_files(enumerate_corpus(root), cwd=root,
-                      config=config or (root / ROOT_CONFIG),
-                      linter=linter or find_linter(root))
+    files = enumerate_corpus(root)
+    return [*lint_files(files, cwd=root, config=config or (root / ROOT_CONFIG),
+                        linter=linter or find_linter(root)),
+            *accepted_rfc_decision_findings(root, files)]
 
 
 def baseline_corpus(root: Path, ref: str, *, config: Path, linter: str) -> list[Finding]:
@@ -184,7 +238,8 @@ def baseline_corpus(root: Path, ref: str, *, config: Path, linter: str) -> list[
             raise BaselineUnreadable(f"could not unpack {ref}: {exc}") from exc
         base = Path(tmp)
         files = sorted(str(p.relative_to(base)) for p in base.rglob("*.md"))
-        return lint_files(files, cwd=base, config=config.resolve(), linter=linter)
+        return [*lint_files(files, cwd=base, config=config.resolve(), linter=linter),
+                *accepted_rfc_decision_findings(base, files)]
 
 
 def classify(current: list[Finding],
@@ -226,7 +281,8 @@ def analyse(root: Path, *, baseline: str | None = None, config: Path | None = No
     linter = linter or find_linter(root)
     config = config or (root / ROOT_CONFIG)
     files = enumerate_corpus(root)
-    current = lint_files(files, cwd=root, config=config, linter=linter)
+    current = [*lint_files(files, cwd=root, config=config, linter=linter),
+               *accepted_rfc_decision_findings(root, files)]
 
     reason = ""
     base_findings: list[Finding] | None = None

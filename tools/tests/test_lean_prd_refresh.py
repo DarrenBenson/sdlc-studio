@@ -1731,14 +1731,20 @@ class PrdRulesTests(unittest.TestCase):
         self.assertEqual([], grooming_problems(self.prd))
 
     def test_a_held_criterion_names_the_bug_its_words_describe(self):
-        """BG1162 AC3. Mutant: the Verify AC criterion Held by BG1063 reassigned to BG0959; it
-        must be named, the tree as it is not. (It moved from BG1023's criterion when BG1023 was
-        fixed in run twenty-one. The floor's mutant was dropped when BG0959 was fixed in run
-        twenty-three, since the floor no longer names a holder.)"""
+        """BG1162 AC3. Mutant: a criterion Held by BG1063 reassigned to BG0959; it must be
+        named, the tree as it is not. No criterion is held now (the Verify AC gate criterion was
+        ticked when BG1063 was fixed), so the held clause is put on that criterion in a copy:
+        the tree as it is stays clean, the clause is clean on the bug its words describe, and
+        reassigned it is named. (The floor's mutant was dropped when BG0959 was fixed.)"""
         self.assertEqual([], holder_problems(self.prd))
-        verify = "Held by BG1063: no code reads the key"
-        self.assertIn(verify, self.prd)
-        moved = holder_problems(self.mutate(verify, "Held by BG0959: no code reads the key"))
+        self.assertNotIn("Held by BG", self.prd)
+        crit = next(text for _, text in detail_blocks(self.prd)["Verify AC"]["criteria"]
+                    if text.startswith("Supports a verify gate"))
+        held = f"- [x] {crit}"
+        verify = ("- [ ] Supports a verify gate. Held by BG1063: no code reads the key, and the live "
+                  "Done gate is `quality.done_requires_verified`.")
+        self.assertEqual([], holder_problems(self.mutate(held, verify)))
+        moved = holder_problems(self.mutate(held, verify.replace("BG1063", "BG0959")))
         self.assertEqual(1, len(moved), moved)
         self.assertIn("criterion 3 names BG0959 as its holder", moved[0])
         self.assertIn("match BG1063 better", moved[0])
@@ -1761,9 +1767,9 @@ DEFAULTS = SKILL / "templates" / "config-defaults.yaml"
 REFERENCE_CONFIG = SKILL / "reference-config.md"
 #: The keys the incremental-adoption account has always named, and the three the defaults file
 #: ships advisory beside them: what `gate_keys_off` must find, so it is not vacuous.
-NAMED_GATE_KEYS = ("review.line_coverage", "review.author_self_check", "require_ac_verification",
-                   "constitution.enforce", "two_backlog.enforce", "quality.require_full_sections",
-                   "provenance.enforce", "sprint.affects_check", "sprint.fresh_session")
+NAMED_GATE_KEYS = ("review.line_coverage", "review.author_self_check", "constitution.enforce",
+                   "two_backlog.enforce", "quality.require_full_sections", "provenance.enforce",
+                   "sprint.affects_check", "sprint.fresh_session")
 _BLOCKING_VALUES = ("block", "enforce", "true")
 _KEY_LINE_RE = re.compile(r"^( *)([a-z_]+):(?:[ \t]+([^#\s][^#]*?))?[ \t]*(?:#[ \t]*(.*))?$")
 _OFF_FALLBACK_RE = re.compile(r"(?:project_override|config\.get)\(\s*[^,()]+,\s*\"([a-z_.]+)\",\s*False\b")
@@ -1880,7 +1886,7 @@ class PrdFlagDefaultsTests(unittest.TestCase):
                           "adoption reason"], flag_intro_problems(bare, off))
         old = ("The one deliberate exception is `two_backlog.enforce`, which defaults **OFF**")
         put_back = flag_intro_problems(self.prd.replace(
-            "Nine ship **OFF** or advisory", old, 1), off)
+            "Eight ship **OFF** or advisory", old, 1), off)
         self.assertEqual(["the introduction still calls one key the single exception"],
                          put_back)
 

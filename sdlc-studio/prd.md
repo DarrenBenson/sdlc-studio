@@ -260,7 +260,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Test automation | Generate executable tests | Complete | High | help/test-automation.md | EP0004 |
 | Test environment | Containerised test env setup | Complete | Low | help/test-env.md | EP0004 |
 | Reconcile | Census-based drift detection + auto-fix; `--verify` | Complete | High | reference-reconcile.md, scripts/reconcile.py | EP0005 |
-| Verify AC | Executable AC verifier DSL; its vitest and jest verbs select a test by file and name | Partial | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
+| Verify AC | Executable AC verifier DSL; its vitest and jest verbs select a test by file and name | Complete | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
 | Review | Unified PRD/TRD/TSD/Persona + CODE review, cadence | Complete | High | reference-review.md, scripts/review_prep.py | EP0005 |
 | Status / Hint | Pipeline dashboard + single next step | Complete | High | help/status.md, scripts/status.py | EP0005 |
 | Project orchestration | `project plan` / `project implement`, dependency order | Complete | High | reference-project.md | EP0007 |
@@ -365,11 +365,11 @@ against the running code so "Done" means verified, not asserted.
 
 - [x] Parses the `- **Verify:**` lines of a story's or a bug's criteria (`sdlc_md.EXECUTES_VERIFIERS`) into executable checks; the vitest and jest verbs select a test by file and by name, the name filter placed before any `--`.
 - [x] Runs each check; reports `Verified: yes/no` per AC with pass/fail/manual counts.
-- [ ] Supports a verify gate (`require_ac_verification`) that aborts the completion cascade on failure. Held by BG1063: no code reads the key, and the live Done gate is `quality.done_requires_verified`.
+- [x] Supports a verify gate (`quality.done_requires_verified`, on by default) that refuses a story's move to Done while its criteria are red or never run; `transition.py` reads it.
 - [x] Writes a machine-readable report to `.local/verify-report.json`.
 
 **Dependencies:** scripts/verify_ac.py
-**Status:** Partial · **Confidence:** [HIGH]
+**Status:** Complete · **Confidence:** [HIGH]
 
 #### Engagement floor (the planning pass is not a judgement call)
 
@@ -700,11 +700,10 @@ unconditionally under `--strict`, and the one escape is `git commit --no-verify`
 Project config (`sdlc-studio/.config.yaml`, defaults in
 `templates/config-defaults.yaml`). The gate-bearing keys are the ones that matter.
 Most share one shape: the default is ON, the opt-out is a recorded value, and an
-**absent** config blocks rather than disarms. Nine ship **OFF** or advisory, each for
+**absent** config blocks rather than disarms. Eight ship **OFF** or advisory, each for
 incremental adoption: `review.line_coverage` (`off`: a close pays for coverage only in a
 project that asked, and `coverage` is an optional dependency), `review.author_self_check`
 (`report`: a project upgrading is not refused on its first review),
-`require_ac_verification` (`false`: leave it off while seeding `Verify:` lines),
 `constitution.enforce` (`false`: a violation is advisory until the project opts in),
 `provenance.enforce` (`false`: `provenance check` names an unstamped artefact and exits 0
 until the project opts in), `sprint.affects_check` (`warn`: an `Affects` naming a file the
@@ -724,7 +723,6 @@ the pre-tier stories that reach Done today, so judging it would refuse them).
 | `two_backlog.enforce` | `false` | The two-backlog hard gates (plan refuses a request, terminal status derived from children, `undecomposed` drift, CR-creation Size demand). OFF for upgrade safety; one config line turns it on |
 | `capacity.tokens` / `.minutes` / `.units` | 500000 / 240 / 8 | The sprint ceiling. Tokens are a forecast and warn only; minutes and units feed the run breaker |
 | `appetite.minutes` / `.units` | 0 (inherit `capacity`) | Pin one axis of the run breaker independently of capacity |
-| `require_ac_verification` | `false` | Abort the completion cascade when a story's ACs do not pass. Adopt incrementally: leave off while seeding `Verify:` lines, enable once reconcile reports `manual: 0` |
 | `review.line_coverage` | `off` | `report` or `block` judge a unit's changed lines by coverage; `off` pays for none, and `block` refuses naming `coverage` when it is absent |
 | `review.author_self_check` | `report` | `block` refuses a review brief until the author has recorded the self-check; `report` prints the section and proceeds |
 | `constitution.enforce` | `false` | `true` makes a violation of a machine-checkable principle fail `constitution check` |
@@ -859,6 +857,7 @@ none.
 | 2026-11-21 | 6.4.0 | Verify AC (BG1023): the vitest and jest verbs select a test by file and name, so the parse criterion is ticked and the row no longer names BG1023 as holding it; the feature stays Partial, held by BG1063 |
 | 2026-11-22 | 6.4.0 | Environment variables (BG1578): the table gains `SDLC_VERIFY_RED_DETAIL`, the file `verify_ac.py run` appends each red criterion's own verifier output to, which the scheduled corpus lane sets |
 | 2026-11-22 | 6.4.0 | Environment variables (BG1578): `SDLC_VERIFY_TIMEOUT` names both its readers and their defaults, 300 s at the release gate and 120 s for `verify_ac.py run`, which now reads it when `--timeout` is not given, and `SDLC_VERIFY_RED_DETAIL` names the release gate's verify lane, which the corpus lane runs, beside `verify_ac.py run` as writing the file |
+| 2026-11-23 | 6.4.0 | Verify AC (BG1063): the retired `require_ac_verification` key leaves the gate-bearing keys and the configuration table, the verify gate criterion names `quality.done_requires_verified` and is ticked, and the feature and its row read Complete |
 | 2026-11-23 | 6.4.0 | Engagement floor (BG0959): the floor takes a ULID `adopt_after` cutoff on a schema-v3 project and refuses one set before schema v3, so the escapes criterion is ticked and the feature is Complete |
 
 ---

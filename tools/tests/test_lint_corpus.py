@@ -20,6 +20,7 @@ import glob
 import importlib.util
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -195,6 +196,78 @@ class LaneWiringTests(unittest.TestCase):
                          "periodic and pre-release")
 
 
+def _rfc(number: str, status: str, decision: str) -> str:
+    return (f"# RFC{number}: t\n\n> **Status:** {status}\n> **Priority:** High\n\n"
+            f"## Summary\n\ns\n\n## Decision\n\n{decision}\n\n## Related Artifacts\n\nnone\n")
+
+
+PENDING = "**Outcome:** pending `rfc decide`\n**Rationale:** pending\n"
+FILLED = "**Outcome:** Option B, 2026-11-14 (D0474)\n**Rationale:** the operator's call\n"
+
+
+class AcceptedRfcDecisionTests(unittest.TestCase):
+    def _fixture(self, rfcs: dict) -> Path:
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        root = Path(d.name)
+        _init_repo(root)
+        _write(root, ".markdownlint.json", ROOT_CONFIG)
+        for name, text in rfcs.items():
+            _write(root, f"sdlc-studio/rfcs/{name}.md", text)
+        _commit_all(root, "seed")
+        return root
+
+    def test_an_accepted_rfc_with_a_pending_outcome_is_reported(self) -> None:
+        root = self._fixture({
+            "RFC0001-accepted-pending": _rfc("0001", "Accepted", PENDING),
+            "RFC0002-proposed-pending": _rfc("0002", "Proposed", PENDING),
+            "RFC0003-accepted-filled": _rfc("0003", "Accepted", FILLED),
+            "RFC0004-accepted-shouting": _rfc("0004", "Accepted", "**Outcome:** PENDING\n"),
+            "RFC0005-accepted-empty": _rfc("0005", "Accepted", "**Outcome:**\n"),
+            "RFC0006-accepted-template": _rfc("0006", "Accepted", "**Outcome:** {{outcome}}\n"),
+            "RFC0007-accepted-no-outcome": _rfc("0007", "Accepted", "> *Filled on acceptance.*\n"),
+            "RFC0010-pending-below-the-decision": _rfc("0010", "Accepted", "no outcome line")
+            + "\n## Notes\n\n**Outcome:** pending\n",
+            "RFC0008-accepted-pending-word": _rfc("0008", "Accepted",
+                                                  "**Outcome:** Option B; pending is no word\n"),
+        })
+        found = lint_corpus.accepted_rfc_decision_findings(root)
+        self.assertEqual(["sdlc-studio/rfcs/RFC0001-accepted-pending.md",
+                          "sdlc-studio/rfcs/RFC0004-accepted-shouting.md",
+                          "sdlc-studio/rfcs/RFC0005-accepted-empty.md",
+                          "sdlc-studio/rfcs/RFC0006-accepted-template.md"],
+                         [f.path for f in found])
+        first = found[0]
+        self.assertEqual(lint_corpus.RFC_DECISION_RULE, first.rule)
+        self.assertEqual(12, first.line, "the line of the Outcome, as a value")
+        self.assertEqual("**Outcome:** pending `rfc decide`", first.context)
+        # Through the lane: the finding is in the run's result, unattributed with no baseline.
+        result = lint_corpus.analyse(root, baseline=None, linter=LINTER)
+        rows = [f for f in result["findings"] if f["rule"] == lint_corpus.RFC_DECISION_RULE]
+        self.assertEqual(4, len(rows), rows)
+        self.assertTrue(all(r["status"] == lint_corpus.UNATTRIBUTED for r in rows))
+        self.assertEqual(1, lint_corpus.exit_code(result))
+        self.assertIn("RFC0001-accepted-pending.md:12 RFC-DECISION",
+                      lint_corpus.render(result))
+        # Attributed: the same finding at the baseline is pre-existing, a new one introduced.
+        base = gitutil.git(["rev-parse", "HEAD"], cwd=root, text=True).stdout.strip()
+        _write(root, "sdlc-studio/rfcs/RFC0009-new.md", _rfc("0009", "Accepted", PENDING))
+        _commit_all(root, "add")
+        attributed = lint_corpus.analyse(root, baseline=base, linter=LINTER)
+        by = {f["path"].split("/")[-1][:7]: f["status"] for f in attributed["findings"]
+              if f["rule"] == lint_corpus.RFC_DECISION_RULE}
+        self.assertEqual(lint_corpus.PRE_EXISTING, by["RFC0001"])
+        self.assertEqual(lint_corpus.INTRODUCED, by["RFC0009"])
+
+    def test_a_non_utf8_or_non_rfc_file_is_not_a_finding_and_not_a_crash(self) -> None:
+        root = self._fixture({"RFC0001-bad-bytes": "x"})
+        (root / "sdlc-studio/rfcs/RFC0001-bad-bytes.md").write_bytes(b"\xff\xfe\x00bad")
+        _write(root, "docs/RFC0002-notes.md", _rfc("0002", "Accepted", PENDING))
+        _write(root, "sdlc-studio/rfcs/RFC0003-ok.md", _rfc("0003", "Accepted", FILLED))
+        _commit_all(root, "more")
+        self.assertEqual([], lint_corpus.accepted_rfc_decision_findings(root))
+
+
 class CorpusLaneRunsOnThisRepo(unittest.TestCase):
     """The lane against the real corpus. Not a green/red assertion - the repo carries
     hundreds of pre-existing findings - but the enumeration must be real and the run
@@ -210,6 +283,45 @@ class CorpusLaneRunsOnThisRepo(unittest.TestCase):
             ["git", "ls-files", "-z"], cwd=REPO, capture_output=True, text=True,
             check=True).stdout.split("\0") if p}
         self.assertTrue(set(files) <= tracked, "the lane enumerated an untracked file")
+
+    def test_no_accepted_rfc_here_has_a_pending_decision(self) -> None:
+        self.assertEqual([], [f"{f.path}:{f.line}" for f in
+                              lint_corpus.accepted_rfc_decision_findings(REPO)])
+        # Positive control: the rule does read this repository's RFCs.
+        rfcs = [p for p in lint_corpus.enumerate_corpus(REPO) if "sdlc-studio/rfcs/RFC" in p]
+        self.assertGreater(len(rfcs), 30, "the RFCs went missing from the enumeration")
+        for number in ("0063", "0064"):
+            path = next(p for p in rfcs if f"/RFC{number}-" in p)
+            text = (REPO / path).read_text(encoding="utf-8")
+            self.assertIn("> **Status:** Accepted", text)
+            decision = text.split("\n## Decision\n", 1)[1].split("\n## ", 1)[0]
+            for field in ("Outcome", "Date", "Rationale", "Decisions", "Spawned CRs"):
+                self.assertRegex(decision, rf"\*\*{field}:\*\*\s*\S", f"{number} {field}")
+            self.assertNotRegex(decision, r"(?i):\*\*\s*pending")
+
+    def test_rfc0063_deferred_workstreams_name_a_request_or_ruling(self) -> None:
+        text = next((REPO / p).read_text(encoding="utf-8")
+                    for p in lint_corpus.enumerate_corpus(REPO)
+                    if "sdlc-studio/rfcs/RFC0063-" in p)
+        decomposed = set(re.findall(r"CR\d{4}", re.search(
+            r"^> \*\*Decomposed-into:\*\*(.*)$", text, re.M).group(1)))
+        rows = {m.group(1): m.group(2) for m in re.finditer(
+            r"^\| (WS\d) \|(?:[^|]*\|){2}([^|]*)\|", text, re.M)}
+        self.assertEqual({f"WS{n}" for n in range(1, 9)}, set(rows))
+        for ws in ("WS2", "WS5", "WS6", "WS7"):
+            cell = rows[ws]
+            self.assertNotIn("(new)", cell, f"{ws} still promises a CR nothing carries")
+            cited = set(re.findall(r"CR\d{4}", cell))
+            self.assertTrue(re.search(r"D\d{4}", cell) or cited & decomposed,
+                            f"{ws} names no decomposed CR and no ruling: {cell!r}")
+        for ws in ("WS1", "WS3"):
+            self.assertNotIn("(new)", rows[ws], ws)
+        for number in ("0063", "0064"):
+            rfc = next((REPO / p).read_text(encoding="utf-8")
+                       for p in lint_corpus.enumerate_corpus(REPO)
+                       if f"sdlc-studio/rfcs/RFC{number}-" in p)
+            history = rfc.split("## Revision History", 1)[1]
+            self.assertRegex(history, r"\| Decision section filled", number)
 
 
 if __name__ == "__main__":
