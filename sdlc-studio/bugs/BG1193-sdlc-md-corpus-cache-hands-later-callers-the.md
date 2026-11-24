@@ -26,8 +26,8 @@ Key the cache on the resolved root and hand each caller paths under the root it 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Inside `corpus_cache()`, a relative-root read followed by an absolute-root `reconcile._census_filenames` returns the same names as outside the cache, with no ValueError.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py
+- [ ] **AC1** Inside `corpus_cache()`, a relative-root read followed by an absolute-root `reconcile._census_filenames` returns the same names as outside the cache, with no ValueError. Fails on: the cache hands later callers the first walk's path spelling, so a relative root then an absolute one raises ValueError in `_census_filenames`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_a_relative_then_an_absolute_root_returns_the_same_names
 
 ## Impact
 
@@ -38,3 +38,4 @@ A caller that wraps work in the corpus cache crashes on a mixed root spelling, w
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses, Verify re-pointed to new nodes |

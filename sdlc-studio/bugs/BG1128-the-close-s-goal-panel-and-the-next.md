@@ -26,9 +26,9 @@ Read the close's goal panel through the same rounds-on-the-latest-wording view `
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a goal amended with one seat asking to re-review and that seat's verdict recorded alone, when the close's goal panel is read, then it names every seat's verdict on the latest wording, as the plan does
+- [ ] **AC1** Given a goal amended with one seat asking to re-review and that seat's verdict recorded alone, when the close's goal panel is read, then it names every seat's verdict on the latest wording, as the plan does. Fails on: `_recorded_goal_seats` and `_recorded_clause_verdicts` read only the latest round, so the panel shows the one seat that recorded alone while the plan shows every seat answered.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_the_close_panel_reads_every_round_on_the_latest_wording
-- [ ] **AC2** Given G reviewed by three seats with qa asking to re-review, amended to G2 at engineering's request, and qa's verdict on G2 recorded alone, when G2 is amended to G3, then every seat's standing verdict on G2 carries (none is owed but a seat that asked), and `--requesting-seat product` is accepted, as the plan's read says product's verdict on G2 stands
+- [ ] **AC2** Given G reviewed by three seats with qa asking to re-review, amended to G2 at engineering's request, and qa's verdict on G2 recorded alone, when G2 is amended to G3, then every seat's standing verdict on G2 carries (none is owed but a seat that asked), and `--requesting-seat product` is accepted, as the plan's read says product's verdict on G2 stands. Fails on: the amendment's carry reads only the last round on the prior wording (sprint.py:11452), so amending again re-opens standing seats and refuses `--requesting-seat product` as having no verdict on G2.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_the_next_amendment_carries_from_every_round_on_the_prior_wording
 
 ## Impact
@@ -42,3 +42,4 @@ The close's goal judgement under-counts the seats that judged the goal it closes
 | 2026-10-22 | Claude Opus 5.5 | Filed |
 | 2026-10-26 | sdlc-studio | Retitled: was "The close's goal panel reads only the latest goal-review round, while the plan now reads every round on the latest wording, so after an owing seat records alone the two disagree on which seats have answered" |
 | 2026-10-26 | sdlc | AC2 from US1096's round-2 QA review: the next amendment's carry has the same single-round read |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

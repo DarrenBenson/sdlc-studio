@@ -23,9 +23,9 @@ Accept any text after the id that is not a further id character, so `### AC3 (DE
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a story whose third criterion heading is `### AC3 (DEFERRED)` with its own `Verify: manual` line, when `verify_ac` lists the story's criteria, then AC3 is listed with the manual Verify line and AC2 keeps only its own
+- [ ] **AC1** Given a story whose third criterion heading is `### AC3 (DEFERRED)` with its own `Verify: manual` line, when `verify_ac` lists the story's criteria, then AC3 is listed with the manual Verify line and AC2 keeps only its own. Fails on: `AC_HEADING_RE` accepts only a colon and title after the id, so `### AC3 (DEFERRED)` opens no criterion and its Verify line folds into AC2.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_suffixed_heading_opens_its_own_criterion
-- [ ] **AC2** Given a heading `### AC10: title`, when the criteria are parsed, then it opens AC10, never AC1 with a suffix
+- [ ] **AC2** Given a heading `### AC10: title`, when the criteria are parsed, then it opens AC10, never AC1 with a suffix. Fails on: a loosened heading pattern that matches the id prefix would read `AC10` as AC1 with a suffix; today nothing tests it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_ac10_is_not_ac1_with_a_suffix
 
 ## Impact
@@ -37,3 +37,4 @@ A deferred or suffixed criterion's manual marker attaches to the wrong criterion
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-12 | Claude Opus 5.5 (triage) | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

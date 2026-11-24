@@ -25,10 +25,10 @@ Refuse batch add for an id with no artefact; end the BLOCKING field at the line,
 
 ## Acceptance Criteria
 
-- [ ] **AC1** batch add refuses an id with no artefact file, naming it.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py -k batch_add
-- [ ] **AC2** A verdict with BLOCKING: none followed by a further section records as having no blocking item.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py -k blocking_none
+- [ ] **AC1** batch add refuses an id with no artefact file, naming it. Fails on: `batch add` accepts an id with no artefact file and reports it added.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_batch_add_refuses_an_id_with_no_artefact_file
+- [ ] **AC2** A verdict with BLOCKING: none followed by a further section records as having no blocking item. Fails on: `critic.py record` parses the prior-finding section after `BLOCKING: none` as the blocking item `none PRIOR FINDING RULING` and refuses.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_blocking_none_before_a_further_section_records_no_blocking_item
 
 ## Impact
 
@@ -39,3 +39,4 @@ Each cost an orchestrator round trip in run six.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses, Verify re-pointed to new nodes |

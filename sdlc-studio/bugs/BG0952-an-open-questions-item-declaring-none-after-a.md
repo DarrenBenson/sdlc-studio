@@ -32,9 +32,9 @@ Allow leading punctuation and whitespace before the declaration, e.g. `^[\s\-\u2
 
 ## Acceptance Criteria
 
-- [ ] **AC1** `- [ ] <U+2014> None ...` (em dash), `- [ ] <U+2013> None` (en dash) and `- [ ] - None.` are not reported as open questions, shown by a test
+- [ ] **AC1** `- [ ] <U+2014> None ...` (em dash), `- [ ] <U+2013> None` (en dash) and `- [ ] - None.` are not reported as open questions, shown by a test. Fails on: `_DECLARES_NONE_RE` has no leading-dash allowance, so the em dash, en dash and hyphen forms are reported as unresolved.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py -k dash_forms
-- [ ] **AC2** `- [ ] Nonetheless, should we ...?` is still reported (the word boundary still holds)
+- [ ] **AC2** `- [ ] Nonetheless, should we ...?` is still reported (the word boundary still holds). Fails on: nothing yet pins the word boundary, so a loosened pattern that also swallowed `Nonetheless` would pass unnoticed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py -k word_boundary
 
 ## Revision History
@@ -46,3 +46,4 @@ Allow leading punctuation and whitespace before the declaration, e.g. `^[\s\-\u2
 | 2026-10-06 | Claude Opus 5.5 (triage) | Em dashes spelled as U+2014 / `\u2014` so the house-style lane passes; the repro is unchanged in effect |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Consuming-project name generalised for the neutrality lane |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

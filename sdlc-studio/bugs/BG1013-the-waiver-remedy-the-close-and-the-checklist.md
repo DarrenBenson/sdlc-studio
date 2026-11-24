@@ -24,7 +24,7 @@ Print `--authorised-by "<the operator>"` in all three remedies, from one shared 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Every waiver remedy the close or the checklist prints, run as printed with its placeholders filled, records the waiver
+- [ ] **AC1** Every waiver remedy the close or the checklist prints, run as printed with its placeholders filled, records the waiver. Fails on: the three remedies print `decisions.py waive` without `--authorised-by`, so the command as printed is refused.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_waiver_remedy_runs.py::WaiverRemedyTests::test_each_printed_remedy_records_as_printed
 
 ## Revision History
@@ -32,3 +32,4 @@ Print `--authorised-by "<the operator>"` in all three remedies, from one shared 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

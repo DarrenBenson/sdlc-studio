@@ -24,7 +24,7 @@ Either record the supplied verdict on the file-and-close path too (it is an answ
 
 ## Acceptance Criteria
 
-- [ ] **AC1** --file-and-close with --goal-verdict and --note either records the verdict or refuses up front naming the flag it ignored
+- [ ] **AC1** --file-and-close with --goal-verdict and --note either records the verdict or refuses up front naming the flag it ignored. Fails on: `cmd_close` sets the supplied verdict to None under `--file-and-close`, so the flag is dropped silently and the close is refused as goal unjudged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_file_and_close_goal_verdict.py -k supplied_verdict_not_silently_dropped
 
 ## Triage
@@ -37,3 +37,4 @@ Either record the supplied verdict on the file-and-close path too (it is an answ
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

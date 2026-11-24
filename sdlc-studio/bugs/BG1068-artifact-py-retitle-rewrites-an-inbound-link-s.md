@@ -24,7 +24,7 @@ When an inbound link's text is the artefact's own `<ID>: <old title>`, rewrite i
 
 ## Acceptance Criteria
 
-- [ ] **AC1** After `retitle`, an epic's breakdown link to the retitled story carries the new title as its text as well as the new path
+- [ ] **AC1** After `retitle`, an epic's breakdown link to the retitled story carries the new title as its text as well as the new path. Fails on: retitle rewrites the link target only, so the epic breakdown link text still reads `US1080: <old title>`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py -k breakdown_link_text_follows_the_retitle
 
 ## Impact
@@ -37,3 +37,4 @@ The epic, the first thing a reader opens, names work by a title nobody uses any 
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |

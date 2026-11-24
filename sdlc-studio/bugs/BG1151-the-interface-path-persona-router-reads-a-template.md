@@ -27,14 +27,14 @@ Treat a row still carrying `{{...}}` as undeclared (or take the example out of c
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A card whose Interface row still carries the template's `{{...}}` slot is treated as declaring no interface, and the missing-interface warning names it.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
-- [ ] **AC2** An escaped pipe in the Interface cell does not end the row, so every span after it is read.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
-- [ ] **AC3** Dropping the ./ normalisation on either side fails a test.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
-- [ ] **AC4** validate reports two Primaries whose declared paths are equal or nested, whatever their prose.
-  - **Verify:** pytest tools/tests/test_persona_coherence.py
+- [ ] **AC1** A card whose Interface row still carries the template's `{{...}}` slot is treated as declaring no interface, and the missing-interface warning names it. Fails on: `persona_interface_paths` reads the example code spans in the unfilled `{{optional ...}}` slot as declared paths, so the card declares src and bin/run with no warning.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_a_row_with_the_template_slot_declares_no_interface
+- [ ] **AC2** An escaped pipe in the Interface cell does not end the row, so every span after it is read. Fails on: `_INTERFACE_ROW_RE` stops at an escaped pipe, so the spans after it are lost.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_an_escaped_pipe_does_not_end_the_interface_row
+- [ ] **AC3** Dropping the ./ normalisation on either side fails a test. Fails on: dropping `removeprefix('./')` at `sdlc_md.py`:2842 or artifact.py:368 leaves every test green.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePrimaryTests::test_a_dot_slash_path_matches_on_both_sides
+- [ ] **AC4** validate reports two Primaries whose declared paths are equal or nested, whatever their prose. Fails on: validate.py compares the row text, so two Primaries with different prose and the same or nested paths pass.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths
 
 ## Impact
 
@@ -49,3 +49,4 @@ In a multi-Primary cast, stories can be minted against the wrong Primary without
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses, Verify re-pointed to new nodes |

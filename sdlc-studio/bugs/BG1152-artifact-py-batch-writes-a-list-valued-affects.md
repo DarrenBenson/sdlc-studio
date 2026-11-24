@@ -25,8 +25,8 @@ Join a list-valued affects with ', ' before rendering, as a string affects is wr
 
 ## Acceptance Criteria
 
-- [ ] **AC1** A batch spec item with a list-valued affects renders `> **Affects:** a, b`, and the minted unit's Affects parses to those paths.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+- [ ] **AC1** A batch spec item with a list-valued affects renders `> **Affects:** a, b`, and the minted unit's Affects parses to those paths. Fails on: `artifact.py batch` renders a list-valued affects as a Python repr, so the Affects line reads `['hooks/pre-push']` and parses to one bracketed token.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_valued_affects_renders_as_a_path_list
 
 ## Impact
 
@@ -37,3 +37,4 @@ A unit minted from a JSON spec carries an Affects line that no reader parses as 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses, Verify re-pointed to new nodes |

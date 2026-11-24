@@ -24,7 +24,7 @@ Do not emit the grooming warning for meta types (review, retro, handoff, report)
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Minting a review record prints no grooming warning about a section its template lacks
+- [ ] **AC1** Minting a review record prints no grooming warning about a section its template lacks. Fails on: `artifact.py new --type review` prints the NOT FINISHED grooming line for a template that has no Acceptance Criteria section.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py -k no_ac_warning_for_review
 
 ## Triage
@@ -37,3 +37,4 @@ Do not emit the grooming warning for meta types (review, retro, handoff, report)
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at 8b844a80, not a regression, consuming-project name generalised for the neutrality lane; changelog fragment added to Affects |
+| 2026-11-24 | Sam Eriksson (qa) | Regroomed for run twenty-six: Fails on clauses |
