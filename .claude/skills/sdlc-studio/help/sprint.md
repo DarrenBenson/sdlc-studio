@@ -789,12 +789,13 @@ withheld.
 
 `retro.py accuracy --id RETROxxxx --delegated-tokens N` records one delegated agent's own total
 against the open run, and `--delegated-harness HARNESS` (`claude`, `cursor`, `copilot`,
-`opencode` or `codex`) names the harness the agent ran under. Where that harness's reading in
-the run already holds its subagents' spend, as an opencode session's does beside a Claude main
-thread, the total is kept on the record but left out of the run's Tokens figures and the
-retro's total, so it is not counted twice. Any other name is refused and nothing is recorded,
-and a total with no harness is added as before. A lane return's record names no harness, since
-no reading holds a lane worktree's session.
+`opencode` or `codex`) names the harness whose metered session ran the agent as a subagent.
+Where that harness's reading in the run already holds its subagents' spend, as an opencode
+session's does beside a Claude main thread, the total is kept on the record but left out of the
+run's Tokens figures and the retro's total, so it is not counted twice, and the retro's basis
+says so. Any other name is refused and nothing is recorded, and a total with no harness is
+added as before. Leave the flag off for an agent that ran as a session of its own, which no
+reading holds; a lane return's record names no harness for the same reason.
 
 ## Driving a wave
 

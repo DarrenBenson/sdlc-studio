@@ -2933,6 +2933,17 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     delegated = run_state.delegated_records(state, readers)
     supplied = 0 if whole else run_state.delegated_total(state, readers)
     total = delta + supplied
+    # The supplied totals left out above because they are tagged to a harness whose reading
+    # holds its agents, counted per harness and said in the basis: a basis that read as though
+    # nothing was supplied would invite the same total again, untagged, and count it twice.
+    left_out: dict[str, int] = {}
+    for r in run_state.delegated_records(state):
+        if r.get(run_state.HARNESS) in readers:
+            left_out[r[run_state.HARNESS]] = left_out.get(r[run_state.HARNESS], 0) + 1
+    held_out = "".join(
+        f". The {h} reading already holds delegated agents' spend, so the {n} delegated "
+        f"total(s) supplied under {h} are not added: adding them would count that spend twice"
+        for h, n in left_out.items())
     # The sentences below are the Claude transcript's, kept word for word. Another harness's
     # reading is stated in its reader's own words, and "main thread" appears only where they
     # say it.
@@ -2974,12 +2985,16 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
                  + ", but the run's meter stamps do not say theirs did, so "
                  + ("the delegated totals supplied are added, as the sprint report adds them, "
                     "and an agent that ran as a subagent of this session is counted in both"
-                    if supplied else "no delegated total was supplied to add"))
+                    if supplied else "no delegated total was supplied to add")
+                 + held_out)
     elif supplied:
         basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED {measured} "
                  f"({meter}), plus {supplied:,} SUPPLIED by {len(delegated)} delegated "
                  f"agent(s), which is a figure they reported rather than one measured here. "
-                 f"{bound}")
+                 f"{bound}" + held_out)
+    elif held_out:
+        basis = (f"{rid} cost AT LEAST {delta:,}, {spend}: {meter}{held_out}. No other "
+                 f"delegated total was supplied, and {bound}")
     else:
         basis = (f"{rid} cost AT LEAST {delta:,}, {spend}: {meter}. No delegated "
                  f"total was supplied, and {bound}. Record one with "
@@ -5072,13 +5087,15 @@ def build_parser() -> argparse.ArgumentParser:
                            help="which agent reported the --delegated-tokens figure")
             p.add_argument("--delegated-harness", dest="delegated_harness", default=None,
                            choices=token_meters.HARNESSES, metavar="HARNESS",
-                           help="the harness the agent ran under, one a meter reads ("
+                           help="the harness whose metered session ran the agent as a "
+                                "subagent, one a meter reads ("
                                 + ", ".join(token_meters.HARNESSES) + "). Where that "
                                 "harness's reading in the run holds its subagents' spend, as "
                                 "an opencode session's does, the total is left out of the "
                                 "run's total, which already counts it; a total with no "
-                                "harness is added as before. Any other name is refused and "
-                                "nothing is recorded")
+                                "harness is added as before. Leave it off for an agent that "
+                                "ran as a session of its own, which no reading holds. Any "
+                                "other name is refused and nothing is recorded")
             p.add_argument("--delegated-unit", dest="delegated_unit", default="",
                            metavar="ID",
                            help="the unit the agent worked on: the report reads a unit's tagged "

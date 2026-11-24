@@ -1584,6 +1584,68 @@ class DelegatedHarnessTests(unittest.TestCase):
                             for p in page.split("\n\n")),
                         "help/sprint.md names --delegated-harness beside --delegated-tokens")
 
+    def test_the_retro_basis_says_a_tagged_total_is_left_out_not_unsupplied(self) -> None:
+        """`retro.py accuracy --tokens-from-harness` states the capture's basis. Over a run with
+        no delegated total it says none was supplied and how to record one; once a total tagged
+        to opencode, whose reading holds its agents, is left out, it says that total was
+        supplied and is not added, never that none was or that one should be recorded (which
+        would invite the same total again untagged, the double count). Beside an untagged total
+        and over a reading that holds this session's subagents it says the same. MUTANTS: the
+        sentence dropped from each branch, the left-out totals counted over every record or
+        none, and the no-supply advice kept beside a left-out total."""
+        import retro
+        retros = self.root / "sdlc-studio" / "retros"
+        retros.mkdir()
+        (retros / "RETRO0001-r.md").write_text("# RETRO0001: r\n\n> **Batch:** BG0001\n",
+                                               encoding="utf-8")
+        run_state.open_run(str(self.root), batch=["BG0001"], goal="g")
+        run_state.update(str(self.root), **{
+            run_state.TOKEN_STAMPS: self._stamps(),
+            run_state.TOKEN_BASELINE: {"tokens": 1000, "source": "/c/s.jsonl"}})
+
+        def basis(**cap) -> str:
+            with (mock.patch.object(retro, "_run_covers", return_value=True),
+                  mock.patch.object(retro, "harness_tokens", return_value={
+                      "tokens": 5000, "source": "/c/s.jsonl", "basis": "b", **cap})):
+                rc, said = self._accuracy("--tokens-from-harness")
+            self.assertEqual(0, rc, said)
+            [line] = [s for s in said.splitlines() if s.startswith("token actual captured")]
+            return line
+
+        left = ("The opencode reading already holds delegated agents' spend, so the 1 delegated "
+                "total(s) supplied under opencode are not added: adding them would count that "
+                "spend twice")
+        none = basis()
+        self.assertIn("AT LEAST 4,000", none)
+        self.assertIn("No delegated total was supplied", none)
+        self.assertIn("Record one with `accuracy --delegated-tokens N", none)
+        self.assertNotIn("not added", none, "the control: nothing was left out")
+        self.assertEqual(0, self._accuracy("--delegated-tokens", "300", "--delegated-harness",
+                                           "opencode")[0])
+        tagged = basis()
+        self.assertIn("AT LEAST 4,000", tagged)
+        self.assertIn(left, tagged)
+        self.assertIn("No other delegated total was supplied", tagged)
+        self.assertNotIn("No delegated total was supplied", tagged)
+        self.assertNotIn("Record one", tagged)
+        self.assertEqual(0, self._accuracy("--delegated-tokens", "300")[0])
+        both = basis()
+        self.assertIn("AT LEAST 4,300", both)
+        self.assertIn("plus 300 SUPPLIED by 1 delegated agent(s)", both)
+        self.assertIn(left, both)
+        self.assertEqual(0, self._accuracy("--delegated-tokens", "200", "--delegated-harness",
+                                           "claude")[0])
+        added = basis()
+        self.assertIn("plus 500 SUPPLIED by 2 delegated agent(s)", added)
+        self.assertNotIn("under claude", added, "a harness whose reading leaves agents out")
+        self.assertIn(left, added)
+        held = basis(includes_subagents=True)
+        self.assertIn("This reading holds the subagent transcripts", held)
+        self.assertIn(left, held)
+        self.assertEqual(0, self._accuracy("--delegated-tokens", "100", "--delegated-harness",
+                                           "opencode")[0])
+        self.assertIn(left.replace("the 1 delegated", "the 2 delegated"), basis())
+
     def test_the_dollar_row_leaves_a_tagged_record_out_of_what_it_names_unpriced(self) -> None:
         """The Estimates Dollar cost row names unpriced only the supplied totals its Tokens row
         adds: the tagged record the Tokens row leaves out is not among them. MUTANTS: the split

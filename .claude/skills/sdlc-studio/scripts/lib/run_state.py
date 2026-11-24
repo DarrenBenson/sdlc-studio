@@ -3028,7 +3028,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     model, or a blank one, the record carries no `model` key; nothing is filled in for it, since
     the main thread's model would price a smaller model's subagent at the larger one's rate.
 
-    `harness` names the harness the agent ran under, stored on the record trimmed. A record
+    `harness` names the harness whose metered session ran the agent as a subagent, stored on
+    the record trimmed. A record
     tagged to a harness whose reading holds its agents' spend is not added to that run's total
     (`delegated_records`); an untagged record is added as it always was.
     """
