@@ -6,8 +6,10 @@ lacking an uncommitted edit read at its newest commit since the record whose sub
 unit or no unit id. So a record of committed work survives another unit's later commit to a
 shared file, and the author's own further edit, uncommitted or committed under this unit's id or
 none, still reads as a record of an earlier diff. The landing orders this per-file view cannot
-see through are BG1121's; an edit made in a merge commit's conflict resolution is read through the
-merge's remerge diff, pinned in `test_self_check_merge_commit`. The review tooling's own
+see through (another unit's commit beneath the author's own, a cherry-pick) are admitted by the
+hunk-by-hunk view, pinned in `test_self_check_hunk_binding`; an edit made in a merge commit's
+conflict resolution is read through the merge's remerge diff, pinned in
+`test_self_check_merge_commit`. The review tooling's own
 writes (the self-check log, the verdict log, the runtime notes under `sdlc-studio/.local`) are
 outside the digest, so recording a self-check or a verdict, or taking a brief, does not move it.
 
@@ -220,9 +222,10 @@ class LaterUnitTests(unittest.TestCase):
 
     def test_a_record_off_the_line_of_history_reads_the_content_as_it_stands(self) -> None:
         """A record taken on a branch HEAD does not contain is judged on the content as it
-        stands, as is a row written before the commit was kept. Mutant: the ancestor check
-        dropped, so B's commit on main is set aside against a side branch's content that main
-        never received."""
+        stands, and hunk by hunk from the commit HEAD shares with it, which still lacks the side
+        branch's edit; a row written before the commit was kept, on the content as it stands
+        alone. Mutant: the ancestor check dropped, so B's commit on main is set aside against a
+        side branch's content that main never received."""
         _project(self.root)
         gitutil.git(["checkout", "-q", "-b", "side"], self.root)
         _commit(self.root, f"feat({A}): s returns 6", SHARED, "def s():\n    return 6\n")

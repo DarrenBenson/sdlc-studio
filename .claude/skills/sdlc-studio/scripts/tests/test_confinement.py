@@ -695,6 +695,7 @@ SCRATCH, UNTRACKED, NEW, OUTSIDE = "scratch", "untracked", "new", "outside"
 #: so no site writing one is here except as OUTSIDE.
 SHARED_WRITE_ALLOWLIST: dict[str, tuple[str, str]] = {
     "critic.py::_replay_author_mutants::edits": (SCRATCH, "the edits file in a mkdtemp directory"),
+    "critic.py::_set_aside::Path(scratch) / name": (SCRATCH, "a merge side in a TemporaryDirectory"),
     "file_finding.py::grooming_gaps::preview": (SCRATCH, "a preview in a TemporaryDirectory"),
     "verify_ac.py::_phase_plugins::tmp / f'_sdlc_batch_{phase}.py'": (
         SCRATCH, "a pytest plugin module in the batch run's temporary directory"),

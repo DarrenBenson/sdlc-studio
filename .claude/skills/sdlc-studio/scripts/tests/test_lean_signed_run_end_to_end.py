@@ -300,7 +300,8 @@ class SignedRunEndToEndTests(unittest.TestCase):
         """AC3. MUTANTS: BG0851 reverted (no operator ruling, 'no gate stood down'); BG0849
         reverted (the graduation CR UNRULED); BG0826 reverted (no run id, no table: the bare
         close scaffolds a retro the rulings cannot be written in); BG0865 reverted (the page's
-        Known issues rows carry no ruling, and the close's own CR is not listed)."""
+        Known issues rows carry no ruling, and the close's own CR is not listed); BG1698
+        reverted (the discharged carry left dropped, so the page does not credit it delivered)."""
         run = self.flow
         page = run.page()
         cr = json.loads((run.root / "sdlc-studio" / "lessons.jsonl").read_text(
@@ -310,8 +311,10 @@ class SignedRunEndToEndTests(unittest.TestCase):
         self.assertIn("the operator ruled 1 time(s)", page)
         self.assertNotIn("no gate stood down", page)
         self.assertRegex(page, rf"\*\*{DROPPED}\*\* - Forced-override: --force waived")
-        self.assertRegex(page, rf"{CARRIED} .*carried at the review cap: {run.carry_bug}",
-                         "the page does not name the carried unit with its bug")
+        # The carry's discharging APPROVE in the carrying run returns the unit to the batch
+        # (BG1698), so the page credits it as delivered; its bug keeps its Known issues row.
+        self.assertRegex(page, rf"(?m)^\| {CARRIED} \|[^\n]*\| delivered \|",
+                         "the page does not credit the discharged carry as delivered")
         self.assertIn(cr, page, "the page does not name the graduation CR")
         # The retro's rulings themselves, each on its Known issues row of the page the operator
         # signs (BG0865): the carry's bug, and the graduation CR ruled by its lesson class.

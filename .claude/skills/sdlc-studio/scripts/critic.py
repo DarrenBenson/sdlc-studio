@@ -48,6 +48,7 @@ _TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source |
           "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 #: The review depths. `full` is the adversarial pass - mutations, boundaries, silent-failure
 #: paths, claims verified by execution. `light` is the bounded pass a low-risk unit earns.
+#: Deepest first: `rejoinder_tier` compares two tiers by their place here.
 TIERS = ("full", "light")
 #: What an operator's explicit `--tier` records, so their choice is distinguishable from a
 #: derived one. A tier nobody chose and a tier somebody chose are different facts about a
@@ -357,11 +358,26 @@ def _edge_whitespace_span(text: str) -> tuple[int, str, str] | None:
     return None
 
 
+#: What markdownlint's MD034 reads as a bare URL besides an http(s) one: an email address, and a
+#: `www.` address that no word character or dot runs into. An `<...>` autolink or a link
+#: destination matches `keep` first, so an address inside one is written as it stands.
+_BARE_ADDRESS = re.compile(r"(?P<keep><[^<>\s]*>|\]\([^()\s]*\))"
+                           r"|[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
+                           r"|(?<![\w.])www\.[^\s<>`]+")
+
+
 def _code_urls(text: str) -> str:
-    """Each bare http(s) URL in a finding as a code span, so the ledger row passes the markdown
-    lane's no-bare-URL rule unedited: the filer's own rule, `file_finding._code_urls`, reused."""
+    """Each bare http(s) URL, email address or `www.` address in a finding as a code span, so
+    the ledger row passes the markdown lane's no-bare-URL rule (MD034) unedited: the filer's own
+    rule, `file_finding._code_urls`, reused for the URLs, and its `_code_url` for the others,
+    outside every code span. A trailing full stop or an unbalanced `)` stays outside the span."""
     import file_finding  # noqa: PLC0415 - imported where used, as the other callers here do
-    return file_finding._code_urls(text or "")
+
+    def span(m: re.Match) -> str:
+        return m.group(0) if m.group("keep") else file_finding._code_url(m)
+
+    return _outside_spans(file_finding._code_urls(text or ""),
+                          lambda part: _BARE_ADDRESS.sub(span, part))
 
 
 #: Every character `str.splitlines` ends a line at, each folded to a space in a ledger cell.
@@ -438,26 +454,31 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
     A DELIVERY verdict is held to the review rounds here, so every writer is: `round_refusal`
     refuses it with nothing written, and a REJECT at the cap carries the unit (`carry_at_cap`).
     A carry that fails raises `CarryFailed`, whose message says the REJECT row WAS written.
+    The APPROVE that discharges a carry in the run that carried it returns the unit to that
+    run's batch (`_rejoin_if_discharged`), and its notice is printed here.
     """
-    path, _round, bug = _record(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, tier, tier_explicit, ruling)
-    if bug:
-        print(carried_notice(unit, bug), file=sys.stderr)
+    path, _round, bug, rejoined = _record(repo_root, unit, verdict, reviewer, author, issues,
+                                          phase, brief, tier, tier_explicit, ruling)
+    for notice in (carried_notice(unit, bug) if bug else None, rejoined):
+        if notice:
+            print(notice, file=sys.stderr)
     return path
 
 
 def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
             tier=None, tier_explicit=False, ruling=None,
-            source="-", read_from=None) -> tuple[Path, int | None, str | None]:
-    """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
-    the row's round in its delivery (None off the delivery phase) and the carried bug's id
-    (None when nothing was carried)."""
+            source="-", read_from=None) -> tuple[Path, int | None, str | None, str | None]:
+    """Write the verdict, then carry the unit if it is a REJECT at the cap, or return it to the
+    batch of the run that carried it if it is the APPROVE that discharges that carry: the ledger
+    path, the row's round in its delivery (None off the delivery phase), the carried bug's id
+    (None when nothing was carried) and the rejoin's notice (None when nothing rejoined)."""
     path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
                                 brief, tier, tier_explicit, ruling, source, read_from)
     if phase != "delivery":
-        return path, None, None
+        return path, None, None, None
     rounds = delivery_rounds(repo_root, unit)
-    return path, len(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds)
+    return (path, len(rounds), _carry_if_capped(repo_root, unit, verdict, path, rounds),
+            _rejoin_if_discharged(repo_root, unit, verdict, ruling))
 
 
 def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief,
@@ -888,15 +909,17 @@ def unit_review_rounds(repo_root: Path | str, unit: str, phase: str = "delivery"
             if sdlc_md.norm_id(r.get("unit", "")) == want and not is_superseded(r)]
 
 
-def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery") -> dict:
+def seat_verdicts(repo_root: Path | str, unit: str, phase: str = "delivery",
+                  rows: list[dict] | None = None) -> dict:
     """The LATEST verdict each reviewing seat gave on a unit, as `{reviewer: VERDICT}`.
 
     A split panel is a different escalation from a repeatedly-rejecting one: seats that
     disagree need the operator to break the tie, not another repair round. Latest per seat,
-    because a seat that rejected and then approved has resolved its own objection.
+    because a seat that rejected and then approved has resolved its own objection. Read over
+    `rows` when given (`escalation_notice` passes one delivery's), else over every live round.
     """
     out: dict = {}
-    for row in unit_review_rounds(repo_root, unit, phase):
+    for row in (unit_review_rounds(repo_root, unit, phase) if rows is None else rows):
         who = str(row.get("reviewer") or "").strip()
         if who:
             out[who] = str(row.get("verdict") or "").strip().upper()
@@ -1875,7 +1898,8 @@ def review_rounds_across_ledgers(repo_root: Path | str, unit: str,
     `critic.py record` appends to `critic-verdicts.md`, and the frozen batch ledger
     (`sprint-review-record.md`, read through `sprint_reviews`) still holds historical batch rows
     naming the unit. Escalation once read the first only, so two batch REJECT rounds on one unit
-    escalated nothing.
+    escalated nothing; it now reads the unit's current delivery (`escalation_notice`), and this
+    reader answers `sprint._rejected_unanswered`.
 
     Deliberately NOT folded into `unit_review_rounds`, which feeds `seat_verdicts` and the
     coverage predicate. Those ask "which seat holds what verdict on this unit" - a per-unit
@@ -1951,13 +1975,25 @@ def escalation_notice(repo_root: Path | str, unit: str, phase: str = "delivery")
     Both recording commands call THIS rather than assembling the rounds themselves, because the
     defect being repaired was precisely that the caller assembled them from the wrong ledger.
 
+    A delivery verdict is judged over the unit's CURRENT delivery alone (`delivery_rounds`),
+    both its REJECT count and its seats' verdicts: a reopened unit's first REJECT is round 1 of
+    a new delivery, and the closed delivery's APPROVE or REJECT is no seat or round of it. In
+    an open run the delivery is counted from the run's base for the unit, which still holds
+    once a carry at the cap has dropped it from the batch; a closed run's base is not read. The
+    frozen batch ledger (`sprint_reviews`) takes no new row, so no current delivery holds one.
+
     It says where the operator READS it, because nothing sends it to them: a unit carried at
     the cap is on the sprint report's `Dropped, held and carried over` row and in the bug that
     holds its findings; any other escalation is in this output and the verdict ledger.
     """
-    rounds = [str(r.get("verdict") or "")
-              for r in review_rounds_across_ledgers(repo_root, unit, phase)]
-    escalate, why = panel_escalation(rounds, seat_verdicts(repo_root, unit, phase))
+    if phase == "delivery":
+        state = run_state.read(repo_root) or {}
+        rows = delivery_rounds(repo_root, unit,
+                               state if state.get("outcome") == run_state.RUNNING else None)
+    else:
+        rows = unit_review_rounds(repo_root, unit, phase)
+    escalate, why = panel_escalation([str(r.get("verdict") or "") for r in rows],
+                                     seat_verdicts(repo_root, unit, phase, rows))
     if not escalate:
         return ""
     uid = sdlc_md.norm_id(unit)
@@ -2087,6 +2123,45 @@ def _carry_if_capped(repo_root: Path | str, unit: str, verdict: str, path: Path,
             f"carrying it at the review cap failed: {exc}. The unit stays in the open run's "
             f"batch with that REJECT unanswered: file its findings as a bug and drop it from "
             f"the batch (`sprint batch drop`) by hand") from exc
+
+
+#: What the notice of a discharged carry says the unit does, word for word in the review page.
+REJOINS = "rejoins the carrying run's batch"
+
+
+def _rejoin_if_discharged(repo_root: Path | str, unit: str, verdict: str,
+                          ruling: str | None = None) -> str | None:
+    """Return `unit` to the open run's batch when `verdict` is the APPROVE that discharges its
+    carry in that run, the latest batch change dropping it there being the carry at the cap
+    (`_carry_bug`); the notice to print, or None when nothing rejoined. The add's reason names
+    the carry bug and any `ruling`, and the notice says the bug is still Open and how it is
+    closed, which `transition.py` does after running its criteria. An APPROVE in a later run
+    that holds the unit, with no open run, or after a hand drop that followed the carry adds
+    nothing. The row is already written, so a failed add is named with its remedy, not raised."""
+    if str(verdict or "").upper() != APPROVE:
+        return None
+    uid = sdlc_md.norm_id(unit)
+    state = run_state.read(repo_root) or {}
+    if state.get("outcome") != run_state.RUNNING or run_state.batch_holds(state, uid):
+        return None
+    bug = None
+    for change in state.get("batch_changes") or []:
+        if (isinstance(change, dict) and change.get("action") == "drop"
+                and sdlc_md.norm_id(str(change.get("id") or "")) == uid):
+            bug = _carry_bug(repo_root, change.get("reason"))
+    if not bug:
+        return None
+    why = f"discharged {CARRIED_REASON}: {bug}" + (f", ruling {str(ruling).strip().upper()}"
+                                                   if ruling else "")
+    still = (f"{bug}, which holds the carried findings, is still Open: close it with "
+             f"`transition.py set --id {bug} --status Fixed`, which runs its criteria")
+    try:
+        run_state.add_to_batch(repo_root, uid, why)
+    except (run_state.RunStateError, OSError) as exc:
+        return (f"  WARNING: {uid}'s APPROVE discharges its carry, but it could not rejoin the "
+                f"open run's batch ({exc}): add it back with `sprint.py batch add {uid}`. "
+                f"{still}")
+    return f"  {uid} {REJOINS}: this APPROVE discharges its carry at the review cap. {still}"
 
 
 def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
@@ -2775,6 +2850,8 @@ ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carry
         An origin tag after a ';' or a line break always starts a new finding, so write \\;
         before a quoted tag, even inside a code span. Any other ';' ends a finding unless
         brackets or a code span closed within that finding enclose it; write \\; to keep one.
+        A code span must not begin or end with whitespace: markdownlint's MD038 refuses it,
+        so the record does. Quote the value without the space and say in prose it has one.
 BLOCKING: <the subset that must be fixed before Done, or 'none'. Each item quotes the start
           of its ISSUES finding (no tag needed), and that finding is recorded once, marked
           blocking>
@@ -2975,14 +3052,17 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     their own work before handing the brief over. A full-tier brief asks the reviewer for both
     passes as well.
 
-    The surfaces are the commit message, every prose surface the brief's claim inventory names
-    (`CLAIM_SURFACES`) and each changelog fragment the unit's Affects declares - read from its
-    Affects, never from its id, because a carried bug ships its story's fragment. The mutation
-    targets are the test files its Affects declares."""
-    _affects, fragments, tests = _self_check_scope(repo_root, unit)
+    The surfaces are the ones the record accepts (`claim_surfaces`), so the two cannot name
+    different sets: the commit message, then the optional surfaces (every prose surface the
+    brief's claim inventory names, `CLAIM_SURFACES`, then each page the unit's Affects
+    declares), then each changelog fragment the Affects declares - read from its Affects, never
+    from its id, because a carried bug ships its story's fragment. The mutation targets are the
+    test files its Affects declares."""
+    affects, fragments, tests = _self_check_scope(repo_root, unit)
     claims = " ".join("\n".join(_CLAIM_INVENTORY_BLOCK.splitlines()[1:]).split())
     mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
-    surfaces = [f"the {COMMIT_SURFACE}", *CLAIM_SURFACES, *fragments]
+    required, optional = claim_surfaces(affects)
+    surfaces = [f"the {required[0]}", *optional, *required[1:]]
     # The brief's instruction counts its own surfaces ("all four"), so it is printed under the
     # prose surfaces it counts, and the commit message and fragments are held to it after.
     prose = (", ".join(CLAIM_SURFACES[:-1]) + f" and {CLAIM_SURFACES[-1]}"
@@ -3199,10 +3279,11 @@ _SELF_CHECK_HEADER = (
     "> `critic.py self-check record` before a reviewer is briefed. The digest is over the\n"
     "> content of the unit's Affects files, less the review tooling's own writes, when the row\n"
     "> was written, followed by the commit it was taken at. A row is current when its digest\n"
-    "> matches that content now, or that content with each file that has no uncommitted edit\n"
-    "> read at its newest commit since the row's commit that is not another unit's (or at the\n"
-    "> row's commit when all are); a commit is another unit's when its subject names a unit id\n"
-    "> and none is this unit's. `critic.py brief` reads any other row as stale.\n\n"
+    "> matches that content now, or that content with the commits another unit made since the\n"
+    "> row's commit set aside, file by file or hunk by hunk, the second walked from the commit\n"
+    "> HEAD shares with the row's, so a cherry-pick keeps its record; a commit is another unit's\n"
+    "> when its subject names a unit id and none is this unit's. `critic.py brief` reads any\n"
+    "> other row as stale.\n\n"
     "| Unit | Author | Date | Claims | Mutants | Digest |\n"
     "| --- | --- | --- | --- | --- | --- |\n")
 _DIGEST_SKIP = (".git", "__pycache__")
@@ -3347,13 +3428,49 @@ def _merge_resolutions(root: Path, base: str, affects: list[str]) -> dict[str, l
     return found
 
 
+def _commit_walk(root: Path, start: str, affects: list[str], uid: str,
+                 merged: dict[str, list[str]] | None = None
+                 ) -> dict[str, list[tuple[str, bool]]] | None:
+    """Each path among `affects` a commit since `start` touched, mapped to those commits newest
+    first as `(sha, another)`, `another` when the commit is another unit's: its subject names a
+    unit id and none is `uid` (`_names_another_unit`). A merge lists no file of its own here,
+    only the ones `merged` names for it (`_merge_resolutions`). None when git cannot answer."""
+    log = _git(root, "-c", "core.quotePath=false", "log", "--no-renames", "--topo-order",
+               "--relative", "--name-only", "--format=%x00%H %s", f"{start}..HEAD", "--", *affects)
+    if log is None or log.returncode != 0:
+        return None
+    touched: dict[str, list[tuple[str, bool]]] = {}
+    for chunk in log.stdout.decode("utf-8", "replace").split("\0")[1:]:
+        head, *names = chunk.split("\n")
+        sha, _, subject = head.partition(" ")
+        for name in filter(None, [*names, *(merged or {}).get(sha, ())]):
+            touched.setdefault(name, []).append((sha, _names_another_unit(subject, uid)))
+    return touched
+
+
+def _view_digest(root: Path, affects: list[str], touched: dict, own) -> str:
+    """`_content_digest` of each declared path with the files it names, each read through
+    `own(member)` (None for absent): the files in the working tree and every file beneath the
+    path a commit `touched`, less the review tooling's own writes. Raises what `own` raises."""
+    entries = []
+    for rel in affects:
+        prefix = PurePosixPath(rel).as_posix()
+        members = set(_working_members(root, rel)) | {
+            t for t in touched if (t == prefix or t.startswith(prefix + "/"))
+            and not _review_tool_write(t) and not any(
+                part in _DIGEST_SKIP for part in PurePosixPath(t).parts)}
+        views = ((m, own(m)) for m in sorted(members, key=PurePosixPath))
+        entries.append((rel, [(m, data) for m, data in views if data is not None]))
+    return _content_digest(entries)
+
+
 def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | None:
     """`affects_digest` of the unit's Affects with the commits ANOTHER unit made since `base`
-    (the commit the record was taken at) set aside where they top a file's history. Another
-    unit's commit beneath one that is not stays, so a record of uncommitted work is still staled
-    by another unit's commit to that file landing before the author's own. None when it cannot
-    be judged: no repository, `base` not an ancestor of HEAD (as after a rebase or cherry-pick),
-    or git unable to answer, so the caller falls back to the content as it stands.
+    (the commit the record was taken at) set aside file by file, where they top a file's
+    history. Another unit's commit beneath one that is not stays in this view, which
+    `_hunk_view_digest` sets aside hunk by hunk instead. None when it cannot be judged: no
+    repository, `base` not an ancestor of HEAD (as after a rebase or cherry-pick), or git
+    unable to answer.
 
     For each file, the commits since `base` that touched it are read newest first, and a commit
     is another unit's when its subject names a unit id and none is this unit's
@@ -3370,20 +3487,13 @@ def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | Non
     ancestor = _git(root, "merge-base", "--is-ancestor", base, "HEAD")
     if not affects or ancestor is None or ancestor.returncode != 0:
         return None
-    log = _git(root, "-c", "core.quotePath=false", "log", "--no-renames", "--topo-order",
-               "--relative", "--name-only", "--format=%x00%H %s", f"{base}..HEAD", "--", *affects)
-    if log is None or log.returncode != 0:
-        return None
     try:
         merged = _merge_resolutions(root, base, affects)
     except _GitUnreadable:
         return None
-    touched: dict[str, list[tuple[str, bool]]] = {}
-    for chunk in log.stdout.decode("utf-8", "replace").split("\0")[1:]:
-        head, *names = chunk.split("\n")
-        sha, _, subject = head.partition(" ")
-        for name in filter(None, [*names, *merged.get(sha, ())]):
-            touched.setdefault(name, []).append((sha, _names_another_unit(subject, uid)))
+    touched = _commit_walk(root, base, affects, uid, merged)
+    if touched is None:
+        return None
 
     def own(member: str) -> bytes | None:
         path = root / member
@@ -3394,19 +3504,70 @@ def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | Non
         sha = next((s for s, another in commits if not another), base)
         return _rev_blob(root, sha, member)
 
-    entries = []
     try:
-        for rel in affects:
-            prefix = PurePosixPath(rel).as_posix()
-            members = set(_working_members(root, rel)) | {
-                t for t in touched if (t == prefix or t.startswith(prefix + "/"))
-                and not _review_tool_write(t) and not any(
-                    part in _DIGEST_SKIP for part in PurePosixPath(t).parts)}
-            views = ((m, own(m)) for m in sorted(members, key=PurePosixPath))
-            entries.append((rel, [(m, data) for m, data in views if data is not None]))
+        return _view_digest(root, affects, touched, own)
     except (_GitUnreadable, OSError):
         return None
-    return _content_digest(entries)
+
+
+def _set_aside(root: Path, now: bytes | None, after: bytes | None,
+               before: bytes | None) -> bytes | None:
+    """`now` with one commit's change to a file, from `before` to `after`, taken back out:
+    `before` when `now` is `after`, else git's three-way merge of `now` and `before` over
+    `after` (`git merge-file`), which keeps every other hunk of `now`. Raises `_GitUnreadable`
+    when it cannot be taken out cleanly: the merge conflicts, a side is absent, or git cannot
+    run."""
+    if now == after:
+        return before
+    if None in (now, after, before):
+        raise _GitUnreadable("a change that adds or removes the file cannot be taken out of "
+                             "content that has moved since")
+    import tempfile  # noqa: PLC0415 - local; only the hunk view needs files to merge
+    with tempfile.TemporaryDirectory() as scratch:
+        sides = []
+        for name, data in (("now", now), ("after", after), ("before", before)):
+            (Path(scratch) / name).write_bytes(data)
+            sides.append(str(Path(scratch) / name))
+        done = _git(root, "merge-file", "-p", *sides)
+    if done is None or done.returncode != 0:
+        raise _GitUnreadable("git could not take another unit's change back out cleanly")
+    return done.stdout
+
+
+def _hunk_view_digest(repo_root: Path | str, unit: str, base: str) -> str | None:
+    """`affects_digest` of the unit's Affects with each change ANOTHER unit committed since the
+    record set aside hunk by hunk: every such commit's change to a file, newest first, taken
+    back out of the file's content as it stands (`_set_aside`), so what is left is the unit's
+    own change, committed or not, over the content the record was taken against. The walk
+    reads every commit HEAD holds that `base` does not (`base..HEAD`): when HEAD does not
+    descend from `base`, the commits since the one the two share, so a record taken at a
+    commit since cherry-picked onto HEAD is judged against the copy HEAD holds. A commit is
+    another unit's as `_own_change_digest` reads it. None when it cannot be judged: no
+    repository, a `base` git does not hold, a merge with content of its own in a declared file
+    (`_merge_resolutions`), a change that cannot be taken out cleanly, or git unable to
+    answer."""
+    root = Path(repo_root)
+    uid = sdlc_md.norm_id(unit)
+    affects = sorted(set(_self_check_scope(root, unit)[0]))
+    touched = _commit_walk(root, base, affects, uid) if affects else None
+    if touched is None:
+        return None
+
+    def own(member: str) -> bytes | None:
+        path = root / member
+        data = path.read_bytes() if path.is_file() else None
+        for sha, another in touched.get(member, []):
+            if another:
+                data = _set_aside(root, data, _rev_blob(root, sha, member),
+                                  _rev_blob(root, f"{sha}^", member))
+        return data
+
+    try:
+        if any(_merge_resolutions(root, base, affects).values()):
+            return None
+        return _view_digest(root, affects, touched, own)
+    except (_GitUnreadable, OSError):
+        return None
 
 
 def _surface_key(label: str) -> str:
@@ -3819,8 +3980,9 @@ def author_self_check_mode(repo_root: Path | str) -> str:
 
 def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
     """Why the unit has no current self-check, or None when one of its rows carries the digest
-    of its Affects content now, or of the own-change view from the commit the row was taken at
-    (`_own_change_digest`). Any matching row counts, so a diff restored to one already checked
+    of its Affects content now, or of the content with another unit's commits since the row's
+    commit set aside, file by file (`_own_change_digest`) or hunk by hunk
+    (`_hunk_view_digest`). Any matching row counts, so a diff restored to one already checked
     needs no second record."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
@@ -3829,12 +3991,15 @@ def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
     digest = affects_digest(repo_root, unit)
     if any(r["digest"] == digest for r in rows):
         return None
-    own: dict[str, str | None] = {}
+    views: dict[tuple, str | None] = {}
     for row in rows:
-        if (base := row["commit"]) and base not in own:
-            own[base] = _own_change_digest(repo_root, unit, base)
-        if base and own[base] == row["digest"]:
-            return None
+        if not (base := row["commit"]):
+            continue
+        for view in (_own_change_digest, _hunk_view_digest):
+            if (view, base) not in views:
+                views[(view, base)] = view(repo_root, unit, base)
+            if views[(view, base)] == row["digest"]:
+                return None
     last = rows[-1]
     return (f"the self-check recorded for {uid} on {last['date']} is stale: its digest "
             f"{last['digest']} is of an earlier diff, and the unit's Affects content now digests "
@@ -4802,6 +4967,25 @@ def ledger_prior_verdict(root: Path | str, unit: str, seat: str) -> tuple[str, b
             f"from, is {VERDICT_FILE_NOTES[state]}, so the prior verdict is rebuilt from the row")
 
 
+def rejoinder_tier(root: Path | str, unit: str, seat: str) -> tuple[str, str | None]:
+    """`(tier, source)` for a `--rejoinder` brief given no `--tier`: the tier the unit's risk
+    band derives (`tier_for`), unless the seat's standing REJECT (`seat_standing_reject`) was
+    recorded at a deeper one, which the re-review then takes, `source` naming that REJECT. A
+    re-review checks the REJECT's findings at no less depth than they were found, and a REJECT
+    no deeper than the band changes nothing. With no single standing REJECT to read, or one
+    recorded with no tier, the band's tier and no source."""
+    band = tier_for(root, unit)
+    try:
+        row = seat_standing_reject(root, unit, seat)
+    except (OSError, ValueError):
+        return band, None
+    taken = str(row.get("tier") or "").split(" ", 1)[0]
+    if taken in TIERS and TIERS.index(taken) < TIERS.index(band):
+        return taken, (f"{row.get('reviewer')}'s REJECT of {sdlc_md.norm_id(unit)} "
+                       f"({row.get('date')})")
+    return band, None
+
+
 def rejoinder_notice(root: Path | str, unit: str, seat: str) -> str | None:
     """The line a plain brief prints when `seat` holds an unanswered REJECT on `unit`: round 2
     is briefed with `--rejoinder`, which quotes it. None when no single one stands."""
@@ -5323,13 +5507,36 @@ def _verifier_names(line: str, rel: str) -> bool:
     return False
 
 
-def mechanism_files(text: str) -> list[str]:
+def rendered_paths(repo_root: Path | str) -> list[str]:
+    """The project's `review.rendered_paths`: globs of the files its build consumes (a static
+    site's pages, components and data), none by default. Matched by `fnmatch`'s rules, where `*`
+    crosses a `/`, so `src/pages/*` covers every file beneath src/pages/. A value that is not a
+    list of strings is refused by name, never read as no globs."""
+    raw = sdlc_md.project_override(repo_root, "review.rendered_paths", None)
+    if raw is None:
+        return []
+    if not isinstance(raw, list) or not all(isinstance(g, str) for g in raw):
+        raise ValueError(f"review.rendered_paths is {raw!r}, not a list of globs - refused "
+                         f"rather than read as none")
+    return raw
+
+
+def _not_a_mechanism(rel: str, rendered: tuple[str, ...] | list[str]) -> bool:
+    """A declared path that is a page (`CLAIM_PAGE_SUFFIXES`) or that a `rendered` glob covers:
+    a document, or a file the project's build consumes, which no named caller does."""
+    import fnmatch  # noqa: PLC0415 - local; only the caller check matches globs
+    return rel.endswith(CLAIM_PAGE_SUFFIXES) or any(fnmatch.fnmatchcase(rel, g) for g in rendered)
+
+
+def mechanism_files(text: str, rendered: tuple[str, ...] | list[str] = ()) -> list[str]:
     """The declared files that are the unit's MECHANISM.
 
     Derived by SUBTRACTION from what the unit itself declares: its `Affects`, less the files its
-    own verifiers name (those are its proof, not its mechanism) and less markdown (a document is
-    not a mechanism). Never a list of code extensions - such a list exempts the language nobody
-    thought of, which is the failure mode this project has paid for repeatedly.
+    own verifiers name (those are its proof, not its mechanism), less pages (`.md` and `.mdx`: a
+    document is not a mechanism) and less the files a `rendered` glob covers, which the
+    project's build consumes (`rendered_paths`). Never a list of code extensions - such a list
+    exempts the language nobody thought of, which is the failure mode this project has paid for
+    repeatedly.
 
     One known miss, stated rather than hidden: a unit whose verifier reads the mechanism file
     directly (a `grep` over the source it changes) subtracts that file as proof, so it is not
@@ -5341,7 +5548,7 @@ def mechanism_files(text: str) -> list[str]:
     out: list[str] = []
     for raw in sdlc_md.affects_files(text):
         rel = raw.strip().strip("`")
-        if not rel or rel.endswith(".md"):
+        if not rel or _not_a_mechanism(rel, rendered):
             continue
         if any(_verifier_names(line, rel) for line in verify_lines):
             continue
@@ -5356,10 +5563,12 @@ def caller_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
     it is about, because "this unit needs a caller" sends the author back to read all of them
     while "AC1 describes a function with no consumer" points at the line to fix. A unit whose
     declared surface is documentation, or is only its own tests, adds no mechanism and is not
-    asked for one - a check that fires on everything is not a check.
+    asked for one - a check that fires on everything is not a check. Nor is a unit whose declared
+    surface is only files the project's build consumes (`rendered_paths`).
     """
     root = Path(repo_root)
     index = tree_index(root)
+    rendered = rendered_paths(root)
     findings: list[dict] = []
     for raw in units or []:
         uid = sdlc_md.norm_id(raw)
@@ -5368,7 +5577,7 @@ def caller_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
             raise ValueError(f"no artefact with id {uid!r} - the caller check needs a real unit; "
                              f"an id that resolves to nothing is not a unit with no findings")
         text = sdlc_md.read_text_safe(Path(hit[0]))
-        mech = mechanism_files(text)
+        mech = mechanism_files(text, rendered)
         if not mech:
             # A unit whose declared surface is documentation, or only its own tests, adds no
             # mechanism and is legitimately not asked for one. A unit that DECLARED code and
@@ -5378,7 +5587,8 @@ def caller_findings(repo_root: Path | str, units: list[str]) -> list[dict]:
             # naming no consumer, and the verdict is unchanged. That is a vacuous criterion,
             # which is the exact defect this check exists to remove.
             code = [f for f in sdlc_md.affects_files(text)
-                    if f.strip().strip("`") and not f.strip().strip("`").endswith(".md")]
+                    if f.strip().strip("`") and not _not_a_mechanism(f.strip().strip("`"),
+                                                                     rendered)]
             if code:
                 findings.append({
                     "unit": uid, "kind": CALLER_INDETERMINATE, "criteria": [],
@@ -5454,7 +5664,7 @@ def _print_with_verdict_file(root: Path | str, unit: str, text: str, fp: str) ->
 
 
 def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: str,
-                   path: Path, seat: str, commit: str = "") -> str:
+                   path: Path, seat: str, commit: str = "", source: str | None = None) -> str:
     """The tier and fingerprint lines (`lib/lanes.py` parses both), the commit the brief was cut
     at (outside a repository there is none, and no line), and the record command, which reads
     the reviewer's own file, so what is recorded is what the reviewer wrote. The tier is
@@ -5462,8 +5672,13 @@ def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: s
 
     The command names both seats as `<holder> (<role>)`, the form `recorded_seat` reads: the
     reviewer is `seat`, the one briefed, and the author is the seat the unit's lane brief
-    recorded as building it, or the engineering seat, said so, when no lane recorded one."""
-    how = "chosen" if explicit else "derived from the unit's risk band"
+    recorded as building it, or the engineering seat, said so, when no lane recorded one.
+
+    `source` names the REJECT a rejoinder took its tier from (`rejoinder_tier`), printed as the
+    tier's source in place of the risk band."""
+    how = ("chosen" if explicit else
+           f"inherited from {source}, the verdict this re-review answers" if source else
+           "derived from the unit's risk band")
     shown = sdlc_md.display_id(root, unit)
     built_by = run_state.lane_seat(root, unit)
     reviewer = seat_signature(root, seat)
@@ -5494,8 +5709,11 @@ def cmd_brief(args: argparse.Namespace) -> int:
             else:
                 prior = (sys.stdin.read() if src == "-"
                          else Path(src).read_text(encoding="utf-8"))
+            # A re-review is briefed no shallower than the REJECT it answers was recorded at,
+            # unless the operator names a tier.
             explicit = args.tier is not None
-            tier = args.tier or tier_for(args.root, args.unit)
+            tier, source = ((args.tier, None) if explicit
+                            else rejoinder_tier(args.root, args.unit, args.seat))
             text, checked = checked_rejoinder_brief(args.root, args.unit, args.seat, prior,
                                                     tier, rebuilt)
             # The re-review brief carries the same blocks as the first one, so it is refused on
@@ -5520,7 +5738,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 if line:
                     print(line, file=sys.stderr)
             print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,
-                                 head), file=sys.stderr)
+                                 head, source), file=sys.stderr)
         else:
             # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
             # in the parser: a default there is indistinguishable from a choice, and the
@@ -5742,7 +5960,11 @@ def cmd_record(args: argparse.Namespace) -> int:
               "    [new]          the diff introduced a defect that did not exist\n"
               "    [pre-existing] already true of the tree - reported, and it does not block\n"
               "  e.g. --issues \"[regression] verify_ac crashes on an empty Affects; "
-              "[pre-existing] BG0123 slow gate\"", file=sys.stderr)
+              "[pre-existing] BG0123 slow gate\"\n"
+              "  An unescaped ';' can end a finding, and the text after it, carrying no tag of "
+              "its own, is refused here: write \\; to keep a semicolon inside one finding "
+              "(\"[new] a\\; b\" records one).",
+              file=sys.stderr)
         return 2
 
     if getattr(args, "dry_run", False):
@@ -5765,12 +5987,12 @@ def cmd_record(args: argparse.Namespace) -> int:
         drift = (transcription_drift(args.root, unit, brief, args.verdict, args.issues)
                  if source == "-" and brief else None)
         try:
-            path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
-                                   args.issues, brief=brief,
-                                   tier=getattr(args, "tier", None),
-                                   tier_explicit=getattr(args, "tier_explicit", False),
-                                   ruling=getattr(args, "ruling", None), source=source,
-                                   read_from=read_from if bound else None)
+            path, n, bug, rejoined = _record(
+                args.root, unit, args.verdict, args.reviewer, args.author, args.issues,
+                brief=brief, tier=getattr(args, "tier", None),
+                tier_explicit=getattr(args, "tier_explicit", False),
+                ruling=getattr(args, "ruling", None), source=source,
+                read_from=read_from if bound else None)
         except CarryFailed as exc:
             carry_failed.append(unit)
             print(f"record: {exc}", file=sys.stderr)
@@ -5791,6 +6013,8 @@ def cmd_record(args: argparse.Namespace) -> int:
             print(drift, file=sys.stderr)
         if bug:
             print(carried_notice(unit, bug))
+        if rejoined:
+            print(rejoined)
 
     rc = _run_batch(args, "record", write)
     if carry_failed and rc == 0:

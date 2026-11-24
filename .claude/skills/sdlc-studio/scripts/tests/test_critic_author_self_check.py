@@ -1,8 +1,9 @@
 """US1087: `critic.py brief` tells the author, before the brief, the self-check to run.
 
 The section goes to stderr, so the brief on stdout, the one a reviewer reads from a file, and its
-fingerprint are unchanged. It names the claim-inventory surfaces (the commit message, each prose
-surface the brief's claim inventory names, each changelog fragment the unit's Affects declares)
+fingerprint are unchanged. It names the claim-inventory surfaces the self-check record accepts
+(the commit message, each prose surface the brief's claim inventory names, each page and each
+changelog fragment the unit's Affects declares; BG1591)
 and the unit's declared test files as mutation-pass targets, and its instructions are the brief's
 own claim-inventory text and its practice to mutate the author's tests, never a restatement.
 
@@ -242,6 +243,68 @@ class AuthorStepsTests(unittest.TestCase):
             r = _brief(root, "US0110")
             self.assertEqual(0, r.returncode, r.stderr)
             self.assertNotIn("worktree", _section(r.stderr))
+
+    def test_a_declared_page_is_named_in_the_inventory(self) -> None:
+        """BG1591 AC1: a page the unit's Affects declares, `.md` or `.mdx`, is a surface its
+        claims may name, so step 1 names it. Mutant: step 1's list copied from CLAIM_SURFACES
+        and the fragments, leaving the pages out."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0801", "docs/evidence.md, docs/guide.mdx, changelog.d/US0801.md")
+            r = _brief(root, "US0801")
+            self.assertEqual(0, r.returncode, r.stderr)
+            listed = _line(_section(r.stderr), "1. Claim inventory")
+            for page in ("docs/evidence.md", "docs/guide.mdx"):
+                with self.subTest(page=page):
+                    self.assertIn(f"; {page}", listed)
+
+    def test_the_inventory_is_read_from_claim_surfaces(self) -> None:
+        """BG1591 AC2: step 1 names exactly the surfaces `claim_surfaces` returns, each read as
+        `_surface_key` reads a claim's, the commit message first, then its optional surfaces
+        (the prose surfaces, then the pages) and then the changelog fragments, the order step 1
+        has always printed (AC3). Mutants: the list copied rather than read, so a patched
+        `claim_surfaces` goes unnamed; a page or a fragment left out or named twice."""
+        cases = {"US0802": "src/widget.py",
+                 "US0803": "src/widget.py, docs/a.md",
+                 "US0804": "docs/b.mdx",
+                 "US0805": "docs/a.md, changelog.d/US0805.md"}
+
+        def listed(root: Path, unit: str) -> list[str]:
+            line = _line(critic.author_self_check(root, unit), "1. Claim inventory")
+            body = line.removeprefix("1. Claim inventory, over: ").removesuffix(".")
+            return [critic._surface_key(s) for s in body.split("; ")]
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for unit, affects in cases.items():
+                with self.subTest(unit=unit):
+                    _project(root, unit, affects)
+                    required, optional = critic.claim_surfaces(
+                        [a.strip() for a in affects.split(",")])
+                    self.assertEqual([critic._surface_key(s)
+                                      for s in (required[0], *optional, *required[1:])],
+                                     listed(root, unit))
+            real = critic.claim_surfaces
+
+            def one_more(affects: list[str]) -> tuple[list[str], list[str]]:
+                required, optional = real(affects)
+                return required, [*optional, "docs/extra.md"]
+
+            with unittest.mock.patch.object(critic, "claim_surfaces", one_more):
+                self.assertIn("docs/extra.md", listed(root, "US0802"),
+                              "step 1 is not read from claim_surfaces")
+
+    def test_a_unit_declaring_no_page_prints_as_before(self) -> None:
+        """BG1591 AC3, the control: no page, so step 1 reads as it always has. Mutants: the
+        fragment listed again as a page; the existing surfaces reordered or renamed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0802", "src/widget.py, tests/test_widget.py, changelog.d/US0802.md")
+            r = _brief(root, "US0802")
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual("1. Claim inventory, over: the commit message; Resolutions; "
+                             "docstrings; comments; CHANGELOG; changelog.d/US0802.md.",
+                             _line(_section(r.stderr), "1. Claim inventory"))
 
 if __name__ == "__main__":
     unittest.main()

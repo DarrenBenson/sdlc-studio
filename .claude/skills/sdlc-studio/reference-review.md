@@ -19,8 +19,8 @@
 | The adversarial closing-review brief {#closing-review-brief} | 407-415 |
 | &nbsp;&nbsp;The claim inventory runs first | 416-437 |
 | &nbsp;&nbsp;The standing review practices | 438-468 |
-| &nbsp;&nbsp;The author's self-check runs before the brief {#author-self-check} | 469-496 |
-| &nbsp;&nbsp;A REJECT has two exits | 497-529 |
+| &nbsp;&nbsp;The author's self-check runs before the brief {#author-self-check} | 469-495 |
+| &nbsp;&nbsp;A REJECT has two exits | 496-529 |
 | &nbsp;&nbsp;Where a delegated reviewer mutates {#mutation-isolation} | 530-561 |
 | Correcting the verdict log {#superseding-a-verdict} | 562-598 |
 | &nbsp;&nbsp;What a superseded row does to the gates | 599-614 |
@@ -487,12 +487,11 @@ author's evidence and does not count as the reviewer's own mutation pass.
 when the unit has no current row: `block` refuses it (exit 2 naming the missing or stale record and
 `critic.py self-check record`, nothing on stdout, no fingerprint noted, the AUTHOR SELF-CHECK
 section still on stderr); `report`, the default, prints the brief, naming that record on stderr;
-`off` says nothing; any other value is refused by name. A row is current when its digest matches the
-Affects content now or, if HEAD descends from the row's commit, that content with each file lacking
-an uncommitted edit read at its newest commit since then whose subject names this unit or none, else
-at the row's commit. So a restored diff needs no second record, and a record of committed work
-survives another unit's later commit to a shared file, but uncommitted recorded work in a file is
-staled by another unit's commit to it landing first, and an edit made in a merge can be missed.
+`off` says nothing; any other value is refused by name. A row is current when its digest matches the Affects content now, or
+that content with the commits another unit made since the row's commit (a subject naming a unit id, none of them this one)
+set aside: file by file where they top a file's history, or hunk by hunk, each taken back out of the content as it stands,
+from the commit HEAD shares with the row's. So a restored diff, a cherry-pick, or another unit's commit before or after the
+author's own needs no second record; a further edit of the unit's own stales it, and an edit made in a merge can be missed.
 
 ### A REJECT has two exits
 
@@ -514,7 +513,8 @@ reaches Done on an APPROVE from the reviewer who rejected it (the same reviewer 
 is the one verdict the cap admits past it, on a carried unit only, and whether it comes in the
 carrying run or after another reviewer's rounds in a later one; any other reviewer's verdict,
 or a further REJECT, is refused there, and the refusal names the reviewer who can discharge
-the carry. Nothing else
+the carry. Recorded in the carrying run, that APPROVE returns the unit: it rejoins the carrying run's batch, the add naming the carry bug
+and any ruling, and the output says the bug is still Open until `transition.py set --id <bug> --status Fixed` closes it. Nothing else
 answers a REJECT - no repair record, ruling or hand drop, including a drop whose reason is
 worded like a carry - and until one of these happens the unit is refused Done and, while in a
 run's batch, held by its close.

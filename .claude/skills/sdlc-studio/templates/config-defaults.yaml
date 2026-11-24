@@ -75,16 +75,22 @@ review:
   max_rounds: 2
   # What `critic.py brief` does when the unit has no current author self-check (`critic.py
   # self-check record`), first round or `--rejoinder`, at either tier. A row is current when
-  # its digest matches the content of its Affects as they stand or, when HEAD descends from the
-  # row's commit, that content with each file lacking an uncommitted edit read at its newest
-  # commit since then whose subject names this unit or none, else at the row's commit (an edit
-  # made in a merge can be missed). The modes:
+  # its digest matches the content of its Affects as they stand or that content with the
+  # commits another unit made since the row's commit set aside, file by file or hunk by hunk,
+  # walked from the commit HEAD shares with the row's, so a cherry-pick keeps its record (an
+  # edit made in a merge can be missed). The modes:
   #   off                say nothing of it
   #   report  (default)  print the brief and name the missing or stale record on stderr
   #   block              refuse: exit 2, no brief on stdout, no fingerprint noted, and the
   #                      author self-check section printed so the author knows what to record
   # `report` is the default so a project upgrading is not refused on its first review.
   author_self_check: report
+  # Globs of the files the project's build consumes (a static site's pages, components and
+  # data, such as `src/pages/*`; `*` crosses a `/`). `critic.py caller-check` reads a file one
+  # covers as no mechanism, as it reads an `.md` or `.mdx` page, so a unit changing only such
+  # files is not asked for a named caller. None by default; a value that is not a list of
+  # strings refuses the check.
+  rendered_paths: []
   # The line cap, per review tier, on the unit's own diff that `critic.py brief` carries. Past
   # it, one line names each file cut or left out and the command that prints it. Its only
   # reader is critic.py, whose `BRIEF_DIFF_LINES` holds these defaults and a test holds the two
