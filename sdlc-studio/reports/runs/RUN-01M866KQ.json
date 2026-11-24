@@ -1,0 +1,6615 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M866KQ",
+  "started_at": "2026-11-24T07:15:07Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": null,
+  "batch": [
+    "BG0975",
+    "BG0996",
+    "BG1062",
+    "BG1069",
+    "BG1073",
+    "BG1121",
+    "BG1126",
+    "BG1131",
+    "BG1219",
+    "BG1311",
+    "BG1323",
+    "BG1361",
+    "BG1398",
+    "BG1404",
+    "BG1429",
+    "BG1450",
+    "BG1473",
+    "BG1513",
+    "BG1562",
+    "BG1564",
+    "BG1583",
+    "BG1591",
+    "BG1598",
+    "BG1606",
+    "BG1608",
+    "BG1650",
+    "BG1658",
+    "BG1673",
+    "BG1692",
+    "BG1698",
+    "BG1736",
+    "BG1204"
+  ],
+  "plan": null,
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 377228257,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-11-24T07:15:09Z",
+    "harness": "claude",
+    "cache_read": 13333021826,
+    "priced": 2051565630,
+    "components": {
+      "input": 162056,
+      "output": 57077312,
+      "cache_write_5m": 276350595,
+      "cache_write_1h": 43638294,
+      "cache_read": 13333021826
+    },
+    "subagents": true,
+    "meter": "once-per-message, main thread and subagent transcripts, priced components",
+    "by_model": {
+      "claude-opus-5-5": {
+        "input": 152770,
+        "output": 54434326,
+        "cache_write_5m": 259689712,
+        "cache_write_1h": 43160639,
+        "cache_read": 12931346110
+      },
+      "<synthetic>": {
+        "input": 0,
+        "output": 0,
+        "cache_write_5m": 0,
+        "cache_write_1h": 0,
+        "cache_read": 0
+      },
+      "claude-fable-5-2": {
+        "input": 1274,
+        "output": 780655,
+        "cache_write_5m": 3119729,
+        "cache_write_1h": 477655,
+        "cache_read": 71056136
+      },
+      "claude-sonnet-5-5": {
+        "input": 8004,
+        "output": 1859273,
+        "cache_write_5m": 13492109,
+        "cache_write_1h": 0,
+        "cache_read": 330513223
+      },
+      "claude-haiku-5-5": {
+        "input": 8,
+        "output": 3058,
+        "cache_write_5m": 49045,
+        "cache_write_1h": 0,
+        "cache_read": 106357
+      }
+    }
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 377228257,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:15:10Z",
+      "kind": "open",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333021826,
+      "priced": 2051565630,
+      "components": {
+        "input": 162056,
+        "output": 57077312,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43638294,
+        "cache_read": 13333021826
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152770,
+          "output": 54434326,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43160639,
+          "cache_read": 12931346110
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:22Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:23Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:24Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:25Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:26Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:28Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:29Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:30Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:31Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:16:32Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:04Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:05Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:06Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:08Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:09Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:10Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:11Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:12Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:14Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:40Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:41Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:42Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:43Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:44Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:17:46Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:15Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:16Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:17Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:18Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:19Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:21Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 377230688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T07:18:22Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13333287195,
+      "priced": 2051600846,
+      "components": {
+        "input": 162058,
+        "output": 57078585,
+        "cache_write_5m": 276350595,
+        "cache_write_1h": 43639450,
+        "cache_read": 13333287195
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 152772,
+          "output": 54435599,
+          "cache_write_5m": 259689712,
+          "cache_write_1h": 43161795,
+          "cache_read": 12931611479
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8004,
+          "output": 1859273,
+          "cache_write_5m": 13492109,
+          "cache_write_1h": 0,
+          "cache_read": 330513223
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382347619,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:50:29Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13509428212,
+      "priced": 2078858014,
+      "components": {
+        "input": 164206,
+        "output": 57925805,
+        "cache_write_5m": 280524339,
+        "cache_write_1h": 43733269,
+        "cache_read": 13509428212
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154372,
+          "output": 55101689,
+          "cache_write_5m": 262700855,
+          "cache_write_1h": 43255614,
+          "cache_read": 13071876312
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382358175,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:51:02Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13510785937,
+      "priced": 2079025595,
+      "components": {
+        "input": 164218,
+        "output": 57930621,
+        "cache_write_5m": 280529325,
+        "cache_write_1h": 43734011,
+        "cache_read": 13510785937
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154384,
+          "output": 55106505,
+          "cache_write_5m": 262705841,
+          "cache_write_1h": 43256356,
+          "cache_read": 13073234037
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382362755,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:51:32Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13511218521,
+      "priced": 2079084342,
+      "components": {
+        "input": 164222,
+        "output": 57933225,
+        "cache_write_5m": 280531297,
+        "cache_write_1h": 43734011,
+        "cache_read": 13511218521
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154388,
+          "output": 55109109,
+          "cache_write_5m": 262707813,
+          "cache_write_1h": 43256356,
+          "cache_read": 13073666621
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382520679,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:56:15Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13516469783,
+      "priced": 2079978600,
+      "components": {
+        "input": 164282,
+        "output": 57952454,
+        "cache_write_5m": 280537088,
+        "cache_write_1h": 43866855,
+        "cache_read": 13516469783
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154448,
+          "output": 55128338,
+          "cache_write_5m": 262713604,
+          "cache_write_1h": 43389200,
+          "cache_read": 13078917883
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382524171,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:56:45Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13516945378,
+      "priced": 2080036889,
+      "components": {
+        "input": 164290,
+        "output": 57953705,
+        "cache_write_5m": 280537088,
+        "cache_write_1h": 43869088,
+        "cache_read": 13516945378
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154456,
+          "output": 55129589,
+          "cache_write_5m": 262713604,
+          "cache_write_1h": 43391433,
+          "cache_read": 13079393478
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 382524171,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T09:57:14Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13516945378,
+      "priced": 2080036889,
+      "components": {
+        "input": 164290,
+        "output": 57953705,
+        "cache_write_5m": 280537088,
+        "cache_write_1h": 43869088,
+        "cache_read": 13516945378
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 154456,
+          "output": 55129589,
+          "cache_write_5m": 262713604,
+          "cache_write_1h": 43391433,
+          "cache_read": 13079393478
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 383761181,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T10:51:02Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13559097880,
+      "priced": 2086870856,
+      "components": {
+        "input": 164902,
+        "output": 58234072,
+        "cache_write_5m": 281464810,
+        "cache_write_1h": 43897397,
+        "cache_read": 13559097880
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155068,
+          "output": 55409956,
+          "cache_write_5m": 263641326,
+          "cache_write_1h": 43419742,
+          "cache_read": 13121545980
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 383761181,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T10:53:41Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13559097880,
+      "priced": 2086870856,
+      "components": {
+        "input": 164902,
+        "output": 58234072,
+        "cache_write_5m": 281464810,
+        "cache_write_1h": 43897397,
+        "cache_read": 13559097880
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155068,
+          "output": 55409956,
+          "cache_write_5m": 263641326,
+          "cache_write_1h": 43419742,
+          "cache_read": 13121545980
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 383762339,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T10:57:15Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13559475443,
+      "priced": 2086911562,
+      "components": {
+        "input": 164908,
+        "output": 58234285,
+        "cache_write_5m": 281464810,
+        "cache_write_1h": 43898336,
+        "cache_read": 13559475443
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155074,
+          "output": 55410169,
+          "cache_write_5m": 263641326,
+          "cache_write_1h": 43420681,
+          "cache_read": 13121923543
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 383762339,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T10:58:44Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13559475443,
+      "priced": 2086911562,
+      "components": {
+        "input": 164908,
+        "output": 58234285,
+        "cache_write_5m": 281464810,
+        "cache_write_1h": 43898336,
+        "cache_read": 13559475443
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155074,
+          "output": 55410169,
+          "cache_write_5m": 263641326,
+          "cache_write_1h": 43420681,
+          "cache_read": 13121923543
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385039071,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:44:48Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13601804435,
+      "priced": 2093629164,
+      "components": {
+        "input": 165480,
+        "output": 58467566,
+        "cache_write_5m": 282488853,
+        "cache_write_1h": 43917172,
+        "cache_read": 13601804435
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155646,
+          "output": 55643450,
+          "cache_write_5m": 264665369,
+          "cache_write_1h": 43439517,
+          "cache_read": 13164252535
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385256662,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:47:22Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13604583370,
+      "priced": 2094207178,
+      "components": {
+        "input": 165512,
+        "output": 58474583,
+        "cache_write_5m": 282696960,
+        "cache_write_1h": 43919607,
+        "cache_read": 13604583370
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155678,
+          "output": 55650467,
+          "cache_write_5m": 264873476,
+          "cache_write_1h": 43441952,
+          "cache_read": 13167031470
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385271546,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:48:52Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13606383403,
+      "priced": 2094429475,
+      "components": {
+        "input": 165532,
+        "output": 58480148,
+        "cache_write_5m": 282702492,
+        "cache_write_1h": 43923374,
+        "cache_read": 13606383403
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155698,
+          "output": 55656032,
+          "cache_write_5m": 264879008,
+          "cache_write_1h": 43445719,
+          "cache_read": 13168831503
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385751319,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:53:07Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13610828588,
+      "priced": 2095531440,
+      "components": {
+        "input": 165584,
+        "output": 58492819,
+        "cache_write_5m": 283155906,
+        "cache_write_1h": 43937010,
+        "cache_read": 13610828588
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155750,
+          "output": 55668703,
+          "cache_write_5m": 265332422,
+          "cache_write_1h": 43459355,
+          "cache_read": 13173276688
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385769467,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:54:23Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13611783297,
+      "priced": 2095673838,
+      "components": {
+        "input": 165592,
+        "output": 58499284,
+        "cache_write_5m": 283167581,
+        "cache_write_1h": 43937010,
+        "cache_read": 13611783297
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155758,
+          "output": 55675168,
+          "cache_write_5m": 265344097,
+          "cache_write_1h": 43459355,
+          "cache_read": 13174231397
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385801362,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T11:58:02Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13615434528,
+      "priced": 2096132347,
+      "components": {
+        "input": 165626,
+        "output": 58511422,
+        "cache_write_5m": 283176627,
+        "cache_write_1h": 43947687,
+        "cache_read": 13615434528
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155792,
+          "output": 55687306,
+          "cache_write_5m": 265353143,
+          "cache_write_1h": 43470032,
+          "cache_read": 13177882628
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385812276,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:00:21Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13615947598,
+      "priced": 2096211290,
+      "components": {
+        "input": 165630,
+        "output": 58515154,
+        "cache_write_5m": 283183805,
+        "cache_write_1h": 43947687,
+        "cache_read": 13615947598
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155796,
+          "output": 55691038,
+          "cache_write_5m": 265360321,
+          "cache_write_1h": 43470032,
+          "cache_read": 13178395698
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385821597,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:01:59Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13617216480,
+      "priced": 2096365220,
+      "components": {
+        "input": 165642,
+        "output": 58518629,
+        "cache_write_5m": 283186489,
+        "cache_write_1h": 43950837,
+        "cache_read": 13617216480
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155808,
+          "output": 55694513,
+          "cache_write_5m": 265363005,
+          "cache_write_1h": 43473182,
+          "cache_read": 13179664580
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385822982,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:03:03Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13617701097,
+      "priced": 2096417496,
+      "components": {
+        "input": 165648,
+        "output": 58518979,
+        "cache_write_5m": 283186489,
+        "cache_write_1h": 43951866,
+        "cache_read": 13617701097
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155814,
+          "output": 55694863,
+          "cache_write_5m": 265363005,
+          "cache_write_1h": 43474211,
+          "cache_read": 13180149197
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385822982,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:03:37Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13617701097,
+      "priced": 2096417496,
+      "components": {
+        "input": 165648,
+        "output": 58518979,
+        "cache_write_5m": 283186489,
+        "cache_write_1h": 43951866,
+        "cache_read": 13617701097
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155814,
+          "output": 55694863,
+          "cache_write_5m": 265363005,
+          "cache_write_1h": 43474211,
+          "cache_read": 13180149197
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385822982,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:04:10Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13617701097,
+      "priced": 2096417496,
+      "components": {
+        "input": 165648,
+        "output": 58518979,
+        "cache_write_5m": 283186489,
+        "cache_write_1h": 43951866,
+        "cache_read": 13617701097
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155814,
+          "output": 55694863,
+          "cache_write_5m": 265363005,
+          "cache_write_1h": 43474211,
+          "cache_read": 13180149197
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 385822982,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:04:45Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13617701097,
+      "priced": 2096417496,
+      "components": {
+        "input": 165648,
+        "output": 58518979,
+        "cache_write_5m": 283186489,
+        "cache_write_1h": 43951866,
+        "cache_read": 13617701097
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 155814,
+          "output": 55694863,
+          "cache_write_5m": 265363005,
+          "cache_write_1h": 43474211,
+          "cache_read": 13180149197
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 386550557,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:27:47Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13638667065,
+      "priced": 2099782612,
+      "components": {
+        "input": 165916,
+        "output": 58612367,
+        "cache_write_5m": 283808525,
+        "cache_write_1h": 43963749,
+        "cache_read": 13638667065
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156082,
+          "output": 55788251,
+          "cache_write_5m": 265985041,
+          "cache_write_1h": 43486094,
+          "cache_read": 13201115165
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 386565212,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:28:53Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13639974276,
+      "priced": 2099954205,
+      "components": {
+        "input": 165928,
+        "output": 58618382,
+        "cache_write_5m": 283817153,
+        "cache_write_1h": 43963749,
+        "cache_read": 13639974276
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156094,
+          "output": 55794266,
+          "cache_write_5m": 265993669,
+          "cache_write_1h": 43486094,
+          "cache_read": 13202422376
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 386589408,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:31:34Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13643254213,
+      "priced": 2100350266,
+      "components": {
+        "input": 165960,
+        "output": 58627730,
+        "cache_write_5m": 283828268,
+        "cache_write_1h": 43967450,
+        "cache_read": 13643254213
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156126,
+          "output": 55803614,
+          "cache_write_5m": 266004784,
+          "cache_write_1h": 43489795,
+          "cache_read": 13205702313
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 386606725,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:32:26Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13645776955,
+      "priced": 2100640602,
+      "components": {
+        "input": 165984,
+        "output": 58632109,
+        "cache_write_5m": 283841182,
+        "cache_write_1h": 43967450,
+        "cache_read": 13645776955
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156150,
+          "output": 55807993,
+          "cache_write_5m": 266017698,
+          "cache_write_1h": 43489795,
+          "cache_read": 13208225055
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 386606725,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T12:33:19Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13645776955,
+      "priced": 2100640602,
+      "components": {
+        "input": 165984,
+        "output": 58632109,
+        "cache_write_5m": 283841182,
+        "cache_write_1h": 43967450,
+        "cache_read": 13645776955
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156150,
+          "output": 55807993,
+          "cache_write_5m": 266017698,
+          "cache_write_1h": 43489795,
+          "cache_read": 13208225055
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 387432665,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T13:26:17Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13664997852,
+      "priced": 2103868778,
+      "components": {
+        "input": 166162,
+        "output": 58698692,
+        "cache_write_5m": 284568335,
+        "cache_write_1h": 43999476,
+        "cache_read": 13664997852
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156328,
+          "output": 55874576,
+          "cache_write_5m": 266744851,
+          "cache_write_1h": 43521821,
+          "cache_read": 13227445952
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 387444783,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T13:27:12Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13666337053,
+      "priced": 2104038215,
+      "components": {
+        "input": 166174,
+        "output": 58703389,
+        "cache_write_5m": 284572066,
+        "cache_write_1h": 44003154,
+        "cache_read": 13666337053
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156340,
+          "output": 55879273,
+          "cache_write_5m": 266748582,
+          "cache_write_1h": 43525499,
+          "cache_read": 13228785153
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 387449077,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T13:28:18Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13667222442,
+      "priced": 2104140725,
+      "components": {
+        "input": 166182,
+        "output": 58705186,
+        "cache_write_5m": 284572066,
+        "cache_write_1h": 44005643,
+        "cache_read": 13667222442
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156348,
+          "output": 55881070,
+          "cache_write_5m": 266748582,
+          "cache_write_1h": 43527988,
+          "cache_read": 13229670542
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 387449077,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T13:29:32Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13667222442,
+      "priced": 2104140725,
+      "components": {
+        "input": 166182,
+        "output": 58705186,
+        "cache_write_5m": 284572066,
+        "cache_write_1h": 44005643,
+        "cache_read": 13667222442
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156348,
+          "output": 55881070,
+          "cache_write_5m": 266748582,
+          "cache_write_1h": 43527988,
+          "cache_read": 13229670542
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 389923668,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T16:02:14Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13714544351,
+      "priced": 2112823756,
+      "components": {
+        "input": 166658,
+        "output": 58923551,
+        "cache_write_5m": 286776014,
+        "cache_write_1h": 44057445,
+        "cache_read": 13714544351
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156824,
+          "output": 56099435,
+          "cache_write_5m": 268952530,
+          "cache_write_1h": 43579790,
+          "cache_read": 13276992451
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      }
+    },
+    {
+      "tokens": 389944782,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-24T16:45:27Z",
+      "kind": "report",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 13720249394,
+      "priced": 2113459603,
+      "components": {
+        "input": 166694,
+        "output": 58931268,
+        "cache_write_5m": 286776014,
+        "cache_write_1h": 44070806,
+        "cache_read": 13720249394
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 156860,
+          "output": 56107152,
+          "cache_write_5m": 268952530,
+          "cache_write_1h": 43593151,
+          "cache_read": 13282697494
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-fable-5-2": {
+          "input": 1274,
+          "output": 780655,
+          "cache_write_5m": 3119729,
+          "cache_write_1h": 477655,
+          "cache_read": 71056136
+        },
+        "claude-sonnet-5-5": {
+          "input": 8552,
+          "output": 2040403,
+          "cache_write_5m": 14654710,
+          "cache_write_1h": 0,
+          "cache_read": 366389407
+        },
+        "claude-haiku-5-5": {
+          "input": 8,
+          "output": 3058,
+          "cache_write_5m": 49045,
+          "cache_write_1h": 0,
+          "cache_read": 106357
+        }
+      },
+      "cost_roles": {
+        "source": "acd73b30-154a-4170-83eb-043073708d4b",
+        "subagent_files": 1074,
+        "roles": [
+          {
+            "role": "orchestrator",
+            "agents": 1,
+            "calls": 305,
+            "priced": 9836584,
+            "share": 0.15892636266862364,
+            "split": {
+              "cache_read": 0.8298816895138096,
+              "cache_write": 0.08793947435225911,
+              "output": 0.08210015027880056
+            },
+            "first_context": 266527.0,
+            "avg_context": 269066.5344262295
+          },
+          {
+            "role": "builder",
+            "agents": 4,
+            "calls": 789,
+            "priced": 21245637,
+            "share": 0.34325857543512356,
+            "split": {
+              "cache_read": 0.6261262632926027,
+              "cache_write": 0.21932520625769986,
+              "output": 0.15447218536347826
+            },
+            "first_context": 15453.5,
+            "avg_context": 173325.60076045626
+          },
+          {
+            "role": "reviewer",
+            "agents": 0,
+            "calls": 0,
+            "priced": 0,
+            "share": 0.0,
+            "split": null,
+            "first_context": null,
+            "avg_context": null
+          },
+          {
+            "role": "repair",
+            "agents": 5,
+            "calls": 499,
+            "priced": 14288379,
+            "share": 0.2308525096619666,
+            "split": {
+              "cache_read": 0.5759895737925085,
+              "cache_write": 0.25925002435195826,
+              "output": 0.16468803535203075
+            },
+            "first_context": 40106.0,
+            "avg_context": 170869.76953907814
+          },
+          {
+            "role": "other",
+            "agents": 7,
+            "calls": 588,
+            "priced": 16523373,
+            "share": 0.2669625522342862,
+            "split": {
+              "cache_read": 0.5463259556851621,
+              "cache_write": 0.2824972523316078,
+              "output": 0.17110368342405827
+            },
+            "first_context": 40498.857142857145,
+            "avg_context": 159875.731292517
+          }
+        ],
+        "total": {
+          "agents": 17,
+          "calls": 2181,
+          "priced": 61893973
+        }
+      }
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 132259,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:25Z",
+      "unit": "BG1131",
+      "minutes": 9.987813888888889,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 540849,
+      "components": {
+        "input": 46,
+        "output": 14358,
+        "cache_write_5m": 117855,
+        "cache_write_1h": 0,
+        "cache_read": 3216945
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 46,
+          "output": 14358,
+          "cache_write_5m": 117855,
+          "cache_write_1h": 0,
+          "cache_read": 3216945
+        }
+      }
+    },
+    {
+      "tokens": 198388,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:26Z",
+      "unit": "BG1204",
+      "minutes": 14.981720833333332,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 811273,
+      "components": {
+        "input": 68,
+        "output": 21537,
+        "cache_write_5m": 176782,
+        "cache_write_1h": 0,
+        "cache_read": 4825417
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 68,
+          "output": 21537,
+          "cache_write_5m": 176782,
+          "cache_write_1h": 0,
+          "cache_read": 4825417
+        }
+      }
+    },
+    {
+      "tokens": 132259,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:26Z",
+      "unit": "BG1473",
+      "minutes": 9.987813888888889,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 540849,
+      "components": {
+        "input": 46,
+        "output": 14358,
+        "cache_write_5m": 117855,
+        "cache_write_1h": 0,
+        "cache_read": 3216945
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 46,
+          "output": 14358,
+          "cache_write_5m": 117855,
+          "cache_write_1h": 0,
+          "cache_read": 3216945
+        }
+      }
+    },
+    {
+      "tokens": 66129,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:26Z",
+      "unit": "BG1361",
+      "minutes": 4.993906944444444,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 270424,
+      "components": {
+        "input": 23,
+        "output": 7179,
+        "cache_write_5m": 58927,
+        "cache_write_1h": 0,
+        "cache_read": 1608472
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 23,
+          "output": 7179,
+          "cache_write_5m": 58927,
+          "cache_write_1h": 0,
+          "cache_read": 1608472
+        }
+      }
+    },
+    {
+      "tokens": 132258,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:26Z",
+      "unit": "BG1429",
+      "minutes": 9.987813888888889,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 540849,
+      "components": {
+        "input": 46,
+        "output": 14358,
+        "cache_write_5m": 117855,
+        "cache_write_1h": 0,
+        "cache_read": 3216944
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 46,
+          "output": 14358,
+          "cache_write_5m": 117855,
+          "cache_write_1h": 0,
+          "cache_read": 3216944
+        }
+      }
+    },
+    {
+      "tokens": 132258,
+      "agent": "agent-ac8081a837d91dd7e",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:03:26Z",
+      "unit": "BG1598",
+      "minutes": 9.987813888888889,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 12,
+        "units": 6,
+        "tokens": 793551
+      },
+      "priced": 540848,
+      "components": {
+        "input": 45,
+        "output": 14358,
+        "cache_write_5m": 117855,
+        "cache_write_1h": 0,
+        "cache_read": 3216944
+      },
+      "transcript": "sha256:21dbb35cd2e0",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 45,
+          "output": 14358,
+          "cache_write_5m": 117855,
+          "cache_write_1h": 0,
+          "cache_read": 3216944
+        }
+      }
+    },
+    {
+      "tokens": 75705,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1562",
+      "minutes": 11.857120512820513,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 400475,
+      "components": {
+        "input": 41,
+        "output": 14118,
+        "cache_write_5m": 61546,
+        "cache_write_1h": 0,
+        "cache_read": 2529137
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 41,
+          "output": 14118,
+          "cache_write_5m": 61546,
+          "cache_write_1h": 0,
+          "cache_read": 2529137
+        }
+      }
+    },
+    {
+      "tokens": 75704,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1564",
+      "minutes": 11.857120512820513,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 400475,
+      "components": {
+        "input": 41,
+        "output": 14118,
+        "cache_write_5m": 61546,
+        "cache_write_1h": 0,
+        "cache_read": 2529137
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 41,
+          "output": 14118,
+          "cache_write_5m": 61546,
+          "cache_write_1h": 0,
+          "cache_read": 2529137
+        }
+      }
+    },
+    {
+      "tokens": 37852,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1219",
+      "minutes": 5.928560256410257,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 200238,
+      "components": {
+        "input": 21,
+        "output": 7059,
+        "cache_write_5m": 30773,
+        "cache_write_1h": 0,
+        "cache_read": 1264569
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 21,
+          "output": 7059,
+          "cache_write_5m": 30773,
+          "cache_write_1h": 0,
+          "cache_read": 1264569
+        }
+      }
+    },
+    {
+      "tokens": 37852,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG0996",
+      "minutes": 5.928560256410257,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 200238,
+      "components": {
+        "input": 21,
+        "output": 7059,
+        "cache_write_5m": 30773,
+        "cache_write_1h": 0,
+        "cache_read": 1264568
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 21,
+          "output": 7059,
+          "cache_write_5m": 30773,
+          "cache_write_1h": 0,
+          "cache_read": 1264568
+        }
+      }
+    },
+    {
+      "tokens": 113557,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1323",
+      "minutes": 17.785680769230773,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 600713,
+      "components": {
+        "input": 61,
+        "output": 21176,
+        "cache_write_5m": 92319,
+        "cache_write_1h": 0,
+        "cache_read": 3793705
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 61,
+          "output": 21176,
+          "cache_write_5m": 92319,
+          "cache_write_1h": 0,
+          "cache_read": 3793705
+        }
+      }
+    },
+    {
+      "tokens": 37852,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1736",
+      "minutes": 5.928560256410257,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 200238,
+      "components": {
+        "input": 20,
+        "output": 7059,
+        "cache_write_5m": 30773,
+        "cache_write_1h": 0,
+        "cache_read": 1264568
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 20,
+          "output": 7059,
+          "cache_write_5m": 30773,
+          "cache_write_1h": 0,
+          "cache_read": 1264568
+        }
+      }
+    },
+    {
+      "tokens": 113557,
+      "agent": "agent-ab3965b44fe5bc76a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T09:24:01Z",
+      "unit": "BG1650",
+      "minutes": 17.785680769230773,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 7,
+        "tokens": 492079
+      },
+      "priced": 600713,
+      "components": {
+        "input": 61,
+        "output": 21176,
+        "cache_write_5m": 92318,
+        "cache_write_1h": 0,
+        "cache_read": 3793705
+      },
+      "transcript": "sha256:e447a07f7e81",
+      "by_model": {
+        "claude-sonnet-5-5": {
+          "input": 61,
+          "output": 21176,
+          "cache_write_5m": 92318,
+          "cache_write_1h": 0,
+          "cache_read": 3793705
+        }
+      }
+    },
+    {
+      "tokens": 404113,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1121",
+      "minutes": 32.756034615384614,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 1879724,
+      "components": {
+        "input": 125,
+        "output": 58682,
+        "cache_write_5m": 345305,
+        "cache_write_1h": 0,
+        "cache_read": 11545571
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 125,
+          "output": 58682,
+          "cache_write_5m": 345305,
+          "cache_write_1h": 0,
+          "cache_read": 11545571
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1073",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626575,
+      "components": {
+        "input": 42,
+        "output": 19561,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848524
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 42,
+          "output": 19561,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848524
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1404",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626575,
+      "components": {
+        "input": 42,
+        "output": 19561,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848524
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 42,
+          "output": 19561,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848524
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1450",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626575,
+      "components": {
+        "input": 42,
+        "output": 19561,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848524
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 42,
+          "output": 19561,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848524
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG0975",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626574,
+      "components": {
+        "input": 42,
+        "output": 19561,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848523
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 42,
+          "output": 19561,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848523
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1069",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626574,
+      "components": {
+        "input": 42,
+        "output": 19560,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848523
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 42,
+          "output": 19560,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848523
+        }
+      }
+    },
+    {
+      "tokens": 134704,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1591",
+      "minutes": 10.918678205128204,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 626574,
+      "components": {
+        "input": 41,
+        "output": 19560,
+        "cache_write_5m": 115102,
+        "cache_write_1h": 0,
+        "cache_read": 3848523
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 41,
+          "output": 19560,
+          "cache_write_5m": 115102,
+          "cache_write_1h": 0,
+          "cache_read": 3848523
+        }
+      }
+    },
+    {
+      "tokens": 269409,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1606",
+      "minutes": 21.837356410256408,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 1253149,
+      "components": {
+        "input": 83,
+        "output": 39121,
+        "cache_write_5m": 230204,
+        "cache_write_1h": 0,
+        "cache_read": 7697047
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 83,
+          "output": 39121,
+          "cache_write_5m": 230204,
+          "cache_write_1h": 0,
+          "cache_read": 7697047
+        }
+      }
+    },
+    {
+      "tokens": 269409,
+      "agent": "agent-ae0b3f3ff9ae0fb6a",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T10:27:20Z",
+      "unit": "BG1698",
+      "minutes": 21.837356410256408,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 9,
+        "tokens": 1751155
+      },
+      "priced": 1253149,
+      "components": {
+        "input": 83,
+        "output": 39121,
+        "cache_write_5m": 230204,
+        "cache_write_1h": 0,
+        "cache_read": 7697047
+      },
+      "transcript": "sha256:537f0ef0f676",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 83,
+          "output": 39121,
+          "cache_write_5m": 230204,
+          "cache_write_1h": 0,
+          "cache_read": 7697047
+        }
+      }
+    },
+    {
+      "tokens": 158703,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1062",
+      "minutes": 13.834680392156862,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 853175,
+      "components": {
+        "input": 64,
+        "output": 26373,
+        "cache_write_5m": 132266,
+        "cache_write_1h": 0,
+        "cache_read": 5559136
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 64,
+          "output": 26373,
+          "cache_write_5m": 132266,
+          "cache_write_1h": 0,
+          "cache_read": 5559136
+        }
+      }
+    },
+    {
+      "tokens": 158703,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1583",
+      "minutes": 13.834680392156862,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 853175,
+      "components": {
+        "input": 63,
+        "output": 26373,
+        "cache_write_5m": 132266,
+        "cache_write_1h": 0,
+        "cache_read": 5559135
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 63,
+          "output": 26373,
+          "cache_write_5m": 132266,
+          "cache_write_1h": 0,
+          "cache_read": 5559135
+        }
+      }
+    },
+    {
+      "tokens": 79351,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1398",
+      "minutes": 6.917340196078431,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 426588,
+      "components": {
+        "input": 32,
+        "output": 13187,
+        "cache_write_5m": 66133,
+        "cache_write_1h": 0,
+        "cache_read": 2779568
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 13187,
+          "cache_write_5m": 66133,
+          "cache_write_1h": 0,
+          "cache_read": 2779568
+        }
+      }
+    },
+    {
+      "tokens": 238054,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1513",
+      "minutes": 20.752020588235293,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 1279762,
+      "components": {
+        "input": 95,
+        "output": 39560,
+        "cache_write_5m": 198399,
+        "cache_write_1h": 0,
+        "cache_read": 8338703
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 95,
+          "output": 39560,
+          "cache_write_5m": 198399,
+          "cache_write_1h": 0,
+          "cache_read": 8338703
+        }
+      }
+    },
+    {
+      "tokens": 79351,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1126",
+      "minutes": 6.917340196078431,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 426588,
+      "components": {
+        "input": 32,
+        "output": 13187,
+        "cache_write_5m": 66133,
+        "cache_write_1h": 0,
+        "cache_read": 2779568
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 13187,
+          "cache_write_5m": 66133,
+          "cache_write_1h": 0,
+          "cache_read": 2779568
+        }
+      }
+    },
+    {
+      "tokens": 79351,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1608",
+      "minutes": 6.917340196078431,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 426587,
+      "components": {
+        "input": 32,
+        "output": 13186,
+        "cache_write_5m": 66133,
+        "cache_write_1h": 0,
+        "cache_read": 2779568
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 13186,
+          "cache_write_5m": 66133,
+          "cache_write_1h": 0,
+          "cache_read": 2779568
+        }
+      }
+    },
+    {
+      "tokens": 79351,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1673",
+      "minutes": 6.917340196078431,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 426587,
+      "components": {
+        "input": 32,
+        "output": 13186,
+        "cache_write_5m": 66133,
+        "cache_write_1h": 0,
+        "cache_read": 2779568
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 13186,
+          "cache_write_5m": 66133,
+          "cache_write_1h": 0,
+          "cache_read": 2779568
+        }
+      }
+    },
+    {
+      "tokens": 158703,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1692",
+      "minutes": 13.834680392156862,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 853175,
+      "components": {
+        "input": 63,
+        "output": 26373,
+        "cache_write_5m": 132266,
+        "cache_write_1h": 0,
+        "cache_read": 5559135
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 63,
+          "output": 26373,
+          "cache_write_5m": 132266,
+          "cache_write_1h": 0,
+          "cache_read": 5559135
+        }
+      }
+    },
+    {
+      "tokens": 79351,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1658",
+      "minutes": 6.917340196078431,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 426587,
+      "components": {
+        "input": 32,
+        "output": 13186,
+        "cache_write_5m": 66133,
+        "cache_write_1h": 0,
+        "cache_read": 2779568
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 32,
+          "output": 13186,
+          "cache_write_5m": 66133,
+          "cache_write_1h": 0,
+          "cache_read": 2779568
+        }
+      }
+    },
+    {
+      "tokens": 238054,
+      "agent": "agent-a17fdd89cdcd136da",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:17:17Z",
+      "unit": "BG1311",
+      "minutes": 20.752020588235293,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 17,
+        "units": 10,
+        "tokens": 1348972
+      },
+      "priced": 1279762,
+      "components": {
+        "input": 95,
+        "output": 39560,
+        "cache_write_5m": 198399,
+        "cache_write_1h": 0,
+        "cache_read": 8338703
+      },
+      "transcript": "sha256:5829623d49a1",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 95,
+          "output": 39560,
+          "cache_write_5m": 198399,
+          "cache_write_1h": 0,
+          "cache_read": 8338703
+        }
+      }
+    },
+    {
+      "tokens": 186912,
+      "agent": "agent-a0004ccb58a8cd4e9",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:32:33Z",
+      "unit": "BG1204",
+      "minutes": 16.81972142857143,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 7,
+        "units": 3,
+        "tokens": 436128
+      },
+      "priced": 781979,
+      "components": {
+        "input": 66,
+        "output": 24413,
+        "cache_write_5m": 162433,
+        "cache_write_1h": 0,
+        "cache_read": 4568045
+      },
+      "transcript": "sha256:db93f792616f",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 66,
+          "output": 24413,
+          "cache_write_5m": 162433,
+          "cache_write_1h": 0,
+          "cache_read": 4568045
+        }
+      }
+    },
+    {
+      "tokens": 124608,
+      "agent": "agent-a0004ccb58a8cd4e9",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:32:33Z",
+      "unit": "BG1473",
+      "minutes": 11.21314761904762,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 7,
+        "units": 3,
+        "tokens": 436128
+      },
+      "priced": 521319,
+      "components": {
+        "input": 44,
+        "output": 16276,
+        "cache_write_5m": 108288,
+        "cache_write_1h": 0,
+        "cache_read": 3045364
+      },
+      "transcript": "sha256:db93f792616f",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 44,
+          "output": 16276,
+          "cache_write_5m": 108288,
+          "cache_write_1h": 0,
+          "cache_read": 3045364
+        }
+      }
+    },
+    {
+      "tokens": 124608,
+      "agent": "agent-a0004ccb58a8cd4e9",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:32:33Z",
+      "unit": "BG1598",
+      "minutes": 11.21314761904762,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 7,
+        "units": 3,
+        "tokens": 436128
+      },
+      "priced": 521319,
+      "components": {
+        "input": 44,
+        "output": 16276,
+        "cache_write_5m": 108288,
+        "cache_write_1h": 0,
+        "cache_read": 3045363
+      },
+      "transcript": "sha256:db93f792616f",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 44,
+          "output": 16276,
+          "cache_write_5m": 108288,
+          "cache_write_1h": 0,
+          "cache_read": 3045363
+        }
+      }
+    },
+    {
+      "tokens": 158186,
+      "agent": "agent-ab0ca488b543bf85c",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:52:14Z",
+      "unit": "BG1562",
+      "minutes": 23.00781111111111,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 9,
+        "units": 4,
+        "tokens": 711836
+      },
+      "priced": 563888,
+      "components": {
+        "input": 39,
+        "output": 19607,
+        "cache_write_5m": 138539,
+        "cache_write_1h": 0,
+        "cache_read": 2926383
+      },
+      "transcript": "sha256:4da32fb798c3",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 39,
+          "output": 19607,
+          "cache_write_5m": 138539,
+          "cache_write_1h": 0,
+          "cache_read": 2926383
+        }
+      }
+    },
+    {
+      "tokens": 237279,
+      "agent": "agent-ab0ca488b543bf85c",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:52:14Z",
+      "unit": "BG1323",
+      "minutes": 34.51171666666667,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 9,
+        "units": 4,
+        "tokens": 711836
+      },
+      "priced": 845833,
+      "components": {
+        "input": 59,
+        "output": 29411,
+        "cache_write_5m": 207809,
+        "cache_write_1h": 0,
+        "cache_read": 4389575
+      },
+      "transcript": "sha256:4da32fb798c3",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 59,
+          "output": 29411,
+          "cache_write_5m": 207809,
+          "cache_write_1h": 0,
+          "cache_read": 4389575
+        }
+      }
+    },
+    {
+      "tokens": 79093,
+      "agent": "agent-ab0ca488b543bf85c",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:52:14Z",
+      "unit": "BG1736",
+      "minutes": 11.503905555555555,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 9,
+        "units": 4,
+        "tokens": 711836
+      },
+      "priced": 281944,
+      "components": {
+        "input": 19,
+        "output": 9804,
+        "cache_write_5m": 69270,
+        "cache_write_1h": 0,
+        "cache_read": 1463191
+      },
+      "transcript": "sha256:4da32fb798c3",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 19,
+          "output": 9804,
+          "cache_write_5m": 69270,
+          "cache_write_1h": 0,
+          "cache_read": 1463191
+        }
+      }
+    },
+    {
+      "tokens": 237278,
+      "agent": "agent-ab0ca488b543bf85c",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T11:52:14Z",
+      "unit": "BG1650",
+      "minutes": 34.51171666666667,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 9,
+        "units": 4,
+        "tokens": 711836
+      },
+      "priced": 845832,
+      "components": {
+        "input": 59,
+        "output": 29411,
+        "cache_write_5m": 207809,
+        "cache_write_1h": 0,
+        "cache_read": 4389575
+      },
+      "transcript": "sha256:4da32fb798c3",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 59,
+          "output": 29411,
+          "cache_write_5m": 207809,
+          "cache_write_1h": 0,
+          "cache_read": 4389575
+        }
+      }
+    },
+    {
+      "tokens": 207856,
+      "agent": "agent-aee9df53e3bed34cc",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T12:21:34Z",
+      "unit": "BG1121",
+      "minutes": 19.3002375,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 8,
+        "units": 5,
+        "tokens": 554283
+      },
+      "priced": 1054816,
+      "components": {
+        "input": 79,
+        "output": 34757,
+        "cache_write_5m": 173021,
+        "cache_write_1h": 0,
+        "cache_read": 6646768
+      },
+      "transcript": "sha256:19fcff4ad266",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 79,
+          "output": 34757,
+          "cache_write_5m": 173021,
+          "cache_write_1h": 0,
+          "cache_read": 6646768
+        }
+      }
+    },
+    {
+      "tokens": 69286,
+      "agent": "agent-aee9df53e3bed34cc",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T12:21:35Z",
+      "unit": "BG1073",
+      "minutes": 6.4334125,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 8,
+        "units": 5,
+        "tokens": 554283
+      },
+      "priced": 351605,
+      "components": {
+        "input": 26,
+        "output": 11586,
+        "cache_write_5m": 57674,
+        "cache_write_1h": 0,
+        "cache_read": 2215589
+      },
+      "transcript": "sha256:19fcff4ad266",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 11586,
+          "cache_write_5m": 57674,
+          "cache_write_1h": 0,
+          "cache_read": 2215589
+        }
+      }
+    },
+    {
+      "tokens": 69285,
+      "agent": "agent-aee9df53e3bed34cc",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T12:21:35Z",
+      "unit": "BG0975",
+      "minutes": 6.4334125,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 8,
+        "units": 5,
+        "tokens": 554283
+      },
+      "priced": 351605,
+      "components": {
+        "input": 26,
+        "output": 11586,
+        "cache_write_5m": 57673,
+        "cache_write_1h": 0,
+        "cache_read": 2215589
+      },
+      "transcript": "sha256:19fcff4ad266",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 11586,
+          "cache_write_5m": 57673,
+          "cache_write_1h": 0,
+          "cache_read": 2215589
+        }
+      }
+    },
+    {
+      "tokens": 69285,
+      "agent": "agent-aee9df53e3bed34cc",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T12:21:35Z",
+      "unit": "BG1591",
+      "minutes": 6.4334125,
+      "apportioned": {
+        "by": "points",
+        "points": 1,
+        "of": 8,
+        "units": 5,
+        "tokens": 554283
+      },
+      "priced": 351605,
+      "components": {
+        "input": 26,
+        "output": 11585,
+        "cache_write_5m": 57673,
+        "cache_write_1h": 0,
+        "cache_read": 2215589
+      },
+      "transcript": "sha256:19fcff4ad266",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 26,
+          "output": 11585,
+          "cache_write_5m": 57673,
+          "cache_write_1h": 0,
+          "cache_read": 2215589
+        }
+      }
+    },
+    {
+      "tokens": 138571,
+      "agent": "agent-aee9df53e3bed34cc",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T12:21:35Z",
+      "unit": "BG1606",
+      "minutes": 12.866825,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 8,
+        "units": 5,
+        "tokens": 554283
+      },
+      "priced": 703210,
+      "components": {
+        "input": 53,
+        "output": 23171,
+        "cache_write_5m": 115347,
+        "cache_write_1h": 0,
+        "cache_read": 4431179
+      },
+      "transcript": "sha256:19fcff4ad266",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 53,
+          "output": 23171,
+          "cache_write_5m": 115347,
+          "cache_write_1h": 0,
+          "cache_read": 4431179
+        }
+      }
+    },
+    {
+      "tokens": 54180,
+      "agent": "agent-a5d4c2470c09fd8b0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T13:19:45Z",
+      "unit": "BG1062",
+      "minutes": 7.208910256410257,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 5,
+        "tokens": 352172
+      },
+      "priced": 462767,
+      "components": {
+        "input": 38,
+        "output": 13980,
+        "cache_write_5m": 40162,
+        "cache_write_1h": 0,
+        "cache_read": 3426259
+      },
+      "transcript": "sha256:130c2365c450",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 38,
+          "output": 13980,
+          "cache_write_5m": 40162,
+          "cache_write_1h": 0,
+          "cache_read": 3426259
+        }
+      }
+    },
+    {
+      "tokens": 81271,
+      "agent": "agent-a5d4c2470c09fd8b0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T13:19:45Z",
+      "unit": "BG1513",
+      "minutes": 10.813365384615386,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 5,
+        "tokens": 352172
+      },
+      "priced": 694151,
+      "components": {
+        "input": 58,
+        "output": 20971,
+        "cache_write_5m": 60243,
+        "cache_write_1h": 0,
+        "cache_read": 5139389
+      },
+      "transcript": "sha256:130c2365c450",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 58,
+          "output": 20971,
+          "cache_write_5m": 60243,
+          "cache_write_1h": 0,
+          "cache_read": 5139389
+        }
+      }
+    },
+    {
+      "tokens": 54180,
+      "agent": "agent-a5d4c2470c09fd8b0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T13:19:45Z",
+      "unit": "BG1692",
+      "minutes": 7.208910256410257,
+      "apportioned": {
+        "by": "points",
+        "points": 2,
+        "of": 13,
+        "units": 5,
+        "tokens": 352172
+      },
+      "priced": 462767,
+      "components": {
+        "input": 38,
+        "output": 13980,
+        "cache_write_5m": 40162,
+        "cache_write_1h": 0,
+        "cache_read": 3426259
+      },
+      "transcript": "sha256:130c2365c450",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 38,
+          "output": 13980,
+          "cache_write_5m": 40162,
+          "cache_write_1h": 0,
+          "cache_read": 3426259
+        }
+      }
+    },
+    {
+      "tokens": 81271,
+      "agent": "agent-a5d4c2470c09fd8b0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T13:19:45Z",
+      "unit": "BG1311",
+      "minutes": 10.813365384615386,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 5,
+        "tokens": 352172
+      },
+      "priced": 694151,
+      "components": {
+        "input": 58,
+        "output": 20970,
+        "cache_write_5m": 60242,
+        "cache_write_1h": 0,
+        "cache_read": 5139389
+      },
+      "transcript": "sha256:130c2365c450",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 58,
+          "output": 20970,
+          "cache_write_5m": 60242,
+          "cache_write_1h": 0,
+          "cache_read": 5139389
+        }
+      }
+    },
+    {
+      "tokens": 81270,
+      "agent": "agent-a5d4c2470c09fd8b0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T13:19:45Z",
+      "unit": "BG1204",
+      "minutes": 10.813365384615386,
+      "apportioned": {
+        "by": "points",
+        "points": 3,
+        "of": 13,
+        "units": 5,
+        "tokens": 352172
+      },
+      "priced": 694151,
+      "components": {
+        "input": 58,
+        "output": 20970,
+        "cache_write_5m": 60242,
+        "cache_write_1h": 0,
+        "cache_read": 5139389
+      },
+      "transcript": "sha256:130c2365c450",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 58,
+          "output": 20970,
+          "cache_write_5m": 60242,
+          "cache_write_1h": 0,
+          "cache_read": 5139389
+        }
+      }
+    },
+    {
+      "tokens": 1380650,
+      "agent": "agent-aa1433c79da53b2a0",
+      "note": "sprint lane return (landed)",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-24T15:54:21Z",
+      "unit": "BG1204",
+      "minutes": 134.41013333333333,
+      "priced": 4105435,
+      "components": {
+        "input": 244,
+        "output": 141871,
+        "cache_write_5m": 1238535,
+        "cache_write_1h": 0,
+        "cache_read": 18476676
+      },
+      "transcript": "sha256:0d22d8121c27",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 244,
+          "output": 141871,
+          "cache_write_5m": 1238535,
+          "cache_write_1h": 0,
+          "cache_read": 18476676
+        }
+      }
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "BG1204",
+      "reason": "carried at the review cap: BG1737",
+      "at": "2026-11-24T11:55:09Z",
+      "review_base": "0de7cc652b09"
+    },
+    {
+      "action": "add",
+      "id": "BG1204",
+      "at": "2026-11-24T16:00:56Z",
+      "reason": "discharged carried at the review cap: BG1737"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0613",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "3994fa7709f4cc7a605c06896fa93076f697d9c0",
+  "git_identity": {
+    "route": [
+      "sha256:9cadf11b9042",
+      "sha256:6293ee952582"
+    ],
+    "name": "Darren Benson",
+    "email": "darren.benson@deskpoint.com",
+    "file": "sha256:9cadf11b9042"
+  },
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-11-24T07:12:10Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "plan_digest": "sha256:6b971f468e95702f6f71e4f309a8182cbe5142ada715127cb26e13a8461bea54",
+  "sprint_goal": "The eighteen Lows the operator kept are fixed with fourteen more from their files; each fix's test fails without it",
+  "sprint_serves": [
+    "O5",
+    "O1"
+  ],
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "qa",
+        "achievable": "partial - all 32 units are open Lows, Points-sized and groomed at 75d5df74b, with reachable end state Fixed and no placeholder criteria, so the batch can be fixed; but BG1598 AC1 and AC2 name existing tests that pass today, so that unit cannot show its fix by a test that fails first, and the 24 units sharing files run as serial clusters (BG1323 and BG1736 a second cluster).",
+        "done_means": "Serves O1 (Maya Okafor, End goal 1; Maya Okafor, End goal 5) and O5 (Abena Osei, End goal 6): done is every one of the 32 bugs transitioned to Fixed only after its executable criteria run green, each criterion's named test having been seen to fail on the unfixed code, with each fix committed alongside its changelog.d fragment; the Lows are fixed in the code path, not merely re-closed.",
+        "one_increment": "no - it reads as a batch of 32 unrelated small defects grouped by operator decision (D0564) and by shared file, not one capability; the themes (critic, sprint, goal-review, archive, commit-msg hook, run state) recur but no single user-visible outcome is delivered. It is coherent as a Low-sweep.",
+        "note": "Spot-check by reading all 32 units (AC-by-AC script plus reading the weak ones). Every AC carries a 'Fails on' clause and a Verify line naming a pytest id, except BG1650 AC2, whose parsed Verify is fine (the 'npm test' text is inside the Given, a false alarm). Of 32 units, 30 name tests that do not exist yet in the tree (the builder creates them, so they will fail first by construction, but this is unproven until red is seen). Named defects: BG1598 AC1 and AC2 Verify lines run test_docs_do_not_call_copilot_repo_scoped and test_the_harness_table_is_alphabetical_with_a_verification_command, which I ran and both PASS today (README line 95 still reads '| Copilot |'), so neither fails before the fix; AC3's test_a_not_measured_model_figure_names_no_model does not exist yet and is a mutant claim (NOT_MEASURED in _NO_MODEL), so its failing without the fix rests on the builder. Control ACs that hold today by design (BG0975 AC3, BG1069 AC3, BG1073 AC3, BG1121 AC3, BG1126 AC3, BG1404 AC3, BG1429 AC2, BG1591 AC3, BG1606 AC3, BG1698 AC3, BG1736 AC2) are stated as controls, not fix tests; acceptable, but the goal's last clause is then true of each unit's fix criteria, not every criterion. The goal names no outcome; the wording 'eighteen Lows ... fourteen more' sums to 32, matching the batch (BG1601 closed obsolete and excluded).",
+        "rereview": "no",
+        "clauses": {
+          "The eighteen Lows the operator kept are fixed with fourteen more from their files": "partial - 18+14=32 matches the batch and all are groomed Lows reaching Fixed, but I could not verify which 18 are the operator's kept set from the unit files (the groom commit asserts it, D0564), and 24 units cluster on shared files so they land serially; BG1598 also cannot evidence its fix by test.",
+          "each fix's test fails without it": "partial - every criterion has a 'Fails on' clause and a named Verify test, and 30 of 32 units' tests are new (will start red), but BG1598 AC1 and AC2 verify tests pass on the unfixed tree (executed), BG1564's happy-path test already exists, and about eleven criteria are explicit controls that hold today; the clause is true per fix criterion only if BG1598 is rewritten or exempted."
+        }
+      },
+      {
+        "seat": "engineering",
+        "achievable": "yes - all 32 units are Low, groomed at 75d5df74b with a bounded Affects set and executable criteria; the 18 D0564 kept ids plus 14 others make exactly 32; the shared-file lanes (SP, CR, RS, SAFE) serialise the overlap, so the cost is lane order and the roughly 90 points, not unknowns. Risk is the cluster of 24 units on shared files, not any unit's feasibility.",
+        "done_means": "Serves O5 (Maya Okafor End goal 5; Abena Osei End goal 6: a repeated failure is fixed in the code path and the process stays small), with O1 (every fix verified by a test that runs green) and O8 (humans and agents under the same gates) as the evidence leg, and a secondary reach to O12 (Abena End goal 4: defects traced and not repeated) for the critic and sign fixes. Done means all 32 reach Fixed with the Verify test red before and green after, not that the Lows merely close.",
+        "one_increment": "yes - every unit is a Low defect in the shipped scripts or their pages, groomed to the same pattern (Fails on plus a named Verify test), so the batch ships as one 'clear the kept and grouped Lows' release note. It is a sweep rather than a theme: units span critic, sprint, run_state, migrate, persona_goals and the README, so it is one increment by cleared-backlog purpose and not by feature.",
+        "note": "Spot-read all 32: every AC has a Fails on clause and a Verify line naming a pytest test (counts of ACs, Fails on and Verify matched on the units read in full; BG0996, BG1062, BG1069, BG1073, BG1121, BG1126, BG1131, BG1204, BG1219, BG1311, BG1323, BG1361, BG1398, BG1404, BG1429, BG1450, BG1598, BG1606, BG1650 shown line by line). Units that cannot show a test failing before the fix: BG1598 AC3 only. Its test_a_not_measured_model_figure_names_no_model does not exist yet and sprint_report.py line 6821 already holds NOT_MEASURED in _NO_MODEL, so the test passes on the current code; it kills a mutant, it does not fail without a fix, and the unit's README and install-test criteria (AC1, AC2) are unrelated to it. Treat it as a coverage criterion needing a mutant record, or split it out. Weaker but acceptable: guard criteria marked 'this guard holds today' (BG0975 AC3, BG1069 AC3, BG1404 AC3, BG1606 AC3) pass before the fix by design, as positive controls; each unit's other criteria still fail first. BG1219 AC2 and BG1323 AC3 test a Verify line and a docstring, which fail before the change and are fine. Goal names no outcome; the operator should add O5 to it. Not read by execution: I did not run any Verify test, so red-before was judged by the written Fails on clause and the existence of the test names.",
+        "rereview": "no",
+        "clauses": {
+          "The eighteen Lows the operator kept are fixed with fourteen more from their files": "yes - D0564 lists exactly BG0996 BG1062 BG1121 BG1131 BG1204 BG1219 BG1311 BG1323 BG1361 BG1398 BG1429 BG1473 BG1513 BG1562 BG1564 BG1583 BG1598 BG1650 (18), all present in the batch, and the other 14 (BG0975 BG1069 BG1073 BG1126 BG1404 BG1450 BG1591 BG1606 BG1608 BG1658 BG1673 BG1692 BG1698 BG1736) make 32; each is groomed, sized and attributable to a file lane. Achievable in one run if the lanes are respected.",
+          "each fix's test fails without it": "partial - 31 of 32 units carry criteria with Fails on and a Verify test that can fail before the fix; BG1598 AC3 cannot, because the code it names is already correct and its test is new coverage. The four 'guard holds today' criteria are deliberate positive controls and pass before the fix; each of those units has a red-first criterion beside it. Not confirmed by running the tests."
+        }
+      },
+      {
+        "seat": "product",
+        "achievable": "yes - all 32 units are groomed Lows with 2-5 executable criteria, every kept id in D0564 (BG0996 BG1062 BG1121 BG1131 BG1204 BG1219 BG1311 BG1323 BG1361 BG1398 BG1429 BG1473 BG1513 BG1562 BG1564 BG1583 BG1598 BG1650) is in the batch, and the other 14 (BG0975 BG1069 BG1073 BG1126 BG1404 BG1450 BG1591 BG1606 BG1608 BG1658 BG1673 BG1692 BG1698 BG1736) make 32; the 24-unit shared-file cluster serialises, so it costs time, not feasibility",
+        "done_means": "Serves O2 (Maya Okafor, End goal 2) and O4 (Maya End goal 4), with O3 (End goal 3) and O1 (End goal 1) in support, and Rowan Achterberg End goal 2: done means each of the 32 Lows reaches Fixed with its executable criteria green and each criterion's test shown red on the pre-fix tree, so the sprint-sign, close, brief and ledger paths a user runs report the true state instead of a wrong page, a stale record or a misleading refusal",
+        "one_increment": "no - the goal names a count and a provenance (kept Lows plus fourteen more) rather than a user outcome, and the batch spans four unrelated areas (sprint lanes and close, critic ledger and brief, run state and cost, archive and hook safety) with no single reader benefit; it is a backlog sweep that is coherent only as 'user-meetable Lows', the bar D0564 set for the eighteen but not for the fourteen",
+        "note": "The goal names no PRD outcome or persona; the reading above supplies it. Spot-check by reading: all 32 units carry a Fails on clause on every AC and a Verify line (counts equal ACs; BG1650 has five Verify lines for three ACs, fine). Verify tests that cannot fail before the fix by reading: BG1598 AC1 and AC2 name test_docs_do_not_call_copilot_repo_scoped and test_the_harness_table_is_alphabetical_with_a_verification_command, which already exist and presumably pass on the current README, so they do not go red before the fix; BG1564 AC3 (test_archive_happy_path) is a positive control that exists and passes by design, which is acceptable. BG1692 AC3 is a shell grep that does fail now (the docstring text is present). BG1598 AC3 is a mutant claim, so its Verify is the test_evidence_page test; its red state depends on the mutant. Of the 32, BG1598 is the unit that cannot show a test failing before its fix; every other Verify names a test not yet in the tree, which fails before the fix by absence (a weaker red than a behavioural one, so the builder must still record the red run). Not a blocker; suggest the goal gain an outcome clause (for example 'so the close, sign and brief report the true state') in a later run, not now.",
+        "rereview": "no",
+        "clauses": {
+          "The eighteen Lows the operator kept are fixed with fourteen more from their files": "yes - the 18 kept ids and the 14 extras are all present, all groomed to Fixed-reachable Lows; the second half is a file grouping, not a user outcome, but it is countable and checkable",
+          "each fix's test fails without it": "partial - nearly every unit pairs each AC with a Fails on clause and a Verify naming a not-yet-existing test, so it goes red before the fix; BG1598 AC1 and AC2 name existing tests that likely pass on the current tree, so those cannot show red before the fix without a changed test, and the phrase is not tied to a recorded red run"
+        }
+      }
+    ],
+    "goal": "The eighteen Lows the operator kept are fixed with fourteen more from their files; each fix's test fails without it",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 24,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-11-24T07:05:56Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "requested_by": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "qa",
+        "one_increment": "no - it reads as a batch of 32 unrelated small defects grouped by operator decision (D0564) and by shared file, not one capability; the themes (critic, sprint, goal-review, archive, commit-msg hook, run state) recur but no single user-visible outcome is delivered. It is coherent as a Low-sweep.",
+        "note": "Spot-check by reading all 32 units (AC-by-AC script plus reading the weak ones). Every AC carries a 'Fails on' clause and a Verify line naming a pytest id, except BG1650 AC2, whose parsed Verify is fine (the 'npm test' text is inside the Given, a false alarm). Of 32 units, 30 name tests that do not exist yet in the tree (the builder creates them, so they will fail first by construction, but this is unproven until red is seen). Named defects: BG1598 AC1 and AC2 Verify lines run test_docs_do_not_call_copilot_repo_scoped and test_the_harness_table_is_alphabetical_with_a_verification_command, which I ran and both PASS today (README line 95 still reads '| Copilot |'), so neither fails before the fix; AC3's test_a_not_measured_model_figure_names_no_model does not exist yet and is a mutant claim (NOT_MEASURED in _NO_MODEL), so its failing without the fix rests on the builder. Control ACs that hold today by design (BG0975 AC3, BG1069 AC3, BG1073 AC3, BG1121 AC3, BG1126 AC3, BG1404 AC3, BG1429 AC2, BG1591 AC3, BG1606 AC3, BG1698 AC3, BG1736 AC2) are stated as controls, not fix tests; acceptable, but the goal's last clause is then true of each unit's fix criteria, not every criterion. The goal names no outcome; the wording 'eighteen Lows ... fourteen more' sums to 32, matching the batch (BG1601 closed obsolete and excluded)."
+      },
+      {
+        "seat": "product",
+        "one_increment": "no - the goal names a count and a provenance (kept Lows plus fourteen more) rather than a user outcome, and the batch spans four unrelated areas (sprint lanes and close, critic ledger and brief, run state and cost, archive and hook safety) with no single reader benefit; it is a backlog sweep that is coherent only as 'user-meetable Lows', the bar D0564 set for the eighteen but not for the fourteen",
+        "note": "The goal names no PRD outcome or persona; the reading above supplies it. Spot-check by reading: all 32 units carry a Fails on clause on every AC and a Verify line (counts equal ACs; BG1650 has five Verify lines for three ACs, fine). Verify tests that cannot fail before the fix by reading: BG1598 AC1 and AC2 name test_docs_do_not_call_copilot_repo_scoped and test_the_harness_table_is_alphabetical_with_a_verification_command, which already exist and presumably pass on the current README, so they do not go red before the fix; BG1564 AC3 (test_archive_happy_path) is a positive control that exists and passes by design, which is acceptable. BG1692 AC3 is a shell grep that does fail now (the docstring text is present). BG1598 AC3 is a mutant claim, so its Verify is the test_evidence_page test; its red state depends on the mutant. Of the 32, BG1598 is the unit that cannot show a test failing before its fix; every other Verify names a test not yet in the tree, which fails before the fix by absence (a weaker red than a behavioural one, so the builder must still record the red run). Not a blocker; suggest the goal gain an outcome clause (for example 'so the close, sign and brief report the true state') in a later run, not now."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed",
+    "types": [
+      "bug"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0975": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG0996": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1062": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1069": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1073": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1121": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1126": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1131": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1204": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1219": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1311": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1323": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1361": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1398": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1404": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1429": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1450": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1473": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1513": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1562": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1564": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1583": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1591": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1598": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1606": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1608": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1650": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "forecast_priced": 4094673,
+        "forecast_usd": 16.3787,
+        "forecast_span_minutes": 41.7,
+        "added": false
+      },
+      "BG1658": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1673": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      },
+      "BG1692": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1698": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "forecast_priced": 2729782,
+        "forecast_usd": 10.9191,
+        "forecast_span_minutes": 27.8,
+        "added": false
+      },
+      "BG1736": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "forecast_priced": 1364891,
+        "forecast_usd": 5.4596,
+        "forecast_span_minutes": 13.9,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 186252,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      },
+      "priced_per_point": {
+        "value": 1364891,
+        "retros": [
+          "RETRO0153",
+          "RETRO0154",
+          "RETRO0155",
+          "RETRO0156",
+          "RETRO0157"
+        ],
+        "source": "measured: median priced per point of RETRO0153, RETRO0154, RETRO0155, RETRO0156, RETRO0157"
+      },
+      "usd_per_million": {
+        "value": 4.0,
+        "model": "claude-opus-5-5",
+        "effective": "2026-11-12",
+        "price_effective": "2026-11-06",
+        "source": "claude-opus-5-5's input price per million, price table effective 2026-11-12 (entry dated 2026-11-06)"
+      },
+      "points_per_elapsed_hour": {
+        "value": 4.317,
+        "reports": [
+          "RPT0039",
+          "RPT0040",
+          "RPT0041",
+          "RPT0042",
+          "RPT0043"
+        ],
+        "source": "measured: median points per elapsed hour of RPT0039, RPT0040, RPT0041, RPT0042, RPT0043"
+      }
+    }
+  },
+  "token_forecast": 10243860,
+  "lanes_in_flight": [],
+  "lane_seats": {
+    "BG1062": "engineering",
+    "BG1583": "engineering",
+    "BG1398": "engineering",
+    "BG1513": "engineering",
+    "BG1126": "engineering",
+    "BG1608": "engineering",
+    "BG1673": "engineering",
+    "BG1692": "engineering",
+    "BG1658": "engineering",
+    "BG1311": "engineering",
+    "BG1121": "engineering",
+    "BG1073": "engineering",
+    "BG1404": "engineering",
+    "BG1450": "engineering",
+    "BG0975": "engineering",
+    "BG1069": "engineering",
+    "BG1591": "engineering",
+    "BG1606": "engineering",
+    "BG1698": "engineering",
+    "BG1131": "engineering",
+    "BG1204": "engineering",
+    "BG1473": "engineering",
+    "BG1361": "engineering",
+    "BG1429": "engineering",
+    "BG1598": "engineering",
+    "BG1562": "engineering",
+    "BG1564": "engineering",
+    "BG1219": "engineering",
+    "BG0996": "engineering",
+    "BG1323": "engineering",
+    "BG1736": "engineering",
+    "BG1650": "engineering"
+  },
+  "unit_actuals": {
+    "BG1062": {
+      "minutes": 369.92,
+      "tokens": 10201977,
+      "started_at": "2026-11-24T07:16:22Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1583": {
+      "minutes": 281.65,
+      "tokens": 8570674,
+      "started_at": "2026-11-24T07:16:23Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1398": {
+      "minutes": 283.95,
+      "tokens": 8581588,
+      "started_at": "2026-11-24T07:16:24Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1513": {
+      "minutes": 370.78,
+      "tokens": 10214095,
+      "started_at": "2026-11-24T07:16:25Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1126": {
+      "minutes": 285.55,
+      "tokens": 8590909,
+      "started_at": "2026-11-24T07:16:26Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1608": {
+      "minutes": 268.33,
+      "tokens": 7808383,
+      "started_at": "2026-11-24T07:16:28Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1673": {
+      "minutes": 270.88,
+      "tokens": 8025974,
+      "started_at": "2026-11-24T07:16:29Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1692": {
+      "minutes": 371.8,
+      "tokens": 10218389,
+      "started_at": "2026-11-24T07:16:30Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1658": {
+      "minutes": 272.35,
+      "tokens": 8040858,
+      "started_at": "2026-11-24T07:16:31Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1311": {
+      "minutes": 373.0,
+      "tokens": 10218389,
+      "started_at": "2026-11-24T07:16:32Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1121": {
+      "minutes": 314.5,
+      "tokens": 9358720,
+      "started_at": "2026-11-24T07:17:04Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1073": {
+      "minutes": 315.35,
+      "tokens": 9376037,
+      "started_at": "2026-11-24T07:17:05Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1404": {
+      "minutes": 220.15,
+      "tokens": 6531651,
+      "started_at": "2026-11-24T07:17:06Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1450": {
+      "minutes": 221.6,
+      "tokens": 6531651,
+      "started_at": "2026-11-24T07:17:08Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG0975": {
+      "minutes": 316.17,
+      "tokens": 9376037,
+      "started_at": "2026-11-24T07:17:09Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1069": {
+      "minutes": 213.87,
+      "tokens": 6530493,
+      "started_at": "2026-11-24T07:17:10Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1591": {
+      "minutes": 310.6,
+      "tokens": 9319869,
+      "started_at": "2026-11-24T07:17:11Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1606": {
+      "minutes": 311.68,
+      "tokens": 9334524,
+      "started_at": "2026-11-24T07:17:12Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1698": {
+      "minutes": 216.45,
+      "tokens": 6530493,
+      "started_at": "2026-11-24T07:17:14Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1131": {
+      "minutes": 152.82,
+      "tokens": 5116931,
+      "started_at": "2026-11-24T07:17:40Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1204": {
+      "minutes": 524.55,
+      "tokens": 12692980,
+      "started_at": "2026-11-24T07:17:41Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1473": {
+      "minutes": 275.42,
+      "tokens": 8520631,
+      "started_at": "2026-11-24T07:17:42Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1361": {
+      "minutes": 153.32,
+      "tokens": 5127487,
+      "started_at": "2026-11-24T07:17:43Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1429": {
+      "minutes": 153.8,
+      "tokens": 5132067,
+      "started_at": "2026-11-24T07:17:44Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1598": {
+      "minutes": 276.62,
+      "tokens": 8538779,
+      "started_at": "2026-11-24T07:17:46Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1562": {
+      "minutes": 284.8,
+      "tokens": 8592294,
+      "started_at": "2026-11-24T07:18:15Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1564": {
+      "minutes": 157.98,
+      "tokens": 5289991,
+      "started_at": "2026-11-24T07:18:16Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1219": {
+      "minutes": 158.47,
+      "tokens": 5293483,
+      "started_at": "2026-11-24T07:18:17Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG0996": {
+      "minutes": 158.93,
+      "tokens": 5293483,
+      "started_at": "2026-11-24T07:18:18Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1323": {
+      "minutes": 285.3,
+      "tokens": 8592294,
+      "started_at": "2026-11-24T07:18:19Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1736": {
+      "minutes": 285.82,
+      "tokens": 8592294,
+      "started_at": "2026-11-24T07:18:21Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1650": {
+      "minutes": 286.38,
+      "tokens": 8592294,
+      "started_at": "2026-11-24T07:18:22Z",
+      "start_tokens": 2431,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  },
+  "review_base": {
+    "BG1131": 0,
+    "BG1361": 0,
+    "BG1429": 0,
+    "BG1204": 0,
+    "BG1473": 0,
+    "BG1598": 0,
+    "BG1564": 0,
+    "BG1219": 0,
+    "BG0996": 0,
+    "BG1562": 0,
+    "BG1323": 0,
+    "BG1736": 0,
+    "BG1650": 0,
+    "BG1069": 0,
+    "BG1698": 0,
+    "BG1591": 0,
+    "BG1606": 0,
+    "BG1404": 0,
+    "BG1450": 0,
+    "BG1121": 0,
+    "BG1073": 0,
+    "BG0975": 0,
+    "BG1608": 0,
+    "BG1673": 0,
+    "BG1658": 0,
+    "BG1692": 0,
+    "BG1311": 0,
+    "BG1583": 0,
+    "BG1398": 0,
+    "BG1126": 0,
+    "BG1062": 0,
+    "BG1513": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "All 32 units Fixed on independent APPROVEs: the 18 operator-kept Lows plus 14 from their files; each review ran the unit's new tests against base and saw them fail, and BG1204 closed through its carry exit in round six."
+  },
+  "scaffolded_retro": "RETRO0158",
+  "close_attempts": [
+    {
+      "at": "2026-11-24T16:32:14Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_known_issues": [],
+  "persona_learnings_listed": [],
+  "close_output": [
+    "sdlc-studio/retros/RETRO0158-the-eighteen-lows-the-operator-kept-are-fixed.md"
+  ],
+  "close_not_measured": [],
+  "close_goal_judgement": {
+    "panel": "partial over 2 clause(s), 3 seat(s), no seat matched the author; partial: The eighteen Lows the operator kept are fixed with fourteen more from their files; partial: each fix's test fails without it",
+    "defects": "0 BLOCKING, 92 leavable",
+    "blocking": [],
+    "caller_check": "32 unit(s) of 32 ship a mechanism with no named caller"
+  },
+  "close_tree": "05fe28f8705d040140281b6c805b8db89f066c53",
+  "retro": "RETRO0158",
+  "report_gate_clear": [
+    "BG0975",
+    "BG0996",
+    "BG1062",
+    "BG1069",
+    "BG1073",
+    "BG1121",
+    "BG1126",
+    "BG1131",
+    "BG1204",
+    "BG1219",
+    "BG1311",
+    "BG1323",
+    "BG1361",
+    "BG1398",
+    "BG1404",
+    "BG1429",
+    "BG1450",
+    "BG1473",
+    "BG1513",
+    "BG1562",
+    "BG1564",
+    "BG1583",
+    "BG1591",
+    "BG1598",
+    "BG1606",
+    "BG1608",
+    "BG1650",
+    "BG1658",
+    "BG1673",
+    "BG1692",
+    "BG1698",
+    "BG1736"
+  ],
+  "verified_sha": "08dfcdedc89e42dcdfc8aa76c7f29dd8ab9a2562",
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-24T13:43:51Z",
+        "databaseId": 45406447622,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f1569e5fb4707bc93aeaef6fcac049857f06cb18",
+        "updatedAt": "2026-11-24T15:19:14Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0975": [
+      "686bad06324d19fb",
+      "0edb2ef4d204f6b6"
+    ],
+    "BG0996": [
+      "1d5876e1217ec155"
+    ],
+    "BG1062": [
+      "693f3a6c9a821e17",
+      "d3c1370ea1ba740c"
+    ],
+    "BG1069": [
+      "beb32c31a1127bb8"
+    ],
+    "BG1073": [
+      "e2c3d116b1f76316",
+      "e4731bfa862c9482"
+    ],
+    "BG1121": [
+      "4982c729c10d5797",
+      "5859b3aac120986b"
+    ],
+    "BG1126": [
+      "7d0a7d9c11df888b"
+    ],
+    "BG1131": [
+      "4b67a0fb81d69231"
+    ],
+    "BG1204": [
+      "f0816577e5d30adf",
+      "48cfcd6e62a2c266",
+      "93de4e8c9dc9dac6"
+    ],
+    "BG1219": [
+      "0c1dee50fed1d09b"
+    ],
+    "BG1311": [
+      "d44411d7db9a8fd2",
+      "de3f3653fa0459d9"
+    ],
+    "BG1323": [
+      "c929f3a8b4899a26",
+      "7bef7f54783789bd"
+    ],
+    "BG1361": [
+      "429304cd9c043b5a"
+    ],
+    "BG1398": [
+      "e7c18b1b4a7336bd"
+    ],
+    "BG1404": [
+      "d4bda2b170d42efa"
+    ],
+    "BG1429": [
+      "52e15b634d687e8a"
+    ],
+    "BG1450": [
+      "4ac3b5fdda68ce8c"
+    ],
+    "BG1473": [
+      "567667ff15e31402",
+      "b86af65759afcf77"
+    ],
+    "BG1513": [
+      "add9f320e7935985",
+      "e0f54545d85edb35"
+    ],
+    "BG1562": [
+      "cf54c544f791aaf0",
+      "16c52b6f1b791299"
+    ],
+    "BG1564": [
+      "9317765195207ea3"
+    ],
+    "BG1583": [
+      "4cb556e47a7968a6"
+    ],
+    "BG1591": [
+      "3875ad08ff0c021b",
+      "d85b6da975569274"
+    ],
+    "BG1598": [
+      "e95778fdb20ab119",
+      "9ce1ffaadf13668f"
+    ],
+    "BG1606": [
+      "1fa294d81e92cb66",
+      "4198418dcf31ea32"
+    ],
+    "BG1608": [
+      "9548fc8224c8be90"
+    ],
+    "BG1650": [
+      "babf72d7d02f1b36",
+      "ee7c57b79e14522a"
+    ],
+    "BG1658": [
+      "0ddd4fd27cd1a304"
+    ],
+    "BG1673": [
+      "a28166098b239021"
+    ],
+    "BG1692": [
+      "6dbb3f46c2dc8963",
+      "9b385d14c3cbb26d"
+    ],
+    "BG1698": [
+      "3282a0fd1183f377"
+    ],
+    "BG1736": [
+      "2d1cb627539a5be2",
+      "89b6019fa3bacfc1"
+    ]
+  },
+  "report_discharged": [],
+  "lane_yield": {
+    "rows": [
+      {
+        "lane": "gate",
+        "refusals": 0,
+        "catches": 0,
+        "paperwork": 0,
+        "verdict": "delete candidate: 4 refusal(s) over 3 runs and no candidate catch"
+      },
+      {
+        "lane": "markdown",
+        "refusals": 1,
+        "catches": 0,
+        "paperwork": 1,
+        "verdict": "delete candidate: 2 refusal(s) over 3 runs and no candidate catch"
+      },
+      {
+        "lane": "repo-writes",
+        "refusals": 0,
+        "catches": 0,
+        "paperwork": 0,
+        "verdict": "delete candidate: 1 refusal(s) over 3 runs and no candidate catch"
+      }
+    ],
+    "in_run": 1,
+    "skipped": 0
+  },
+  "report": "RPT0044",
+  "report_fingerprint": "c554d224c96c99c8",
+  "report_window_end": "2026-11-24T16:46:35Z",
+  "evidence_schema": "1.0"
+}

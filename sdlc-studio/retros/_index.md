@@ -167,3 +167,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0155](RETRO0155-the-review-retro-lessons-drive-report-and-verify.md) | The review, retro, lessons, drive, report and verify scripts lose 28 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
 | [RETRO-0156](RETRO0156-release-cut-filer-validate-refine-and-the-carried.md) | Release cut, filer, validate, refine and the carried units lose 25 Medium bugs; each fix's test fails without it | 2026-11-23 | -- | -- |
 | [RETRO-0157](RETRO0157-the-last-23-medium-bugs-are-fixed-and.md) | The last 23 Medium bugs are fixed and commits test on the gate host; each fix's test fails without it | 2026-11-24 | -- | -- |
+| [RETRO-0158](RETRO0158-the-eighteen-lows-the-operator-kept-are-fixed.md) | The eighteen Lows the operator kept are fixed with fourteen more from their files; each fix's test fails without it | 2026-11-24 | -- | -- |

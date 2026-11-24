@@ -1,0 +1,132 @@
+# RETRO-0158: The eighteen Lows the operator kept are fixed with fourteen more from their files; each fix's test fails without it
+
+> **Date:** 2026-11-24
+> **Run:** RUN-01M866KQ
+> **Batch:** BG0975, BG0996, BG1062, BG1069, BG1073, BG1121, BG1126, BG1131, BG1219, BG1311, BG1323, BG1361, BG1398, BG1404, BG1429, BG1450, BG1473, BG1513, BG1562, BG1564, BG1583, BG1591, BG1598, BG1606, BG1608, BG1650, BG1658, BG1673, BG1692, BG1698, BG1736, BG1204
+
+## Keep
+
+- Settling a builder's BLOCKED scope on main the moment it names it: CR's three blocks (BG1121's confinement allowlist, BG1698's end-to-end line, BG1591's contradictory AC2) were widened or reworded in minutes and the lane landed green.
+- Splitting a nine- or ten-unit lane's review across two qa reviewers by unit: each context stayed small, and the four CR and SP review halves ran in parallel.
+- `lane brief --repair` now recreates a landed lane's worktree (BG1311, landed this run): BG1204's rounds five and six reused the same builder and worktree path, so the builder kept its context.
+- Filing only what a user meets: three Lows (BG1738, BG1739, BG1740) from the reviews' out-of-unit findings; the cosmetic, rare and wording ones are listed below, not filed.
+
+## Stop
+
+- Stop putting a URL in a decision row's rationale: the commit's markdown lane refuses a bare URL (MD034), which cost the first paperwork commit.
+- Stop chaining a step on a token that a failure line also matches: SAFE's accepts waited on `paper25-1 (done|failed)` and started on the failure. Wait on `done` alone, and fail the chain on `failed`.
+- Stop writing a criterion that names a reach the code does not have: BG1204's AC4 (an orchestrator widening) asked lane runs to carry their harness, which no reader needed, and lost their spend; it took round two's probe to show it.
+
+## Try
+
+- [new: a criterion's premise is probed before it is written] Before adding or widening a criterion that names a reader's or a total's behaviour, run the shipped command on a fixture and read what it actually counts. BG1204's AC4 and AC1 were both re-ruled after a reviewer's probe; each re-ruling cost a builder round and a review.
+- [new: a docs-only repair still mutates its unit's declared tests] A repair that changes only prose still owes mutants of the code its unit's declared tests cover, since `lane land` refuses a self-check whose mutants list is empty while the unit declares a test file (SAFE2's BG1562). The builder mutates that code and lists each result, even when its own diff touches no code.
+
+## Cost
+
+- BG1204 took six build rounds. Its title defect (a delegated total counted twice) was unreachable through any shipped command until round four, and each later round found one more true sentence to make: the basis, then the one-capture total. Five REJECTs past the cap were not recorded; round two's stood until the carry exit.
+- First-round rejects: 16 of 32 units (RS 3, SAFE 4, CR 5, SP 4), nearly all on a [new] line with no pin or a sentence left untrue. All but BG1204 closed in round two.
+- Two paperwork refusals: MD034 on a bare URL in D0613, and SAFE2's land refused once for BG1562's empty mutants list (fixed by its builder).
+- 'proof unit: NOT DISCHARGED' printed on BG1564 and BG0996's accepts: the lane returned no proof evidence.
+
+## Not filed (D0561, no user meets a wrong result)
+
+- docs/INSTALL.md:112 labels its row `Copilot` (wording).
+- migrate.py killed by SIGKILL leaves collection children that recreate the pyc directory; the next start sweeps it (rare, self-healing).
+- BG0996: a closing `]` is still pulled into a code span (cosmetic).
+- `lane brief --units US0101 US0101` briefs a unit twice (input error).
+- A high-severity bug that declares Falsifies is labelled only "blocks the goal claim" (wording).
+
+## Machinery share (D0440)
+
+Delivered all 32 units, 55 points, every one a Low bug the operator kept or one from the same files. By theme the run is almost all machinery: the units fix the skill's own sprint, review and cost tooling (sprint.py, critic.py, run_state, retro.py, engagement_floor.py), which every user of the installed skill runs at plan, review and close, so each one is a defect a user can meet. Closing them and the 128 Won't Fix under D0613 takes the open count from 249 to 92, four of those filed from this run's reviews.
+
+## Known issues carried
+
+| id | ruling | ruled by | date |
+| --- | --- | --- | --- |
+| BG1738 | not-stop-ship | orchestrator | 2026-11-24 |
+| BG1739 | not-stop-ship | orchestrator | 2026-11-24 |
+| BG1740 | not-stop-ship | orchestrator | 2026-11-24 |
+| BG1741 | not-stop-ship | orchestrator | 2026-11-24 |
+
+All four are Low and filed from this run's reviews: BG1738 and BG1741 understate a run's token total in two narrow configurations, BG1739 refuses one shape of finding text with a workaround (rephrase), and BG1740 is one sentence of a reference page. None changes a release outcome.
+
+## Estimate vs actual
+
+<!-- accuracy:begin (generated by retro.py accuracy --write) -->
+
+| Unit | Points | Estimate (plan-time) | Actual | Ratio (est/actual) | Tokens/pt | Size | Wall | Model |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BG0975 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG0996 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1062 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1069 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1073 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1121 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1126 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1131 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1219 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1311 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1323 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1361 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1398 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1404 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1429 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1450 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1473 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1513 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1562 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1564 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1583 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1591 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1598 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1606 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1608 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1650 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1658 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1673 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1692 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1698 | 2 | 372,504 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1736 | 1 | 186,252 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| BG1204 | 3 | 558,756 | - | **UNMEASURED** (no telemetry token record) | - | - | - | - |
+| **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **46323s** | - |
+
+**0 of 32 unit(s) measured; 32 of 32 forecast at plan time.**
+
+**Priced cost: 61,893,973 priced input-equivalent tokens**, 1,125,345 per point over 55 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $161.82, $2.94 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
+
+- input: 4,638 x1
+- output: 1,853,956 x5
+- cache write 5m: 10,425,419 x1.25
+- cache write 1h: 432,512 x2
+- cache read: 387,227,568 x0.1
+
+**Sprint tokens/point: 231,210** (12,716,525 tokens over 55 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
+
+  secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
+
+Review passes - read from the verdict ledger:
+
+  code review: 49 pass(es) over 32 unit(s), 17 rejected
+
+Second review seats on 20 high-class unit(s) - read from the verdict ledger:
+
+  no second-seat verdict on BG0975, BG1062, BG1069, BG1073, BG1121, BG1126, BG1311, BG1398, BG1404, BG1450, BG1513, BG1583, BG1591, BG1606, BG1608, BG1658, BG1673, BG1692, BG1698, BG1204: one seat reviewed each
+Unmeasured: BG0975, BG0996, BG1062, BG1069, BG1073, BG1121, BG1126, BG1131, BG1219, BG1311, BG1323, BG1361, BG1398, BG1404, BG1429, BG1450, BG1473, BG1513, BG1562, BG1564, BG1583, BG1591, BG1598, BG1606, BG1608, BG1650, BG1658, BG1673, BG1692, BG1698, BG1736, BG1204. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
+No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
+
+Forecast by `TOKENS_PER_POINT=186252`, recorded at plan time. OUT-OF-SAMPLE: forecast by the constants in force, on a sprint they were not fitted to. This is the only kind of row that tells you anything.
+
+Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
+<!-- accuracy:end -->
+
+## Persona learnings
+
+<!-- persona-learnings:begin (generated by sprint close) -->
+No approved learning awaits listing for RUN-01M866KQ.
+
+0 of 49 verdict rows name no seat.
+<!-- persona-learnings:end -->
