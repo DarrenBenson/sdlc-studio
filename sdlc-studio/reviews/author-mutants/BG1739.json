@@ -1,0 +1,34 @@
+{
+  "unit": "BG1739",
+  "digest": "657e4f36d99408b3 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1739-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "keep the backslash inside the span",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "'\\\"\\\\\" or (url[-1]",
+      "new": "'\\\"\" or (url[-1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py::BareUrlTests::test_a_url_stops_before_a_backslash_that_escapes_a_semicolon",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cut the URL at any backslash",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "https?://[^\\s<>`]+\"",
+      "new": "https?://[^\\s<>`\\\\]+\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py::BareUrlTests::test_an_inner_backslash_stays_in_the_url_and_a_plain_semicolon_stays_outside",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record refused for the escaped semicolon",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "'\\\"\\\\\" or (url[-1]",
+      "new": "'\\\"\" or (url[-1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::LedgerLintTests::test_a_url_followed_by_an_escaped_semicolon_is_recorded",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

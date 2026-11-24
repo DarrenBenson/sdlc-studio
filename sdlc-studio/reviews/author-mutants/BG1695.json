@@ -1,0 +1,79 @@
+{
+  "unit": "BG1695",
+  "digest": "ab208cfb39ea4e96 at 45045c034802",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1695-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the replay listing split on whitespace",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\", \"-z\")\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "new": "conflicts = _git(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\").stdout.split()\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_names_a_path_holding_a_space_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rebase listing split on whitespace",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\", \"-z\")\n    _git(wt_top, \"rebase\", \"--abort\")\n    named",
+      "new": "conflicts = _git(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\").stdout.split()\n    _git(wt_top, \"rebase\", \"--abort\")\n    named",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_rebase_conflict_names_a_path_holding_a_space_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the replay listing is not NUL separated",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\", \"-z\")\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "new": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\")\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_names_a_path_holding_a_space_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rebase listing is not NUL separated",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\", \"-z\")\n    _git(wt_top, \"rebase\", \"--abort\")\n    named",
+      "new": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\")\n    _git(wt_top, \"rebase\", \"--abort\")\n    named",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_rebase_conflict_names_a_path_holding_a_space_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the replay listing names every changed path",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"--diff-filter=U\", \"-z\")\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "new": "conflicts = _paths(wt_top, \"diff\", \"--name-only\", \"-z\")\n        _git(wt_top, \"rebase\", \"--abort\")\n        _git(wt_top, \"reset\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_still_names_an_ordinary_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged listing split on whitespace",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "\"--name-only\", \"-z\").stdout.split(\"\\0\")\n              if p]",
+      "new": "\"--name-only\").stdout.split()\n              if p]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged listing keeps empty names",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "\"--name-only\", \"-z\").stdout.split(\"\\0\")\n              if p]",
+      "new": "\"--name-only\", \"-z\").stdout.split(\"\\0\")\n              ]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "staged listing not NUL separated",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "\"--name-only\", \"-z\").stdout.split(\"\\0\")\n              if p]",
+      "new": "\"--name-only\", \"-z\").stdout.split()\n              if p]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

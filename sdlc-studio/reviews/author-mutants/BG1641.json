@@ -1,0 +1,115 @@
+{
+  "unit": "BG1641",
+  "digest": "13d9c90222e8dc21 at 45045c034802",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1641-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no reviewer line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "sdlc_md.atomic_write(root_top / rel, f\"{resume}\\n\\n{brief.stdout}\" if resume else brief.stdout)",
+      "new": "sdlc_md.atomic_write(root_top / rel, brief.stdout)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "line added to every brief",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    resume = _reviewer_line(root_top, unit)\n",
+      "new": "    resume = _reviewer_line(root_top, unit) or f\"{REVIEWER_LINE}nobody\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_first_round_brief_carries_no_reviewer_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "line not printed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "+ (f\"\\n  {resume}\" if resume else \"\"))",
+      "new": "+ \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_lane_land_prints_the_reviewer_beside_the_brief_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "line separated by one newline",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"{resume}\\n\\n{brief.stdout}\"",
+      "new": "f\"{resume}\\n{brief.stdout}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fingerprint hashed with the line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return critic.brief_fingerprint(_REVIEWER_LINE_RE.sub(\"\", text, count=1))",
+      "new": "return critic.brief_fingerprint(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fingerprint strip anywhere in the text",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "r\"\\A\" + re.escape(REVIEWER_LINE)",
+      "new": "r\"\" + re.escape(REVIEWER_LINE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_fingerprint_leaves_out_only_the_line_at_the_head",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an answered reject still names the reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if not row or not str(row.get(\"verdict\") or \"\").upper().startswith(critic.REJECT):\n        return None\n    who",
+      "new": "    if not row:\n        return None\n    who",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_reviewer_line_is_named_only_for_a_reject_still_standing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a row naming no reviewer is named",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if not who:\n        return None\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_reviewer_line_is_named_only_for_a_reject_still_standing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unreadable ledger stops the land",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except (OSError, ValueError):\n        return None\n    if not row or",
+      "new": "    except ZeroDivisionError:\n        return None\n    if not row or",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_reviewer_line_is_named_only_for_a_reject_still_standing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the reviewer is not named in the line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return (f\"{REVIEWER_LINE}{who} - this repair",
+      "new": "return (f\"{REVIEWER_LINE}someone - this repair",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the saved brief is hashed unstripped by lane accept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        fp = saved_brief_fingerprint(saved)\n",
+      "new": "        fp = critic.brief_fingerprint(saved)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "approved hashes the brief unstripped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/resume_brief.py",
+      "old": "fp = lanes.saved_brief_fingerprint(brief.read_text(encoding=\"utf-8\", errors=\"replace\"))",
+      "new": "fp = critic.brief_fingerprint(brief.read_text(encoding=\"utf-8\", errors=\"replace\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::RepairBriefApprovalTests::test_a_repair_brief_with_a_reviewer_line_reads_its_reject",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "unit": "BG1296",
+  "digest": "d243606e1e004db0 at 45045c034802",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1296-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "land keeps the id as given",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "units = [sdlc_md.display_id(root, u.strip()) for u in units or [] if u and u.strip()]",
+      "new": "units = [u.strip() for u in units or [] if u and u.strip()]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_lower_case_unit_id_names_the_canonical_brief_and_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "accept keeps the id as given",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    unit = sdlc_md.display_id(root, unit)\n    try:\n        said",
+      "new": "    try:\n        said",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_reads_the_brief_by_the_normalised_unit_id",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

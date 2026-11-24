@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py, changelog.d/BG1335.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py, changelog.d/BG1335.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
 > **Evidence:** RUN-01M77177, 2026-11-12: BG1300's deferral
 > **Created:** 2026-11-12
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Record the block on the run state and surface it wherever the batch is listed, r
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPA lane: AC3's 'in status' needs status.py to show a bug held blocked by `decision defer --block` |

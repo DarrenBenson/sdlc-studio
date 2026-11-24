@@ -29,10 +29,12 @@ When `lane brief` runs in a linked worktree whose HEAD is not a descendant of th
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward
 - [ ] **AC2** Given a linked worktree at or ahead of the main worktree's branch tip, and the main worktree itself, when `lane brief` runs in each, then no such warning is printed and the brief is the one printed today. Fails on: a warning on every brief, which a builder learns to ignore.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_an_up_to_date_worktree_and_the_root_are_not_warned
-- [ ] **AC3** Given a builder briefed by `lane brief` in a harness worktree that starts at origin's commit, the brief names the fast-forward step and the base the builder must be at before building (carried from BG1338)
+- [ ] **AC3** Given a builder briefed by `lane brief` in a harness worktree that starts at origin's commit, the brief names the fast-forward step and the base the builder must be at before building (carried from BG1338). Fails on: the brief names neither the step nor the base, so a harness worktree builds on origin's stale commit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_fast_forward_step_and_the_base_to_build_on
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPA lane: AC3 given a Verify line; it had none, so no run could judge it (the plan's unspecified-criteria advisory) |

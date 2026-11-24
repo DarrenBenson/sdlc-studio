@@ -1,0 +1,43 @@
+{
+  "unit": "BG1304",
+  "digest": "8417b9907faaed85 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1304-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "directories not part of the token",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
+      "new": "([A-Za-z_]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dots and dashes not in a directory",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
+      "new": "((?:[\\w]+/)*[A-Za-z_]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "path split in a request",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
+      "new": "([A-Za-z_]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::SuppliedContentLandsTests::test_a_path_with_a_directory_is_never_split_by_a_code_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "identifier pass switched off",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p) for p in pieces[0::2]]",
+      "new": "        pieces[0::2] = [p for p in pieces[0::2]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "unit": "BG1657",
+  "digest": "931822603996c36f at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1657-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "title and prose left unsafed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        parts[i] = _escape_lone_bold(\"\".join(pieces), after_span=i > 0,\n                                     before_span=i < len(parts) - 1)",
+      "new": "        parts[i] = \"\".join(pieces)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_the_title_passes_markdownlint_in_file_and_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "steps fenced block escaped too",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if not was_open and fence is None:",
+      "new": "        if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "steps never escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if not was_open and fence is None:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "real bold pair escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"(?<!\\S)\\*\\*(?!\\S)\")",
+      "new": "r\"(?<!\\S)\\*\\*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "marker opening a line not escaped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"(?<!\\S)\\*\\*(?!\\S)\")",
+      "new": "r\"(?<=\\s)\\*\\*(?!\\S)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed",
+      "result": "survived",
+      "answer": "Equivalent: _escape_lone_bold pads the text with a space (or an x beside a span) before matching, so a marker at a text edge sees whitespace behind it under either lookbehind"
+    },
+    {
+      "mutant": "span before the marker ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "edged = (\"x\" if after_span else \" \") + text",
+      "new": "edged = (\" \") + text",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "span after the marker ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "+ (\"x\" if before_span else \" \")",
+      "new": "+ (\" \")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "steps span flags ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "parts[i] = _escape_lone_bold(parts[i], after_span=i > 0, before_span=i < len(parts) - 1)",
+      "new": "parts[i] = _escape_lone_bold(parts[i])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "steps spans escaped inside",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "    parts = line.split(\"`\")\n    for i in range(0, len(parts), 2):\n        parts[i] = _escape_lone_bold(parts[i], after_span",
+      "new": "    parts = [line]\n    for i in range(0, len(parts), 2):\n        parts[i] = _escape_lone_bold(parts[i], after_span",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "unit": "BG1713",
+  "digest": "2c014b4917eec3d2 at 45045c034802",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1713-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the add takes no lock",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    with held:\n        if path.is_dir():",
+      "new": "    with contextlib.nullcontext():\n        if path.is_dir():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_parallel_adds_all_succeed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lock is not waited for",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            except BlockingIOError:\n                if time.monotonic() > deadline:",
+      "new": "            except BlockingIOError:\n                if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_the_add_waits_for_the_common_dir_lock_and_releases_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lock is never given up",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            except BlockingIOError:\n                if time.monotonic() > deadline:",
+      "new": "            except BlockingIOError:\n                if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_a_lock_held_past_the_wait_refuses_the_add",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lock is kept after the add",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        try:\n            yield\n        finally:\n            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)\n    finally:\n        fh.close()",
+      "new": "        yield\n    finally:\n        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_the_add_waits_for_the_common_dir_lock_and_releases_it",
+      "result": "survived",
+      "answer": "Equivalent on CPython: the open lock file is a local of the generator, so dropping the explicit LOCK_UN and close() still releases the flock when the frame ends and the file object is freed; probe: the mutant's test still passes because _assert_free takes the lock at once after the call."
+    },
+    {
+      "mutant": "the add is not re-checked under the lock",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if path.is_dir():  # another lane for this unit added it while this one waited\n            return path.resolve()\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_two_calls_for_one_unit_add_it_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an existing worktree takes the lock",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    path = root_top / RUN_WORKTREES / name\n    if path.is_dir():\n        return path.resolve()\n    found",
+      "new": "    path = root_top / RUN_WORKTREES / name\n    found",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_an_existing_worktree_is_reused_without_the_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a root with no common dir takes a lock",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if not found.returncode else contextlib.nullcontext())",
+      "new": "if True else contextlib.nullcontext())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_a_root_that_is_no_repository_takes_no_lock_and_says_why",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unopenable lock file is ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except OSError as exc:\n        raise LandError(f\"the lane worktree lock {lock} cannot be opened: {exc}\", 2) from None",
+      "new": "    except OSError as exc:\n        raise ZeroDivisionError(str(exc)) from None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_a_lock_file_that_cannot_be_opened_refuses_the_add",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "flock unavailable stops the add",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except ImportError:\n        yield\n        return\n    lock = common",
+      "new": "    except ZeroDivisionError:\n        yield\n        return\n    lock = common",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_where_flock_is_unavailable_the_add_goes_ahead_unlocked",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

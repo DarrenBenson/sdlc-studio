@@ -1,0 +1,52 @@
+{
+  "unit": "BG1616",
+  "digest": "cdafaeb88b35924f at 45045c034802",
+  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1616-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "any Key: value last paragraph is a trailer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^[A-Za-z][A-Za-z0-9-]*: \\S\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_body_line_shaped_like_a_trailer_stays_in_the_body",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailer match is case-sensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Mentions is not a known trailer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs): \\S\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Refs is not a known trailer",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Mentions): \\S\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a later worktree with commits ahead is refused whatever is named first",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if ahead != \"0\":\n            raise LandError(f\"{lane.top} holds",
+      "new": "        if ahead != \"1000\":\n            raise LandError(f\"{lane.top} holds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_naming_a_worktree_with_commits_ahead_first_lands_it",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "unit": "BG1328",
+  "digest": "5e5dcf83e3047dbb at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1328-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "epic reopened whatever its status",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "    if status != sdlc_md.default_terminal_status(\"epic\"):\n        return []",
+      "new": "    if False:\n        return []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_an_epic_that_is_not_done_is_left_as_it_is",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "epic not reopened",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "    reopen(eid, \"In Progress\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_draft_story_minted_into_a_done_epic_reopens_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "request not reopened",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        reopen(sdlc_md.extract_record_id(hit[0].stem) or parent, working)",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_the_parent_request_is_not_derived_complete_after_the_mint",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a live request moved too",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        if working is None or not sdlc_md.is_terminal_status(",
+      "new": "        if working is None or sdlc_md.is_terminal_status(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_live_request_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch mint does not reopen",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "                reopen_notes.extend(_reopen_done_epic(root, it.get(\"epic\", \"\")))",
+      "new": "                pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_batch_mint_reopens_the_epic_the_same_way",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal swallowed with no note",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            notes.append(f\"{rid} could not be reopened to {to} (",
+      "new": "            (lambda *a: None)(f\"{rid} could not be reopened to {to} (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_refused_reopen_is_a_note_and_the_mint_stands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal raised out of the mint",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        except (ValueError, FileNotFoundError) as exc:\n            notes.append",
+      "new": "        except FileNotFoundError as exc:\n            notes.append",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_refused_reopen_is_a_note_and_the_mint_stands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "notes dropped from a single mint",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            ac_warnings.extend(_reopen_done_epic(root, f[\"epic\"]))",
+      "new": "            _reopen_done_epic(root, f[\"epic\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_refused_reopen_is_a_note_and_the_mint_stands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every epic reopened",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "    if status != sdlc_md.default_terminal_status(\"epic\"):",
+      "new": "    if status is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_an_epic_that_is_not_done_is_left_as_it_is",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a named epic refused as decomposed",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    refinable(root, request_id, allow_decomposed=named)",
+      "new": "    refinable(root, request_id)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unnamed epic accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "    named = _names_epic(root, request_id, into_epic)",
+      "new": "    named = bool(into_epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any terminal epic accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "_validate_into_target(root, into_epic, allow_terminal=named)",
+      "new": "_validate_into_target(root, into_epic, allow_terminal=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_a_closed_epic_the_request_does_not_name_still_refuses_into",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a closed epic never accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "_validate_into_target(root, into_epic, allow_terminal=named)",
+      "new": "_validate_into_target(root, into_epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "criteria seeded again",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "                     if seed_acs and not named else None)",
+      "new": "                     if seed_acs else None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "earlier epics dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "            existing_children=sdlc_md.decomposed_ids(rpath.read_text(encoding=\"utf-8\")),\n            seed_criteria=seed_criteria, classes=classes)",
+      "new": "            existing_children=[],\n            seed_criteria=seed_criteria, classes=classes)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_a_further_slice_keeps_the_requests_other_epics",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unnamed lookup matches by prefix",
+      "file": ".claude/skills/sdlc-studio/scripts/refine.py",
+      "old": "return sdlc_md.norm_id(into_epic) in {sdlc_md.norm_id(e) for e in sdlc_md.decomposed_ids(text)}",
+      "new": "return any(sdlc_md.norm_id(into_epic) in sdlc_md.norm_id(e) for e in sdlc_md.decomposed_ids(text)) or bool(into_epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

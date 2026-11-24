@@ -1,0 +1,52 @@
+{
+  "unit": "BG1152",
+  "digest": "3d84b4ee80e0f16f at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1152-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "list affects left as a value",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "if isinstance(f.get(\"affects\"), (list, tuple)):",
+      "new": "if isinstance(f.get(\"affects\"), tuple):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_valued_affects_renders_as_a_path_list",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank paths kept",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "for a in f[\"affects\"] if str(a).strip())}",
+      "new": "for a in f[\"affects\"])}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_string_affects_and_a_list_with_blanks_are_written_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "paths not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "\", \".join(str(a).strip() for a in f[\"affects\"]",
+      "new": "\", \".join(str(a) for a in f[\"affects\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_string_affects_and_a_list_with_blanks_are_written_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "single creation not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "    f = _affects_text(dict(fields or {}))",
+      "new": "    f = dict(fields or {})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_single_creation_takes_a_list_the_same_way",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "    items = [_affects_text(dict(it)) for it in items]",
+      "new": "    items = [dict(it) for it in items]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_valued_affects_renders_as_a_path_list",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

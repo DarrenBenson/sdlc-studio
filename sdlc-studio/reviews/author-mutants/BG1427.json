@@ -1,0 +1,43 @@
+{
+  "unit": "BG1427",
+  "digest": "792a3f45ea460a95 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1427-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "parent cell not synced",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                reconcile.apply_spawned_column(root, types=[parent_type])",
+      "new": "                pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py::ParentIndexCellTests::test_a_child_filed_under_a_parent_leaves_no_spawned_column_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no type synced",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "reconcile.apply_spawned_column(root, types=[parent_type])",
+      "new": "reconcile.apply_spawned_column(root, types=[])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py::ParentIndexCellTests::test_a_child_filed_under_a_parent_leaves_no_spawned_column_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every request index synced",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "reconcile.apply_spawned_column(root, types=[parent_type])",
+      "new": "reconcile.apply_spawned_column(root)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py::ParentIndexCellTests::test_a_cell_of_another_index_is_not_touched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "synced for a preview too",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)",
+      "new": "        result = _file_finding_locked(root, type_, spec, title, fields, today, dry_run=True)\n        if parent_path is not None:\n            reconcile.apply_spawned_column(root, types=[parent_type])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py::ParentIndexCellTests::test_a_dry_run_writes_no_cell",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

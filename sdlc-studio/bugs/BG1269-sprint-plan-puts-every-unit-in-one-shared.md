@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1269.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-delivery.md, changelog.d/BG1269.md
 > **Evidence:** the orchestrator's friction log (R8-F12), from run eight (RUN-01M6RZQZ)'s plan and the BG1254 and US1132 landings
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Rank each cluster's files by kind and print the pairs sharing a code file on a l
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPA lane: reference-sprint.md (the lane partition and cluster passages) and reference-delivery.md say lanes share no file at all, which after the fix holds for code files only |

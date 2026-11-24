@@ -1,0 +1,79 @@
+{
+  "unit": "BG1476",
+  "digest": "ee314a771092e2d9 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1476-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "stamp names no run",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "if state.get(\"outcome\") == run_state.RUNNING and state.get(\"run_id\"):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_a_finding_filed_in_an_open_run_names_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a closed run named as open",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "if state.get(\"outcome\") == run_state.RUNNING and state.get(\"run_id\"):",
+      "new": "if state.get(\"run_id\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an open state without an id named",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "if state.get(\"outcome\") == run_state.RUNNING and state.get(\"run_id\"):",
+      "new": "if state.get(\"outcome\") == run_state.RUNNING:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unreadable state names a run",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        state = {}  # an unreadable state names no run; filing is not the place to refuse it",
+      "new": "        state = {\"outcome\": run_state.RUNNING, \"run_id\": \"RUN-BAD\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the moment dropped from the run stamp",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return f\"{state['run_id']} - raised during the run, {moment}\"",
+      "new": "return f\"{state['run_id']} - raised during the run\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_a_finding_filed_in_an_open_run_names_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a caller's batch overwritten",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "\"_batch\": fields.get(\"_batch\") or _raised_in_batch(root)}",
+      "new": "\"_batch\": _raised_in_batch(root)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the none-open stamp loses its moment",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return f\"none open - raised outside a delivery batch, {moment}\"",
+      "new": "return \"none open - raised outside a delivery batch\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the stamp names no run (brief fixture)",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return f\"{state['run_id']} - raised during the run, {moment}\"",
+      "new": "return f\"none open - raised outside a delivery batch, {moment}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_a_finding_filed_mid_run_is_listed_by_its_moment",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

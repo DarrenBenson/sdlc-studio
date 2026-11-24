@@ -1,0 +1,79 @@
+{
+  "unit": "BG1068",
+  "digest": "a9a10a90e9137d94 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1068-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "text left as it was",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            updated = _retext_inbound_links(updated, new_name, file_id, old_title, new_title)",
+      "new": "            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_breakdown_link_text_follows_the_retitle",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link to another file retexted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "                or Path(target.split(\"#\", 1)[0]).name != new_name):",
+      "new": "                ):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another artefact's id retexted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "                or sdlc_md.norm_id(lead.group(1)) != sdlc_md.norm_id(file_id)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other link text retexted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        if (lead is None or text[lead.end():] != old_title",
+      "new": "        if (lead is None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "brackets left unescaped",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "safe = new_title.replace(\"[\", \"\\\\[\").replace(\"]\", \"\\\\]\")",
+      "new": "safe = new_title",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_a_title_with_brackets_keeps_the_link_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fenced links retexted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        if is_fence_line or fence is not None:\n            out.append(line)\n            continue\n        segs = line.split(\"`\")\n        segs[0::2] = [_LINK_TEXT_RE",
+      "new": "        if False:\n            out.append(line)\n            continue\n        segs = line.split(\"`\")\n        segs[0::2] = [_LINK_TEXT_RE",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "code-span links retexted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        segs[0::2] = [_LINK_TEXT_RE.sub(repl, s) for s in segs[0::2]]",
+      "new": "        segs[:] = [_LINK_TEXT_RE.sub(repl, s) for s in segs]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "write only when the target moved",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            if updated != body:\n                sdlc_md.atomic_write(rp, updated)",
+      "new": "            if _n and updated != body:\n                sdlc_md.atomic_write(rp, updated)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_a_retitle_to_a_new_case_only_still_retexts_the_link",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

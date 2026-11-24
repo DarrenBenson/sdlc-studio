@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1287.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_trunk_integration.py, tools/tests/test_doc_claims.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, changelog.d/BG1287.md
 > **Evidence:** the between-releases review before v6.3.0 (D0427, LL0005), code leg B; repro under scratchpad rel63/legs/scratch-b/
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Phrase the obligation as 'the lane is landed by `sprint lane land` onto the root
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-24 | orchestrator (delegate under D0545) | Affects widened for run twenty-six's SPA lane: the obligation's text is pinned by test_trunk_integration.py and mirrored in reference-agent-prompt-template.md item 5, which tools/tests/test_doc_claims.py checks |

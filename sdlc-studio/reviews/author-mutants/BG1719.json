@@ -1,0 +1,88 @@
+{
+  "unit": "BG1719",
+  "digest": "a3523b784e0c6f72 at e1cf8c8645e1",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1719-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "new writes the raw title",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        title = file_finding._md_safe(title)\n        body = _land_supplied(render(type_, disp, title",
+      "new": "        body = _land_supplied(render(type_, disp, title",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::TitleMarkdownSafeTests::test_title_identifier_is_markdown_safe_through_new",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch writes the raw title",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            title = file_finding._md_safe(it[\"title\"])  # the slug was made from the raw words",
+      "new": "            title = it[\"title\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::TitleMarkdownSafeTests::test_title_identifier_is_markdown_safe_through_batch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch link text raw",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "_wire_story_to_epic(root, it[\"epic\"], p[\"disp\"], title, p[\"file_id\"], p[\"slug\"])",
+      "new": "_wire_story_to_epic(root, it[\"epic\"], p[\"disp\"], it[\"title\"], p[\"file_id\"], p[\"slug\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::TitleMarkdownSafeTests::test_title_identifier_is_markdown_safe_in_an_epic_breakdown_link",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch index row raw",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "                    header, link, title, create_status, f,",
+      "new": "                    header, link, it[\"title\"], create_status, f,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::TitleMarkdownSafeTests::test_title_identifier_is_markdown_safe_through_batch",
+      "result": "survived",
+      "answer": "Equivalent: file_finding.append_index_row runs reconcile.apply_type, whose field projection rewrites the row's title from the file's H1, so the row written by row_from_header is overwritten with the safed H1 title either way"
+    },
+    {
+      "mutant": "single index row raw",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "row = sdlc_md.row_from_header(header, f\"[{disp}]({file_id}-{slug}.md)\", title,",
+      "new": "row = sdlc_md.row_from_header(header, f\"[{disp}]({file_id}-{slug}.md)\", f[\"title\"] if \"title\" in f else title,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::TitleMarkdownSafeTests::test_title_identifier_is_markdown_safe_through_new",
+      "result": "survived",
+      "answer": "Equivalent: the same reconcile.apply_type projection of the H1 title into the row; in new the title variable is already the safed one"
+    },
+    {
+      "mutant": "consolidated bullet title raw",
+      "file": ".claude/skills/sdlc-studio/scripts/triage_noise.py",
+      "old": "    title = file_finding._md_safe(title)  # noqa: SLF001 - the one prose escaper\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::ConsolidatedMarkdownTests::test_consolidated_title_is_markdown_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "consolidated summary raw",
+      "file": ".claude/skills/sdlc-studio/scripts/triage_noise.py",
+      "old": "    detail = file_finding._prose_safe((detail or \"\").strip()) if (detail or \"\").strip() else \"\"",
+      "new": "    detail = (detail or \"\").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::ConsolidatedMarkdownTests::test_consolidated_title_is_markdown_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "consolidation CR title raw",
+      "file": ".claude/skills/sdlc-studio/scripts/triage_noise.py",
+      "old": "    cr_title = file_finding._md_safe(cr_title)  # noqa: SLF001 - the slug above is of the raw words\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::ConsolidatedMarkdownTests::test_consolidated_title_is_markdown_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plain consolidated title changed",
+      "file": ".claude/skills/sdlc-studio/scripts/triage_noise.py",
+      "old": "    cr_title = f\"Low-severity {display_theme} (consolidated)\"",
+      "new": "    cr_title = f\"Low-severity {display_theme} (merged)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::ConsolidatedMarkdownTests::test_a_plain_consolidated_finding_is_written_as_before",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
