@@ -56,8 +56,11 @@ and can read each run's record without running the tool
   story's fragment into the 6.5.0 section.
 - `tools/known_issues.py` and `tools/tests/test_known_issues.py` are in Affects for AC1's `BARS`
   entry. Without it the 6.5.0 page states the v6.0 bar under a v6.5 heading, which is weaker than
-  the bar 6.5 was held to. `bar` itself stays Critical and High (its `BARRED`); the stricter count
-  is AC2's test, as the grooming brief asked. Existing `test_known_issues` cases render 5.1.1,
+  the bar 6.5 was held to. The severities a bar refuses belong to that bar: the v6.5 entry bars
+  Medium as well as Critical and High, so `bar`, `check` and the page's Not carried section judge a
+  6.5 release by it, and an older tag keeps its own release's bar (the qa seat's round-one REJECT,
+  which superseded grooming's note that `bar` stays Critical and High). AC2's count test holds the
+  operator's ceiling of under 50. Existing `test_known_issues` cases render 5.1.1,
   6.0.0 and 6.1.0 and are unaffected by a (6, 5) entry; add one for 6.5.0.
 - The page and the count are written before the cut and regenerated after the run's sign if
   anything is filed or signed later (as D0500 did for 6.4.0), so each test judges the page as the
@@ -74,3 +77,4 @@ and can read each run's record without running the tool
 | --- | --- | --- |
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0631) | Groomed from US1330's AC2, AC3 and AC6, split off at the 8-point ceiling US0854::AC1 refuses: user story, criteria with Verify lines in this story's own test module, Depends on US1327, Release 6.5 |
+| 2026-11-25 | orchestrator (delegate under D0545) | Notes: the barred severities follow each release's bar, per the qa seat's round-one REJECT, replacing grooming's note that `bar` stays Critical and High |

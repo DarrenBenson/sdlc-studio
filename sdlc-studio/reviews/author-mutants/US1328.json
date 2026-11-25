@@ -1,0 +1,277 @@
+{
+  "unit": "US1328",
+  "digest": "f40fd3f19288cc89 at 3e9b821b81f6",
+  "report": "sdlc-studio/.local/lane/landed/agent-a63f862b376dec2e2/US1328-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "gate exit code not pinned",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(refused.returncode, 2, refused.stdout + refused.stderr)",
+      "new": "self.assertEqual(refused.returncode, 3, refused.stdout + refused.stderr)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config read exit not pinned",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(read.returncode, 1, read.stdout + read.stderr)",
+      "new": "self.assertEqual(read.returncode, 0, read.stdout + read.stderr)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "block mode framing allowed",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(rc, 1, f\"standard {standard!r} framed a card that breaks a rule\")",
+      "new": "self.assertEqual(rc, 0, f\"standard {standard!r} framed a card that breaks a rule\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report mode line count",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(len([ln for ln in err.splitlines() if ln.startswith(REPORT_LINE)]), 1)",
+      "new": "self.assertEqual(len([ln for ln in err.splitlines() if ln.startswith(REPORT_LINE)]), 2)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "migrate sets block not report",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "r\"(?m)^personas:\\n(?:  .*\\n)*?  standard: report$\"",
+      "new": "r\"(?m)^personas:\\n(?:  .*\\n)*?  standard: block$\"",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "duplicate refusal exit",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(refused.returncode, 1, refused.stdout + refused.stderr)",
+      "new": "self.assertEqual(refused.returncode, 0, refused.stdout + refused.stderr)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "distinct-from line id",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertIn(\"> **Distinct-from:** BG0001\", _read(new[0]))",
+      "new": "self.assertIn(\"> **Distinct-from:** BG0009\", _read(new[0]))",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "risk-class mapped class",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "(\"US0001\", \"standard\", \"high\"))",
+      "new": "(\"US0001\", \"standard\", \"elevated\"))",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply lowers a stamp",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertIn(\"> **Risk-class:** high\", _read(high), \"apply lowered a stamp\")",
+      "new": "self.assertIn(\"> **Risk-class:** standard\", _read(high), \"apply lowered a stamp\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fence-blind section reader",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "        if line.lstrip().startswith(\"```\"):\n            fenced = not fenced",
+      "new": "        if False:\n            fenced = not fenced",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config link anchor not derived",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "            heading = line\n",
+      "new": "            heading = \"\"\n",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "runner verdict word",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "ln.startswith(\"w returns 2 killed:\")",
+      "new": "ln.startswith(\"w returns 2 survived:\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-applied verdict word",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "ln.startswith(\"absent text not-applied:\")",
+      "new": "ln.startswith(\"absent text killed:\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unfiltered report accepted",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertNotEqual(refused.returncode, 0, \"a row the runner did not apply was kept\")",
+      "new": "self.assertEqual(refused.returncode, 0, \"a row the runner did not apply was kept\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replay agrees",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertIn(critic.REPLAY_DISAGREES, line, brief.stdout)",
+      "new": "self.assertNotIn(critic.REPLAY_DISAGREES, line, brief.stdout)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mutants-from needle",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "\"`--mutants-from <report>`\"",
+      "new": "\"`--mutants-from REPORT`\"",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "signed-by cell text",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "\"Ada Lane (entered under delegation, authorised by decision D0001)\"",
+      "new": "\"Ada Lane (delegated, D0001)\"",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision without delegated",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertIn(\"not marked --delegated\", why)",
+      "new": "self.assertIn(\"is marked --delegated\", why)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "accountable line undelegated",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertNotIn(\"delegation\", pack)",
+      "new": "self.assertIn(\"delegation\", pack)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "6.5 line first",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertTrue(lines[0].startswith(\"- **New in 6.5\"),",
+      "new": "self.assertTrue(lines[0].startswith(\"- **New in 6.4\"),",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "6.5 section order",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "[\"From 6.4 to 6.5\", \"From 6.3 to 6.4\"],",
+      "new": "[\"From 6.4 to 6.5\", \"From 6.2 to 6.3\"],",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp owed at 6.4",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "stamp_owed = _skill_version() >= (6, 5, 0)",
+      "new": "stamp_owed = _skill_version() >= (6, 4, 0)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owed count",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(len(owed), 2 + stamp_owed,",
+      "new": "self.assertEqual(len(owed), 3 + stamp_owed,",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1613 clause",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertIn(\"which no shipped script reads yet\", six_five)",
+      "new": "self.assertIn(\"which a shipped script reads\", six_five)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1613 guard inverted",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "if _bug_status(\"BG1613\") == \"Open\":",
+      "new": "if _bug_status(\"BG1613\") != \"Open\":",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "survived",
+      "answer": "Accepted by design: the clause is pinned only while BG1613 is Open, as the release epic requires so a later fix never turns this test red; inverting the guard skips the clause and nothing else may assert the bug status. The BG1613 clause mutant shows the branch runs and binds at HEAD (killed)."
+    },
+    {
+      "mutant": "check holds a card",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertEqual(held.returncode, 1, \"check named no card the standard holds\")",
+      "new": "self.assertEqual(held.returncode, 0, \"check named no card the standard holds\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-card project gets the key",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertFalse(any(\"personas.standard\" in d for d in owed),",
+      "new": "self.assertTrue(any(\"personas.standard\" in d for d in owed),",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v64 section by position",
+      "file": "tools/tests/test_lean_docs_v64.py",
+      "old": "at = froms.index(\"From 6.3 to 6.4\")",
+      "new": "at = 0",
+      "test": "tools/tests/test_lean_docs_v64.py::DocsV64Tests::test_existing_users_has_the_63_to_64_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v64 section order",
+      "file": "tools/tests/test_lean_docs_v64.py",
+      "old": "\"From 6.1 to 6.2\", \"From 6.0 to 6.1\"])",
+      "new": "\"From 6.0 to 6.1\", \"From 6.1 to 6.2\"])",
+      "test": "tools/tests/test_lean_docs_v64.py::DocsV64Tests::test_existing_users_has_the_63_to_64_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delegated Signer sentence not approved",
+      "file": "tools/tests/test_engineering_leaders_page.py",
+      "old": "        \"A signature may be entered on the signer's behalf, under delegation, only with \"",
+      "new": "        \"A signature may be entered on the signer's behalf, under a delegation, only with \"",
+      "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

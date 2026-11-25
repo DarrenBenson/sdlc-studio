@@ -1,0 +1,241 @@
+{
+  "unit": "US1331",
+  "digest": "286a73ad4b5b76b8 at 4841d946b4c0",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3b9af2c481ff2ad3/US1331-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no v6.5 row in BARS",
+      "file": "tools/known_issues.py",
+      "old": "    ((6, 5), \"v6.5\", \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
+      "new": "",
+      "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no v6.5 row in BARS (AC1)",
+      "file": "tools/known_issues.py",
+      "old": "    ((6, 5), \"v6.5\", \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
+      "new": "",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v6.5 row recorded for 6.4",
+      "file": "tools/known_issues.py",
+      "old": "((6, 5), \"v6.5\"",
+      "new": "((6, 4), \"v6.5\"",
+      "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v6.5 row named v6.0",
+      "file": "tools/known_issues.py",
+      "old": "((6, 5), \"v6.5\"",
+      "new": "((6, 5), \"v6.0\"",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ceiling 50 read as 100",
+      "file": "tools/known_issues.py",
+      "old": "**Fewer than 50 open bugs",
+      "new": "**Fewer than 100 open bugs",
+      "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Medium dropped from the bar",
+      "file": "tools/known_issues.py",
+      "old": "none at Medium or above.** The release",
+      "new": "none at High or above.** The release",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v6.0 row dropped",
+      "file": "tools/known_issues.py",
+      "old": "    ((6, 0), \"v6.0\", \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
+      "new": "",
+      "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "v6.0 row dropped (AC1)",
+      "file": "tools/known_issues.py",
+      "old": "    ((6, 0), \"v6.0\", \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
+      "new": "",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ship-open sentence fixed at both severities",
+      "file": "tools/known_issues.py",
+      "old": "shipped = tuple(s for s in DISCLOSED if any(_matches(sev, (s,)) for sev, _t in found.values()))",
+      "new": "shipped = DISCLOSED",
+      "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "severity compared with ==",
+      "file": "tools/known_issues.py",
+      "old": "any(_matches(sev, (s,)) for sev",
+      "new": "any(sev == s for sev",
+      "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any read as all",
+      "file": "tools/known_issues.py",
+      "old": "if any(_matches(sev, (s,))",
+      "new": "if all(_matches(sev, (s,))",
+      "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "severities joined with a comma",
+      "file": "tools/known_issues.py",
+      "old": "{' and '.join(shipped)}",
+      "new": "{', '.join(shipped)}",
+      "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render passes DISCLOSED",
+      "file": "tools/known_issues.py",
+      "old": "return _head(total, release, shipped)",
+      "new": "return _head(total, release, DISCLOSED)",
+      "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: ceiling compared with >",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if len(found) >= CEILING:",
+      "new": "if len(found) > CEILING:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: ceiling 51",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "CEILING = 50",
+      "new": "CEILING = 51",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Medium not barred",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "BARRED = (\"medium\", \"high\", \"critical\")",
+      "new": "BARRED = (\"high\", \"critical\")",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: severity not folded",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if sev.strip().casefold() in BARRED",
+      "new": "if sev in BARRED",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: unreadable finding ignored",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "    if blind:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: closed findings counted",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if row is not None and known_issues._is_open(row[1]):",
+      "new": "if row is not None:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: unparseable dropped",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "return found, known_issues.unparseable(root)",
+      "new": "return found, []",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: v6.5 bar unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if stated != BAR_V65:",
+      "new": "if False:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: v6.0 history unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if lead(section(page, \"The bar v6.0 was held to, kept as history\")) != BAR_V60:",
+      "new": "if False:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: heading series unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if series != [\"6.5\"]:",
+      "new": "if False:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: unfilled count line accepted",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "if len(filled) != 1:",
+      "new": "if len(filled) > 1:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: count disagreement unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "elif len(filled) == 1 and filled[0] != counted[0]:",
+      "new": "elif False:",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: lead read without DOTALL",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "body or \"\", re.S)",
+      "new": "body or \"\")",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

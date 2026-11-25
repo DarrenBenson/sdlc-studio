@@ -1,0 +1,214 @@
+{
+  "unit": "US1329",
+  "digest": "666e74e1c393a1b2 at cdf633b4eefe",
+  "report": "sdlc-studio/.local/lane/landed/agent-a816949e13af822c1/US1329-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "residue-call-in-join-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "        left, right = ([_WILD] if segs is None and isinstance(s, ast.Call) else segs\n",
+      "new": "        left, right = (segs\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-call-in-join-any-expression",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "[_WILD] if segs is None and isinstance(s, ast.Call) else segs",
+      "new": "[_WILD] if segs is None else segs",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helper-follow-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "        return _helper_segments(e, helpers, seen)\n",
+      "new": "        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helper-one-return-guard",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "    if len(returns) != 1:\n",
+      "new": "    if not returns:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helper-recursion-guard",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "    if name not in helpers or name in seen:\n",
+      "new": "    if name not in helpers:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helper-own-names",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "    env = _env(nodes, menv, (ret.lineno, ret.col_offset), helpers, seen | {name})\n",
+      "new": "    env = menv\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helpers-any-def",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "               if isinstance(node, _DEFS) and node in top}\n",
+      "new": "               if isinstance(node, _DEFS)}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-helpers-not-passed-to-names",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "_env(nodes, base, (c.lineno, c.col_offset), helpers),",
+      "new": "_env(nodes, base, (c.lineno, c.col_offset)),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-conditional-first-branch-only",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "        return next((s for s in branches if LOCAL_DIR in s), branches[0] if branches else None)\n",
+      "new": "        return branches[0] if branches else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-conditional-last-branch-only",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "        return next((s for s in branches if LOCAL_DIR in s), branches[0] if branches else None)\n",
+      "new": "        return branches[-1] if branches else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-conditional-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "    if isinstance(e, ast.IfExp):\n        branches",
+      "new": "    if False:\n        branches",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_path_matches_only_what_its_span_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "residue-placeholder-name-not-a-path-row",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py",
+      "old": "_PATH_SPAN_RE = re.compile(r\"`([^`\\s]*(?:/|<[^<>`\\s]+>)[^`\\s]*)`\")",
+      "new": "_PATH_SPAN_RE = re.compile(r\"`([^`\\s]*/[^`\\s]*)`\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_each_path_row_is_held_to_the_code_that_writes_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-owed-verb-dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "and `persona_review.py owed` names each card owed a review",
+      "new": "and each card owed a review is named",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-red-ci-unit-dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "| EP0340 (US1236, US1237, US1238) |",
+      "new": "| EP0340 (US1236, US1237) |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-wait-key-said-to-bound",
+      "file": "sdlc-studio/prd.md",
+      "old": "No script reads it while BG1613 is open: the trunk guidance fences",
+      "new": "It bounds the wait while BG1613 is open: the trunk guidance fences",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-rendered-paths-default",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `review.rendered_paths` | `[]` |",
+      "new": "| `review.rendered_paths` | `{}` |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-risk-drift-unnamed",
+      "file": "sdlc-studio/prd.md",
+      "old": "`reconcile.py detect` reports an open story",
+      "new": "reconcile reports an open story",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-drive-location-missing",
+      "file": "sdlc-studio/prd.md",
+      "old": "| scripts/lib/drive.py, scripts/lib/lanes.py, reference-sprint.md |",
+      "new": "| scripts/lib/drives.py, scripts/lib/lanes.py, reference-sprint.md |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-working-tree",
+      "file": "sdlc-studio/tsd.md",
+      "old": "in that scratch copy of the tree, never the\nworking tree.",
+      "new": "in that scratch copy of the tree, or the\nworking tree.",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-verdict-dropped",
+      "file": "sdlc-studio/tsd.md",
+      "old": "killed, survived, not-applied or error;",
+      "new": "killed, survived or error;",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-outside-affects-killed",
+      "file": "sdlc-studio/tsd.md",
+      "old": "is reported not-applied and never counted killed.",
+      "new": "is reported killed.",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-flaky-title",
+      "file": "sdlc-studio/tsd.md",
+      "old": "whose title says flaky",
+      "new": "whose Affects names it",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-exit-status",
+      "file": "sdlc-studio/tsd.md",
+      "old": "the command exits 0 only on `rerun`.",
+      "new": "the command exits 0 on `rerun` or `stop`.",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

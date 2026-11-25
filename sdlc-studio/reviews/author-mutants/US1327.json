@@ -1,0 +1,340 @@
+{
+  "unit": "US1327",
+  "digest": "94f41751d92ee640 at 774cdfa481b9",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae34736f28d3387cb/US1327-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "headline one-sentence or->and",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "headline)) != 1 or not re.search(",
+      "new": "headline)) != 1 and not re.search(",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "theme bullet not removed from rest",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        rest = rest.replace(hits[0], \"\", 1)\n",
+      "new": "        rest = rest\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "allowed-outside guard dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "for m in UNIT_ID.findall(sbody) if m not in allowed]",
+      "new": "for m in UNIT_ID.findall(sbody)]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Breaking sentence not stripped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    rest = BREAKING_SAID.sub(\"\", rest)\n",
+      "new": "    rest = rest\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "contributors heading skip narrowed",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "r\"known issues|sources|contributors\", heading, re.I):\n            continue",
+      "new": "r\"known issues|sources\", heading, re.I):\n            continue",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "contributor branch never taken",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        if re.search(r\"contributors\", heading, re.I):\n            problems += [f\"the contributors heading",
+      "new": "        if False:\n            problems += [f\"the contributors heading",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "CHANGELOG link always Unreleased",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "want = \"6.5.0\" if \"6.5.0\" in labels.values() else \"Unreleased\"",
+      "new": "want = \"Unreleased\"",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "too-many units check dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "for u in sorted(named - want)]",
+      "new": "for u in sorted(set())]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "count line not skipped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if COUNT_LINE.match(unit.strip()) or not OPEN_TALK.search(unit):",
+      "new": "if not OPEN_TALK.search(unit):",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nearest decision after -> last after",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "dec = after[0] if after else",
+      "new": "dec = after[-1] if after else",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "non-quality decision guard dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "            if dec not in QUALITY:\n",
+      "new": "            if False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bar check inverted",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "open defects and none at Medium or above\"\n                   not in theme):",
+      "new": "open defects and none at Medium or above\"\n                   in theme):",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "second seat clause dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": " or \"second, independent\" not in recheck[0]:",
+      "new": ":",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision count check dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if not carried or carried.group(1) != said.group(1):",
+      "new": "if not carried:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wont_fix counts any status",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if not status or status.group(1).strip() != \"Won't Fix\":",
+      "new": "if not status:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wont_fix reads the whole file",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "counts[dec] += bool(res and re.search(rf\"\\b{dec}\\b\", res.group(1)))",
+      "new": "counts[dec] += bool(res and re.search(rf\"\\b{dec}\\b\", text))",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "post-cut id set compared",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if all(filed):\n",
+      "new": "    if True:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "post-cut count check dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    elif len(named) != len(filed):\n",
+      "new": "    elif False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Removed beside no-Removed statement",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if other and NO_OTHER.search(flat):\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no Breaking sentence branch dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if filed and not said:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "intro paragraph not allowed",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "for p in paras if not NO_OTHER.search(\" \".join(p.split()))]",
+      "new": "for p in paras]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Instead word count",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "b.partition(\"Instead:\")[2])) < 3:",
+      "new": "b.partition(\"Instead:\")[2])) < 0:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "two changes in one bullet",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        elif len(named) > 1:\n            problems.append(f\"one bullet",
+      "new": "        elif False:\n            problems.append(f\"one bullet",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Sam check ignores blocks",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if blocks is None or blocks > 0:\n",
+      "new": "    if blocks is None:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cut entries fall through to fragments",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "                    out.append((m.group(1), frozenset(UNIT_ID.findall(bullet)), bullet))\n        return out\n",
+      "new": "                    out.append((m.group(1), frozenset(UNIT_ID.findall(bullet)), bullet))\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "PyYAML order check dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if not pip or (curls and pip[0] > curls[0]):",
+      "new": "    if not pip:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "migrate order inverted",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if not (dry and wet and dry[0] < wet[0]):",
+      "new": "if not (dry and wet and dry[0] > wet[0]):",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default mismatch ignored",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        elif said[key] != want:\n            problems.append(f\"the path gives {key}",
+      "new": "        elif False:\n            problems.append(f\"the path gives {key}",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "extra key ignored",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "for key in said\n                 if key not in stated]",
+      "new": "for key in said\n                 if False]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closed bug still judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if status in CLOSED:\n        return problems\n",
+      "new": "",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bounds claim ignored",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if WAIT_KEY in s and BOUNDS.search(s)]",
+      "new": "if False]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "BG1613 id not required",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": " or (\n            \"BG1613\" not in bullet[0]):",
+      "new": ":",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report always the first named",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "rpt = before[-1] if before else named[0][1]",
+      "new": "rpt = named[0][1]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "out-of-range report accepted",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "            if rpt not in RUNS_65:\n",
+      "new": "            if False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "RUNS_65 range short",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "range(35, 46)}",
+      "new": "range(35, 45)}",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "figure not carried ignored",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "            elif value not in carried:\n",
+      "new": "            elif False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dry run 'writes nothing' check dropped",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if not re.search(r\"\\bwrites nothing\\b\", dry_para):\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
