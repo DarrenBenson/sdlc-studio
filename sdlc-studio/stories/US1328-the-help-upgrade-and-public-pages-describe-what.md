@@ -5,7 +5,7 @@
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/help/upgrade.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/help/reconcile.md, .claude/skills/sdlc-studio/help/review.md, README.md, llms.txt, docs/existing-users.md, docs/engineering-leaders.md, tools/tests/test_lean_docs_v65.py, tools/tests/test_lean_docs_v64.py, tools/tests/test_lean_docs_v63.py, changelog.d/US1328.md
+> **Affects:** .claude/skills/sdlc-studio/help/upgrade.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/help/reconcile.md, .claude/skills/sdlc-studio/help/review.md, README.md, llms.txt, docs/existing-users.md, docs/engineering-leaders.md, tools/tests/test_lean_docs_v65.py, tools/tests/test_lean_docs_v64.py, tools/tests/test_lean_docs_v63.py, tools/tests/test_engineering_leaders_page.py, changelog.d/US1328.md
 > **Epic:** EP0379
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -110,3 +110,4 @@ answered for a run signed under delegation
 | --- | --- | --- |
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for EP0379 from the product seat's draft (run twenty-seven, the v6.5.0 release epic): user story, criteria with Verify lines, Release 6.5, Depends on for the wave order, and notes, modelled on EP0314 |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects widened at the builder's BLOCKED: test_engineering_leaders_page.py holds every sentence of the page that names an agent or accountability as a closed set, and AC3's Signer sentence names the evidence pack's Accountable line |
