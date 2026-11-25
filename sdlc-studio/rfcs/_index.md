@@ -1,18 +1,18 @@
 # RFC Registry Index
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 1 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 26 |
 | Superseded | 2 |
 | Withdrawn | 3 |
 | Delivered | 36 |
-| **Total** | **68** |
+| **Total** | **69** |
 
 ## All RFCs
 
@@ -31,6 +31,7 @@
 | [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Delivered | sdlc-studio | 2026-11-17 | CR0731 |
 | [RFC-0067](RFC0067-what-the-skill-should-learn-from-estate-scale.md) | What the skill should learn from estate-scale autonomous delivery: impact analysis before refine, tests before brownfield change, runtime inputs and running-app evidence | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0735, CR0736, CR0737, CR0738 |
 | [RFC-0068](RFC0068-should-the-canonical-skill-source-move-out-of.md) | Should the canonical skill source move out of .claude/skills/ to a harness-neutral path | Low | Draft | sdlc-studio | 2026-11-18 | -- |
+| [RFC-0069](RFC0069-what-a-long-wait-inside-an-agent-costs.md) | What a long wait inside an agent costs once its prompt cache expires, and whether builders and round-two reviewers should avoid one | Medium | Draft | sdlc-studio | 2026-11-25 | -- |
 
 ## Archived Releases
 
