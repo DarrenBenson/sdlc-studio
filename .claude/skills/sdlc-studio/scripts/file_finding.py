@@ -1781,14 +1781,15 @@ def _code_urls(text) -> str:
 #: A token after `\` is left alone: `\_name` is already escaped, and a backtick after the
 #: backslash would be escaped in turn, leaving an unbalanced span (MD038). The leading-underscore
 #: shape also skips a token after `/` or `#`, which is a URL path, link target or anchor. The
-#: first shape is a path of two or more segments, optionally rooted (`/abs`, `~/`, `$HOME/`),
-#: holding an underscore inside a word (`tools/tests/test_x.py`, `src/my_pkg/main.py`), so it is
+#: first shape is a path, holding an underscore inside a word (`tools/tests/test_x.py`,
+#: `src/my_pkg/main.py`): a rooted one (`/abs`, `~/`, `$HOME/`) with one or more segments after
+#: its root (`/tmp_dir`, `~/my_file.txt`), or an unrooted one of two or more. It is
 #: one span and never a directory followed by a spanned file name. It starts only where no path
 #: character, backtick or backslash precedes it, so no start can fall inside another path's run
 #: and the scan stays linear in the length of the prose.
 _MD_TOKEN_RE = re.compile(
-    r"((?<![\w`\\/~$.\-])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)(?:~|\$[A-Za-z_]\w*)?/?"
-    r"(?:[\w.\-]+/)+[\w.\-]+"
+    r"((?<![\w`\\/~$.\-])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)"
+    r"(?:(?:~|\$[A-Za-z_]\w*)?/(?:[\w.\-]+/)*[\w.\-]+|(?:[\w.\-]+/)+[\w.\-]+)"
     r"|(?<![\w`\\])[A-Za-z_][\w.]*_[\w().\[\]]*"
     r"|(?<![\w`\\])(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
 

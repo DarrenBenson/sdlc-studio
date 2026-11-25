@@ -471,6 +471,12 @@ class MdSafeProseTests(unittest.TestCase):
                          ff._md_safe("~/.cache/sdlc-tmp/run_x.json ok"))
         self.assertEqual("`$HOME/bin/do_it`.", ff._md_safe("$HOME/bin/do_it."))
         self.assertEqual("`src/my_pkg/main.py` here", ff._md_safe("src/my_pkg/main.py here"))
+        # a root and one segment, and the lone slash that is no root
+        self.assertEqual("`~/my_file.txt` `/tmp_dir` `./a_b`.",
+                         ff._md_safe("~/my_file.txt /tmp_dir ./a_b."))
+        self.assertEqual("a / b and x/ y", ff._md_safe("a / b and x/ y"))
+        # a bare call keeps its parentheses: the path shape needs a slash to claim a word
+        self.assertEqual("calls `resolve_canonical(x)` now", ff._md_safe("calls resolve_canonical(x) now"))
         # near misses: a path with no underscore, and `and/or`, hold nothing to wrap
         self.assertEqual("see docs/guide.md and/or src/main.py",
                          ff._md_safe("see docs/guide.md and/or src/main.py"))

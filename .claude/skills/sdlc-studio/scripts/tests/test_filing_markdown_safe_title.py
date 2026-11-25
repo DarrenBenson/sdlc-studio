@@ -205,6 +205,20 @@ class TitleMarkdownTests(unittest.TestCase):
         bare = re.sub(r"`[^`\n]*`", "", bare)
         self.assertNotRegex(bare, r"(?<!\S)\*\*(?!\S)")
 
+    def test_a_rooted_path_of_one_segment_is_one_span_through_the_filer(self) -> None:
+        """BG1304: a root and a single segment (`~/my_file.txt`, `/tmp_dir`, `./a_b`) is one code
+        span, as a rooted path of several is, filed through `file_finding.py file`. Mutant: the
+        path shape needing two segments after its root, so the root is left outside a span that
+        holds the segment alone."""
+        summary = ("see ~/my_file.txt and /tmp_dir and ./a_b and $HOME/run_x.json and "
+                   "~/.cache/run_x.json now; ~/plain.txt, /tmp and a/b stay as written")
+        _root, body, _row = self._filed_with("plain", summary, "1. run it", "fix it")
+        want = ("see `~/my_file.txt` and `/tmp_dir` and `./a_b` and `$HOME/run_x.json` and "
+                "`~/.cache/run_x.json` now; ~/plain.txt, /tmp and a/b stay as written")
+        self.assertIn(want, body)
+        for split in ("~/`my_file.txt`", "/`tmp_dir`", "./`a_b`"):
+            self.assertNotIn(split, body)
+
     def test_a_glob_in_a_step_command_is_escaped_outside_a_fence_only(self) -> None:
         """What the escape costs a copied command, as `_steps_safe` says: a glob `**` on a step
         or an indented code line is escaped, and the same line in a fence is kept as written."""
