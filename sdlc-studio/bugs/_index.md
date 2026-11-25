@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 55 |
+| Open | 54 |
 | In Progress | 0 |
-| Fixed | 1226 |
+| Fixed | 1228 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1751** |
+| **Total** | **1752** |
 
 ## All Bugs
 
@@ -379,7 +379,7 @@
 | [BG1301](BG1301-the-release-cut-leaves-this-repository-s-own.md) | The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1303](BG1303-sprint-lane-brief-names-a-schema-3-unit.md) | `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing | Fixed | Low | 2026-11-09 | 2026-11-09 |
-| [BG1304](BG1304-artifact-py-new-wraps-a-file-name-inside.md) | `artifact.py new` wraps a file name inside a path in backticks, so tools/tests/x.py in a CR's Impact or criteria is written as tools/tests/`x.py` | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1304](BG1304-artifact-py-new-wraps-a-file-name-inside.md) | `artifact.py new` wraps a file name inside a path in backticks, so tools/tests/x.py in a CR's Impact or criteria is written as tools/tests/`x.py` | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1305](BG1305-the-cursor-meter-drops-the-model-the-cursor.md) | The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1306](BG1306-critic-py-brief-never-tells-a-reviewer-probing.md) | `critic.py brief` never tells a reviewer probing confinement or environment-isolation code to run its mutants with HOME set to a temporary directory, so a mutant can write outside the scratch tree | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Fixed | Low | 2026-11-09 | 2026-11-09 |
@@ -819,7 +819,7 @@
 | [BG1741](BG1741-the-retro-judges-a-run-whole-from-another.md) | The retro judges a run whole from another harness's session when the closing session has no closing stamp, and drops a supplied delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1742](BG1742-bg1026-did-not-converge-in-review-round-2.md) | BG1026 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1743](BG1743-bg1296-did-not-converge-in-review-round-2.md) | BG1296 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1744](BG1744-bg1304-did-not-converge-in-review-round-2.md) | BG1304 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1744](BG1744-bg1304-did-not-converge-in-review-round-2.md) | BG1304 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1745](BG1745-bg1649-did-not-converge-in-review-round-2.md) | BG1649 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1746](BG1746-bg1449-did-not-converge-in-review-round-2.md) | BG1449 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1747](BG1747-bg1661-did-not-converge-in-review-round-2.md) | BG1661 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
@@ -827,6 +827,7 @@
 | [BG1749](BG1749-bg0960-did-not-converge-in-review-round-2.md) | BG0960 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1750](BG1750-bg1251-did-not-converge-in-review-round-2.md) | BG1251 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1751](BG1751-bg1269-did-not-converge-in-review-round-2.md) | BG1269 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1752](BG1752-two-prose-escaper-tests-bound-a-measured-duration.md) | Two prose-escaper tests bound a measured duration by a constant and fail the wall-clock census | Open | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
