@@ -962,6 +962,51 @@ class OpenRunLineTests(unittest.TestCase):
             self.assertEqual(payload["run"]["rung"], "design")
 
 
+class BlockedUnitLineTests(unittest.TestCase):
+    """BG1335: a bug has no Blocked status, so `sprint decision defer --block` holds it on the
+    run state's `blocked_units`, and the dashboard names it under the run line beside the bug's
+    own status, rather than leaving it to read as an ordinary open unit."""
+
+    @staticmethod
+    def _pillars(root: Path) -> str:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = status.main(["pillars", "--root", str(root)])
+        assert rc == 0, buf.getvalue()
+        return buf.getvalue()
+
+    @staticmethod
+    def _root(d: str, **state) -> Path:
+        root = Path(d)
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        for n in (1, 2):
+            (bugs / f"BG000{n}-x.md").write_text(
+                f"# BG000{n}: b\n\n> **Status:** Open\n> **Severity:** Low\n",
+                encoding="utf-8")
+        (root / "sdlc-studio" / ".local").mkdir(parents=True)
+        (root / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
+            {"run_id": "RUN-B", "outcome": "running", "goal": "done", "sprint_goal": "g",
+             "batch": ["BG0001", "BG0002"], **state}), encoding="utf-8")
+        return root
+
+    def test_a_bug_held_blocked_is_named_under_the_run_line(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            out = self._pillars(self._root(d, blocked_units=["BG0001"]))
+            lines = out.splitlines()
+            self.assertTrue(lines[0].startswith("Run:          RUN-B"), out)
+            held = [ln for ln in lines if ln.startswith("Blocked:")]
+            self.assertEqual(["Blocked:      BG0001 (Open) - held by `sprint decision defer "
+                              "--block` on the run state until `sprint decision resolve` "
+                              "answers it"], held)
+            self.assertLess(lines.index(held[0]), [i for i, ln in enumerate(lines)
+                                                   if ln.startswith("Requirements:")][0])
+        for state in ({}, {"blocked_units": []}, {"blocked_units": ["BG0001"],
+                                                    "outcome": "goal-reached"}):
+            with self.subTest(state=state), tempfile.TemporaryDirectory() as d:
+                self.assertNotIn("Blocked:", self._pillars(self._root(d, **state)))
+
+
 class RunLineDocTests(unittest.TestCase):
     """US0467 AC5. The help page must document exactly the fields the run line emits, both
     ways, so a field added, renamed or dropped in code fails the test rather than the reader."""

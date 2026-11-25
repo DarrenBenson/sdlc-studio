@@ -53,7 +53,10 @@ the root: the staged copy of whichever worktree of the landing changes them, the
 another's, and the root's where none does. One it would
 refuse, a required surface missing above all, stops the landing with exit 2 and nothing moved:
 the worktree, its staged change and the root's branch are as they were, so the builder repairs
-the hand-in in place.
+the hand-in in place. Each worktree's staged markdown is then linted, each file under the
+markdownlint config nearest above it in the worktree, and a lint failure stops the landing the
+same way, naming the file and the rule; a file no config governs is not linted, and a linter
+that cannot be found is said, never read as a pass.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -1162,10 +1165,72 @@ def _steps(root_top: Path, lanes_: list[_Lane], record: dict, author: str | None
     return 1 if failed else 0
 
 
+#: The config files markdownlint-cli reads from the folder it runs in, in its own order.
+MARKDOWNLINT_CONFIGS = (".markdownlint.jsonc", ".markdownlint.json", ".markdownlint.yaml",
+                        ".markdownlint.yml", ".markdownlintrc")
+
+
+def _markdownlint(root_top: Path, top: Path) -> str | None:
+    """The markdownlint a commit in `top` reaches: the worktree's own `node_modules`, the root
+    checkout's (a worktree carries none of its own), then the PATH."""
+    for base in (top, root_top):
+        found = base / "node_modules" / ".bin" / "markdownlint"
+        if found.is_file() and os.access(found, os.X_OK):
+            return str(found)
+    return shutil.which("markdownlint")
+
+
+def _markdownlint_config(top: Path, rel: str) -> Path | None:
+    """The markdownlint config nearest above `rel` in the worktree `top`, or None when none
+    governs it, so a project that lints no markdown has none linted here."""
+    folder = (top / rel).parent
+    while True:
+        for name in MARKDOWNLINT_CONFIGS:
+            if (folder / name).is_file():
+                return folder / name
+        if folder == top or folder == folder.parent:
+            return None
+        folder = folder.parent
+
+
+def _refuse_markdown(root_top: Path, lanes_: list[_Lane]) -> None:
+    """Each worktree's staged markdown linted before anything moves, each file under its nearest
+    config, so a hand-in the commit's markdown lane would refuse is refused here, naming the
+    file and the rule, with exit 2. A linter that cannot be found is said, and lands nothing
+    less: the commit's own hooks still run."""
+    for lane in lanes_:
+        staged = _git(lane.top, "diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR",
+                      "--", "*.md").stdout.split("\0")
+        groups: dict[Path, list[str]] = {}
+        for rel in (r for r in staged if r):
+            if (config := _markdownlint_config(lane.top, rel)) is not None:
+                groups.setdefault(config, []).append(rel)
+        if not groups:
+            continue
+        lint = _markdownlint(root_top, lane.top)
+        if lint is None:
+            _say(f"WARNING markdownlint was not found, so the staged markdown in {lane.top} was "
+                 f"not linted before the commit: "
+                 f"{', '.join(r for rels in groups.values() for r in rels)}", err=True)
+            continue
+        failed = []
+        for config, rels in groups.items():
+            res = subprocess.run([lint, "--config", str(config), *rels], cwd=str(lane.top),
+                                 capture_output=True, text=True, timeout=GIT_TIMEOUT,
+                                 check=False)
+            if res.returncode:
+                failed.append(_tail(res.stdout + res.stderr))
+        if failed:
+            raise LandError(f"the staged markdown in {lane.top} fails markdownlint, which the "
+                            f"commit's markdown lane would refuse. Nothing was committed:\n"
+                            + "\n".join(failed), 2)
+
+
 def _land(root: Path, worktrees: list[Path], units: list[str], author: str | None,
           price=None) -> int:
     lanes_ = _preflight(root, worktrees, units)
     root_top = _top(root, "the root")
+    _refuse_markdown(root_top, lanes_)
     _keep_hand_ins(root_top, lanes_)
     names = [lane.name for lane in lanes_]
     record = {"worktrees": names, "paths": [str(lane.top) for lane in lanes_], "units": units,

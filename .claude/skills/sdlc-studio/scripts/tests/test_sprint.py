@@ -460,8 +460,15 @@ class BatchCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._open(root, ["US0001"])
-            rc, out, _ = self._run(mod, ["batch", "add", "US0002", "--root", str(root)])
-            self.assertEqual(rc, 0)
+            # `batch add` takes only an id an artefact file carries (BG1237)
+            (root / "src").mkdir()
+            (root / "src" / "two.py").write_text("X = 2\n", encoding="utf-8")
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US0002-two.md").write_text(
+                "# US0002: two\n\n> **Status:** Ready\n> **Points:** 1\n"
+                "> **Affects:** src/two.py\n", encoding="utf-8")
+            rc, out, err = self._run(mod, ["batch", "add", "US0002", "--root", str(root)])
+            self.assertEqual(rc, 0, err)
             self.assertEqual(mod.run_state.read(str(root))["batch"], ["US0001", "US0002"])
             self.assertIn("added US0002", out)
 
@@ -2128,6 +2135,79 @@ class BreakdownGateTests(unittest.TestCase):
             self.assertIn("breakdown", err)              # the command that fixes it
             self.assertIn("sprint.breakdown: judgement", err)   # the recorded escape
 
+    #: The two repairs, each by a line only its own block prints.
+    _FIELD_FIX = "> **Affects:** path/to/file.py"
+    _VERIFY_FIX = "- **Verify:** pytest path/to/test_file.py::TestCase::test_name"
+
+    @staticmethod
+    def _no_verifier_bug(root: Path, num: int, affects: bool = True) -> None:
+        """A bug with Points and an authored criterion, and no Verify line at all; with
+        Affects unless `affects` is False."""
+        _src(root, f"src/nv{num}.py")
+        d = root / "sdlc-studio" / "bugs"
+        d.mkdir(parents=True, exist_ok=True)
+        meta = f"> **Affects:** src/nv{num}.py\n" if affects else ""
+        (d / f"BG{num:04d}-x.md").write_text(
+            f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+            f"{meta}> **Points:** 2\n## Acceptance Criteria\n\n"
+            "### AC1: it behaves as recorded\n\n- **Given** the recorded state\n",
+            encoding="utf-8")
+
+    def test_the_refusal_names_the_unit_what_it_lacks_and_the_fix_for_a_missing_verifier(
+            self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._no_verifier_bug(root, 8)
+            rc, out, err = self._plan(root)
+            self.assertNotEqual(rc, 0)
+            self.assertNotIn("batch:", out)
+            self.assertIn("BG0008", err)
+            self.assertIn("Verify:", err.split("ungroomed:")[1].split("\n")[1])  # what it lacks
+            self.assertIn(self._VERIFY_FIX, err)                 # the repair that matches
+            self.assertIn("- **Verify:** manual <what a human checks>", err)
+            self.assertNotIn(self._FIELD_FIX, err)               # not fields it already has
+            self.assertNotIn("> **Points:** 3", err)
+            self.assertIn("sprint.py breakdown", err)            # the shared tail still prints
+            self.assertIn("sprint.breakdown: judgement", err)
+
+    def test_each_kind_of_miss_gets_its_own_repair(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, groomed=False)
+            _, _, err = self._plan(root)
+            self.assertEqual(err.count(self._FIELD_FIX), 1)      # today's field template...
+            self.assertEqual(err.count("> **Points:** 3"), 1)
+            self.assertNotIn(self._VERIFY_FIX, err)              # ...and no Verify repair
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1, groomed=False)
+            self._no_verifier_bug(root, 2)
+            self._no_verifier_bug(root, 3)
+            _, _, err = self._plan(root)
+            self.assertEqual(err.count(self._FIELD_FIX), 1)      # both repairs, each once
+            self.assertEqual(err.count(self._VERIFY_FIX), 1)
+            self.assertEqual(err.count("sprint.breakdown: judgement"), 1)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._no_verifier_bug(root, 5, affects=False)    # one unit with both misses
+            _, _, err = self._plan(root)
+            self.assertEqual(err.count(self._FIELD_FIX), 1)
+            self.assertEqual(err.count(self._VERIFY_FIX), 1)
+
+    def test_breakdown_prints_the_verify_repair_for_a_no_verifier_unit(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._no_verifier_bug(root, 4)
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = _load().main(["breakdown", "--bugs", "Open", "--root", str(root),
+                                   "--skip-personas"])
+            self.assertEqual(rc, 0)
+            self.assertIn("BG0004", out.getvalue())
+            self.assertIn(self._VERIFY_FIX, out.getvalue())
+            self.assertNotIn(self._FIELD_FIX, out.getvalue())
+            self.assertIn("sprint.py breakdown --bugs Open", out.getvalue())
+
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
     def test_the_recorded_opt_out_reports_and_does_not_block(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2208,6 +2288,72 @@ class SharedFileClusterTests(unittest.TestCase):
             _groomed_cr(root, 2, _src(root, "src/b.py"))
             bd = _load().build_plan(root, "cr", "Proposed", skip_personas=True)["breakdown"]
             self.assertEqual(bd["clusters"], [])
+
+    @staticmethod
+    def _plan_text(root: Path) -> tuple[str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = _load().main(["plan", "--bugs", "Open", "--root", str(root), "--no-fetch",
+                               "--skip-personas"])
+        assert rc == 0, err.getvalue()
+        return out.getvalue(), err.getvalue()
+
+    def test_a_pair_sharing_a_code_file_is_named_on_its_own_line(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            doc, code = _src(root, "docs/reference.md"), _src(root, "src/code.py")
+            _groomed_bug(root, 1, f"{doc}, {code}, {_src(root, 'src/a.py')}")
+            _groomed_bug(root, 2, f"{doc}, {code}, {_src(root, 'src/b.py')}")
+            _groomed_bug(root, 3, f"{doc}, {_src(root, 'src/c.py')}")
+            out, err = self._plan_text(root)
+            lines = out.splitlines()
+            self.assertIn("    BG0001, BG0002 share src/code.py", lines, out)
+            cluster = [ln for ln in lines if ln.startswith("    BG0001, BG0002, BG0003 -> ")]
+            self.assertEqual(1, len(cluster), out)              # the cluster still names all
+            self.assertFalse([ln for ln in lines if "share src/code.py" in ln
+                              and "BG0003" in ln], out)
+            self.assertEqual(1, out.count("share src/code.py"), out)
+            # the wave warning names the pair over its code file, never the prose page
+            warned = [ln for ln in err.splitlines() if "NOT safely parallel" in ln]
+            self.assertEqual(1, len(warned), err)
+            self.assertIn("BG0001 and BG0002 both touch src/code.py.", warned[0])
+            self.assertNotIn("BG0003", warned[0])
+            self.assertNotIn("reference.md", warned[0])
+
+    def test_a_shared_prose_file_stays_advisory(self) -> None:
+        for page in ("docs/reference.md", "docs/guide.mdx"):
+            with self.subTest(page=page), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                doc = _src(root, page)
+                _groomed_bug(root, 1, f"{doc}, {_src(root, 'src/a.py')}")
+                _groomed_bug(root, 2, f"{doc}, {_src(root, 'src/b.py')}")
+                data = _load().build_plan(root, "bug", "Open", skip_personas=True)
+                # the partition is the one the batch has without the shared page
+                self.assertEqual([["BG0001"], ["BG0002"]], data["lane_partition"]["lanes"])
+                self.assertTrue(data["delivery_mode"]["parallel_available"],
+                                data["delivery_mode"]["reason"])
+                self.assertEqual([], data["breakdown"]["code_shares"])
+                self.assertEqual([["BG0001", "BG0002"]],
+                                 [c["units"] for c in data["breakdown"]["clusters"]])
+                out, err = self._plan_text(root)
+                cluster = [ln for ln in out.splitlines()
+                           if ln.startswith("    BG0001, BG0002 -> ")]
+                self.assertEqual(1, len(cluster), out)
+                self.assertIn("prose only, advisory", cluster[0])
+                self.assertFalse([ln for ln in out.splitlines()
+                                  if re.match(r"    \S+, \S+ share ", ln)], out)
+                self.assertNotIn("units sharing a code file", out)
+                self.assertNotIn("NOT safely parallel", err)
+                self.assertNotIn("delivered SEQUENTIALLY", out)
+                self.assertIn("    lane 1: BG0001", out.splitlines())
+                self.assertIn("    lane 2: BG0002", out.splitlines())
+                # the control: the same two units over a shared code file are one lane
+                code = _src(root, "src/shared.py")
+                _groomed_bug(root, 1, f"{doc}, {code}")
+                _groomed_bug(root, 2, f"{doc}, {code}")
+                data = _load().build_plan(root, "bug", "Open", skip_personas=True)
+                self.assertEqual([["BG0001", "BG0002"]], data["lane_partition"]["lanes"])
+                self.assertFalse(data["delivery_mode"]["parallel_available"])
 
 
 class WaveClusterWarningTests(unittest.TestCase):
@@ -8224,6 +8370,32 @@ class LanePartitionTests(_DeliveryModeFixture):
             self.assertEqual(lane_of["US0001"], lane_of["US0002"])
             self.assertNotEqual(lane_of["US0001"], lane_of["US0003"])
 
+    def test_units_sharing_a_code_file_are_never_parallel(self):
+        """Every unit declares one reference page and two also declare one code file: the
+        pair share a lane, and the page alone joins no one to it."""
+        s = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            batch = [self._story(root, 1, "docs/reference.md, src/code.py", "tests/test_a.py"),
+                     self._story(root, 2, "docs/reference.md, src/code.py", "tests/test_b.py"),
+                     self._story(root, 3, "docs/reference.md, src/c.py", "tests/test_c.py")]
+            lanes = s.lane_partition(root, batch)["lanes"]
+            lane_of = {uid: i for i, lane in enumerate(lanes) for uid in lane}
+            self.assertEqual(lane_of["US0001"], lane_of["US0002"])
+            self.assertNotEqual(lane_of["US0001"], lane_of["US0003"])
+            offer = s.delivery_mode_offer(root, batch)
+            self.assertEqual([["US0001", "US0002"], ["US0003"]], offer["groups"])
+            # without the page, the pair still share a lane and the third has its own
+            batch = [self._story(root, 4, "src/code.py", "tests/test_d.py"),
+                     self._story(root, 5, "src/code.py", "tests/test_e.py"),
+                     self._story(root, 6, "src/f.py", "tests/test_f.py")]
+            self.assertEqual([["US0004", "US0005"], ["US0006"]],
+                             s.lane_partition(root, batch)["lanes"])
+            # a test file shared through a Verify line couples them as a code file does
+            batch = [self._story(root, 7, "docs/reference.md", "tests/test_shared.py"),
+                     self._story(root, 8, "docs/reference.md", "tests/test_shared.py")]
+            self.assertEqual([["US0007", "US0008"]], s.lane_partition(root, batch)["lanes"])
+
     def test_the_partition_changes_nothing_else_in_the_plan(self):
         """AC2. The partition is a view, not an input: computing it leaves the delivery-mode
         decision (the batch, its groups, the offered modes) byte-identical."""
@@ -11184,6 +11356,47 @@ class LaneInFlightTests(unittest.TestCase):
             rs.record_lane_start(root, "US0001")
             rs.record_lane_start(root, "US0001")
             self.assertEqual(len(rs.lanes_in_flight(root)), 1)
+
+    def test_a_brief_names_sibling_lanes_in_one_line(self) -> None:
+        """Two sibling lanes in flight get one line naming them, not a restart WARNING each; the
+        full warning is kept for a briefed unit that is itself in flight."""
+        mod = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            (root / "src").mkdir()
+            (root / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+            stories = root / "sdlc-studio" / "stories"
+            stories.mkdir(parents=True)
+            batch = ["US0001", "US0002", "US0003"]
+            for uid in batch:
+                (stories / f"{uid}-x.md").write_text(
+                    f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** src/app.py\n"
+                    "> **Points:** 2\n\n## Acceptance Criteria\n\n### AC1: it holds\n\n"
+                    "- **Verify:** file src/app.py\n", encoding="utf-8")
+            mod.run_state.open_run(root, batch=batch, goal="g")
+            mod.run_state.record_lane_start(root, "US0001")
+            mod.run_state.record_lane_start(root, "US0002")
+
+            def brief(uid: str) -> list[str]:
+                out, err = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    rc = mod.main(["lane", "brief", "--units", uid, "--root", str(root)])
+                self.assertEqual(0, rc, err.getvalue())
+                return err.getvalue().splitlines()
+
+            err = brief("US0003")
+            named = [ln for ln in err if "US0001" in ln or "US0002" in ln]
+            self.assertEqual(1, len(named), err)
+            self.assertIn("in flight: US0001, US0002", named[0])
+            self.assertFalse([ln for ln in err if ln.startswith("WARNING")], err)
+            # the briefed unit itself in flight keeps the full warning; its siblings, one line
+            err = brief("US0001")
+            own = [ln for ln in err if ln.startswith("WARNING")]
+            self.assertEqual(1, len(own), err)
+            self.assertIn("US0001 was briefed at", own[0])
+            self.assertIn("MAY ALREADY CARRY its work", own[0])
+            self.assertEqual(1, len([ln for ln in err if "in flight: US0002, US0003" in ln]), err)
+            self.assertEqual(2, len(err), err)
 
     def test_no_open_run_records_nothing_rather_than_raising(self) -> None:
         rs = _load().run_state

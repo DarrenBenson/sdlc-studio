@@ -2457,6 +2457,30 @@ def _shared_file_clusters(files_by_unit: dict[str, list[str]],
     return sorted(out, key=lambda c: c["units"])
 
 
+#: A prose page: a file most units append to, which merges cleanly, so sharing one is advisory.
+#: Every other shared file is code, which conflicts, so the units sharing it are not parallel.
+PROSE_SUFFIXES = (".md", ".mdx")
+
+
+def _is_prose(path: str) -> bool:
+    return str(path).lower().endswith(PROSE_SUFFIXES)
+
+
+def _code_shares(files_by_unit: dict[str, list[str]]) -> list[dict]:
+    """Each pair of units that share a code file, with the code files they share: the pairs a
+    batch-wide cluster joined by a prose page hides, and the ones that must not build in
+    parallel."""
+    ids = sorted(files_by_unit)
+    out: list[dict] = []
+    for n, a in enumerate(ids):
+        for b in ids[n + 1:]:
+            shared = sorted(f for f in set(files_by_unit[a]) & set(files_by_unit[b])
+                            if not _is_prose(f))
+            if shared:
+                out.append({"units": [a, b], "files": shared})
+    return out
+
+
 def _ids_cited_by_stories(root: Path) -> set:
     """Every artifact id any story mentions - so a CR a story already actions is not flagged
     for decomposition a second time."""
@@ -2656,6 +2680,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "ungroomed": ungroomed, "oversized": oversized, "groomed": groomed,
             "ceiling": ceiling, "downgraded": downgraded,
             "clusters": _shared_file_clusters(files_by_unit, sources_by_unit),
+            "code_shares": _code_shares(files_by_unit),
             "affects_advisories": affects_advisories,
             "registry_advisories": registry_advice,
             **({"test_advisories": test_advice} if test_reach else {}),
@@ -2773,9 +2798,11 @@ def _build_tooling_hits(files: list[str]) -> list[str]:
 
 
 def _full_partition(units: list[tuple[str, list[str]]]) -> list[list[str]]:
-    """Every unit assigned to a file-disjoint group, SINGLETONS INCLUDED (unlike the cluster
-    view, which drops units that share nothing). Union-find over the shared files; the result is
-    sorted so a given batch always partitions the same way."""
+    """Every unit assigned to a group no code file crosses, SINGLETONS INCLUDED (unlike the
+    cluster view, which drops units that share nothing). Union-find over the shared files; the
+    result is sorted so a given batch always partitions the same way. A shared prose page
+    (`PROSE_SUFFIXES`) joins no one: each unit appends to it and it merges cleanly, so it stays
+    advisory in the cluster report rather than holding a batch to one group."""
     parent = {uid: uid for uid, _ in units}
 
     def find(x: str) -> str:
@@ -2787,7 +2814,8 @@ def _full_partition(units: list[tuple[str, list[str]]]) -> list[list[str]]:
     by_file: dict[str, list[str]] = {}
     for uid, files in units:
         for f in files:
-            by_file.setdefault(f, []).append(uid)
+            if not _is_prose(f):
+                by_file.setdefault(f, []).append(uid)
     for uids in by_file.values():
         for other in uids[1:]:
             ra, rb = find(uids[0]), find(other)
@@ -2854,11 +2882,11 @@ def delivery_mode_offer(repo_root: Path | str, batch: list[dict]) -> dict:
         if len(groups) >= 2:
             modes.append(PARALLEL)
             reason = (f"the batch decomposes into {len(groups)} file-disjoint groups (test files "
-                      f"counted as coupling), so a PARALLEL worktree build is available alongside "
-                      f"the SEQUENTIAL one - either is safe")
+                      f"counted as coupling, a shared prose page advisory), so a PARALLEL "
+                      f"worktree build is available alongside the SEQUENTIAL one - either is safe")
         else:
-            reason = ("every unit shares an affected file (source or test) with another, so the "
-                      "batch does not decompose; PARALLEL was withheld and it is delivered "
+            reason = ("every unit shares an affected code file (source or test) with another, so "
+                      "the batch does not decompose; PARALLEL was withheld and it is delivered "
                       "SEQUENTIALLY")
     return {"modes": modes, "parallel_available": PARALLEL in modes,
             "groups": groups, "reason": reason, "default_mode": SEQUENTIAL,
@@ -2889,8 +2917,9 @@ def lane_partition(repo_root: Path | str, batch: list[dict]) -> dict:
 
     A unit that declares no `Affects` is UNPLACEABLE and named, never placed: an undeclared file
     is invisible to a collision check, so a lane holding it cannot be called disjoint. `_full_partition`
-    guarantees no file appears in two lanes. This changes no plan decision - it is a view over the
-    batch, not an input to selecting or ordering it."""
+    guarantees no code file appears in two lanes; a shared prose page may, and the cluster report
+    names it as advisory. This changes no plan decision - it is a view over the batch, not an
+    input to selecting or ordering it."""
     root = Path(repo_root)
     placeable: list[tuple[str, list[str]]] = []
     unplaceable: list[str] = []
@@ -2928,7 +2957,7 @@ def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str,
         p = out / f"lane-{i:02d}.worklist.txt"
         header = [
             f"# Lane {i} of {len(lanes)} - file-disjoint against the other lanes by declared"
-            " Affects.",
+            " Affects, but for a shared prose page, which merges cleanly.",
             "# CAVEAT: disjointness is only as good as the declared Affects. A unit touching a"
             " file it did not declare (an undeclared file) can still collide with another lane -"
             " the guarantee does not cover what was never declared.",
@@ -3002,8 +3031,8 @@ LANE_OBLIGATIONS = (
     "could not discharge and why.",
     "A repair answering a REJECT carries only the blocking findings and the pins that kill "
     "them, and files the rest.",
-    "Land the unit on `main`: open no PR and push no branch, fast-forwarding a local worktree "
-    "onto `main` within the lane, unless `release_strategy` is `pr-required`.",
+    "The lane is landed by `sprint lane land` onto the root's branch: open no PR and push no "
+    "branch, unless `release_strategy` is `pr-required`.",
 )
 
 #: Opens the brief's file-history section. The lane meets the prior work and the defects its
@@ -3133,6 +3162,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
         effort = effort_setting(root)
     except EffortError:
         effort = None
+    base = _lane_base(root)
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -3144,6 +3174,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
                        "criteria": contract["criteria"],
                        "trd_constraints": trd_constraints(root, contract["text"]),
                        "obligations": list(LANE_OBLIGATIONS),
+                       "base": base,
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
                        "lessons": injected,
@@ -3357,7 +3388,8 @@ def lane_repair_text(scope: dict) -> str:
 
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
-    criteria it is held to, its Affects, the seat card to adopt, the history of the files it
+    criteria it is held to, its Affects, the base to build on and the fast-forward that reaches
+    it, the seat card to adopt, the history of the files it
     touches, the proof its unit owes, the standing obligations, the lessons injected at build,
     the author self-check, and the commands that run its criteria, hand its work in and stage it,
     within its call budget. Composed purely from the brief record, so the same dispatch renders
@@ -3380,6 +3412,14 @@ def lane_brief_text(brief: dict) -> str:
     else:
         lines.append("Affects: NONE DECLARED - declare the files this unit changes before "
                      "building it.")
+    if base := brief.get("base"):
+        where = (f"{base['branch']} at {base['commit']}" if base["branch"]
+                 else f"commit {base['commit']}")
+        lines.append(f"Base: build on {where}, the main worktree's tip when this brief was "
+                     f"printed. A harness worktree can start at origin's older commit, without "
+                     f"the grooming not yet pushed: before building, run `git merge --ff-only "
+                     f"{base['branch'] or base['commit']}` in your worktree unless its HEAD is "
+                     f"{base['commit']} or a descendant of it.")
     if brief.get("home_isolated"):
         lines.append(f"Lane: the main checkout, not a worktree - {brief['id']} declares "
                      f"`{LANE_ISOLATION_FIELD}: {LANE_HOME}`: its tests set a temporary HOME, "
@@ -3548,10 +3588,13 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     The commit message's shape is the project's own, so only the unit id is asked of the
     subject. The values the hand-in may hold are listed word for word from what `critic.py
     self-check record` accepts (`critic.claim_surfaces`, `CLAIM_RULINGS`, `MUTANT_RESULTS`), so
-    the list cannot drift from the record that judges it."""
+    the list cannot drift from the record that judges it, with the unit's Affects test files a
+    mutant's test must name."""
     import critic  # noqa: PLC0415 - deferred sibling; the record's own vocabulary
+    import file_finding  # noqa: PLC0415 - sibling; the test-path rule the record reads
     claims, mutants = _lane_hand_in_files(uid)
     required, optional = critic.claim_surfaces(affects)
+    tests = [a for a in affects if file_finding.is_test_path(a)]
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
              # dry: a builder's run writes nothing into the unit's own file, outside its Affects
              f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
@@ -3564,7 +3607,9 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
              f"each as {{mutant, test, result, answer}}",
              f"    The values the record accepts, word for word, and no others - surface: "
              f"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, "
-             f"bare, the evidence in the claim; result: {', '.join(critic.MUTANT_RESULTS)}",
+             f"bare, the evidence in the claim; result: {', '.join(critic.MUTANT_RESULTS)}"
+             + (f"; each mutant's test: a `path::name` in one of the unit's Affects test "
+                f"files, {', '.join(tests)}" if tests else ""),
              f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
              f"subject, written last"]
     if not affects:
@@ -3927,6 +3972,35 @@ def goal_review_rounds(rec: dict) -> list[dict]:
     return []
 
 
+def seat_verdicts_on_wording(rounds: list, goal: str | None = None,
+                             accept=None) -> list[tuple[dict, dict]]:
+    """Each seat's newest verdict on one wording, with the round it came from.
+
+    The rounds on `goal` (the latest round's wording when None) are read newest first, back to
+    the amendment that introduced the wording, which already carried what carries; a seat's
+    newer verdict replaces its own and leaves the others standing. `accept`, when given, decides
+    which of a seat's verdicts count. The one read the plan, the amendment's carry and the
+    close's goal panel share, so none of them re-opens a seat another reads as standing.
+    """
+    on = [r for r in rounds or [] if isinstance(r, dict)]
+    if goal is not None:
+        on = on[:max((i + 1 for i, r in enumerate(on)
+                       if _norm_goal(r.get("goal")) == _norm_goal(goal)), default=0)]
+    out: list[tuple[dict, dict]] = []
+    seen: set[str] = set()
+    for rnd in reversed(on):
+        if _norm_goal(rnd.get("goal")) != _norm_goal(on[-1].get("goal")):
+            break
+        for s in rnd.get("seats") or []:
+            role = str(s.get("seat") or "").strip() if isinstance(s, dict) else ""
+            if role and role not in seen and (accept is None or accept(s)):
+                seen.add(role)
+                out.append((s, rnd))
+        if rnd.get("amended_from"):
+            break
+    return out
+
+
 def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
                        skip_personas: bool = False) -> dict:
     """Has a seat reviewed THIS goal, what did it say, and how many rounds did it take?
@@ -3958,19 +4032,10 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     # amendment that introduced the wording (it already carried what carries): read alone, the
     # latest round re-opened every seat it left out, so a seat owing a verdict cost a round of
     # every seat. Each verdict keeps the round it came from, whose requester it answers to.
-    seats: list[dict] = []
-    source: dict[str, dict] = {}
-    for rnd in reversed(rounds):
-        if _norm_goal(rnd.get("goal")) != _norm_goal(latest.get("goal")):
-            break
-        for s in rnd.get("seats") or []:
-            role = str(s.get("seat") or "").strip() if isinstance(s, dict) else ""
-            if role and role not in source and all(str(s.get(f) or "").strip()
-                                                   for f in GOAL_REVIEW_FIELDS):
-                source[role] = rnd
-                seats.append(s)
-        if rnd.get("amended_from"):
-            break
+    standing = seat_verdicts_on_wording(
+        rounds, accept=lambda s: all(str(s.get(f) or "").strip() for f in GOAL_REVIEW_FIELDS))
+    seats: list[dict] = [s for s, _rnd in standing]
+    source: dict[str, dict] = {str(s.get("seat")).strip(): rnd for s, rnd in standing}
     if seats and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal):
         # TWO DIFFERENT ANSWERS, never one predicate. `achievable = no` is an OBJECTION: advice
         # the operator reads before approving the plan. `one_increment = no` is
@@ -4692,7 +4757,7 @@ def _render_lane_partition(data: dict) -> None:
         return
     lanes = lp.get("lanes") or []
     print(f"  lane partition (report-only): {len(lanes)} file-disjoint lane(s) - "
-          "no file appears in two:")
+          "no code file appears in two; a shared prose page is advisory:")
     for i, lane in enumerate(lanes, start=1):
         print(f"    lane {i}: " + ", ".join(lane))
     unplaceable = lp.get("unplaceable") or []
@@ -4719,28 +4784,37 @@ def _render_clusters(data: dict) -> None:
 
     A `Depends on:` edge is a DECLARATION; a shared file is a FACT. The wave computation only
     knows the declarations, so it has called two units parallel while both rewrote one module.
-    The cluster is printed with the plan, and a wave is called out as NOT safely parallel once
-    for each pair of its units that declare a file in common, naming the pair and the files.
-    Two units joined in one cluster only through a third unit share no file, so they are not
-    warned."""
+    The cluster is printed with the plan, each pair of units sharing a code file on a line of
+    its own, and a wave is called out as NOT safely parallel once for each pair of its units
+    that declare a code file in common, naming the pair and the files. Two units joined in one
+    cluster only through a third unit share no file, so they are not warned. A shared prose page
+    is advisory: a page each unit appends to merges cleanly, so it holds no wave back."""
     bd = data.get("breakdown") or {}
     clusters = bd.get("clusters") or []
     if not clusters:
         return
-    print("  shared-file clusters (one cluster = one file in common, so NOT parallel; "
-          "`derived` = worked out from a Verify line, not declared by anyone):")
+    print("  shared-file clusters (one cluster = one file in common; a shared code file is NOT "
+          "parallel, a shared prose page is advisory; `derived` = worked out from a Verify "
+          "line, not declared by anyone):")
     for c in clusters:
         src = c.get("sources") or {}
         shown = ", ".join(f"{f} [{src.get(f, 'declared')}]" for f in c["files"][:3])
         more = f" (+{len(c['files']) - 3} more)" if len(c["files"]) > 3 else ""
-        print(f"    {', '.join(c['units'])} -> {shown}{more}")
+        prose = (" - prose only, advisory: a shared page merges cleanly"
+                 if all(_is_prose(f) for f in c["files"]) else "")
+        print(f"    {', '.join(c['units'])} -> {shown}{more}{prose}")
+    pairs = bd.get("code_shares") or []
+    if pairs:
+        print("  units sharing a code file (build each pair in one lane, or in sequence):")
+        for pair in pairs:
+            print(f"    {', '.join(pair['units'])} share {', '.join(pair['files'])}")
     for i, wave in enumerate(data.get("waves") or [], 1):
         for c in clusters:
             held = c["unit_files"]
             members = [u for u in wave if u in held]
             for n, a in enumerate(members):
                 for b in members[n + 1:]:
-                    common = [f for f in held[a] if f in held[b]]
+                    common = [f for f in held[a] if f in held[b] and not _is_prose(f)]
                     if common:
                         print(f"  warning: wave {i} is NOT safely parallel - {a} and {b} both "
                               f"touch {', '.join(common)}. Run them in sequence, or declare "
@@ -4758,6 +4832,25 @@ def affects_check_mode(repo_root: Path | str) -> str:
     mode = str(config.get(repo_root, "sprint.affects_check", AFFECTS_CHECK_DEFAULT)
                or AFFECTS_CHECK_DEFAULT).strip().lower()
     return mode if mode in ("warn", "block") else AFFECTS_CHECK_DEFAULT
+
+
+def _not_a_path(entry: str) -> bool:
+    """An Affects entry of words and spaces with no file shape: it holds whitespace and does not
+    end in an extension (`HA scripts foo / bar`, never `docs/My Notes.md`)."""
+    text = str(entry).strip()
+    return bool(re.search(r"\s", text)) and not re.search(r"\.[A-Za-z0-9]+$", text)
+
+
+def _not_on_disk(paths: list[str], creates: bool = True) -> str:
+    """The Affects entries not on disk, each said as what it is: an entry that is not a path is
+    named so, and only a path is told, with `creates`, that a file the unit creates is fine."""
+    words = [p for p in paths if _not_a_path(p)]
+    files = [p for p in paths if not _not_a_path(p)]
+    parts = ([", ".join(files) + (" (a file the unit CREATES is fine)" if creates else "")]
+             if files else [])
+    if words:
+        parts.append(f"not a path: {', '.join(words)} (name the file the unit touches)")
+    return "; ".join(parts)
 
 
 def affects_findings(repo_root: Path | str, unit_ids) -> list[dict]:
@@ -4812,7 +4905,7 @@ def _render_affects_advisories(data: dict, repo_root=None) -> None:
     for it in items:
         if it.get("unresolvable"):
             print(f"    {it['id']}: declared but not on disk - "
-                  f"{', '.join(it['unresolvable'])} (a file the unit CREATES is fine)")
+                  f"{_not_on_disk(it['unresolvable'])}")
         if it.get("undeclared"):
             print(f"    {it['id']}: targeted by its own Verify lines but undeclared - "
                   f"{', '.join(it['undeclared'])}")
@@ -4921,16 +5014,25 @@ def _breakdown_detail(bd: dict) -> list[str]:
             for u in bd["ungroomed"]]
 
 
-BREAKDOWN_FIX = """  fix each one on the artefact, then re-plan:
-    Affects   > **Affects:** path/to/file.py, path/to/other.py
+#: The repair for a unit missing a field (Affects, Points or Size), and for every other miss
+#: but the one `VERIFY_FIX` answers. `_breakdown_fix` prints each block the batch needs, once.
+BREAKDOWN_FIX = """    Affects   > **Affects:** path/to/file.py, path/to/other.py
               the files the unit will touch. Without it nothing can size the unit, and
               nothing can see that two units touch the same file.
     Points    > **Points:** 3
               the job size on the modified Fibonacci scale ({scale}) - not its urgency,
               and not a guess at hours. It is RELATIVE: is this bigger than the last 3 you
               delivered? Nothing else is accepted: a 7 is the false precision the scale
-              exists to prevent, and above {ceiling} the unit must be SPLIT, not estimated.
-  see the whole grooming list, read-only:  sprint.py breakdown {sel}
+              exists to prevent, and above {ceiling} the unit must be SPLIT, not estimated."""
+
+#: The repair for a unit whose criteria are authored and carry no verifier: it already has its
+#: fields, so the field template would send its author to add what is there.
+VERIFY_FIX = """    Verify    - **Verify:** pytest path/to/test_file.py::TestCase::test_name
+              under each criterion, the check `verify_ac.py run` executes to prove it. A
+              criterion only a person can check says so:
+              - **Verify:** manual <what a human checks>"""
+
+BREAKDOWN_FIX_TAIL = """  see the whole grooming list, read-only:  sprint.py breakdown {sel}
   opt out ONLY as a recorded decision: set `sprint.breakdown: judgement` in
   sdlc-studio/.config.yaml and this lane reports instead of blocking. Omission is not an
   escape - an absent config BLOCKS."""
@@ -4989,9 +5091,21 @@ def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
 
 
 def _breakdown_fix(bd: dict, sel: str) -> str:
-    return BREAKDOWN_FIX.format(
-        sel=sel, ceiling=bd.get("ceiling", sdlc_md.POINTS_SPLIT_ABOVE),
-        scale=", ".join(str(p) for p in sdlc_md.POINTS_SCALE))
+    """The repair for each kind of miss the ungroomed units hold, each block once: the Verify
+    line for a unit whose only miss is a criterion with no verifier, the field template for any
+    other miss."""
+    units = bd.get("ungroomed") or []
+    verify_only = [u.get("ac_why") == "no-verifier" and len(u.get("missing") or []) == 1
+                   for u in units]
+    blocks = ["  fix each one on the artefact, then re-plan:"]
+    if not all(verify_only):
+        blocks.append(BREAKDOWN_FIX.format(
+            ceiling=bd.get("ceiling", sdlc_md.POINTS_SPLIT_ABOVE),
+            scale=", ".join(str(p) for p in sdlc_md.POINTS_SCALE)))
+    if any(u.get("ac_why") == "no-verifier" for u in units):
+        blocks.append(VERIFY_FIX)
+    blocks.append(BREAKDOWN_FIX_TAIL.format(sel=sel))
+    return "\n".join(blocks)
 
 
 def _oversized_detail(bd: dict) -> list[str]:
@@ -6770,8 +6884,7 @@ def _close_checklist(root, retro, state, read_root=None):
         f"{len(named)} compulsory checklist item(s) unanswered{past}:"
         f"\n{detail}",
         "answer each item by running the stage it names, or record a waiver naming it and "
-        "why (`decisions.py waive --subject "
-        f"{sprint_report.WAIVER_SUBJECT}:<item> --rationale '<why>'`) - closing without an "
+        f"why (`{sprint_report.waiver_command()}`) - closing without an "
         "item and forgetting it must be different events in the record")
 
 
@@ -8442,9 +8555,7 @@ def _checklist_blockers(root: Path, retro_id: str, state: dict,
         out.append({"stage": "checklist", "detail": detail,
                     "remedy": row.get("detail")
                               or ("run the stage it names, or record a waiver naming it "
-                                  f"(`decisions.py waive --subject "
-                                  f"{sprint_report.WAIVER_SUBJECT}:{item_id} "
-                                  f"--rationale '<why>'`)")})
+                                  f"(`{sprint_report.waiver_command(item_id)}`)")})
     # THE UNFINISHED-UNIT HOLD, asked of the predicate chain step 6 reads and rendered by the
     # same two helpers, so the pre-flight cannot read ready over a unit the checklist step then
     # stops on. No waiver reaches it here either. A hold that cannot be computed is a blocker,
@@ -9484,6 +9595,13 @@ def cmd_batch(args: argparse.Namespace) -> int:
         print("sprint batch drop: --reason is required - a drop is recorded, not silent",
               file=sys.stderr)
         return 2
+    # An id no artefact file carries is refused before the write: added, it is a unit nothing
+    # can build or gate, and the add would report it as joining the batch.
+    if action == "add" and sdlc_md.find_by_id(root, args.id) is None:
+        print(f"sprint batch add REFUSED {sdlc_md.norm_id(args.id)}: no artefact file carries "
+              f"that id. NOTHING was added - file the unit first, or correct the id.",
+              file=sys.stderr)
+        return 2
     # REFUSED BEFORE THE WRITE. The check used to run after `add_to_batch`, so the operator was
     # told "refused" about a unit the done-gate could already see - a refusal that is a message
     # rather than a refusal. Applied on every output format: the json path skipped the check
@@ -9494,7 +9612,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
             for it in offenders:
                 if it.get("unresolvable"):
                     print(f"  {it['id']}: Affects declares path(s) not on disk - "
-                          f"{', '.join(it['unresolvable'])}", file=sys.stderr)
+                          f"{_not_on_disk(it['unresolvable'], creates=False)}", file=sys.stderr)
                 if it.get("undeclared"):
                     print(f"  {it['id']}: targeted by its own Verify lines but undeclared - "
                           f"{', '.join(it['undeclared'])}", file=sys.stderr)
@@ -9523,19 +9641,67 @@ def cmd_batch(args: argparse.Namespace) -> int:
               f"{len(state.get('batch') or [])} unit(s), held to the same gates as the rest.")
         # The SAME check the plan ran over the original batch. Without it, joining a batch after
         # the plan was printed is a way past a gate every other unit in that batch passed.
+        # The `block` refusal happens BEFORE the write, above - reaching here means the mode is
+        # `warn`, so each finding is a labelled warning that says the unit went in anyway.
+        anyway = "added anyway under `sprint.affects_check: warn`"
         for it in affects_findings(root, [change["id"]]):
             if it.get("unresolvable"):
-                print(f"  {it['id']}: Affects declares path(s) not on disk - "
-                      f"{', '.join(it['unresolvable'])} (a file the unit CREATES is fine)")
+                print(f"  warning: {it['id']}: Affects declares path(s) not on disk - "
+                      f"{_not_on_disk(it['unresolvable'])} - {anyway}")
             if it.get("undeclared"):
-                print(f"  {it['id']}: targeted by its own Verify lines but undeclared - "
-                      f"{', '.join(it['undeclared'])}")
-            # The `block` refusal now happens BEFORE the write, above - reaching here means
-            # the mode is `warn`, so these are reported and nothing is refused.
+                print(f"  warning: {it['id']}: targeted by its own Verify lines but undeclared - "
+                      f"{', '.join(it['undeclared'])} - {anyway}")
     if action == "add" and (missing := _unspecified_criteria(root, change["id"])):
         print(_unspecified_line(change["id"], missing),
               file=sys.stderr if getattr(args, "format", "text") == "json" else sys.stdout)
     return 0
+
+
+def _main_worktree(root) -> dict | None:
+    """The main worktree, the first `git worktree list --porcelain` names, as `{"path", "head",
+    "ref"}`, `ref` "" when it is on no branch; None when git cannot say."""
+    listed = _git(root, "worktree", "list", "--porcelain")
+    if not listed or listed.returncode:
+        return None
+    first = listed.stdout.split("\n\n", 1)[0].splitlines()
+    field = {ln.split(" ", 1)[0]: ln.split(" ", 1)[1] for ln in first if " " in ln}
+    if not field.get("worktree") or not field.get("HEAD"):
+        return None
+    return {"path": field["worktree"], "head": field["HEAD"], "ref": field.get("branch", "")}
+
+
+def _lane_base(root) -> dict | None:
+    """The base a lane builds on: the main worktree's branch and its tip, `branch` "" when that
+    worktree is on no branch, so the commit alone names it; None when git cannot say. A harness
+    worktree can start at origin's older commit, and only this names the one to reach first."""
+    main = _main_worktree(root)
+    short = _git(root, "rev-parse", "--short", main["head"]) if main else None
+    if not short or short.returncode:
+        return None
+    return {"branch": main["ref"].removeprefix("refs/heads/"), "commit": short.stdout.strip()}
+
+
+def _worktree_behind(root) -> str:
+    """A WARNING when `root` is a linked worktree whose HEAD is not a descendant of the main
+    worktree's branch tip, naming both commits and the fast-forward that brings the unit read
+    here up to date; "" for the main worktree, one at or ahead of the tip, a main worktree on no
+    branch, or when git cannot say."""
+    found = _main_worktree(root)
+    top = _git(root, "rev-parse", "--show-toplevel")
+    if not found or not top or top.returncode:
+        return ""
+    main, ref = found["path"], found["ref"]
+    if not ref or Path(main).resolve() == Path(top.stdout.strip()).resolve():
+        return ""
+    behind = _git(root, "merge-base", "--is-ancestor", ref, "HEAD")
+    if not behind or behind.returncode != 1:
+        return ""
+    head, tip = (_git(root, "rev-parse", "--short", r) for r in ("HEAD", ref))
+    branch = ref.removeprefix("refs/heads/")
+    return (f"WARNING this worktree's HEAD {head.stdout.strip()} is not a descendant of "
+            f"{branch} at {tip.stdout.strip()} in the main worktree {main}, so the unit briefed "
+            f"here may be older than the one there: run `git merge --ff-only {branch}` in this "
+            f"worktree, then brief it again")
 
 
 def _lane_unit_ids(args: argparse.Namespace) -> list[str]:
@@ -10194,11 +10360,12 @@ def close_goal_judgement(root, state: dict, seats: list | None = None,
 
 
 def _recorded_goal_seats(root) -> list[str]:
-    """The seats that reviewed the Sprint Goal at plan time, from the recorded round."""
+    """The seats that reviewed the Sprint Goal, each seat's newest verdict on its latest wording
+    (`seat_verdicts_on_wording`)."""
     data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
     rounds = data.get("rounds") if isinstance(data, dict) else None
-    latest = (rounds or [{}])[-1] if isinstance(rounds, list) and rounds else {}
-    return [str(s.get("seat")) for s in (latest.get("seats") or []) if s.get("seat")]
+    return [str(s.get("seat")).strip()
+            for s, _rnd in seat_verdicts_on_wording(rounds if isinstance(rounds, list) else [])]
 
 
 def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
@@ -10221,9 +10388,8 @@ def _recorded_clause_verdicts(root, clauses: list[str]) -> dict | None:
     """
     data = sdlc_md.read_json(Path(root) / "sdlc-studio/.local/goal-review.json", {})
     rounds = data.get("rounds") if isinstance(data, dict) else None
-    latest = (rounds or [{}])[-1] if isinstance(rounds, list) and rounds else {}
     out: dict = {}
-    for seat in latest.get("seats") or []:
+    for seat, _rnd in seat_verdicts_on_wording(rounds if isinstance(rounds, list) else []):
         per_clause = seat.get("clauses")
         if not isinstance(per_clause, dict):
             continue          # a whole-goal answer is not a per-clause one
@@ -10674,7 +10840,9 @@ def cmd_lane(args: argparse.Namespace) -> int:
         # EVERY stale marker, not only those naming a unit in THIS dispatch. Filtering to the
         # briefed set meant a lane that died on US0001 went unmentioned when the operator
         # briefed US0002 - which is the restart case the marker exists for, and the only case
-        # in which the operator has not already noticed.
+        # in which the operator has not already noticed. The siblings are named on one line,
+        # since in a parallel wave every one is in flight by design; the full restart warning
+        # is kept for a briefed unit that is itself in flight.
         # BOTH of these read the run state, and BOTH must not stop a brief being issued. The
         # first repair guarded `lane_dispatch` and left these three statements later in the same
         # command, so the artefact's own reproduction still produced a traceback and issued no
@@ -10684,11 +10852,21 @@ def cmd_lane(args: argparse.Namespace) -> int:
             "in_flight", lambda: run_state.lanes_in_flight(root), [],
             "the run state could not be read, so whether any lane never returned is UNKNOWN, "
             "not none - check the diff before starting")
+        if args.action == "brief" and (behind := _worktree_behind(root)):
+            print(behind, file=sys.stderr)
+        briefed = {sdlc_md.norm_id(u) for u in units}
         for row in in_flight:
+            if sdlc_md.norm_id(row["unit"]) not in briefed:
+                continue
             print(f"WARNING {row['unit']} was briefed at {row['started_at']} and never "
                   f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
                   f"before starting: a lane redoing a repair that is already present is how "
                   f"a partial edit reached a commit.", file=sys.stderr)
+        siblings = [r["unit"] for r in in_flight if sdlc_md.norm_id(r["unit"]) not in briefed]
+        if siblings:
+            print(f"in flight: {', '.join(siblings)} - briefed and not yet returned; a lane "
+                  f"that died leaves its work in the tree, so check the diff before restarting "
+                  f"one", file=sys.stderr)
         def start_lane(b: dict) -> None:
             _lane_run_state(
                 "record_lane_start",
@@ -11089,6 +11267,16 @@ def record_close_tree(root) -> None:
             run_state.update(root, close_tree=digest)
 
 
+def bound_untracked(root) -> list[str]:
+    """The untracked files `tree_digest` takes into the close's tree: those `git add -A` adds
+    (not ignored), less the run records it drops. Empty when git cannot be read."""
+    res = _git(root, "ls-files", "--others", "--exclude-standard", "-z", "--", ".")
+    if res is None or res.returncode != 0:
+        return []
+    dropped = ("sdlc-studio/.local/", run_state.TRACKED_REL.as_posix() + "/")
+    return sorted(p for p in res.stdout.split("\0") if p and not p.startswith(dropped))
+
+
 def _close_forward_port(root, pre: dict) -> list[dict]:
     """Mirror the skill into the installed copy when the pre-flight found it drifted.
 
@@ -11348,9 +11536,17 @@ def cmd_close(args: argparse.Namespace) -> int:
     pending_dec = state.get("pending_decisions") or []
     if pending_dec:
         print()
-        _render_pending_decisions(pending_dec)
+        _render_pending_decisions(pending_dec, root)
         print()
     if getattr(args, "file_and_close", False):
+        # The filing path records no verdict, so a supplied one is refused here, before anything
+        # is filed, rather than dropped and then refused as an unjudged goal.
+        if args.goal_verdict:
+            print(f"close refused: --goal-verdict is ignored with --file-and-close, so nothing "
+                  f"was filed. Record it first with `sprint.py goal-verdict --verdict "
+                  f"{args.goal_verdict} --note \"...\"`, then re-run the close with "
+                  f"--file-and-close and without --goal-verdict", file=sys.stderr)
+            return 2
         return _file_and_close(root, args, state, pre)
     if not state.get("sprint_goal"):
         print("close refused: no sprint goal recorded on this run - set one at plan time "
@@ -11524,6 +11720,10 @@ def cmd_close(args: argparse.Namespace) -> int:
     # that has moved since.
     record_close_tree(root)
     _file_awaiting_record(root)
+    if report_id and (untracked := bound_untracked(root)):
+        print(f"close: the signature binds the tree as it stands, with {len(untracked)} "
+              f"untracked file(s): {', '.join(untracked)} - leave each as it is until the run "
+              f"is signed; `sign` refuses a tree changed since the close")
     if known:
         print(f"close: finished with {len(known)} known issue(s), recorded on the run and "
               + (f"handed over on the report {report_id}" if report_id else
@@ -14172,7 +14372,8 @@ def cmd_goal_review(args) -> int:
                       file=sys.stderr)
                 return 2
             fresh_roles = {str(s.get("seat") or "").strip() for s in seats}
-            prior_roles = {str(s.get("seat") or "").strip() for s in (prior.get("seats") or [])}
+            standing = [s for s, _rnd in seat_verdicts_on_wording(prior_rounds, amend_from)]
+            prior_roles = {str(s.get("seat") or "").strip() for s in standing}
             # The requesting seat must actually have a verdict on the prior goal, or the amendment
             # carries nothing and the round would DECLARE a requesting seat that simultaneously
             # needs a fresh verdict - a self-contradictory, dishonest trail. Refuse it. The
@@ -14183,7 +14384,7 @@ def cmd_goal_review(args) -> int:
                       f"the prior goal (an amendment) or supply its fresh --seat verdict on the "
                       f"new goal", file=sys.stderr)
                 return 2
-            for s in (prior.get("seats") or []):
+            for s in standing:
                 role = str(s.get("seat") or "").strip()
                 if role not in fresh_roles and s.get("rereview") != "yes":
                     carried.append({**s, "carried_from": amend_from})
@@ -14293,13 +14494,35 @@ def _parse_labelled(spec: str, what: str) -> tuple[str, str]:
     return label.strip(), text.strip()
 
 
-def _render_pending_decisions(pending: list[dict]) -> None:
+def _decision_rows(root: Path, pending: list[dict]) -> list[dict]:
+    """Each pending decision with the unit's own `status` and whether it is `blocked`: held by
+    `defer --block` on the run state's `blocked_units`, the field any unit may carry, since a
+    bug's type has no Blocked status to write."""
+    state = run_state.read(root) or {}
+    held = {sdlc_md.norm_id(u) for u in (state.get("blocked_units") or [])}
+    rows = []
+    for p in pending:
+        uid = sdlc_md.norm_id(p.get("unit") or "")
+        hit = sdlc_md.find_by_id(root, uid) if uid else None
+        raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) or "", "Status") if hit else ""
+        status = (sdlc_md.canonical_status(raw or "", sdlc_md.status_vocab(hit[1], root))
+                  or (raw or "").strip()) if hit else ""
+        rows.append({**p, "status": status or "no artefact on disk",
+                     "blocked": bool(p.get("blocked")) or uid in held})
+    return rows
+
+
+def _render_pending_decisions(pending: list[dict], root: Path | None = None) -> None:
     """The structured surface, one stop for everything: question, named options with their
-    consequences, the recommendation marked with its reason."""
+    consequences, the recommendation marked with its reason. Given `root`, each unit is shown
+    with its own status, and as BLOCKED when `defer --block` held it on the run state."""
     print(f"pending operator decisions: {len(pending)} - asked together, one stop, "
           f"not one stop per decision:")
-    for i, p in enumerate(pending, 1):
-        print(f"\n[{i}] {p['unit']}: {p['question']}")
+    for i, p in enumerate(_decision_rows(root, pending) if root else pending, 1):
+        shown = ""
+        if root:
+            shown = f" ({p['status']}{', BLOCKED on the run state' if p['blocked'] else ''})"
+        print(f"\n[{i}] {p['unit']}{shown}: {p['question']}")
         rec = p.get("recommend") or {}
         for o in p["options"]:
             mark = (f"   <- RECOMMENDED: {rec['reason']}"
@@ -14345,19 +14568,34 @@ def cmd_decision(args) -> int:
         pending = list(state.get("pending_decisions") or [])
         pending.append({"unit": args.unit, "question": args.question.strip(),
                         "options": options, "recommend": recommend,
-                        "deferred_at": sdlc_md.now_iso8601(), "resolution": None})
+                        "deferred_at": sdlc_md.now_iso8601(), "resolution": None,
+                        "blocked": bool(args.block)})
         deferred = list(state.get("deferred_units") or [])
         if args.unit not in deferred:
             deferred.append(args.unit)
-        run_state.update(root, pending_decisions=pending, deferred_units=deferred)
+        # The block is held on the run state for every kind, as `blocked_units`: a bug's type
+        # has no Blocked status, and writing one was refused, leaving the bug reading as an
+        # ordinary open unit. A kind whose vocabulary has Blocked is also moved to it.
+        held = list(state.get("blocked_units") or [])
+        if args.block and args.unit not in held:
+            held.append(args.unit)
+        run_state.update(root, pending_decisions=pending, deferred_units=deferred,
+                         **({"blocked_units": held} if args.block else {}))
         blocked = ""
-        if args.block:
+        hit = sdlc_md.find_by_id(root, args.unit) if args.block else None
+        if args.block and hit and "Blocked" not in sdlc_md.status_vocab(hit[1], root):
+            raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) or "", "Status") or "?"
+            blocked = (f"; {sdlc_md.norm_id(args.unit)} held Blocked on the run state "
+                       f"(`blocked_units`, shown by `sprint decision list`); its Status stays "
+                       f"{raw.strip()}, since a {hit[1]} has no Blocked status")
+        elif args.block:
             import transition  # noqa: PLC0415
             try:
                 transition.transition(root, args.unit, "Blocked")
                 blocked = ", unit marked Blocked (recorded, never defaulted)"
             except (ValueError, OSError) as exc:
-                blocked = f", unit NOT marked Blocked ({exc})"
+                blocked = (f", unit held Blocked on the run state but its Status NOT marked "
+                           f"Blocked ({exc})")
         # NAME what the batch continues with, not merely how many decisions are pending. A
         # count leaves the reader to work out whether anything is still buildable, and the
         # observed failure was a whole batch parking because nobody worked it out.
@@ -14373,12 +14611,12 @@ def cmd_decision(args) -> int:
     pending = list(state.get("pending_decisions") or [])
     if args.action == "list":
         if args.format == "json":
-            print(json.dumps(pending, indent=2))
+            print(json.dumps(_decision_rows(root, pending), indent=2))
             return 0
         if not pending:
             print("no pending operator decisions")
             return 0
-        _render_pending_decisions(pending)
+        _render_pending_decisions(pending, root)
         return 0
 
     # resolve: the ONLY path that writes an answer - autonomous runs never reach it
@@ -14401,8 +14639,12 @@ def cmd_decision(args) -> int:
     # is only ever appended to is a log, and this one is read as a state.
     still_deferred = [u for u in (state.get("deferred_units") or [])
                       if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
+    # The block `defer --block` held goes with its answered question, for the same reason.
+    still_held = [u for u in (state.get("blocked_units") or [])
+                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
     run_state.update(root, pending_decisions=pending, resolved_decisions=resolved,
-                     deferred_units=still_deferred)
+                     deferred_units=still_deferred,
+                     **({"blocked_units": still_held} if "blocked_units" in state else {}))
     # The operator answered a question the run could not, so it is counted as an operator
     # ruling, as `decisions.py add --by operator` counts one; the report's Rulings read it.
     run_state.record_ruling(root, None, "operator",

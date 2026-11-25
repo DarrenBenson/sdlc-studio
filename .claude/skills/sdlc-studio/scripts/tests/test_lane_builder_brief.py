@@ -28,6 +28,7 @@ import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402
 import loader  # noqa: E402
 
 critic = loader.load_script("critic")
@@ -258,12 +259,171 @@ class BuilderBriefTests(_Isolated):
         self.assertIn("ruling: TRUE, FALSE, UNVERIFIABLE,", line)
         self.assertIn("result: killed, survived", line)
         self.assertNotIn("src/app.py", line)
-        self.assertNotIn("tests/test_app.py", line)
+        # a test file is no claim surface; it is named only as where a mutant's test lives
+        self.assertNotIn("tests/test_app.py", line.split("; ruling:")[0])
         with unittest.mock.patch.object(live, "MUTANT_RESULTS", ("killed", "survived", "x")), \
                 unittest.mock.patch.object(live, "CLAIM_RULINGS", ("TRUE", "MAYBE")):
             drifted = listed(_brief(root, "US0102"))
         self.assertIn("result: killed, survived, x", drifted)
         self.assertIn("ruling: TRUE, MAYBE,", drifted)
+
+    def test_the_hand_in_line_names_the_accepted_rulings_and_test_files(self) -> None:
+        """The hand-in line says a ruling is one of the accepted values, written bare, and that
+        each mutant's test is a `path::name` in one of the unit's Affects test files, named."""
+        affects = "src/app.py, tests/test_app.py, tests/test_more.py, changelog.d/US0102.md"
+        root = _project(self._tmp.name, {"US0101": "src/other.py", "US0102": affects})
+
+        def hand_in(out: str) -> str:
+            lines = [ln for ln in out.splitlines() if "The values the record accepts" in ln]
+            self.assertEqual(1, len(lines), out)
+            return lines[0]
+
+        line = hand_in(_brief(root, "US0102"))
+        self.assertIn("ruling: TRUE, FALSE, UNVERIFIABLE, bare, the evidence in the claim", line)
+        self.assertIn("each mutant's test: a `path::name` in one of the unit's Affects test "
+                      "files, tests/test_app.py, tests/test_more.py", line)
+        self.assertNotIn("src/app.py", line)
+        # a unit whose Affects declares no test file is given no test-file rule
+        line = hand_in(_brief(root, "US0101"))
+        self.assertNotIn("path::name", line)
+        self.assertIn("ruling: TRUE, FALSE, UNVERIFIABLE, bare", line)
+
+    def _repo_and_worktree(self) -> tuple[Path, Path]:
+        """The project committed on `main`, and a linked worktree on its own branch at main."""
+        root = _project(self._tmp.name)
+        gitutil.git(["init", "-q", "-b", "main"], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", "base"], root)
+        wt = Path(self._tmp.name) / "wt"
+        gitutil.git(["worktree", "add", "-q", "-b", "lane", str(wt), "main"], root)
+        return root, wt
+
+    def _brief_in(self, where: Path, uid: str = "US0102") -> tuple[str, list[str]]:
+        """`lane brief` run in `where` with git confined to the fixture: (stdout, stderr lines)."""
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(os.environ, gitutil.git_env(), clear=True), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sprint.main(["lane", "brief", "--units", uid, "--root", str(where)])
+        self.assertEqual(0, rc, err.getvalue())
+        return out.getvalue(), err.getvalue().splitlines()
+
+    @staticmethod
+    def _short(where: Path, ref: str) -> str:
+        return gitutil.git(["rev-parse", "--short", ref], where, text=True).stdout.strip()
+
+    def test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward(self) -> None:
+        root, wt = self._repo_and_worktree()
+        story = root / "sdlc-studio" / "stories" / "US0102-x.md"
+        story.write_text(story.read_text(encoding="utf-8")
+                         + "\n### AC2: it holds again\n\n- **Verify:** file src/app.py\n",
+                         encoding="utf-8")
+        gitutil.git(["commit", "-q", "-am", "groom US0102"], root)
+        out, err = self._brief_in(wt)
+        self.assertNotIn("AC2", out)                     # the stale copy is what was briefed
+        warned = [ln for ln in err if ln.startswith("WARNING") and "--ff-only" in ln]
+        self.assertEqual(1, len(warned), err)
+        self.assertIn(f"this worktree's HEAD {self._short(wt, 'HEAD')} is not a descendant of "
+                      f"main at {self._short(root, 'main')}", warned[0])
+        self.assertIn("`git merge --ff-only main`", warned[0])
+        self.assertNotEqual(self._short(wt, "HEAD"), self._short(root, "main"), "premise")
+        # the fast-forward it names brings the unit up to date, and the warning goes
+        gitutil.git(["merge", "--ff-only", "-q", "main"], wt)
+        out, err = self._brief_in(wt)
+        self.assertIn("AC2", out)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+
+    def test_an_up_to_date_worktree_and_the_root_are_not_warned(self) -> None:
+        root, wt = self._repo_and_worktree()
+        at_tip, err = self._brief_in(wt)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+        here, err = self._brief_in(root)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+        self.assertEqual(here.replace(str(root), "<top>"), at_tip.replace(str(wt), "<top>"))
+        # ahead of the tip is not behind it
+        (wt / "src" / "app.py").write_text("x = 2\n", encoding="utf-8")
+        gitutil.git(["commit", "-q", "-am", "the lane's own work"], wt)
+        _out, err = self._brief_in(wt)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+        # the root itself, behind nothing, even with its branch moved past the worktree
+        (root / "src" / "app.py").write_text("x = 3\n", encoding="utf-8")
+        gitutil.git(["commit", "-q", "-am", "main moves"], root)
+        _out, err = self._brief_in(root)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+        # a main worktree on no branch names no branch to fast-forward to
+        gitutil.git(["checkout", "-q", "--detach"], root)
+        _out, err = self._brief_in(wt)
+        self.assertFalse([ln for ln in err if "--ff-only" in ln], err)
+
+    @staticmethod
+    def _obligation_rows(out: str) -> list[str]:
+        lines = out.splitlines()
+        rows = []
+        for ln in lines[lines.index("Obligations on this lane:") + 1:]:
+            if not ln.startswith("  - "):
+                break
+            rows.append(ln[4:])
+        return rows
+
+    def _committed(self, branch: str) -> Path:
+        """The project committed on `branch`, a trunk that need not be called main."""
+        root = _project(self._tmp.name)
+        gitutil.git(["init", "-q", "-b", branch], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", "base"], root)
+        return root
+
+    def test_the_landing_obligation_names_lane_land_and_no_branch(self) -> None:
+        root = self._committed("trunk")
+        out, _err = self._brief_in(root)
+        rows = self._obligation_rows(out)
+        landing = [r for r in rows if "sprint lane land" in r]
+        self.assertEqual(1, len(landing), rows)
+        self.assertIn("The lane is landed by `sprint lane land` onto the root's branch: open no "
+                      "PR and push no branch", landing[0])
+        for row in rows:                       # no obligation names a trunk or a fast-forward
+            self.assertNotRegex(row, r"\bmain\b")
+            self.assertNotIn("fast-forward", row.lower())
+        # beside the brief's own instruction to leave the commit to the landing
+        self.assertIn("Do not commit and do not record the self-check", out)
+
+    def test_the_landing_obligation_keeps_the_pr_required_exception(self) -> None:
+        out = _brief(_project(self._tmp.name), "US0102")
+        landing = [r for r in self._obligation_rows(out) if "sprint lane land" in r]
+        self.assertEqual(1, len(landing), out)
+        self.assertTrue(landing[0].endswith(
+            "open no PR and push no branch, unless `release_strategy` is `pr-required`."),
+            landing[0])
+
+    def test_the_brief_names_the_fast_forward_step_and_the_base_to_build_on(self) -> None:
+        root = self._committed("trunk")
+        harness = Path(self._tmp.name) / "harness"      # cut from origin's older commit
+        gitutil.git(["worktree", "add", "-q", "--detach", str(harness), "trunk"], root)
+        story = root / "sdlc-studio" / "stories" / "US0102-x.md"
+        story.write_text(story.read_text(encoding="utf-8") + "\n<!-- groomed -->\n",
+                         encoding="utf-8")
+        gitutil.git(["commit", "-q", "-am", "groom US0102"], root)
+        tip = self._short(root, "trunk")
+        step = "`git merge --ff-only trunk`"
+        for where in (root, harness):                   # printed by the orchestrator or here
+            out, _err = self._brief_in(where)
+            base = [ln for ln in out.splitlines() if ln.startswith("Base: ")]
+            self.assertEqual(1, len(base), out)
+            self.assertIn(f"build on trunk at {tip}", base[0])
+            self.assertIn(step, base[0])
+            self.assertLess(out.index("Base: "), out.index("Obligations on this lane:"))
+        # the step it names puts the harness worktree on the base
+        self.assertNotEqual(tip, self._short(harness, "HEAD"), "premise: the worktree is behind")
+        gitutil.git(["merge", "--ff-only", "-q", "trunk"], harness)
+        self.assertEqual(tip, self._short(harness, "HEAD"))
+        # a root on no branch names its commit as the base and the step to it
+        gitutil.git(["checkout", "-q", "--detach"], root)
+        out, _err = self._brief_in(root)
+        self.assertIn(f"Base: build on commit {tip}", out)
+        self.assertIn(f"`git merge --ff-only {tip}`", out)
+
+    def test_a_brief_outside_git_names_no_base(self) -> None:
+        out = _brief(_project(self._tmp.name), "US0102")
+        self.assertNotIn("Base: ", out)
 
     def _seat_paths(self, out: str) -> list[str]:
         """The card each Seat line names as the work render to adopt."""

@@ -41,7 +41,7 @@ def _markdownlint() -> str | None:
     found = shutil.which("markdownlint")
     if found:
         return found
-    roots = [SKILL.parents[1]]
+    roots = [SKILL.parents[2]]          # the checkout root, above `.claude/skills/`
     common = gitutil.git(["rev-parse", "--path-format=absolute", "--git-common-dir"], SKILL,
                          check=False, text=True)
     if common.returncode == 0 and common.stdout.strip():

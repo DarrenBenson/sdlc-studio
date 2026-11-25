@@ -230,6 +230,76 @@ class LaneLandTests(_LaneFixture):
         self.assertFalse((self.root / "sdlc-studio/reviews/author-self-checks.md").exists(),
                          "a self-check was recorded for a lane that never landed")
 
+    #: A stand-in markdownlint: it logs the config it was given and reports MD032 on each line
+    #: of a named file that opens `+ `, on stderr, exiting 1, as markdownlint does.
+    LINTER = """#!{python}
+import sys
+args = sys.argv[1:]
+with open({log!r}, "a", encoding="utf-8") as log:
+    log.write(args[args.index("--config") + 1] + " " + " ".join(args[2:]) + "\\n")
+bad = 0
+for name in args[2:]:
+    for n, line in enumerate(open(name, encoding="utf-8"), 1):
+        if line.startswith("+ "):
+            print(f"{{name}}:{{n}} error MD032/blanks-around-lists Lists should be surrounded "
+                  f"by blank lines", file=sys.stderr)
+            bad = 1
+sys.exit(bad)
+"""
+
+    def _land_with_path(self, path: str, *units: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "land", "--worktree", str(self.wt),
+             "--units", *units, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root),
+            env={**self._env(), "PATH": path}, check=False)
+
+    def test_a_hand_in_fragment_that_fails_markdownlint_is_refused_before_the_commit(
+            self) -> None:
+        base = self.root.parent
+        bin_dir, lint_log = base / "linter-bin", base / "lint.log"
+        _write(bin_dir, "markdownlint", self.LINTER.format(python=sys.executable,
+                                                           log=str(lint_log)))
+        (bin_dir / "markdownlint").chmod(0o755)
+        # no markdownlint on the PATH but the stand-in, whatever the host carries
+        bare = os.pathsep.join(d for d in os.environ.get("PATH", "").split(os.pathsep)
+                               if d and not (Path(d) / "markdownlint").exists())
+        self._move_main(".markdownlint.json", '{"default": true, "MD013": false}\n')
+        gitutil.git(["merge", "--ff-only", "-q", "main"], self.wt)
+        fragment = f"changelog.d/{A}.md"
+        wrapped = ("<!-- section: Fixed -->\n\nThe count is now two, which is the old one\n"
+                   "+ 3 more.\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._stage(fragment, wrapped)
+        self._hand_in()
+        main_before = _git(self.root, "rev-parse", "HEAD")
+        r = self._land_with_path(os.pathsep.join([str(bin_dir), bare]), A)
+        out = r.stdout + r.stderr
+        self.assertEqual(2, r.returncode, out)
+        self.assertIn(f"{fragment}:4 error MD032/blanks-around-lists", out)
+        self.assertIn("Nothing was committed", out)
+        self.assertEqual(0, self._hook_runs_in_the_worktree(), "refused only at the commit")
+        self.assertEqual(main_before, _git(self.root, "rev-parse", "HEAD"))
+        self.assertTrue(self.wt.is_dir())
+        self.assertEqual(f"{self.wt / '.markdownlint.json'} {fragment}",
+                         lint_log.read_text(encoding="utf-8").strip())
+        # the clean hand-in beside it lands, linted as it goes
+        self._stage(fragment, "<!-- section: Fixed -->\n\nThe count is now two, three more.\n")
+        r = self._land_with_path(os.pathsep.join([str(bin_dir), bare]), A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual(1, self._hook_runs_in_the_worktree())
+        self.assertEqual(2, len(lint_log.read_text(encoding="utf-8").splitlines()))
+        # with no linter to be found the landing says so, and is not held by it
+        gitutil.git(["worktree", "add", "-q", "-b", BRANCH, str(self.wt), "main"], self.root)
+        self._stage(fragment, wrapped)
+        self._hand_in()
+        r = self._land_with_path(bare, A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertIn(f"WARNING markdownlint was not found, so the staged markdown in {self.wt} "
+                      f"was not linted before the commit: {fragment}", out)
+        self.assertEqual(2, len(lint_log.read_text(encoding="utf-8").splitlines()))
+
     def test_a_rebase_conflict_is_aborted_and_named(self) -> None:
         """The conflict is met replaying the staged change, before the commit: the lane stays
         staged and uncommitted, and no hook ran (`test_lane_land_replay` holds the criterion)."""

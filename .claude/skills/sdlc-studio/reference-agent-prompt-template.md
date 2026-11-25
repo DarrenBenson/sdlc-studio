@@ -263,9 +263,10 @@ through the incident that bought each one:
 4. **Bound the repair.** A repair answering a REJECT carries only the blocking findings and the
    pins that kill them, and files the rest. A repair that widens past its findings breaks what the
    first build got right.
-5. **Land on main.** Land the unit on `main`: open no PR and push no branch, fast-forwarding a
-   local worktree onto `main` within the lane, unless `release_strategy` is `pr-required`.
-   sdlc-studio integrates continuously; the review and push gates replace a PR's review.
+5. **Land through the landing.** The lane is landed by `sprint lane land` onto the root's
+   branch: open no PR and push no branch, unless `release_strategy` is `pr-required`. The builder
+   stages its work and commits nothing; sdlc-studio integrates continuously, and the review and
+   push gates replace a PR's review.
 
 The dispatch enforces the first of them itself rather than passing the judgement down: a unit
 whose contract cannot be READ never reaches a lane, and the refusal names the unit and what is

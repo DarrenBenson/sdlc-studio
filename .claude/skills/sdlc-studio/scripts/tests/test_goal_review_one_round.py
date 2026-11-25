@@ -481,5 +481,87 @@ class GoalLengthAtReviewTests(_Copies):
         self.assertEqual(twenty, sprint.goal_review_rounds(sprint.goal_review(root))[-1]["goal"])
 
 
+class ClosePanelRoundsTests(_Copies):
+    """The close's goal panel and the next amendment's carry read the rounds on a wording as
+    the plan does: each seat's newest verdict, back to the amendment that introduced it."""
+
+    G3 = "ship the renderer and the parser to users"
+
+    def _owing_seat_alone(self, root: Path) -> None:
+        """G by three seats, qa asking to re-review; G2 at engineering's request, engineering
+        answering it fresh per clause; then qa's verdict on G2, per clause, recorded alone."""
+        _ok(_record(root, "--goal", G, "--seat", "engineering|no|done|yes|reword it",
+                    "--seat", "product|yes|done|yes", "--seat", "qa|yes|done|yes|show me|yes"))
+        for name, seat, amend in (
+                ("eng.json", "engineering", ("--amend-from", G, "--requesting-seat",
+                                             "engineering")),
+                ("qa.json", "qa", ())):
+            fields = root / name
+            fields.write_text(json.dumps({"goal": G2, "seats": [
+                {"seat": seat, "achievable": "yes", "done_means": "done", "one_increment": "yes",
+                 "clauses": {G2: "yes" if seat == "qa" else "no"}}]}), encoding="utf-8")
+            _ok(_record(root, "--fields-file", str(fields), *amend))
+
+    def test_the_close_panel_reads_every_round_on_the_latest_wording(self) -> None:
+        root = self._copy("base")
+        self._owing_seat_alone(root)
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        self.assertEqual(["qa"], [s["seat"] for s in latest["seats"]])   # qa recorded alone
+        plan = sorted(s["seat"] for s in sprint.goal_review_status(root, G2)["seats"])
+        self.assertEqual(sorted(SEATS), plan)
+        self.assertEqual(plan, sorted(sprint._recorded_goal_seats(root)))
+        self.assertEqual({G2: {"engineering": "missed", "qa": "achieved"}},
+                         sprint._recorded_clause_verdicts(root, [G2]))
+        record: dict = {}
+        lines = sprint.close_goal_judgement(
+            root, {"sprint_goal": G2, "batch": [], "author": "builder"}, record=record)
+        self.assertIn("over 1 clause(s), 3 seat(s), no seat matched the author",
+                      record["panel"])
+        self.assertIn(f"    partial (1 seat(s) silent): {G2}", lines)
+        # a newer verdict of one seat replaces its own and leaves the others standing
+        fields = root / "eng2.json"
+        fields.write_text(json.dumps({"goal": G2, "seats": [
+            {"seat": "engineering", "achievable": "yes", "done_means": "done",
+             "one_increment": "yes", "clauses": {G2: "yes"}}]}), encoding="utf-8")
+        _ok(_record(root, "--fields-file", str(fields)))
+        self.assertEqual({G2: {"engineering": "achieved", "qa": "achieved"}},
+                         sprint._recorded_clause_verdicts(root, [G2]))
+        self.assertEqual(sorted(SEATS), sorted(sprint._recorded_goal_seats(root)))
+        # an amendment starts the wording's read afresh: a material change carries no seat
+        _ok(_record(root, "--goal", self.G3, "--amend-from", G2, "--material"))
+        self.assertEqual([], sprint._recorded_goal_seats(root))
+        self.assertIsNone(sprint._recorded_clause_verdicts(root, [G2]))
+
+    def test_the_next_amendment_carries_from_every_round_on_the_prior_wording(self) -> None:
+        root = self._copy("base")
+        self._owing_seat_alone(root)
+        _ok(_record(root, "--goal", self.G3, "--amend-from", G2, "--requesting-seat", "product"))
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        self.assertEqual(sorted(SEATS), sorted(s["seat"] for s in latest["seats"]))
+        self.assertTrue(all(s.get("carried_from") == G2 for s in latest["seats"]))
+        self.assertEqual("product", latest["requesting_seat"])
+        status = sprint.goal_review_status(root, self.G3)
+        self.assertEqual([], status["needs_reconsult"])
+        # the carry takes each seat's NEWEST verdict on G2, not its first
+        carried = {s["seat"]: s for s in latest["seats"]}
+        self.assertEqual("yes", carried["engineering"]["achievable"])
+        self.assertEqual({G2: "no"}, carried["engineering"]["clauses"])
+        # none is owed but a seat that asked: qa asking on G2 is not carried to G3
+        root = self._copy("base")
+        _ok(_record(root, "--goal", G,
+                    *[a for r in SEATS for a in ("--seat", f"{r}|yes|done|yes")]))
+        _ok(_record(root, "--goal", G2, "--amend-from", G, "--requesting-seat", "engineering"))
+        _ok(_record(root, "--goal", G2, "--seat", "qa|yes|done|yes|look again|yes"))
+        _ok(_record(root, "--goal", self.G3, "--amend-from", G2, "--requesting-seat", "product"))
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        self.assertEqual(["engineering", "product"], sorted(s["seat"] for s in latest["seats"]))
+        self.assertEqual(["qa"], sprint.goal_review_status(root, self.G3)["needs_reconsult"])
+        # a seat with no verdict on any round of the prior wording is still refused
+        r = _record(root, "--goal", "ship it all to users", "--amend-from", self.G3,
+                    "--requesting-seat", "qa")
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("has no verdict on", r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

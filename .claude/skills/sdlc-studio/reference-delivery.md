@@ -3,7 +3,7 @@
 When a sprint run begins, the batch is built one of two ways:
 
 - **Sequential** - the units are built in order, in the working tree. Always available.
-- **Parallel** - each file-disjoint group is built by its own agent in an isolated git
+- **Parallel** - each group no code file crosses is built by its own agent in an isolated git
   worktree, then merged. Available **only** when the batch genuinely decomposes.
 
 `sprint plan` computes which modes are on the table and states the reason, so the operator
@@ -13,9 +13,11 @@ and repo state always yield the same modes and the same groups.
 ## When parallel is offered
 
 Parallel is offered when the batch partitions into **two or more file-disjoint groups**. Two
-units couple - and so land in the same group, forcing sequence - when they share any file.
-A group of two or more units that all touch a common file cannot be split; two agents editing
-the same file in separate worktrees produce a merge conflict.
+units couple - and so land in the same group, forcing sequence - when they share a code file.
+A group of two or more units that all touch a common code file cannot be split; two agents
+editing the same code file in separate worktrees produce a merge conflict. A shared prose page
+(`.md`, `.mdx`) couples nobody: each unit appends to it, it merges cleanly, and the plan reports
+the share as advisory.
 
 Parallel is **withheld**, and the batch is delivered sequentially, when:
 
@@ -42,10 +44,10 @@ choice - and the road not taken - is recorded.
 ## Building in parallel
 
 A parallel build gives each group its own agent and worktree, so the groups never touch each
-other's files. On merge, the groups are file-disjoint by construction, so the merges combine
-cleanly. The merge step still counts test files as coupling: a group boundary drawn without
-them would let two groups share a test module and conflict at merge, which is the failure the
-coupling rule exists to prevent.
+other's code files. On merge, no code file crosses two groups by construction, and a prose page
+two groups both append to merges cleanly. The merge step still counts test files as coupling: a
+group boundary drawn without them would let two groups share a test module and conflict at
+merge, which is the failure the coupling rule exists to prevent.
 
 ## Worktree isolation is not workspace isolation
 

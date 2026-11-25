@@ -400,6 +400,33 @@ def awaiting_signature_lines(repo_root: Path | str) -> list[str]:
             for r in waiting]
 
 
+def blocked_lines(repo_root: Path | str, run: dict | None) -> list[str]:
+    """One line per unit the open run holds blocked by `sprint decision defer --block`, read from
+    the run state's `blocked_units` with the unit's own status beside it: a bug has no Blocked
+    status, so without this line it reads as an ordinary open unit. [] with no open run, an
+    unreadable one (the run line already names it), or none held."""
+    if not run or run.get("unreadable"):
+        return []
+    from lib import run_state   # THE shared reader; this must not be a second one
+
+    root = Path(repo_root)
+    try:
+        held = (run_state.read(root) or {}).get("blocked_units") or []
+    except run_state.RunStateError:
+        return []
+    lines = []
+    for uid in (held if isinstance(held, list) else []):
+        norm = sdlc_md.norm_id(str(uid))
+        hit = sdlc_md.find_by_id(root, norm)
+        raw = (sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) or "", "Status") or ""
+               if hit else "")
+        shown = ((sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root))
+                  or raw.strip()) if hit else "") or "no artefact on disk"
+        lines.append(f"Blocked:      {norm} ({shown}) - held by `sprint decision defer --block` "
+                     f"on the run state until `sprint decision resolve` answers it")
+    return lines
+
+
 _UNSET = object()
 
 
@@ -473,6 +500,9 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     # open while an earlier one waits, and each still needs the operator. After the flush, so
     # the run line reaches a pipe first.
     for line in awaiting_signature_lines(root):
+        print(line)
+    # Each unit the open run holds blocked on its own state, which a bug's Status cannot show.
+    for line in blocked_lines(root, run):
         print(line)
     sys.stdout.flush()
     # ONE sweep over the corpus for the census and every advisory beneath it: `children_of`

@@ -150,8 +150,9 @@ class TrunkIntegrationTests(unittest.TestCase):
 
     def test_the_lane_brief_forbids_a_pr_or_pushed_branch(self) -> None:
         """AC3. MUTANT: `LANE_OBLIGATIONS` without the trunk entry (no row forbids a PR), or an
-        entry that drops the worktree fast-forward. Control: the obligations already shipped
-        still ride the brief, and it exits 0."""
+        entry that lands anywhere but through `sprint lane land` onto the root's branch (BG1287:
+        no literal `main` and no fast-forward beside the brief's own "Do not commit"). Control:
+        the obligations already shipped still ride the brief, and it exits 0."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "src").mkdir()
@@ -168,9 +169,10 @@ class TrunkIntegrationTests(unittest.TestCase):
         rows = _obligations(out)
         trunk = [r for r in rows if RULE_NO_PR.lower() in r.lower()]
         self.assertEqual(1, len(trunk), rows)
-        for words in ("Land the unit on `main`", "fast-forwarding", "worktree onto `main`",
-                      "within the lane"):
+        for words in ("landed by `sprint lane land`", "onto the root's branch", RULE_OPT_IN):
             self.assertIn(words, trunk[0])
+        self.assertNotIn("`main`", trunk[0])
+        self.assertNotIn("fast-forward", trunk[0])
         self.assertTrue(any(r.startswith("Refuse a unit that carries no authored") for r in rows),
                         rows)
         self.assertTrue(any(r.startswith("A repair answering a REJECT") for r in rows), rows)

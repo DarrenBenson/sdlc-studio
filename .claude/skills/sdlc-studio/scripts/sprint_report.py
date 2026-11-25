@@ -888,6 +888,14 @@ def _seam_lines(rep: dict) -> list[str]:
 WAIVABLE_RULES = ("rule:sprint-checklist",)
 WAIVER_SUBJECT = "rule:sprint-checklist"
 
+
+def waiver_command(item: str = "<item>") -> str:
+    """The checklist waiver remedy, with `<why>` and `<the operator>` left for its reader to
+    fill. Every surface that prints one prints this, so none can drop `--authorised-by`, which
+    `decisions.py waive` refuses a checklist waiver without."""
+    return (f"decisions.py waive --subject {WAIVER_SUBJECT}:{item} --rationale '<why>' "
+            f"--authorised-by '<the operator>'")
+
 #: A STAGE row is exactly one of these three. Evidence that cannot be READ is `not-run`, with
 #: the reason in `detail`: this checklist certifies that a stage can be SHOWN to have happened,
 #: and an unreadable record shows nothing. That is the conservative direction - the alternative
@@ -2526,8 +2534,7 @@ def render_checklist(ck: dict) -> str:
     if ck["outstanding"]:
         lines += ["", f"{len(ck['outstanding'])} compulsory item(s) OUTSTANDING: "
                       f"{', '.join(ck['outstanding'])}. The close refuses until each is "
-                      f"answered or waived on the record (`decisions.py waive --subject "
-                      f"{WAIVER_SUBJECT}:<item> --rationale '<why>'`)."]
+                      f"answered or waived on the record (`{waiver_command()}`)."]
     if ck.get("expired"):
         lines += ["", f"{len(ck['expired'])} item(s) PAST THEIR WINDOW, reported and not held: "
                       + "; ".join(f"{r['id']} (enforce at `{_window(r)}`)"

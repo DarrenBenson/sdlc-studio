@@ -302,10 +302,10 @@ below), then re-plan.
 
 **Shared-file clusters.** A `Depends on:` edge is a *declaration*; a shared file is a *fact*. The
 planner therefore also derives clusters from the `Affects` it already parses: units touching the
-same file are **one cluster**, not independent parallel work, and a wave holding more than one
-member of a cluster is called out as NOT safely parallel (run them in sequence, or declare the
-edge so the waves say so). Without this the planner reported two units as safely parallel while
-both rewrote the same module.
+same file are **one cluster**. Each pair sharing a code file is named on its own line, and a wave
+holding such a pair is called out as NOT safely parallel (run them in sequence, or declare the
+edge). A cluster joined only by a prose page (`.md`, `.mdx`) is advisory: it merges cleanly.
+Without this the planner reported two units as safely parallel while both rewrote the same module.
 
 **Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so
 `plan --stories <status> --epic EPxxxx [--epic EPyyyy]` restricts the batch to stories in the named
@@ -406,8 +406,8 @@ backlog can be groomed against exactly what the gate reads. It never blocks and 
 
 **Delivery mode - sequential or parallel.** Every plan states whether the batch may be built in
 parallel worktrees, or must go sequentially, and why. Parallel is offered only when the batch
-partitions into two or more file-disjoint groups; a one-unit batch, an all-coupled batch, or a
-unit with no declared `Affects` is delivered sequentially. Test files count as coupling (a shared
+partitions into two or more groups no code file crosses; a one-unit batch, an all-coupled batch,
+or a unit with no declared `Affects` is delivered sequentially. Test files count as coupling (a shared
 test module conflicts on merge exactly as a shared source module does). Build tooling and shared
 config count as coupling too: a unit touching the commit hooks, the `tools/` guards, the gate,
 `package.json`, `install.sh`, the CI workflow or the shared project config is never offered as
@@ -417,7 +417,7 @@ merge-clean split is not a safe one. That set is declared, not guessed from a fi
 [reference-delivery.md](reference-delivery.md) for the full contract.
 
 **Lane partition - report-only, and its limit travels with the export.** Every plan also emits a file-disjoint LANE PARTITION
-(the batch split so no file appears in two lanes, from the same `Affects`/Verify files the clusters use). It is REPORT-ONLY -
+(the batch split so no code file appears in two lanes, a shared prose page being advisory, from the same `Affects`/Verify files the clusters use). It is REPORT-ONLY -
 it selects, orders and forecasts nothing, only showing how the work would divide across teams or worktrees; a unit that
 declares no `Affects` is **unplaceable** and named, never dropped into a lane. `sprint plan --export-lanes DIR` writes each
 lane as a `--worklist`-readable file, stating the caveat - disjointness is only as good as the declared `Affects`, and a unit
