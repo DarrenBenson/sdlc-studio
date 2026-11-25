@@ -36,6 +36,7 @@ REPO = Path(__file__).resolve().parents[2]
 SKILL_REL = ".claude/skills/sdlc-studio"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.append(str(REPO / SKILL_REL / "scripts" / "tests"))
+import gitutil  # noqa: E402
 from test_lean_release_notes_v6 import (  # noqa: E402
     UNIT_ID, _blank, changelog_sections, section, sections, units)
 from test_lean_release_notes_v61 import _norm, _run  # noqa: E402
@@ -48,7 +49,8 @@ NOTES_64_REL = "docs/release-notes-v6.4.0.md"
 CHANGELOG = REPO / "CHANGELOG.md"
 FRAGMENTS = REPO / "changelog.d"
 REPORTS = REPO / "sdlc-studio" / "reports"
-DECISIONS = REPO / "sdlc-studio" / "decisions.md"
+DECISIONS_REL = "sdlc-studio/decisions.md"
+DECISIONS = REPO / DECISIONS_REL
 BUGS = REPO / "sdlc-studio" / "bugs"
 TAG = "v6.5.0"
 
@@ -290,8 +292,9 @@ def wont_fix(bugs: Path | None = None) -> dict[str, int]:
 
 
 def ruled_at(dec: str) -> str:
-    """The commit that recorded `dec`'s row in the decisions log, the oldest whose change adds
-    or removes that row: the commit that applied its Won't Fix list."""
+    """The commit that recorded `dec`'s row in the decisions log: the oldest commit whose change
+    adds or removes the row, which is the one that added it, never HEAD, a later commit that
+    edits the row in place, or one that removes it. That commit applied its Won't Fix list."""
     proc = _run("git", "-C", str(REPO), "log", "--reverse", "--format=%H", "-S", f"| {dec} |",
                 "--", "sdlc-studio/decisions.md")
     commits = proc.stdout.split()
@@ -826,8 +829,10 @@ class ReleaseNotesTests(unittest.TestCase):
         tree, where a D0613 bug reopened since (BG0971) and a later Won't Fix bug citing D0564
         would move them to 127 and 140. `wont_fix` is checked on a fixture corpus: a bug at Won't
         Fix naming the decision outside its Resolution, or naming it while still open, is not
-        counted. The corpus is read through git, so that subtest alone is skipped in a tree that
-        is not a git clone."""
+        counted. `ruled_at` naming any commit but the one that added each row (622cb4156 for D0564,
+        e8bed39a5 for D0613), such as HEAD, fails here as on the fixture repository of
+        `RulingCommitTests`. The corpus is read through git, so that subtest alone is skipped in a
+        tree that is not a git clone."""
         rows = decision_rows()
         quality = lambda text: quality_problems(text, rows, None)  # noqa: E731
         self.assertFlags(quality(shipped(NOTES_64_REL).replace("6.4.0", "6.5.0")),
@@ -872,6 +877,14 @@ class ReleaseNotesTests(unittest.TestCase):
 
         with self.subTest("the Won't Fix counts, read from the corpus as each ruling left it"):
             self.needs_cli()
+            for dec, added in (("D0564", "622cb4156"), ("D0613", "e8bed39a5")):
+                commit = ruled_at(dec)
+                self.assertTrue(commit.startswith(added), f"{dec} read at {commit}, not {added}")
+                at, before = (_run("git", "-C", str(REPO), "show", f"{ref}:{DECISIONS_REL}")
+                              for ref in (commit, f"{commit}^"))
+                self.assertIn(f"| {dec} |", at.stdout, f"{dec}'s row is not in the log at {commit}")
+                self.assertNotIn(f"| {dec} |", before.stdout,
+                                 f"{dec}'s row is already in the log before {commit}")
             ruled = ruled_counts()
             self.assertEqual([], quality_problems(self.text, rows, ruled))
             self.assertFlags(quality_problems(self.mutant("139 Low bugs", "140 Low bugs"), rows,
@@ -1124,6 +1137,52 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertFlags(fixture, "RPT0044, named for 55, is not signed")
         self.assertFlags(fixture, "RPT0045, named for 77, has no committed JSON")
         self.assertEqual([], cost_problems(self.text))
+
+
+class RulingCommitTests(unittest.TestCase):
+    """`ruled_at` names the commit that added a decision's row, and `ruled_counts` reads the
+    corpus there, on a repository built here, so it runs in any tree with git on the path."""
+
+    BUG = "# BG{n}: x\n\n> **Status:** {status}\n\n## Resolution\n\nWon't Fix under D0564.\n"
+
+    def commit(self, root: Path, row: str | None, statuses: dict[str, str], message: str) -> str:
+        """Write the decisions log holding `row` (or none) and each bug at its status, commit
+        them, and return the commit."""
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True, exist_ok=True)
+        (root / "sdlc-studio" / "decisions.md").write_text(
+            "# Decisions\n\n| ID | Decision |\n| --- | --- |\n" + (f"{row}\n" if row else ""),
+            encoding="utf-8")
+        for n, status in statuses.items():
+            (bugs / f"BG{n}-x.md").write_text(self.BUG.format(n=n, status=status), encoding="utf-8")
+        ident = ("-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false")
+        gitutil.git([*ident, "add", "-A"], cwd=root)
+        gitutil.git([*ident, "commit", "-q", "-m", message], cwd=root)
+        return gitutil.git(["rev-parse", "HEAD"], cwd=root, text=True).stdout.strip()
+
+    def test_the_ruling_commit_is_the_one_that_added_the_row(self) -> None:
+        """MUTANTS: `ruled_at` returning HEAD; the newest commit whose change adds or removes the
+        row (`commits[-1]`); the log read newest first (`--reverse` dropped); a decision with no
+        row read as a commit rather than refused. The fixture adds D0564's row with two bugs at
+        Won't Fix, then edits the row in place and reopens one bug, then removes the row and
+        reopens the other: HEAD holds none at Won't Fix, the edit one, the ruling two."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], cwd=root)
+            self.commit(root, None, {"0001": "Open", "0002": "Open"}, "base")
+            ruled = self.commit(root, "| D0564 | approve two |",
+                                {"0001": "Won't Fix", "0002": "Won't Fix"}, "rule")
+            self.commit(root, "| D0564 | approve two, as amended |",
+                        {"0001": "Open", "0002": "Won't Fix"}, "amend the row in place")
+            head = self.commit(root, None, {"0001": "Open", "0002": "Open"}, "remove the row")
+            self.assertNotEqual(ruled, head)
+            self.assertEqual(0, wont_fix(root / "sdlc-studio" / "bugs")["D0564"],
+                             "premise: HEAD's corpus holds no bug at Won't Fix")
+            with mock.patch.dict(ruled_at.__globals__, REPO=root):
+                self.assertEqual(ruled, ruled_at("D0564"))
+                self.assertEqual({"D0564": 2}, ruled_counts(("D0564",)))
+                with self.assertRaisesRegex(AssertionError, "no commit recording D0999"):
+                    ruled_at("D0999")
 
 
 if __name__ == "__main__":
