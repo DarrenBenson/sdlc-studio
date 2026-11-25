@@ -470,15 +470,14 @@ class MdSafeProseTests(unittest.TestCase):
         input with backticks added. Fixed seed, 4000 inputs. A URL is always set apart by
         spaces: `_code_urls` must span it whole, so a span the author wrote against it is the
         author's to separate. Mutants: a rooted path allowed to start after `)` or `]`; the
-        merge of touching spans removed; the span boundary guard removed."""
+        merge of touching spans removed; the span boundary guard removed. It reads no clock:
+        the escaper's speed is the next test's to pin."""
         import random
         import re
-        import time
         authors = ["`AA`", "``B`B``", "`$REPO`", "`c d`"]
         pieces = ["unit_cost", "my_list", "a_b", "x", "tmp_dir", "run_x", "_c_d", "()", "[0]",
                   "(", ")", "[", "]", "/", "~/", "./", "$HOME/", " ", " ", ".", " https://x.io/a_b "]
         rng = random.Random(20261125)
-        began = time.perf_counter()
         checked = 0
         for _ in range(4000):
             text = "".join(rng.choice(pieces + authors * 2) for _ in range(rng.randint(1, 9)))
@@ -496,17 +495,29 @@ class MdSafeProseTests(unittest.TestCase):
             self.assertNotIn("``", bare, (text, out))
             self.assertEqual(text.replace("`", ""), out.replace("`", ""), (text, out))
         self.assertGreater(checked, 2500)
-        self.assertLess(time.perf_counter() - began, 5.0)
 
     def test_the_escaper_is_linear_in_a_paths_segment_count(self) -> None:
-        """A long run of segments is scanned once, not once per slash: 16 KB took 14.7 s when a
-        start could follow every slash. Mutant: the start allowed after a path character."""
+        """A long run of segments is scanned once, not once per slash. The pin is a ratio of the
+        work done, not a number of seconds: the escaper may spend at most 64 times the processor
+        time on a path of 16 times the segments, where a linear scan spends about 16 times and a
+        scan once per slash about 230 times. Processor time counts only this process's work, so
+        time spent waiting behind other processes is not in it, and each length is run five
+        times, in turn, with the least of each compared. Mutant: the start allowed after a path
+        character (4000 segments of `a/` then took 0.37 s, against 1.6 ms for 250)."""
         import time
-        for text in ("a/" * 16000 + "x", "a_b/" * 8000 + "x", "/".join(["d"] * 16000) + "/t_x.py"):
-            began = time.perf_counter()
-            out = ff._md_safe(text)
-            self.assertLess(time.perf_counter() - began, 1.0, text[:12])
-            self.assertEqual(text.replace("`", ""), out.replace("`", ""), "only spans added")
+        for shape in (lambda n: "a/" * n + "x", lambda n: "a_b/" * (n // 2) + "x",
+                      lambda n: "/".join(["d"] * n) + "/t_x.py"):
+            short, long_ = shape(250), shape(4000)
+            spent_short, spent_long = [], []
+            for _ in range(5):
+                began = time.process_time()
+                ff._md_safe(short)
+                spent_short.append(time.process_time() - began)
+                began = time.process_time()
+                out = ff._md_safe(long_)
+                spent_long.append(time.process_time() - began)
+            self.assertLess(min(spent_long), 64 * min(spent_short), long_[:12])
+            self.assertEqual(long_.replace("`", ""), out.replace("`", ""), "only spans added")
 
     def test_a_slash_joined_path_is_one_token(self) -> None:
         """BG1304 AC2. Mutants: the path split at its last slash, the file name wrapped alone;
