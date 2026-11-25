@@ -901,8 +901,8 @@ def held_rows(repo_root: Path | str, unit: str) -> set[str]:
 def hold_for_second_seat(repo_root: Path | str, unit: str) -> str:
     """Hold `unit`'s latest delivery row, the APPROVE `lane accept` has just recorded for a
     high-risk unit, for its second independent seat: the next verdict from another seat shares
-    that row's round (`delivery_rounds`), so its REJECT opens a repair rather than spending a
-    round of its own. The row's key; raises ValueError with no row and OSError when the note
+    that row's round (`delivery_rounds`), so its REJECT spends no round of its own: below the
+    review cap it opens a repair, and on a row held at the cap it is a REJECT at the cap. The row's key; raises ValueError with no row and OSError when the note
     cannot be written."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_verdicts(repo_root) if sdlc_md.norm_id(r.get("unit", "")) == uid]

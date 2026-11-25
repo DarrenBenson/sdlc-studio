@@ -4786,9 +4786,10 @@ def _render_clusters(data: dict) -> None:
     knows the declarations, so it has called two units parallel while both rewrote one module.
     The cluster is printed with the plan, each pair of units sharing a code file on a line of
     its own, and a wave is called out as NOT safely parallel once for each pair of its units
-    that declare a code file in common, naming the pair and the files. Two units joined in one
-    cluster only through a third unit share no file, so they are not warned. A shared prose page
-    is advisory: a page each unit appends to merges cleanly, so it holds no wave back."""
+    that touch a code file in common, declared in their `Affects` or named in their `Verify:`
+    lines alike, naming the pair and the files. Two units joined in one cluster only through a
+    third unit share no file, so they are not warned. A shared prose page is advisory: a page
+    each unit appends to merges cleanly, so it holds no wave back."""
     bd = data.get("breakdown") or {}
     clusters = bd.get("clusters") or []
     if not clusters:

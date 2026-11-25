@@ -68,6 +68,13 @@ class LaneReturnAgentPrefixTests(meter._Case):
         recs, out = self._returned("xagent-7", "xagent-7")
         self._assert_priced(recs, out, "xagent-7")
 
+    def test_a_bare_id_opening_with_agent_and_no_dash_is_kept(self) -> None:
+        """The control on the prefix test's dash: `agentx9` opens with the word but not with
+        `agent-`, so it is read as given, from `agent-agentx9.jsonl`. MUTANT: test for `agent`
+        without the dash, which reads it as `9`, from `agent-9.jsonl`."""
+        recs, out = self._returned("agentx9", "agentx9")
+        self._assert_priced(recs, out, "agentx9")
+
     def test_a_missing_transcript_is_still_named_unpriced(self) -> None:
         """The control on the refusal: a prefixed id with no transcript records no priced
         cost and says so, naming the bare id's transcript it looked for."""

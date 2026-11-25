@@ -37,11 +37,11 @@ class LaneAcceptRejectStaleTests(unittest.TestCase):
     _landed_fp = base.LaneAcceptTests._landed_fp
     _brief = base.LaneAcceptTests._brief
 
-    def _stale(self) -> tuple[str, dict]:
-        """Land round one under `block`, then commit to the unit's Affects with no landing: the
+    def _stale(self, mode: str = "block") -> tuple[str, dict]:
+        """Land round one under `mode`, then commit to the unit's Affects with no landing: the
         saved brief's fingerprint and the self-check that no longer covers the diff."""
         config = base._write(self.root, "sdlc-studio/.config.yaml",
-                             "review:\n  author_self_check: block\n")
+                             f"review:\n  author_self_check: {mode}\n")
         gitutil.git(["add", "--", str(config)], self.root)
         gitutil.git(["commit", "-q", "-m", "chore: the self-check gate blocks"], self.root)
         landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
@@ -81,6 +81,35 @@ class LaneAcceptRejectStaleTests(unittest.TestCase):
         self.assertEqual(base._status(self.root, GREEN), "Review")
         self.assertIn(f"the self-check recorded for {GREEN} on {stale['date']} is stale", err)
         self.assertIn("review.author_self_check: block", err)
+
+    def test_a_reject_whose_blocking_quotes_no_finding_reaches_the_records_own_refusal(self):
+        """A REJECT whose BLOCKING line quotes no ISSUES finding is still a REJECT: the stale
+        self-check does not refuse it, so the record's own format refusal names the one-line
+        fix rather than sending the operator to land the unit again. MUTANT: read the verdict
+        through the strict parser, whose BLOCKING check raises."""
+        self._stale()
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, "VERDICT: REJECT\nISSUES: [new] the gate lets a red "
+                                           "unit through\nBLOCKING: a finding never raised\n")
+        self.assertNotEqual(rc, 0, out + err)
+        self.assertEqual(self._scripts(), ["critic.py record"], "the record never judged it")
+        self.assertNotIn(f"land {GREEN} again", err)
+        self.assertIn("`critic.py record` exited", err)
+        self.assertIn("BLOCKING", err)
+        self.assertFalse(critic.verdicts_path(self.root).exists(), "a verdict was recorded")
+
+    def test_report_mode_does_not_say_block_refuses_a_reject(self) -> None:
+        """Under `report` the stale self-check is a warning for every verdict; for a REJECT it
+        says `block` records it too, since that is what `block` now does. MUTANT: keep the old
+        "`block` refuses the verdict" wording for a REJECT."""
+        _saved, stale = self._stale("report")
+        rc, out, err = self._accept(GREEN, REJECT)
+        self.assertEqual(rc, 1, out + err)
+        said = " ".join(err.split())
+        self.assertIn(f"WARNING {GREEN}: the self-check recorded for {GREEN} on {stale['date']} "
+                      f"is stale", said)
+        self.assertNotIn("`block` refuses the verdict", said)
+        self.assertIn("`block` records a REJECT too and refuses an APPROVE", said)
 
     def test_an_unreadable_verdict_on_a_stale_self_check_is_refused(self) -> None:
         """A verdict file whose block names no verdict is read as no REJECT, so the stale

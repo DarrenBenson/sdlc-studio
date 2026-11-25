@@ -116,7 +116,7 @@ links here rather than listing its own.
    (`general-purpose` where the harness has no agent config). Brief the seat with
    `critic.py brief --unit <id> --seat engineering|product|qa` and record its verdict with
    `critic.py record`, each finding tagged `[regression]`, `[new]` or `[pre-existing]` (only the
-   first two block). A high-class unit (a story's `Risk-class` tag, or a bug's Affects read through `risk.components`) also takes a second independent seat, which `sprint plan` names beside its class; `critic.py brief` at that seat says so, and the retro reports what each second seat caught after the first approved. The second seat shares the unit's rounds. Recorded with `critic.py record` alone, rounds are one sequence per unit, whichever seat records them, and at the default cap of 2 a second seat's REJECT after the first seat's APPROVE is round 2, so the unit is carried and not repaired, and a second seat's verdict after a REJECT and an APPROVE is refused as past the cap, until per-seat rounds (US1032, US1033) land. `sprint lane accept` does not spend that round: it records the first seat's APPROVE without moving the unit and holds it for the second seat (`critic.hold_for_second_seat`), whose verdict takes the held round, so its REJECT opens a repair and its APPROVE, accepted the same way, moves the unit. An APPROVE clears the unit. A REJECT is answered in the next round by the
+   first two block). A high-class unit (a story's `Risk-class` tag, or a bug's Affects read through `risk.components`) also takes a second independent seat, which `sprint plan` names beside its class; `critic.py brief` at that seat says so, and the retro reports what each second seat caught after the first approved. The second seat shares the unit's rounds. Recorded with `critic.py record` alone, rounds are one sequence per unit, whichever seat records them, and at the default cap of 2 a second seat's REJECT after the first seat's APPROVE is round 2, so the unit is carried and not repaired, and a second seat's verdict after a REJECT and an APPROVE is refused as past the cap, until per-seat rounds (US1032, US1033) land. `sprint lane accept` does not spend that round: it records the first seat's APPROVE without moving the unit and holds it for the second seat (`critic.hold_for_second_seat`), whose verdict takes the held round, so its REJECT opens a repair below the cap and is at the cap on a round held there, and its APPROVE, accepted the same way, moves the unit. An APPROVE clears the unit. A REJECT is answered in the next round by the
    reviewer who rejected, re-checking the fixes, and the rounds stop at the round cap: a unit still
    rejected at the cap is carried, its findings filed as a bug and the unit dropped from the batch,
    so the run continues without it. The cap's value and what carrying means are in
@@ -301,10 +301,10 @@ genuinely independent batch. The fix is to declare the dependencies (the `--goal
 below), then re-plan.
 
 **Shared-file clusters.** A `Depends on:` edge is a *declaration*; a shared file is a *fact*. The
-planner therefore also derives clusters from the `Affects` it already parses: units touching the
-same file are **one cluster**. Each pair sharing a code file is named on its own line, and a wave
-holding such a pair is called out as NOT safely parallel (run them in sequence, or declare the
-edge). A cluster joined only by a prose page (`.md`, `.mdx`) is advisory: it merges cleanly.
+planner derives clusters from the `Affects` it parses and the files `Verify:` lines name: units
+touching one file are **one cluster**. Each pair sharing a code file is named on its own line, and
+a wave is called out as NOT safely parallel once per pair of its own units sharing one (run them
+in sequence, or declare the edge). A shared prose page (`.md`, `.mdx`) is advisory: it merges cleanly.
 Without this the planner reported two units as safely parallel while both rewrote the same module.
 
 **Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so

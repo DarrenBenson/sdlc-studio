@@ -41,12 +41,15 @@ def _workspace(d: str, max_rounds: int | None = None) -> Path:
     return root
 
 
-def _record(root: Path, verdict: str, reviewer: str, issues: str = "") -> tuple[int, str, str]:
+def _record(root: Path, verdict: str, reviewer: str, issues: str = "",
+            ruling: str = "") -> tuple[int, str, str]:
     out, err = io.StringIO(), io.StringIO()
     argv = ["record", "--unit", UNIT, "--verdict", verdict, "--reviewer", reviewer,
             "--author", "builder", "--root", str(root)]
     if issues:
         argv += ["--issues", issues]
+    if ruling:
+        argv += ["--ruling", ruling]
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = critic.main(argv)
     return rc, out.getvalue(), err.getvalue()
@@ -404,6 +407,53 @@ class PerDeliveryRoundTests(_NoTranscripts):
             rc, _out, err = _record(root, "APPROVE", self.ENG)
             self.assertEqual(rc, 2, err)
             self.assertIn("at the cap of 2", err)
+
+    def _ruled(self, d: str) -> Path:
+        """A high-risk workspace whose decision log holds an accepted ruling granting UNIT a
+        round past the cap."""
+        root = self._high_risk(d)
+        (root / "sdlc-studio" / "decisions.md").write_text(
+            "# Decisions\n\n| ID | Decision | Rationale | Status | Supersedes | Date |\n"
+            "| --- | --- | --- | --- | --- | --- |\n"
+            f"| D0001 | {UNIT} gets a third review round past the cap. | Specified. | accepted "
+            "| -- | 2026-11-25 |\n", encoding="utf-8")
+        return root
+
+    def test_a_ruling_on_a_held_round_at_the_cap_is_not_needed(self) -> None:
+        """The second seat's verdict on a round-2 APPROVE held for it takes round 2, the cap,
+        not a round past it, so a ruling passed with it is not needed and no ruling note is
+        written. MUTANT: judge `past_cap` on the rows recorded rather than the round the verdict
+        takes, which reads the third row as past the cap and writes the ruling."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled(d)
+            _record(root, "REJECT", self.QA, "[new] a")
+            self.assertEqual(_record(root, "APPROVE", self.QA)[0], 0)
+            critic.hold_for_second_seat(root, UNIT)
+            rc, out, err = _record(root, "APPROVE", self.ENG, ruling="D0001")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 2", out)
+            self.assertIn(f"{UNIT} was below the review cap, so ruling D0001 was not needed and "
+                          "is not recorded", err)
+            self.assertEqual([], critic.read_round_rulings(root))
+
+    def test_a_ruled_round_after_a_shared_round_records_its_own_round(self) -> None:
+        """A ruled verdict past the cap that follows a shared round records the round it was,
+        three, not the rows the unit holds, four. MUTANT: write the ruling's round as the
+        count of rows."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._ruled(d)
+            _record(root, "REJECT", self.QA, "[new] a")
+            self.assertEqual(_record(root, "APPROVE", self.QA)[0], 0)
+            critic.hold_for_second_seat(root, UNIT)
+            self.assertEqual(_record(root, "REJECT", self.ENG, "[new] b")[0], 0)
+            rc, out, err = _record(root, "APPROVE", self.ENG, ruling="D0001")
+            self.assertEqual(rc, 0, err)
+            self.assertIn("round 3", out)
+            self.assertEqual(4, len(_rows(root)), "premise: four rows over three rounds")
+            [ruled] = critic.read_round_rulings(root)
+            self.assertEqual((UNIT, "3", "D0001"),
+                             (sdlc_md.norm_id(ruled["unit"]), str(ruled["round"]),
+                              ruled["ruling"]))
 
     def test_a_damaged_holds_file_holds_only_its_readable_notes(self) -> None:
         """The hold notes are read line by line: a line that is not a JSON object naming a unit

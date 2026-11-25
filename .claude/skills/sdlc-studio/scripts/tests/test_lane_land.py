@@ -403,6 +403,18 @@ sys.exit(bad)
         self.assertEqual({A: "Dani Okafor (engineering)"}, record["authors"])
         self.assertEqual({A: self.wt.name}, record["owners"])
 
+    def test_a_lane_briefed_to_the_qa_seat_records_its_author_as_qa(self) -> None:
+        """BG1594 AC1 off the default seat: the brief recorded the qa seat, so the self-check
+        and the land record name the qa seat's holder, not the engineering seat a build takes
+        by default. MUTANT: sign as `critic.BUILD_SEAT` whatever role the brief recorded."""
+        self._briefed_as("qa")
+        self.assertEqual("Sam (qa)", critic.seat_signature(self.root, "qa"),
+                         "premise: the qa seat signs differently from the default build seat")
+        author, record = self._landed_authors()
+        self.assertEqual("Sam (qa)", author)
+        self.assertEqual({A: "Sam (qa)"}, record["authors"])
+        self.assertEqual({A: self.wt.name}, record["owners"])
+
     def test_a_land_with_no_briefed_seat_keeps_the_worktree_name(self) -> None:
         """The control: with no lane brief recording a seat, the worktree's name stands, as
         before."""

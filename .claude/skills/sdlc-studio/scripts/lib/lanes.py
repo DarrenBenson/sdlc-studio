@@ -1369,9 +1369,12 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
         raise LandError(str(exc), 2) from None
     gap = critic.self_check_gap(root, unit) if mode != "off" else None
     # A REJECT moves nothing and holds the findings the repair answers, so `block` records it
-    # with the stale self-check named; only a verdict that could move the unit is refused.
+    # with the stale self-check named; only a verdict that could move the unit is refused. The
+    # verdict is read for its form only, so a REJECT whose BLOCKING the record would refuse is
+    # still a REJECT here and reaches that refusal, which names the fix.
     try:
-        rejecting = str(critic.parse_verdict_block(said)[0] or "").upper() == critic.REJECT
+        said_verdict = critic.parse_verdict_block(said, strict=False)[0]
+        rejecting = str(said_verdict or "").upper() == critic.REJECT
     except ValueError:      # no readable verdict: judged as one that could move the unit
         rejecting = False
     if gap and mode == "block" and not rejecting:
@@ -1383,6 +1386,8 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
         _say(f"WARNING {unit}: {gap}, so no self-check covers the diff {rel} is the brief of "
              + ("; a REJECT moves nothing, so it is recorded (review.author_self_check: block "
                 "refuses an APPROVE)" if mode == "block" else
+                f"(review.author_self_check: {mode}; `block` records a REJECT too and refuses "
+                f"an APPROVE)" if rejecting else
                 f"(review.author_self_check: {mode}; `block` refuses the verdict)"), err=True)
     uid, tier = sdlc_md.norm_id(unit), None
     try:
@@ -1532,9 +1537,15 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
         except (OSError, ValueError) as exc:
             _say(f"  WARNING the APPROVE could not be held for the second seat ({exc}), so "
                  f"that seat's verdict takes a round of its own", err=True)
+        # held at the cap, the second seat's REJECT is that round's and the cap's rules hold it
+        cap = critic.review_ceiling(root)
+        rejected = (f"its REJECT shares round {rnd}, the review cap of {cap}, so it opens no "
+                    f"repair: the unit is carried, or a further round takes a ruling"
+                    if rnd.isdigit() and int(rnd) >= cap else
+                    f"its REJECT shares round {rnd} and opens the repair")
         _say(f"{unit}: NOT moved to {target}: its risk class is high, so it takes two "
              f"independent seats and a second seat is owed ({owed}). Its APPROVE, accepted "
-             f"here, moves the unit; its REJECT shares round {rnd} and opens the repair")
+             f"here, moves the unit; {rejected}")
         return 1
     ran = _script(root, "verify_ac.py", "run", "--id", unit, "--timeout", str(timeout))
     if ran.returncode:

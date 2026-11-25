@@ -183,7 +183,8 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
 
     # BG1661: a high-risk unit takes two independent seats, so the first seat's APPROVE is
     # recorded and held rather than moving the unit, and the second seat's verdict shares its
-    # round: an APPROVE moves the unit, a REJECT opens the repair.
+    # round: an APPROVE moves the unit, a REJECT opens the repair below the review cap and is
+    # at the cap when the held round is the cap.
     _scripts = base.LaneAcceptTests._scripts
 
     def _held(self) -> str:
@@ -202,6 +203,7 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertIn(f"{GREEN}: NOT moved to Done: its risk class is high, so it takes two "
                       f"independent seats and a second seat is owed", said)
         self.assertIn("only the qa seat has approved", said)
+        self.assertIn("its REJECT shares round 1 and opens the repair", said)
         return saved
 
     def test_a_high_risk_first_seat_approve_defers_done(self) -> None:
@@ -216,6 +218,31 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertNotIn(critic.CARRIED_REASON, out + err)
         self.assertEqual(base._status(self.root, GREEN), "Review")
         self.assertEqual([r["round"] for r in critic.delivery_rounds(self.root, GREEN)], [1, 1])
+
+    def test_a_held_round_at_the_cap_says_the_second_seats_reject_is_at_the_cap(self) -> None:
+        """The qa seat rejects round 1, the repair lands and the qa seat approves round 2, the
+        default cap of 2: the held APPROVE's output says the second seat's REJECT shares round 2
+        at the cap and opens no repair, and that REJECT then carries the unit. MUTANT: say the
+        REJECT opens the repair whatever the round."""
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        rc, out, err = self._accept(GREEN, base.REJECT)
+        self.assertIn(f"{GREEN}: REJECT recorded, round 1", out, err)
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        rc, out, err = self._accept(GREEN, APPROVE)
+        self.assertEqual(rc, 1, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 2", out, err)
+        said = " ".join(out.split())
+        self.assertIn("its REJECT shares round 2, the review cap of 2, so it opens no repair",
+                      said)
+        self.assertNotIn("opens the repair", said)
+        path, _fp, _ = self._seat_brief()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{base.REJECT}",
+                                    at=path, reviewer=ENGINEER)
+        self.assertIn(f"{GREEN}: REJECT recorded, round 2; nothing was moved", out, err)
+        self.assertEqual([r["round"] for r in critic.delivery_rounds(self.root, GREEN)],
+                         [1, 2, 2])
 
     def test_the_last_required_seat_approve_moves_a_high_risk_unit(self) -> None:
         """BG1661 AC3. MUTANTS: never move a high-risk unit; count one seat's two APPROVEs as

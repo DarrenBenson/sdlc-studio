@@ -2359,9 +2359,10 @@ class SharedFileClusterTests(unittest.TestCase):
 class WaveClusterWarningTests(unittest.TestCase):
     """BG1495: a wave was warned NOT safely parallel when its units shared no file with each
     other, because the cluster joined them through a unit in a later wave. The warning is
-    judged from the files each pair in the wave declares in common."""
+    judged from the files each pair in the wave touches in common, declared or Verify-named."""
 
-    def _bug(self, root: Path, num: int, files: list[str], depends: str = "") -> None:
+    def _bug(self, root: Path, num: int, files: list[str], depends: str = "",
+             verify: str = "shell true") -> None:
         d = root / "sdlc-studio" / "bugs"
         d.mkdir(parents=True, exist_ok=True)
         dep = f"> **Depends on:** {depends}\n" if depends else ""
@@ -2369,7 +2370,7 @@ class WaveClusterWarningTests(unittest.TestCase):
             f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
             f"> **Affects:** {', '.join(_src(root, f) for f in files)}\n> **Points:** 3\n{dep}"
             "## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
-            "- **Given** the recorded state\n- **Verify:** shell true\n\n", encoding="utf-8")
+            f"- **Given** the recorded state\n- **Verify:** {verify}\n\n", encoding="utf-8")
 
     def _plan(self, root: Path) -> tuple[str, str]:
         out, err = io.StringIO(), io.StringIO()
@@ -2411,6 +2412,22 @@ class WaveClusterWarningTests(unittest.TestCase):
                 ["  warning: wave 1 is NOT safely parallel - BG0001 and BG0002 both touch "
                  "src/shared.py. Run them in sequence, or declare `Depends on:` so the waves "
                  "say so."], warned)
+
+    def test_a_pair_whose_verify_lines_name_one_test_file_is_warned(self) -> None:
+        """The pair's files are the cluster's, declared and Verify-derived alike: two units of
+        one wave with distinct Affects whose Verify lines both run tests/test_shared.py are
+        warned over that file."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _affect(root, "tests/test_shared.py")
+            verify = "pytest tests/test_shared.py"
+            self._bug(root, 1, ["src/a.py"], verify=verify)
+            self._bug(root, 2, ["src/b.py"], verify=verify)
+            out, err = self._plan(root)
+            self.assertIn("BG0001, BG0002 -> tests/test_shared.py [derived]", out)
+            warned = [ln.split(" - ", 1)[1].split(". Run", 1)[0] for ln in err.splitlines()
+                      if "NOT safely parallel" in ln]
+            self.assertEqual(["BG0001 and BG0002 both touch tests/test_shared.py"], warned)
 
     def test_every_colliding_pair_of_a_wave_is_warned(self) -> None:
         """Three units of one wave on one file are three pairs, each named once, and a pair
@@ -4323,11 +4340,36 @@ class PlanJsonTests(unittest.TestCase):
             "# Sprint Charter Queue\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
             f"| [{cid}]({cid}-x.md) | c | Queued |\n", encoding="utf-8")
 
+    def test_plan_write_json_names_an_unplaceable_unit_on_stderr(self) -> None:
+        """A unit with no Affects cannot be placed in a lane, and the export names it as not
+        exported: on stderr under --format json, on stdout without it. MUTANT: send the "not
+        exported" line back to stdout."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / ".local").mkdir(parents=True)
+            _config(root, "sprint:\n  breakdown: judgement\n")
+            _bug(root, 1)
+            _bug(root, 2, groomed=False)
+            rc, out, err = self._plan(root, "--format", "json",
+                                      "--export-lanes", str(root / "lanes"))
+            self.assertEqual(0, rc, err)
+            self.assertEqual(["BG0001", "BG0002"],
+                             sorted(u["id"] for u in json.loads(out)["batch"]),
+                             f"stdout is not one JSON document: {out[:300]!r}")
+            self.assertIn("  not exported (declared no Affects, cannot be placed in a disjoint "
+                          "lane): BG0002", err)
+            # the control: the same plan as text keeps the line on stdout
+            rc, out, err = self._plan(root, "--export-lanes", str(root / "lanes2"))
+            self.assertEqual(0, rc, err)
+            self.assertIn("  not exported (declared no Affects", out)
+            self.assertNotIn("not exported", err)
+
     def test_plan_write_json_stdout_is_one_document(self) -> None:
-        """MUTANT: send any one of the run-opening lines back to stdout. Each line the write
-        prints is reached here: the first plan opens the run from a charter with no content
-        review and exports its lanes; the second re-plans over a resized appetite with a
-        content review and a rolling policy."""
+        """MUTANT: send any one of the run-opening lines back to stdout. Between them the two
+        plans here reach every line the write prints but the "not exported" one, which the test
+        above reaches: the first plan opens the run from a charter with no content review and
+        exports its lanes; the second re-plans over a resized appetite with a content review
+        and a rolling policy."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "sdlc-studio" / ".local").mkdir(parents=True)

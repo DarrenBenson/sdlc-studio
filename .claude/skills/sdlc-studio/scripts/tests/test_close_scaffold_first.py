@@ -167,6 +167,24 @@ class ScaffoldFirstTests(unittest.TestCase):
             self.assertEqual([], self._retros(root))
             self.assertFalse((run_state.read(root) or {}).get("scaffolded_retro"))
 
+    def test_a_close_refused_for_its_identity_or_a_batch_repair_scaffolds_nothing(self) -> None:
+        """The changed-identity and uncommitted-batch-repair refusals come before anything is
+        written, the scaffold included, so a refused close leaves no retro and no record of
+        one. MUTANT: scaffold above either refusal."""
+        refusals = {"_identity_refusal": "close refused: the global git identity has changed",
+                    "_refuse_batch_repair": "close REFUSED: the working tree carries 1 change"}
+        for name, said in refusals.items():
+            with self.subTest(refusal=name), tempfile.TemporaryDirectory() as d:
+                root = self._open_run(d)
+                with unittest.mock.patch.object(sprint, name, return_value=said):
+                    rc, out = _run(["close", "--root", str(root)])
+                self.assertEqual(2, rc, out)
+                self.assertIn(said, out)
+                self.assertEqual([], self._retros(root), "a refused close minted a retro")
+                self.assertFalse((run_state.read(root) or {}).get("scaffolded_retro"),
+                                 "a refused close recorded a retro on the run")
+                self.assertFalse(self._index_names(root, "RETRO0001"))
+
     def test_a_named_retro_is_not_scaffolded_over(self) -> None:
         """The control: a close given --retro mints no retro of its own, and a missing one is
         still refused."""
