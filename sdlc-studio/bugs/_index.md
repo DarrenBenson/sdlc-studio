@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 54 |
+| Open | 49 |
 | In Progress | 0 |
-| Fixed | 1228 |
+| Fixed | 1237 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1752** |
+| **Total** | **1756** |
 
 ## All Bugs
 
@@ -35,7 +35,7 @@
 | [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Fixed | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Fixed | High | 2026-10-07 | 2026-10-07 |
@@ -326,7 +326,7 @@
 | [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1249](BG1249-the-suite-s-root-conftest-py-isolates-neither.md) | The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1250](BG1250-fourteen-tools-tests-modules-strip-every-git-variable.md) | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
-| [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Fixed | Low | 2026-11-06 | 2026-11-06 |
 | [BG1252](BG1252-a-lane-run-session-that-used-two-models.md) | A lane run session that used two models is priced entirely at the rate of the model with the most tokens | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1253](BG1253-lib-lanes-py-clears-only-7-of-the.md) | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1254](BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md) | sprint cost --anatomy reads the whole session, not the open run's window, so it cannot price one run inside a long-lived session | Fixed | Medium | 2026-11-06 | 2026-11-06 |
@@ -344,7 +344,7 @@
 | [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1267](BG1267-sprint-py-lane-return-prints-a-two-model.md) | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1268](BG1268-no-shipped-command-writes-a-row-to-sdlc.md) | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs | Fixed | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1269](BG1269-sprint-plan-puts-every-unit-in-one-shared.md) | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing keeps those units sequential | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1269](BG1269-sprint-plan-puts-every-unit-in-one-shared.md) | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing keeps those units sequential | Fixed | Low | 2026-11-06 | 2026-11-06 |
 | [BG1270](BG1270-the-always-loaded-instruction-cuts-leave-their-restored.md) | The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char cap | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1271](BG1271-sprint-cost-anatomy-counts-a-call-from-the.md) | `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start budget as none, and leaves three boundaries and an AC2 pin loose | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1272](BG1272-the-pre-push-check-reads-only-the-latest.md) | The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail | Fixed | Medium | 2026-11-06 | 2026-11-06 |
@@ -410,7 +410,7 @@
 | [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Fixed | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Fixed | High | 2026-11-10 | 2026-11-10 |
 | [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
-| [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Fixed | Low | 2026-11-12 | 2026-11-12 |
 | [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Superseded | Low | 2026-11-12 | 2026-11-12 |
@@ -823,11 +823,15 @@
 | [BG1745](BG1745-bg1649-did-not-converge-in-review-round-2.md) | BG1649 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1746](BG1746-bg1449-did-not-converge-in-review-round-2.md) | BG1449 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1747](BG1747-bg1661-did-not-converge-in-review-round-2.md) | BG1661 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1748](BG1748-bg1335-did-not-converge-in-review-round-2.md) | BG1335 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1749](BG1749-bg0960-did-not-converge-in-review-round-2.md) | BG0960 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1750](BG1750-bg1251-did-not-converge-in-review-round-2.md) | BG1251 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1751](BG1751-bg1269-did-not-converge-in-review-round-2.md) | BG1269 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1752](BG1752-two-prose-escaper-tests-bound-a-measured-duration.md) | Two prose-escaper tests bound a measured duration by a constant and fail the wall-clock census | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1748](BG1748-bg1335-did-not-converge-in-review-round-2.md) | BG1335 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1749](BG1749-bg0960-did-not-converge-in-review-round-2.md) | BG0960 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1750](BG1750-bg1251-did-not-converge-in-review-round-2.md) | BG1251 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1751](BG1751-bg1269-did-not-converge-in-review-round-2.md) | BG1269 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1752](BG1752-two-prose-escaper-tests-bound-a-measured-duration.md) | Two prose-escaper tests bound a measured duration by a constant and fail the wall-clock census | Fixed | Low | 2026-11-25 | 2026-11-25 |
+| [BG1753](BG1753-a-high-risk-unit-goes-fixed-on-one.md) | A high-risk unit goes Fixed on one seat's round-two APPROVE after the second seat's REJECT | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1754](BG1754-a-story-moved-to-blocked-by-decision-defer.md) | A story moved to Blocked by decision defer --block stays Blocked after its last blocking decision is resolved | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1755](BG1755-the-prose-escaper-spans-a-bare-url-written.md) | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1756](BG1756-a-plan-refused-for-a-criteria-problem-other.md) | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template | Open | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 

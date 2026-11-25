@@ -1,6 +1,6 @@
 {
   "unit": "BG1251",
-  "digest": "348c7dfbc7bea7a3 at 0bcd03956d20",
+  "digest": "e701e4aa1945c41b at 5c7a9f23e9ee",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1251-mutation-edits.json",
   "mutants": [
     {
@@ -126,6 +126,33 @@
       "old": "if found.is_file() and os.access(found, os.X_OK):",
       "new": "if found.is_file():",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lint-timeout-uncaught",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            except subprocess.TimeoutExpired:\n                raise LandError(f\"markdownlint ran past",
+      "new": "            except OSError:\n                raise LandError(f\"markdownlint ran past",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_linter_past_its_timeout_is_a_refusal_and_its_group_is_stopped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lint-run-unbounded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                res = _bounded([lint, \"--config\", str(config), *rels], GIT_TIMEOUT,\n                               cwd=str(lane.top), stdout=subprocess.PIPE,\n                               stderr=subprocess.PIPE)",
+      "new": "                res = subprocess.run([lint, \"--config\", str(config), *rels],\n                                     timeout=GIT_TIMEOUT, cwd=str(lane.top),\n                                     capture_output=True, text=True, check=False)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_linter_past_its_timeout_is_a_refusal_and_its_group_is_stopped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lint-timeout-exit-1",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"lane land, or lint the pages by hand.\", 2) from None",
+      "new": "f\"lane land, or lint the pages by hand.\") from None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_linter_past_its_timeout_is_a_refusal_and_its_group_is_stopped",
       "result": "killed",
       "answer": ""
     }

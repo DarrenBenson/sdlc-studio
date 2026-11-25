@@ -1,6 +1,6 @@
 # BG1752: Two prose-escaper tests bound a measured duration by a constant and fail the wall-clock census
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1752.md
@@ -27,6 +27,7 @@ Mark both tests `@pytest.mark.serial_only` and `@pytest.mark.boundary_only`, or 
 
 - [ ] **AC1** Given the full suite, when the wall-clock census runs, then no test in `test_file_finding.py` bounds a duration its own process measured without both markers, and the escaper's linear-time and no-touching-span properties are still pinned. Fails on: the census naming either test.
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_no_parallel_test_bounds_a_measured_duration_by_a_constant
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

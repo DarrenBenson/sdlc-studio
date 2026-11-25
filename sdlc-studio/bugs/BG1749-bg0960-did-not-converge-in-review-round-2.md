@@ -1,6 +1,6 @@
 # BG1749: BG0960 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0960.md
@@ -27,10 +27,13 @@ Fix each finding above, then deliver BG0960 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG0960 AC1 still passes: Refusing a unit that already has Affects and Points but no verifier names a Verify line as the fix. Fails on: the refusal prints only the Affects and Points templates, so no Verify line is named as the fix.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_the_refusal_names_the_unit_what_it_lacks_and_the_fix_for_a_missing_verifier
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** BG0960 AC2 still passes: A unit missing Affects or Points still gets today's field template, and a batch holding both kinds of miss shows both repairs, each once. Fails on: `_breakdown_fix` always formats the one `BREAKDOWN_FIX` block, so a batch with both kinds of miss shows one repair and not each once.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_each_kind_of_miss_gets_its_own_repair
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** BG0960 AC3 still passes: `sprint.py breakdown`, which prints the same fix block, shows the same matched repair for a no-verifier unit. Fails on: `sprint.py breakdown` shares `_breakdown_fix` and prints the field templates for a no-verifier unit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_breakdown_prints_the_verify_repair_for_a_no_verifier_unit
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

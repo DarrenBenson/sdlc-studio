@@ -1,6 +1,6 @@
 # BG1251: Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_rebrief_terminal.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1251.md
@@ -26,10 +26,13 @@ Print one line naming the units in flight, with the full restart warning only fo
 
 - [ ] **AC1** Given two lanes in flight, when `sprint.py lane brief` briefs a third unit, then one line names the units in flight, and the full restart warning is printed only for the briefed unit when it is itself in flight. Fails on: one WARNING per sibling lane.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_brief_names_sibling_lanes_in_one_line
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a hand-in whose changelog fragment has a wrapped line opening `+ 3`, when `sprint.py lane land` runs, then it refuses before the commit, naming the file and the markdown rule, and a clean hand-in beside it lands. Fails on: the refusal arriving from the commit hook, or an absent linter read as a pass without saying so.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_fragment_that_fails_markdownlint_is_refused_before_the_commit
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a unit whose Affects declares test files, when its lane brief is printed, then the hand-in line names the accepted rulings TRUE, FALSE and UNVERIFIABLE, written bare, and says each mutant's test is a `path::name` in one of those test files, naming them. Fails on: a line naming only the field names.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_hand_in_line_names_the_accepted_rulings_and_test_files
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

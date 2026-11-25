@@ -1,6 +1,6 @@
 {
   "unit": "BG1335",
-  "digest": "da94bc260269976b at 0bcd03956d20",
+  "digest": "6075a925b3715ee9 at 5c7a9f23e9ee",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1335-mutation-edits.json",
   "mutants": [
     {
@@ -69,7 +69,7 @@
     {
       "mutant": "resolve-clears-every-block",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    still_held = [u for u in (state.get(\"blocked_units\") or [])\n                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get(\"unit\") or \"\")]",
+      "old": "    still_held = [u for u in (state.get(\"blocked_units\") or [])\n                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get(\"unit\") or \"\")\n                  or sdlc_md.norm_id(u) in open_blocks]",
       "new": "    still_held = []",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_resolving_one_decision_keeps_every_other_units_block",
       "result": "killed",
@@ -117,6 +117,33 @@
       "old": "        if norm in seen:\n            continue\n",
       "new": "",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-answer-clears-the-block",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\n                  or sdlc_md.norm_id(u) in open_blocks]",
+      "new": "]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_unit_stays_held_while_another_of_its_blocking_decisions_is_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "open-blocks-count-unblocked-questions",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "for p in pending if p.get(\"blocked\")}",
+      "new": "for p in pending}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_unit_stays_held_while_another_of_its_blocking_decisions_is_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "open-blocks-read-before-the-answer-leaves",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    open_blocks = {sdlc_md.norm_id(p.get(\"unit\") or \"\") for p in pending",
+      "new": "    open_blocks = {sdlc_md.norm_id(p.get(\"unit\") or \"\") for p in pending + [entry]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_unit_stays_held_while_another_of_its_blocking_decisions_is_open",
       "result": "killed",
       "answer": ""
     }

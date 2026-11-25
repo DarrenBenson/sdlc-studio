@@ -1,6 +1,6 @@
 {
   "unit": "BG0960",
-  "digest": "9a9d043f49c6df85 at 0bcd03956d20",
+  "digest": "c3578a5c4c72843e at 5c7a9f23e9ee",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG0960-mutation-edits.json",
   "mutants": [
     {
@@ -36,6 +36,24 @@
       "old": "    if any(u.get(\"ac_why\") == \"no-verifier\" for u in units):\n",
       "new": "    if any(u.get(\"ac_why\") == \"no-such-reason\" for u in units):\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_breakdown_prints_the_verify_repair_for_a_no_verifier_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verify-repair-on-any-unverified-criterion",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if any(u.get(\"ac_why\") == \"no-verifier\" for u in units):",
+      "new": "    if any(u.get(\"ac_why\") == \"no-verifier\" or \"Verify\" not in open(u[\"path\"], encoding=\"utf-8\").read().rsplit(\"### AC\", 1)[-1] for u in units):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_each_kind_of_miss_gets_its_own_repair",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pin-fixture-loses-its-verifier",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "\"- **Verify:** pytest src/a.py\\n\\n### AC2: it says so\\n",
+      "new": "\"\\n\\n### AC2: it says so\\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_each_kind_of_miss_gets_its_own_repair",
       "result": "killed",
       "answer": ""
     }

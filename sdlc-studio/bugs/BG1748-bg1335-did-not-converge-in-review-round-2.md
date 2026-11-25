@@ -1,6 +1,6 @@
 # BG1748: BG1335 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py, changelog.d/BG1335.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py
@@ -29,6 +29,7 @@ Fix each finding above, then deliver BG1335 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** BG1335 AC1 still passes: Given an open run with a bug in its batch, when `sprint.py decision defer --unit <bug> --block` runs, then the bug is shown as blocked on the run state, in `sprint.py decision list` and in status, by a field a bug may carry. Fails on: the defer printing that it could not block and leaving the bug indistinguishable from an open unit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

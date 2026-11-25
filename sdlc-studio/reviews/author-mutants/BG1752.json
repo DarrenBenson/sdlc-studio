@@ -1,0 +1,43 @@
+{
+  "unit": "BG1752",
+  "digest": "ce9d939c9b460e44 at 772b468d3d6f",
+  "report": "sdlc-studio/.local/lane/landed/agent-aadda70ebda0778b1/BG1752-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the ratio bound tightened below a linear scan's growth (64 to 8)",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py",
+      "old": "self.assertLess(min(spent_long), 64 * min(spent_short), long_[:12])",
+      "new": "self.assertLess(min(spent_long), 8 * min(spent_short), long_[:12])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_the_escaper_is_linear_in_a_paths_segment_count",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the long path's output compared with its input, backticks kept",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py",
+      "old": "self.assertEqual(long_.replace(\"`\", \"\"), out.replace(\"`\", \"\"), \"only spans added\")",
+      "new": "self.assertEqual(long_, out, \"only spans added\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_the_escaper_is_linear_in_a_paths_segment_count",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the processor clock swapped for a constant zero reading on the long run",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py",
+      "old": "                spent_long.append(time.process_time() - began)",
+      "new": "                spent_long.append(0.0 * (time.process_time() - began) + 1.0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_the_escaper_is_linear_in_a_paths_segment_count",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the property's floor on checked inputs raised past the count it can check",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py",
+      "old": "self.assertGreater(checked, 2500)",
+      "new": "self.assertGreater(checked, 4000)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_no_generated_prose_comes_back_with_two_touching_spans",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

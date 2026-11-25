@@ -1,6 +1,6 @@
 {
   "unit": "BG1269",
-  "digest": "74d7c8e5873d3117 at 0bcd03956d20",
+  "digest": "c3ead2ca659b0500 at 5c7a9f23e9ee",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1269-mutation-edits.json",
   "mutants": [
     {
@@ -62,6 +62,24 @@
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "str(path).lower().endswith(PROSE_SUFFIXES)",
       "new": "str(path).endswith(PROSE_SUFFIXES)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cluster-line-promises-a-merge",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        prose = (\" - prose only, advisory: two units editing one place in it conflict at \"\n                 \"`lane land`, which names the file\"",
+      "new": "        prose = (\" - prose only, advisory: a shared page merges cleanly\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "worklist-header-promises-a-merge",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            \" Affects, but for a shared prose page, which joins no lane: two lanes editing one\"\n            \" place in it conflict at `lane land`, which names the file to resolve.\",",
+      "new": "            \" Affects, but for a shared prose page, which merges cleanly.\",",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
       "result": "killed",
       "answer": ""

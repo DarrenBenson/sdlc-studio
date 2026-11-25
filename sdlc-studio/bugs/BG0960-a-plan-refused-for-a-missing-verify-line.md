@@ -1,6 +1,6 @@
 # BG0960: A plan refused for a missing Verify line tells you to add Affects and Points
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0960.md

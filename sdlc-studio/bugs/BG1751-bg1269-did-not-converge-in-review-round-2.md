@@ -1,6 +1,6 @@
 # BG1751: BG1269 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-delivery.md, changelog.d/BG1269.md
@@ -27,10 +27,13 @@ Fix each finding above, then deliver BG1269 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1269 AC1 still passes: Given a batch whose units all declare one reference doc and two of which also declare one code file, when `sprint.py plan` prints its shared-file report, then a line of its own names that pair and the code file they share. Fails on: the code file listed only inside the batch-wide cluster.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_pair_sharing_a_code_file_is_named_on_its_own_line
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** BG1269 AC2 still passes: Given the same batch, when the lane partition is computed, then the two units sharing the code file sit in one lane or in strictly sequential waves. Fails on: both units placed in parallel lanes of one wave.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_units_sharing_a_code_file_are_never_parallel
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** BG1269 AC3 still passes: Given units that share only a prose file, when the batch is planned, then the share is reported as advisory and the partition is unchanged. Fails on: a shared reference doc forcing the units sequential.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 
