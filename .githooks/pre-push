@@ -86,13 +86,15 @@ for sha in $tag_shas; do
     echo "pre-push: the known-issues check could not run on tagged commit $sha (exit $ki_rc, see above) - the tag is refused until it can" >&2
     exit 1
   fi
-  # The page states zero open Critical or High, and `check` reads only the disclosed severities,
-  # so the release bar is read here too, at the same commit (BG1521). Exit 1 is an open barred
-  # finding (or one nobody can parse); anything else means the bar could not run, said apart.
+  # The page states the bar its release is held to, and `check` reads only the disclosed
+  # severities, so the release bar is read here too, at the same commit (BG1521). `bar` holds
+  # the commit to the severities of the bar its page names (Critical and High through v6.4,
+  # Medium as well from v6.5) and names them when it refuses. Exit 1 is an open barred finding
+  # (or one nobody can parse); anything else means the bar could not run, said apart.
   python3 tools/known_issues.py bar --at "$sha" 1>&2
   bar_rc=$?
   if [ "$bar_rc" -eq 1 ]; then
-    echo "pre-push: the release bar is not met at tagged commit $sha: a Critical or High finding is open there, or one cannot be parsed (named above) - fix it, or change the bar in a recorded decision, then tag the commit that holds the fix" >&2
+    echo "pre-push: the release bar is not met at tagged commit $sha: a finding is open there at a severity the bar its page names bars, or one cannot be parsed (named above) - fix it, or change the bar in a recorded decision, then tag the commit that holds the fix" >&2
     exit 1
   elif [ "$bar_rc" -ne 0 ]; then
     echo "pre-push: the release bar could not run on tagged commit $sha (exit $bar_rc, see above) - the tag is refused until it can" >&2

@@ -479,6 +479,11 @@ def main(argv: list[str] | None = None) -> int:
         return judge(Path(tmp))
 
 
+def _either(barred: tuple[str, ...]) -> str:
+    """`barred` as a reader says it: `Critical or High`, `Critical, High or Medium`."""
+    return f"{', '.join(barred[:-1])} or {barred[-1]}"
+
+
 def _bar(root: Path) -> int:
     """0 when no finding at a severity `root`'s bar bars is open under it, 1 when one is, or when
     a finding cannot be parsed. The bar is the one its page names (`held_to`)."""
@@ -498,13 +503,13 @@ def _bar(root: Path) -> int:
               f"both - {', '.join(blind)}. Repair the heading, status or severity field; a "
               f"finding nobody can read must never count as a corpus with nothing in it")
     if not open_barred and not blind:
-        print(f"release bar met: no open finding at {', '.join(barred[:-1])} or {barred[-1]} "
-              "severity")
+        print(f"release bar met: no open finding at {_either(barred)} severity")
         return 0
     if not open_barred:
         return 1
     listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
-    print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
+    print(f"release bar NOT met under a bar barring {_either(barred)}: {len(open_barred)} open "
+          f"finding(s) at a barred severity - "
           f"{listing}. Fix them or change the bar in a recorded decision, but do not tag "
           f"against a bar the corpus contradicts.", file=sys.stderr)
     return 1

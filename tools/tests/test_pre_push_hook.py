@@ -667,6 +667,73 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
         finally:
             fx.cleanup()
 
+    #: The hook's own refusal line for an unmet bar, which names no severity of its own: `bar`,
+    #: printed just above it, names the severities of the bar the tagged page states.
+    REFUSAL = ("pre-push: the release bar is not met at tagged commit {sha}: a finding is open "
+               "there at a severity the bar its page names bars, or one cannot be parsed (named "
+               "above) - fix it, or change the bar in a recorded decision, then tag the commit "
+               "that holds the fix")
+
+    @staticmethod
+    def _tag(fx: _Clone, severity: str, release: str, tag: str) -> str:
+        """Commit one open finding at `severity` and a page cut for `release` from that corpus,
+        tag it, return the sha."""
+        bugs = fx.clone / known_issues.BUGS_REL
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG9901-a-finding.md").write_text(
+            f"# BG9901: a finding\n\n> **Status:** Open\n> **Severity:** {severity}\n",
+            encoding="utf-8")
+        (fx.clone / known_issues.PAGE_REL).write_text(known_issues.render(fx.clone, release),
+                                                      encoding="utf-8")
+        _git(fx.clone, "add", "-A")
+        _git(fx.clone, "commit", "-q", "-m", f"an open {severity} under the {release} page")
+        _git(fx.clone, "tag", tag)
+        return _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+
+    def test_an_open_medium_under_the_65_bar_is_named_in_the_refusal(self) -> None:
+        """MUTANTS: the hook's refusal restored to "a Critical or High finding is open there",
+        which is false of a tag refused over an open Medium under the v6.5 bar; `bar`'s refusal
+        naming no severity of the bar it held the commit to."""
+        fx = _Clone()
+        try:
+            self.assertEqual(0, fx.push().returncode)
+            fx.argv.unlink(missing_ok=True)
+            sha = self._tag(fx, "Medium", "6.5.0", "v6.5.0")
+            r = fx.push("v6.5.0")
+            self.assertNotEqual(0, r.returncode, "a tag over an open Medium under the v6.5 bar "
+                                "was let through:\n" + r.stderr)
+            self.assertIn(self.REFUSAL.format(sha=sha), r.stderr.splitlines(), r.stderr)
+            self.assertIn("release bar NOT met under a bar barring Critical, High or Medium: 1 "
+                          "open finding(s) at a barred severity - BG9901 (Medium)", r.stderr)
+            self.assertNotIn("Critical or High", r.stderr, r.stderr)
+            self.assertEqual([], fx.gate_calls(), "the gate ran past a refused tag")
+        finally:
+            fx.cleanup()
+
+    def test_the_60_bar_stays_critical_and_high(self) -> None:
+        """MUTANT: the newest bar's severities read for every tag, so a tag whose page states
+        the v6.0 bar is refused over an open Medium. The positive control is that tag, pushed;
+        a later tag over an open High is refused under the bar barring Critical or High, with
+        no Medium named."""
+        fx = _Clone()
+        try:
+            self.assertEqual(0, fx.push().returncode)
+            fx.argv.unlink(missing_ok=True)
+            self._tag(fx, "Medium", "6.0.0", "v6.0.1")
+            ok = fx.push("v6.0.1")
+            self.assertEqual(0, ok.returncode, ok.stderr)
+            self.assertIn("release bar met: no open finding at Critical or High severity", ok.stderr)
+            fx.argv.unlink(missing_ok=True)
+            sha = self._tag(fx, "High", "6.0.0", "v6.0.2")
+            r = fx.push("v6.0.2")
+            self.assertNotEqual(0, r.returncode, r.stderr)
+            self.assertIn(self.REFUSAL.format(sha=sha), r.stderr.splitlines(), r.stderr)
+            self.assertIn("release bar NOT met under a bar barring Critical or High: 1 open "
+                          "finding(s) at a barred severity - BG9901 (High)", r.stderr)
+            self.assertNotIn("Medium", r.stderr.split("release bar NOT met", 1)[1].splitlines()[0])
+        finally:
+            fx.cleanup()
+
     def test_a_bar_that_could_not_run_is_not_reported_as_a_refusal(self) -> None:
         """AC3. MUTANTS: any non-zero exit reported as the bar not met; a could-not-run exit let
         through; the could-not-run line naming no commit."""
