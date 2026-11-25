@@ -2310,6 +2310,7 @@ class SharedFileClusterTests(unittest.TestCase):
             self.assertIn("    BG0001, BG0002 share src/code.py", lines, out)
             cluster = [ln for ln in lines if ln.startswith("    BG0001, BG0002, BG0003 -> ")]
             self.assertEqual(1, len(cluster), out)              # the cluster still names all
+            self.assertNotIn("prose only", cluster[0])   # it holds a code file: not advisory
             self.assertFalse([ln for ln in lines if "share src/code.py" in ln
                               and "BG0003" in ln], out)
             self.assertEqual(1, out.count("share src/code.py"), out)
@@ -2321,7 +2322,7 @@ class SharedFileClusterTests(unittest.TestCase):
             self.assertNotIn("reference.md", warned[0])
 
     def test_a_shared_prose_file_stays_advisory(self) -> None:
-        for page in ("docs/reference.md", "docs/guide.mdx"):
+        for page in ("docs/reference.md", "docs/guide.mdx", "docs/Guide.MD"):
             with self.subTest(page=page), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 doc = _src(root, page)
@@ -5552,6 +5553,26 @@ class DeferredOperatorDecisions(unittest.TestCase):
             rc = mod.main(["decision", "list", "--root", str(root)])
         self.assertEqual(rc, 0, out.getvalue())
         return out.getvalue()
+
+    def test_the_close_shows_a_held_unit_with_its_status_as_blocked(self) -> None:
+        """BG1335: the close asks the deferred decisions with each unit's own status, and names
+        the one `defer --block` holds on the run state as BLOCKED."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _close_state(root, blocked_units=["US0101"], pending_decisions=[
+                {"unit": "US0101", "question": "Which way?", "recommend": None,
+                 "options": [{"label": "a", "consequence": "the first way"},
+                             {"label": "b", "consequence": "the second way"}],
+                 "deferred_at": "2026-07-16T00:00:00Z", "resolution": None}])
+            _close_story(root)
+            _close_retro(root)
+            mod = _load()
+            out, err = io.StringIO(), io.StringIO()
+            with _patch_close_steps(mod), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+            self.assertIn("[1] US0101 (Review, BLOCKED on the run state): Which way?",
+                          out.getvalue(), err.getvalue())
 
     def test_undecidable_unit_is_set_aside_and_batch_continues(self) -> None:
         with tempfile.TemporaryDirectory() as d:

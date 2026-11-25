@@ -414,16 +414,21 @@ def blocked_lines(repo_root: Path | str, run: dict | None) -> list[str]:
         held = (run_state.read(root) or {}).get("blocked_units") or []
     except run_state.RunStateError:
         return []
-    lines = []
+    lines, seen = [], set()
     for uid in (held if isinstance(held, list) else []):
         norm = sdlc_md.norm_id(str(uid))
+        if norm in seen:
+            continue
+        seen.add(norm)
         hit = sdlc_md.find_by_id(root, norm)
         raw = (sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) or "", "Status") or ""
                if hit else "")
         shown = ((sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root))
                   or raw.strip()) if hit else "") or "no artefact on disk"
-        lines.append(f"Blocked:      {norm} ({shown}) - held by `sprint decision defer --block` "
-                     f"on the run state until `sprint decision resolve` answers it")
+        # in its file's spelling, never the norm_id key; as stored when no file has it
+        lines.append(f"Blocked:      {sdlc_md.display_id(root, str(uid))} ({shown}) - held by "
+                     f"`sprint decision defer --block` on the run state until "
+                     f"`sprint decision resolve` answers it")
     return lines
 
 

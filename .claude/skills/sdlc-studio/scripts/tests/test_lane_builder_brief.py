@@ -386,6 +386,29 @@ class BuilderBriefTests(_Isolated):
         # beside the brief's own instruction to leave the commit to the landing
         self.assertIn("Do not commit and do not record the self-check", out)
 
+    def test_a_main_checkout_lane_is_told_the_orchestrator_commits_it(self) -> None:
+        """A unit declaring `Isolation: home` is built in the main checkout, which `lane land`
+        refuses, so its landing obligation agrees with its stage line: the orchestrator commits
+        it onto the root's branch, with no PR, no pushed branch and the pr-required exception."""
+        root = _project(self._tmp.name)
+        story = root / "sdlc-studio" / "stories" / "US0102-x.md"
+        story.write_text(story.read_text(encoding="utf-8").replace(
+            "> **Points:** 2\n", "> **Points:** 2\n> **Isolation:** home\n"), encoding="utf-8")
+        out = _brief(root, "US0102")
+        rows = self._obligation_rows(out)
+        landing = [r for r in rows if "onto the root's branch" in r]
+        self.assertEqual([sprint.LANE_HOME_LANDING], landing, rows)
+        self.assertIn("the orchestrator commits it onto the root's branch", landing[0])
+        self.assertTrue(landing[0].endswith(
+            "open no PR and push no branch, unless `release_strategy` is `pr-required`."))
+        self.assertNotIn("The lane is landed by `sprint lane land`", out)
+        self.assertIn("`sprint lane land` lands only a worktree, so the orchestrator commits", out)
+        for row in rows:
+            self.assertNotRegex(row, r"\bmain\b")
+            self.assertNotIn("fast-forward", row.lower())
+        # the control: the same project's worktree lane keeps the landing through `lane land`
+        self.assertIn(sprint.LANE_LANDING, self._obligation_rows(_brief(root, "US0101")))
+
     def test_the_landing_obligation_keeps_the_pr_required_exception(self) -> None:
         out = _brief(_project(self._tmp.name), "US0102")
         landing = [r for r in self._obligation_rows(out) if "sprint lane land" in r]

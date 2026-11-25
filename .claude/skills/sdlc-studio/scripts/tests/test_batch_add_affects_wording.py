@@ -2,8 +2,9 @@
 
 Under `sprint.affects_check: warn` the unit is added and each Affects finding is a labelled
 warning saying so, so no line of the output reads as a refusal. An Affects entry of words and
-spaces with no file shape is named as not a path wherever a finding is printed, and is never
-told that a file the unit creates is fine. Driven through `sprint.main` in throwaway roots.
+spaces with no file shape is named as not a path wherever a finding is printed (`batch add`,
+the plan's advisory and its refusal under `block`), and is never told that a file the unit
+creates is fine; an entry with no whitespace, such as `Makefile`, is always a path. Driven through `sprint.main` in throwaway roots.
 """
 from __future__ import annotations
 
@@ -107,16 +108,33 @@ class BatchAddWordingTests(unittest.TestCase):
                 else:
                     self.assertIn("src/GHOST.py, docs/My Notes.md", line)
                     self.assertNotIn(_CREATES, line)
-        with tempfile.TemporaryDirectory() as d:
-            # the plan's own Affects advisory says the same
-            root = Path(d)
-            _repo(root, "warn", f"src/thing.py, {_NOT_A_PATH}")
-            (root / "w.txt").write_text("BG0002\n", encoding="utf-8")
-            _rc, text = _main("plan", "--worklist", str(root / "w.txt"), "--no-fetch",
-                              "--root", str(root))
-            line = next(ln for ln in text.splitlines() if "not on disk" in ln)
-            self.assertIn(f"not a path: {_NOT_A_PATH}", line)
-            self.assertNotIn(_CREATES, line)
+        for mode in ("warn", "block"):
+            with self.subTest(plan=mode), tempfile.TemporaryDirectory() as d:
+                # the plan's own Affects advisory says the same, and so does its refusal
+                root = Path(d)
+                _repo(root, mode, f"src/thing.py, {_NOT_A_PATH}")
+                (root / "w.txt").write_text("BG0002\n", encoding="utf-8")
+                rc, text = _main("plan", "--worklist", str(root / "w.txt"), "--no-fetch",
+                                 "--root", str(root))
+                self.assertEqual(2 if mode == "block" else 0, rc, text)
+                line = next(ln for ln in text.splitlines() if "not on disk" in ln)
+                self.assertIn(f"not a path: {_NOT_A_PATH}", line)
+                self.assertNotIn(_CREATES, line)
+
+    def test_an_extension_less_path_is_still_a_path(self) -> None:
+        """A path with no space and no extension (`Makefile`, `bin/tool`) is a path: only an
+        entry holding whitespace can be named as not a path."""
+        for mode in ("warn", "block"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _repo(root, mode, "src/thing.py, Makefile, bin/tool")
+                _rc, text = _main("batch", "add", "BG0002", "--reason", "t",
+                                  "--root", str(root))
+                line = next(ln for ln in text.splitlines() if "not on disk" in ln)
+                self.assertIn("Makefile, bin/tool", line)
+                self.assertNotIn("not a path", line)
+                if mode == "warn":
+                    self.assertIn(f"Makefile, bin/tool {_CREATES}", line)
 
 
 if __name__ == "__main__":

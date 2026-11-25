@@ -2090,5 +2090,82 @@ class LandSeveralWorktreesTests(_PricedFixture):
         gitutil.git(["add", "--", rel], wt)
 
 
+
+class MarkdownLintChoiceTests(unittest.TestCase):
+    """Which markdownlint the landing runs, and under which config each staged page is linted:
+    the config nearest above the page, a dot-directory's page under the config that
+    dot-directory tracks (as the commit hook's payload lane lints `.claude/`), and none for a
+    page no config in the worktree governs."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.base = Path(self._tmp.name).resolve()
+        self.top, self.log = self.base / "repo", self.base / "lint.log"
+        self.bin = self.base / "linter-bin"
+        _write(self.bin, "markdownlint", LaneLandTests.LINTER.format(python=sys.executable,
+                                                                     log=str(self.log)))
+        (self.bin / "markdownlint").chmod(0o755)
+        self.top.mkdir()
+        gitutil.git(["init", "-q", "-b", "main"], self.top)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _stage(self, *rels: str) -> None:
+        for rel in rels:
+            _write(self.top, rel, "# page\n" if rel.endswith(".md") else "{}\n")
+        gitutil.git(["add", "--", *rels], self.top)
+
+    def _linted(self) -> set[str]:
+        """Each run of the stand-in as `<config relative to the top> <page>...`."""
+        bare = os.pathsep.join(d for d in os.environ.get("PATH", "").split(os.pathsep)
+                               if d and not (Path(d) / "markdownlint").exists())
+        lane = lanes._Lane("repo", self.base / "keep", "main", top=self.top, branch="main",
+                           units=[])
+        with unittest.mock.patch.dict(os.environ,
+                                      {"PATH": os.pathsep.join([str(self.bin), bare])}):
+            lanes._refuse_markdown(self.top, [lane])
+        lines = self.log.read_text(encoding="utf-8").splitlines() if self.log.exists() else []
+        return {ln.replace(f"{self.top}/", "", 1) for ln in lines}
+
+    def test_a_page_is_linted_under_the_config_nearest_above_it_and_never_above_the_top(
+            self) -> None:
+        # a config above the worktree's top governs nothing in it, and the top holds none
+        _write(self.base, ".markdownlint.json", "{}\n")
+        self._stage("docs/.markdownlint.json", "docs/guide.md", "docs/deep/page.md",
+                    "notes/free.md")
+        self.assertEqual({"docs/.markdownlint.json docs/deep/page.md docs/guide.md"},
+                         self._linted())
+
+    def test_a_dot_directory_page_is_linted_under_the_config_it_tracks(self) -> None:
+        payload = ".claude/skills/sdlc-studio/.markdownlint.json"
+        self._stage(".markdownlint.json", payload)
+        gitutil.git(["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "c"],
+                    self.top)
+        self._stage(".claude/agents/builder.md", ".claude/skills/sdlc-studio/page.md",
+                    ".github/template.md", "changelog.d/X.md")
+        self.assertEqual(
+            {f"{payload} .claude/agents/builder.md .claude/skills/sdlc-studio/page.md",
+             ".markdownlint.json .github/template.md changelog.d/X.md"},
+            self._linted())
+
+    def test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path(
+            self) -> None:
+        root, wt = self.base / "root", self.base / "wt"
+        found = []
+        for base in (wt, root):
+            _write(base, "node_modules/.bin/markdownlint", "#!/bin/sh\n")
+            (base / "node_modules/.bin/markdownlint").chmod(0o755)
+        with unittest.mock.patch.dict(os.environ, {"PATH": str(self.bin)}):
+            found.append(lanes._markdownlint(root, wt))
+            (wt / "node_modules/.bin/markdownlint").chmod(0o644)    # not runnable: passed over
+            found.append(lanes._markdownlint(root, wt))
+            (root / "node_modules/.bin/markdownlint").unlink()
+            found.append(lanes._markdownlint(root, wt))
+        self.assertEqual([str(wt / "node_modules/.bin/markdownlint"),
+                          str(root / "node_modules/.bin/markdownlint"),
+                          str(self.bin / "markdownlint")], found)
+
+
 if __name__ == "__main__":
     unittest.main()

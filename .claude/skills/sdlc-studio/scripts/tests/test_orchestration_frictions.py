@@ -73,6 +73,13 @@ class OrchestrationFrictionsTests(unittest.TestCase):
                     self.assertIn("no artefact file carries that id", text)
                     self.assertIn("NOTHING was added", text)
                     self.assertEqual(["BG0001"], _batch(root))
+            # a schema v3 id prints as typed, never as the hyphenless key no file carries
+            rc, text = _main("batch", "add", "us-01abcdef", "--reason", "found mid-run",
+                             "--root", str(root))
+            self.assertEqual(2, rc, text)
+            self.assertIn("sprint batch add REFUSED us-01abcdef:", text)
+            self.assertNotIn("US01ABCDEF", text)
+            self.assertEqual(["BG0001"], _batch(root))
             # the positive control: a filed unit is added as before
             rc, text = _main("batch", "add", "BG0002", "--reason", "found mid-run",
                              "--root", str(root))

@@ -3020,6 +3020,16 @@ def render_runbook_pointer() -> list[str]:
 # So the obligations live here, beside the dispatch, and the dispatch enforces the first of them
 # itself: a unit whose contract cannot be READ is refused before a lane starts on it.
 
+#: How a worktree lane lands, and how a lane built in the main checkout (`Isolation: home`)
+#: does instead: `sprint lane land` lands only a worktree, so the orchestrator commits that one,
+#: as the same brief's stage line says. `lane_obligations` gives each lane the one that is true.
+LANE_LANDING = ("The lane is landed by `sprint lane land` onto the root's branch: open no PR and "
+                "push no branch, unless `release_strategy` is `pr-required`.")
+LANE_HOME_LANDING = ("The lane is built in the root checkout, not a worktree, and `sprint lane "
+                     "land` lands only a worktree, so the orchestrator commits it onto the "
+                     "root's branch: open no PR and push no branch, unless `release_strategy` "
+                     "is `pr-required`.")
+
 #: What every lane is held to, stated once. Carried in the brief so it travels with the work
 #: rather than depending on who wrote that sprint's prompt.
 LANE_OBLIGATIONS = (
@@ -3031,9 +3041,15 @@ LANE_OBLIGATIONS = (
     "could not discharge and why.",
     "A repair answering a REJECT carries only the blocking findings and the pins that kill "
     "them, and files the rest.",
-    "The lane is landed by `sprint lane land` onto the root's branch: open no PR and push no "
-    "branch, unless `release_strategy` is `pr-required`.",
+    LANE_LANDING,
 )
+
+
+def lane_obligations(home_isolated: bool) -> list[str]:
+    """The obligations a lane is held to: a main-checkout lane's landing sentence in place of
+    the worktree lane's, since `sprint lane land` refuses the root checkout."""
+    return [LANE_HOME_LANDING if home_isolated and ob == LANE_LANDING else ob
+            for ob in LANE_OBLIGATIONS]
 
 #: Opens the brief's file-history section. The lane meets the prior work and the defects its
 #: reviews found before writing a line rather than in a REJECT, and reads the history the brief
@@ -3170,10 +3186,11 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
         if not contract["ok"]:
             refused.append({"id": contract["id"], "refusal": contract["refusal"]})
             continue
+        home = lane_home_isolated(contract["text"])
         briefs.append({"id": contract["id"], "path": contract["path"],
                        "criteria": contract["criteria"],
                        "trd_constraints": trd_constraints(root, contract["text"]),
-                       "obligations": list(LANE_OBLIGATIONS),
+                       "obligations": lane_obligations(home),
                        "base": base,
                        "proof": lane_proof(root, contract["id"]),
                        "seams": [s for s in seams if contract["id"] in s["units"]],
@@ -3182,7 +3199,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
                        "self_check": _hand_in_self_check(
                            critic.author_self_check(root, contract["id"]), contract["id"]),
                        "points": sdlc_md.read_points(contract["text"]),
-                       "home_isolated": lane_home_isolated(contract["text"]),
+                       "home_isolated": home,
                        "seat_card": str(seat) if seat else None,
                        "seat": build_seat, "builder": builder, "effort": effort})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
@@ -5065,7 +5082,7 @@ def _refuse_affects_blocked(items: list, root) -> None:
     for it in items:
         if it.get("unresolvable"):
             print(f"    {it['id']}: declared but not on disk - "
-                  f"{', '.join(it['unresolvable'])}", file=sys.stderr)
+                  f"{_not_on_disk(it['unresolvable'], creates=False)}", file=sys.stderr)
         if it.get("undeclared"):
             print(f"    {it['id']}: targeted by its own Verify lines but undeclared - "
                   f"{', '.join(it['undeclared'])}", file=sys.stderr)
@@ -5093,8 +5110,8 @@ def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
 
 def _breakdown_fix(bd: dict, sel: str) -> str:
     """The repair for each kind of miss the ungroomed units hold, each block once: the Verify
-    line for a unit whose only miss is a criterion with no verifier, the field template for any
-    other miss."""
+    line for every unit with a criterion that has no verifier, whatever else it lacks, and the
+    field template unless every unit's only miss is that verifier."""
     units = bd.get("ungroomed") or []
     verify_only = [u.get("ac_why") == "no-verifier" and len(u.get("missing") or []) == 1
                    for u in units]
@@ -9599,8 +9616,9 @@ def cmd_batch(args: argparse.Namespace) -> int:
     # An id no artefact file carries is refused before the write: added, it is a unit nothing
     # can build or gate, and the add would report it as joining the batch.
     if action == "add" and sdlc_md.find_by_id(root, args.id) is None:
-        print(f"sprint batch add REFUSED {sdlc_md.norm_id(args.id)}: no artefact file carries "
-              f"that id. NOTHING was added - file the unit first, or correct the id.",
+        # display_id: no file carries the id, so it prints as typed, never as the norm_id key
+        print(f"sprint batch add REFUSED {sdlc_md.display_id(root, args.id)}: no artefact file "
+              f"carries that id. NOTHING was added - file the unit first, or correct the id.",
               file=sys.stderr)
         return 2
     # REFUSED BEFORE THE WRITE. The check used to run after `add_to_batch`, so the operator was
@@ -14577,16 +14595,19 @@ def cmd_decision(args) -> int:
         # The block is held on the run state for every kind, as `blocked_units`: a bug's type
         # has no Blocked status, and writing one was refused, leaving the bug reading as an
         # ordinary open unit. A kind whose vocabulary has Blocked is also moved to it.
+        # Each unit once, in its file's spelling: every reader compares by norm_id, so
+        # `bg0002` then `BG0002` is one unit, and a v3 id is never stored as its hyphenless key.
         held = list(state.get("blocked_units") or [])
-        if args.block and args.unit not in held:
-            held.append(args.unit)
+        shown = sdlc_md.display_id(root, args.unit)
+        if args.block and sdlc_md.norm_id(args.unit) not in {sdlc_md.norm_id(u) for u in held}:
+            held.append(shown)
         run_state.update(root, pending_decisions=pending, deferred_units=deferred,
                          **({"blocked_units": held} if args.block else {}))
         blocked = ""
         hit = sdlc_md.find_by_id(root, args.unit) if args.block else None
         if args.block and hit and "Blocked" not in sdlc_md.status_vocab(hit[1], root):
             raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) or "", "Status") or "?"
-            blocked = (f"; {sdlc_md.norm_id(args.unit)} held Blocked on the run state "
+            blocked = (f"; {shown} held Blocked on the run state "
                        f"(`blocked_units`, shown by `sprint decision list`); its Status stays "
                        f"{raw.strip()}, since a {hit[1]} has no Blocked status")
         elif args.block:

@@ -113,6 +113,54 @@ class DeferBlockTests(unittest.TestCase):
             self.assertEqual([], _status(root))
             self.assertIn("> **Status:** Open", free.read_text(encoding="utf-8"))
 
+    def test_a_block_is_held_once_per_unit_in_its_files_spelling(self) -> None:
+        """`blocked_units` holds each unit once, in its file's spelling: a v3 id prints as
+        `BG-01ABCDEH`, never as the hyphenless key, and a second spelling adds no entry."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 2)
+            v3 = root / "sdlc-studio" / "bugs" / "BG-01ABCDEH-x.md"
+            v3.write_text(_bug(root, 9).read_text(encoding="utf-8")
+                          .replace("BG0009", "BG-01ABCDEH"), encoding="utf-8")
+            (root / "sdlc-studio" / "bugs" / "BG0009-x.md").unlink()
+            _open_run(root, ["BG0002", "BG-01ABCDEH"])
+            for unit in ("bg0002", "BG0002", "bg-01abcdeh"):
+                rc, out, err = _defer(root, unit, "--block")
+                self.assertEqual(0, rc, err)
+            self.assertIn("BG-01ABCDEH held Blocked on the run state", out)
+            self.assertNotIn("BG01ABCDEH", out)
+            state = json.loads((root / STATE_REL).read_text(encoding="utf-8"))
+            self.assertEqual(["BG0002", "BG-01ABCDEH"], state["blocked_units"])
+            held = _status(root)
+            self.assertEqual(2, len(held), held)
+            self.assertTrue(held[0].startswith("Blocked:      BG0002 (Open) - "), held)
+            self.assertTrue(held[1].startswith("Blocked:      BG-01ABCDEH (Open) - "), held)
+            # a run state written before the store was normalised still shows each unit once
+            state["blocked_units"] = ["bg0002", "BG0002", "BG01ABCDEH"]
+            (root / STATE_REL).write_text(json.dumps(state), encoding="utf-8")
+            self.assertEqual(["Blocked:      BG0002 (", "Blocked:      BG-01ABCDEH ("],
+                             [ln.split("Open")[0] for ln in _status(root)])
+            # and a block on a unit already held under another spelling adds no entry
+            rc, _out, err = _defer(root, "BG-01ABCDEH", "--block")
+            self.assertEqual(0, rc, err)
+            self.assertEqual(["bg0002", "BG0002", "BG01ABCDEH"], json.loads(
+                (root / STATE_REL).read_text(encoding="utf-8"))["blocked_units"])
+
+    def test_resolving_one_decision_keeps_every_other_units_block(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1), _bug(root, 2)
+            _open_run(root, ["BG0001", "BG0002"])
+            for unit in ("BG0001", "BG0002"):
+                rc, _out, err = _defer(root, unit, "--block")
+                self.assertEqual(0, rc, err)
+            rc, _out, err = _main("decision", "resolve", "--index", "1", "--choice", "a",
+                                  "--root", str(root))
+            self.assertEqual(0, rc, err)
+            state = json.loads((root / STATE_REL).read_text(encoding="utf-8"))
+            self.assertEqual(["BG0002"], state["blocked_units"])
+            self.assertEqual(["Blocked:      BG0002"], [ln[:20] for ln in _status(root)])
+
 
 if __name__ == "__main__":
     unittest.main()

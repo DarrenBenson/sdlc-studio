@@ -54,9 +54,10 @@ another's, and the root's where none does. One it would
 refuse, a required surface missing above all, stops the landing with exit 2 and nothing moved:
 the worktree, its staged change and the root's branch are as they were, so the builder repairs
 the hand-in in place. Each worktree's staged markdown is then linted, each file under the
-markdownlint config nearest above it in the worktree, and a lint failure stops the landing the
-same way, naming the file and the rule; a file no config governs is not linted, and a linter
-that cannot be found is said, never read as a pass.
+markdownlint config nearest above it in the worktree (a dot-directory's page with none of its
+own there under the one config that dot-directory tracks, as the commit hook lints `.claude/`),
+and a lint failure stops the landing the same way, naming the file and the rule; a file no
+config governs is not linted, and a linter that cannot be found is said, never read as a pass.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -1180,11 +1181,26 @@ def _markdownlint(root_top: Path, top: Path) -> str | None:
     return shutil.which("markdownlint")
 
 
-def _markdownlint_config(top: Path, rel: str) -> Path | None:
+def _tracked_markdownlint_configs(top: Path) -> list[str]:
+    """The markdownlint configs the worktree `top` tracks, as paths relative to it."""
+    listed = _git(top, "ls-files", "-z", "--", *(f"*{n}" for n in MARKDOWNLINT_CONFIGS)).stdout
+    return [r for r in listed.split("\0") if r and Path(r).name in MARKDOWNLINT_CONFIGS]
+
+
+def _markdownlint_config(top: Path, rel: str, tracked: list[str] | None = None) -> Path | None:
     """The markdownlint config nearest above `rel` in the worktree `top`, or None when none
-    governs it, so a project that lints no markdown has none linted here."""
+    governs it, so a project that lints no markdown has none linted here. markdownlint's glob
+    never enters a dot-directory, so a hook lints one by naming its pages under a config it
+    holds: a page in a dot-directory with no config of its own above it there takes the one
+    config that dot-directory tracks, so `.claude/agents/` pages lint under the skill's
+    `.claude/skills/sdlc-studio/.markdownlint.json` as the commit hook's payload lane does."""
+    parts = Path(rel).parts
+    dot = parts[0] if len(parts) > 1 and parts[0].startswith(".") else None
+    inside = [t for t in tracked or [] if dot is not None and Path(t).parts[0] == dot]
     folder = (top / rel).parent
     while True:
+        if folder == top and len(inside) == 1:
+            return top / inside[0]
         for name in MARKDOWNLINT_CONFIGS:
             if (folder / name).is_file():
                 return folder / name
@@ -1202,8 +1218,9 @@ def _refuse_markdown(root_top: Path, lanes_: list[_Lane]) -> None:
         staged = _git(lane.top, "diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR",
                       "--", "*.md").stdout.split("\0")
         groups: dict[Path, list[str]] = {}
+        tracked = _tracked_markdownlint_configs(lane.top)
         for rel in (r for r in staged if r):
-            if (config := _markdownlint_config(lane.top, rel)) is not None:
+            if (config := _markdownlint_config(lane.top, rel, tracked)) is not None:
                 groups.setdefault(config, []).append(rel)
         if not groups:
             continue

@@ -266,7 +266,10 @@ through the incident that bought each one:
 5. **Land through the landing.** The lane is landed by `sprint lane land` onto the root's
    branch: open no PR and push no branch, unless `release_strategy` is `pr-required`. The builder
    stages its work and commits nothing; sdlc-studio integrates continuously, and the review and
-   push gates replace a PR's review.
+   push gates replace a PR's review. A unit declaring `Isolation: home` is told this instead:
+   The lane is built in the root checkout, not a worktree, and `sprint lane land` lands only a
+   worktree, so the orchestrator commits it onto the root's branch: open no PR and push no
+   branch, unless `release_strategy` is `pr-required`.
 
 The dispatch enforces the first of them itself rather than passing the judgement down: a unit
 whose contract cannot be READ never reaches a lane, and the refusal names the unit and what is

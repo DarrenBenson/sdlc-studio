@@ -562,6 +562,20 @@ class ClosePanelRoundsTests(_Copies):
         self.assertEqual(2, r.returncode, r.stdout + r.stderr)
         self.assertIn("has no verdict on", r.stderr)
 
+    def test_an_amendment_from_an_older_wording_carries_that_wordings_verdicts(self) -> None:
+        """The carry reads the rounds on `--amend-from`, never on the latest wording: G3 amended
+        from G carries engineering's `no` on G, not its `yes` on G2."""
+        root = self._copy("base")
+        _ok(_record(root, "--goal", G, "--seat", "engineering|no|done|yes|reword it",
+                    "--seat", "product|yes|done|yes", "--seat", "qa|yes|done|yes"))
+        _ok(_record(root, "--goal", G2, "--amend-from", G, "--requesting-seat", "engineering"))
+        _ok(_record(root, "--goal", G2, "--seat", "engineering|yes|done|yes"))
+        _ok(_record(root, "--goal", self.G3, "--amend-from", G, "--requesting-seat", "product"))
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        carried = {s["seat"]: s for s in latest["seats"]}
+        self.assertEqual("no", carried["engineering"]["achievable"])
+        self.assertTrue(all(s.get("carried_from") == G for s in latest["seats"]), latest)
+
 
 if __name__ == "__main__":
     unittest.main()

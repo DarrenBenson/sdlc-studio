@@ -267,6 +267,8 @@ class LaneObligationDocsTests(unittest.TestCase):
         obligations = list(mod.LANE_OBLIGATIONS)
         self.assertTrue(obligations,
                         "an empty obligation set would make every assertion below vacuous")
+        # a lane built in the root checkout is held to its own landing sentence
+        obligations.append(mod.LANE_HOME_LANDING)
         body = _section(PROMPT, "lane-obligations")
         for text in obligations:
             self.assertIn(_norm(text), body,
