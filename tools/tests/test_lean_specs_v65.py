@@ -18,6 +18,8 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import inspect
+import io
+import json
 import re
 import subprocess
 import sys
@@ -125,6 +127,36 @@ def _flake_project(root: Path) -> str:
     return test
 
 
+def _page(name: str) -> Path:
+    """A page the harness row names: under the repository root, or the skill's `SKILL.md`."""
+    return next(p for p in (REPO / name, SKILL / name) if p.is_file())
+
+
+def harness_claim_problems(cell: str) -> list[str]:
+    """Why the harness row says of a page what the page does not: each page it lists as calling
+    SDLC Studio a harness-agnostic Agent Skill must hold both phrases, and each phrase it quotes
+    from `SKILL.md` must stand in that file's front matter."""
+    flat = _flat(cell)
+    # The clause's own sentence: a full stop ends it only where a space follows, not in a name.
+    m = re.search(r"((?:[^.]|\.(?=\S))*) call SDLC Studio a harness-agnostic Agent Skill", flat)
+    if not m:
+        return ["the row says no page calls SDLC Studio a harness-agnostic Agent Skill"]
+    out = []
+    pages = re.findall(r"`([\w.-]+\.(?:md|txt|json))`", m.group(1))
+    if not pages:
+        out.append("the harness-agnostic clause names no page")
+    for name in pages:
+        text = _read(_page(name))
+        if not (re.search(r"(?i)harness-agnostic", text) and "Agent Skill" in text):
+            out.append(f"{name} does not call SDLC Studio a harness-agnostic Agent Skill")
+    front = _read(SKILL / "SKILL.md").split("\n---", 1)[0]
+    quoted = re.findall(r'`SKILL\.md`[^"]*"([^"]+)"', flat)
+    if not quoted:
+        out.append("the row quotes nothing SKILL.md says")
+    out += [f"SKILL.md's front matter does not say {q!r}" for q in quoted if q not in front]
+    return out
+
+
 class SpecsV65Tests(unittest.TestCase):
     """US1329: what the three specs say 6.5 ships."""
 
@@ -158,8 +190,26 @@ class SpecsV65Tests(unittest.TestCase):
                 row = hits[0]
                 self.assertEqual("Complete", row[2])
                 self.assertEqual([], location_problems(row[4]))
+                if feature == "harness and enterprise pages":
+                    self.assertEqual([], harness_claim_problems(row[1]))
                 self.assertEqual([], unknown_commands(row[1]))
                 self.assertEqual([], [u for u in units if not re.search(rf"\b{u}\b", row[5])])
+        # Controls: a page holding only one of the two phrases, a quote SKILL.md lacks, and a row
+        # quoting nothing from SKILL.md are each refused.
+        claim = ('The first screen of `P.md` call SDLC Studio a harness-agnostic Agent Skill. The '
+                 '`SKILL.md` compatibility line says it "Needs no particular harness"')
+        for held in ("a harness-agnostic skill", "an Agent Skill"):
+            with tempfile.TemporaryDirectory() as d, self.subTest(page=held):
+                (Path(d) / "P.md").write_text(held, encoding="utf-8")
+                with mock.patch(f"{__name__}._page", return_value=Path(d) / "P.md"):
+                    self.assertEqual(["P.md does not call SDLC Studio a harness-agnostic Agent "
+                                      "Skill"], harness_claim_problems(claim))
+        self.assertEqual(["SKILL.md's front matter does not say 'Needs no harness at all 0f3c'"],
+                         harness_claim_problems(claim.replace("particular harness",
+                                                              "harness at all 0f3c")
+                                                .replace("`P.md`", "`README.md`")))
+        self.assertEqual(["the row quotes nothing SKILL.md says"], harness_claim_problems(
+            claim.split(". The")[0].replace("`P.md`", "`README.md`")))
         # The risk class row names reconcile's drift, read from the verbs that report and raise it.
         risk = [r for r in rows if r[0] == "Risk class and second seat"]
         self.assertEqual(1, len(risk))
@@ -344,6 +394,40 @@ class SpecsV65Tests(unittest.TestCase):
             self.assertEqual("BG0002", regressed["bug"])
             self.assertEqual([test, other], regressed["failed"], "no failing test is dropped")
             self.assertEqual(2, filed.call_count)
+            # A regression whose failing tests name no file in the tree is refused, not filed.
+            with mock.patch.object(file_finding, "file_finding") as unfiled, \
+                    mock.patch("sys.stdout"), mock.patch("sys.stderr", new=io.StringIO()) as err:
+                code = gate.cmd_red_run(argparse.Namespace(
+                    root=d, red_run="44", failed=["nofile.py::X::t"], token="can-rerun",
+                    format="text"))
+            self.assertEqual(2, code)
+            self.assertFalse(unfiled.called)
+            self.assertIn("red-run refused - regression: run 44", err.getvalue())
+            self.assertIn("file it with file_finding.py", err.getvalue())
+        self.assertIn("a regression none of whose failing tests names a file in the tree is "
+                      "refused, with the instruction to file it by hand", policy)
+        # The edit runner copies the tree once for the whole list, never once per edit.
+        self.assertIn("the tree is copied once into a scratch directory", runner)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            (root / "sdlc-studio" / "stories" / "US0001-probe.md").write_text(
+                "# US0001: probe\n\n> **Status:** Ready\n> **Affects:** a.py\n", encoding="utf-8")
+            (root / "a.py").write_text("x = 1\ny = 2\n", encoding="utf-8")
+            edits = root / "edits.json"
+            edits.write_text(json.dumps([
+                {"file": "a.py", "old": "x = 1", "new": "x = 0", "test": "t.py::T::a"},
+                {"file": "a.py", "old": "y = 2", "new": "y = 0", "test": "t.py::T::b"}]),
+                encoding="utf-8")
+            args = mutation.build_parser().parse_args(
+                ["--root", d, "run", "--edits", str(edits), "--scope", "US0001", "--report",
+                 str(root / "report.json")])
+            with mock.patch.object(mutation, "_copy_work_tree") as copied, \
+                    mock.patch("sys.stdout"), mock.patch("sys.stderr"):
+                args.func(args)
+            self.assertEqual(1, copied.call_count, "the tree is copied once for two edits")
+            report = json.loads((root / "report.json").read_text(encoding="utf-8"))
+            self.assertEqual(2, len(report["mutants"]), "premise: both edits were read")
 
 
 if __name__ == "__main__":
