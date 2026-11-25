@@ -22,20 +22,20 @@
 | &nbsp;&nbsp;Review gate cutoffs {#review-cutoffs} | 242-252 |
 | Persona Staleness {#personas-staleness-days} | 253-265 |
 | Lessons Validity {#lessons-validity} | 266-282 |
-| Sprint Breakdown Gate {#breakdown} | 283-291 |
-| Two-Backlog Enforcement {#two-backlog} | 292-301 |
-| Sprint Capacity {#capacity} | 302-318 |
-| Run Appetite {#appetite} | 319-331 |
-| Cost Baseline {#cost-baseline} | 332-342 |
-| Model Prices {#pricing} | 343-372 |
-| Skill Source Repo {#skill-source-repo} | 373-391 |
-| Contract Tables {#contract-tables} | 392-407 |
-| Release Strategy {#release-strategy} | 408-431 |
-| Deploy Contract {#deploy} | 432-455 |
-| Model-Tier Routing {#routing} | 456-488 |
-| Spec-Edit Guard {#spec-guard} | 489-511 |
-| Using Config in Templates | 512-524 |
-| Example Project Config | 525-572 |
+| Sprint Breakdown Gate {#breakdown} | 283-292 |
+| Two-Backlog Enforcement {#two-backlog} | 293-302 |
+| Sprint Capacity {#capacity} | 303-321 |
+| Run Appetite {#appetite} | 322-334 |
+| Cost Baseline {#cost-baseline} | 335-346 |
+| Model Prices {#pricing} | 347-376 |
+| Skill Source Repo {#skill-source-repo} | 377-395 |
+| Contract Tables {#contract-tables} | 396-411 |
+| Release Strategy {#release-strategy} | 412-435 |
+| Deploy Contract {#deploy} | 436-459 |
+| Model-Tier Routing {#routing} | 460-492 |
+| Spec-Edit Guard {#spec-guard} | 493-515 |
+| Using Config in Templates | 516-528 |
+| Example Project Config | 529-572 |
 | Conventions (tolerant convention layer) | 573-611 |
 | Version File | 612-632 |
 | &nbsp;&nbsp;Schema version stamp {#schema-version} | 633-653 |
@@ -286,6 +286,7 @@ lessons:
 | --- | --- | --- |
 | `sprint.breakdown` | `enforce` | Default-on, NOT advisory. `enforce`: `sprint plan` REFUSES a batch holding a unit that declares no `Affects` or no `Points:` - and refuses a unit above the split threshold, since above it the estimate is not worth having. It names each ungroomed unit, says what it lacks, and exits non-zero **without printing a plan** - a plan over unsized units is false authority. `judgement`: the lane reports and does not block, the same shape as the engagement floor and the lessons loop. Omission is not an escape - with no config at all the gate BLOCKS, and an unknown mode falls back to `enforce`. `sprint.py breakdown` reports the same census, read-only. See `reference-sprint.md#breakdown` |
 | `sprint.points_split_above` | `8` | The `Points:` value above which the gate refuses a unit and demands it be split. A point is a stable unit of cost up to here and breaks beyond it, so above it decomposition is a triage decision, not an estimation one. Tighten to `5` for smaller units. |
+| `sprint.fresh_session` | `warn` | What a session over 80,000 tokens of context (its newest call's input + cache write + cache read) does at `sprint resume` and `sprint plan --write`: `warn` names it on stderr with the re-read the next 100 calls would pay, and goes on; `block` also makes `resume` exit 2, while `plan --write` still only warns; `off` reads nothing. Any other value reads as `warn`. See `help/sprint.md` |
 
 ---
 
@@ -308,6 +309,8 @@ How much ONE sprint may cost. The single source for both the plan-time "does thi
 | `capacity.tokens` | 500000 | Token-forecast ceiling for the batch; a warning only, never a gate |
 | `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
 | `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
+| `gate_budget.seconds`, `gate_budget.baseline_seconds`, `gate_budget.baseline_date` | unset | The gate's time cost as `sprint plan` prices it: `seconds` is the ceiling the plan states a breach of when the gate's cost is over it; `baseline_seconds` and `baseline_date` declare a measured run, used when no run is recorded. Unset, an unmeasured cost reads UNKNOWN, never zero |
+| `estimator.default`, `estimator.compulsory_after` | unset | Estimate attribution: `default` names the estimator a unit with no `Estimated-by` is credited to (unset: unattributed); `compulsory_after` maps an id prefix to the first id whose size the grooming gate demanded (unset: the era of an unstamped estimate is unknown) |
 | `estimate.tokens_per_point` | unset | Operator override for the measured tokens-per-point rate; the plan prices with it and the forecast basis names it an override beside the measured rate it replaced. Write a plain integer (`200000`, not `1e5`, which YAML reads as text). A value that is not a finite number rounding to 1 or more (text, a boolean, `.nan`, `.inf`, `0`, `0.4`) is ignored, and the basis names it |
 
 `sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: the token total IS transcript-measured, but only as a LOWER BOUND - delegated and sidechain spend is supplied rather than observed - and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
@@ -334,6 +337,7 @@ The appetite is resolved **once**, at plan time, most specific first: `sprint pl
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `cost.baseline_per_point` | 2500000 | Priced input-equivalent tokens per point the close compares a run against until three priced runs exist (VELOCITY.md rows with a Priced/pt figure, plus `retro.py cost-baseline add` rows); `off` records no cost issue until then |
+| `report.enabled` | `true` | Whether the sprint report's text page is drawn. `false` (or `0`, `no`, `off`) withholds the page only: `show --format json` still returns the whole composed report, and telemetry still records |
 | `cost.agent_start_budget` | 30000 | Context tokens (input + cache write + cache read) a subagent's first call may carry before `sprint cost --anatomy` flags it with its start and this budget; the first call is judged, not the largest, and is its transcript's first whatever the run window, which decides only which subagents are judged; a subagent whose records give no per-call start reads not available; the main thread is not judged; `off` flags none |
 
 The default is this repository's own measure: two of its runs, priced from their transcripts, cost about 2.0M and 3.0M per point, and 2.5M sits between them. It describes SDLC Studio's work, not yours, so set your project's own figure. Once three priced runs exist the close uses their median and the key is not read. See `reference-sprint.md#cost-regression`.
@@ -342,7 +346,7 @@ The default is this repository's own measure: two of its runs, priced from their
 
 ## Model Prices {#pricing}
 
-`templates/model-prices.json` lists, per model id, its input, output, cache-read, 5-minute and 1-hour cache-write prices in US dollars per million tokens, the date they were confirmed in force (`effective`) and where they were read (`source`). `scripts/lib/prices.py` reads it and prices a token reading from its own model and components. The keys below sit with the table rather than in `config-defaults.yaml`, so their defaults are built into `lib/prices.py`.
+`templates/model-prices.json` lists, per model id, its input, output, cache-read, 5-minute and 1-hour cache-write prices in US dollars per million tokens, the date they were confirmed in force (`effective`) and where they were read (`source`). `scripts/lib/prices.py` reads it and prices a token reading from its own model and components. `config-defaults.yaml` declares each key below with the value `lib/prices.py` reads when it is unset, `premium_request: null` for the shipped price.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -532,9 +536,7 @@ coverage:
   unit: 75
   integration: 70
 
-# quality.done_requires_verified (default true): when true a story cannot transition
-# to Done while its executable ACs are red/never-run (the Done-gate blocks); set false to
-# downgrade the gate to advisory-warn for the whole project (per-call --force always overrides).
+# quality.done_requires_verified (default true): when true a story cannot transition to Done while its executable ACs are red/never-run (the Done-gate blocks); set false to downgrade the gate to advisory-warn for the whole project (per-call --force always overrides).
 quality:
   done_requires_verified: true
   # epic_requires_test_spec (default true): an epic must have a test-spec (linked by its
@@ -544,9 +546,7 @@ quality:
   # to matrix-bearing specs needs. Only true/false are honoured; any other value warns on
   # stderr and keeps enforcing.
   epic_requires_test_spec: true
-  # mutation_max (default 25): the opt-in mutation probe's cost ceiling per run
-  # (scripts/mutation.py); enumerations beyond it are counted as truncated -
-  # un-checked coverage, never silently clean.
+  # quality.mutation_max (default 25): the opt-in mutation probe's cost ceiling per run (scripts/mutation.py); enumerations beyond it are counted as truncated - un-checked coverage, never silently clean.
   mutation_max: 25
   # require_full_sections (default false): the template-tier gate refuses a story or epic that
   # reaches In Progress/Review/Done while missing the sections the full template carries. By

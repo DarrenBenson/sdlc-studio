@@ -22,8 +22,12 @@ definition overrides them.
   `GIT_CONFIG_GLOBAL` at a file inside your throwaway directory; never run `git config --global`
   or otherwise write the global git configuration. Redirecting HOME alone does not isolate git:
   where `XDG_CONFIG_HOME` is exported, git still writes the operator's real configuration.
-- Run the unit's own criteria (`verify_ac.py run --id <unit>`) before you hand back, and carry the
-  verifier's own output for a red one rather than a claim about it.
+- Remove only the paths you created and recorded, each by its own name; never delete by a glob
+  over a shared directory such as `TMPDIR` or a scratchpad, where other agents' files sit beside
+  yours.
+- Run the unit's own criteria (`verify_ac.py run --id <unit> --dry-run`) before you hand back, and
+  carry the verifier's own output for a red one rather than a claim about it. `--dry-run` keeps
+  the run from writing its results into the unit's own artefact.
 - Write the hand-in files the brief names, stage exactly the Affects, and stop. Commit, push or
   open a pull request only when the brief says to.
 

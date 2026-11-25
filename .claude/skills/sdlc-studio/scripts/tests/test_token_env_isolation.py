@@ -118,11 +118,11 @@ class HarnessEnvironmentTests(unittest.TestCase):
         self.assert_scrubbed(harness_free(SDLC_STUDIO_HARNESS="cursor"), "the cursor reader")
 
     def test_copilot_beside_claude_is_cleared(self) -> None:
-        """AC2. `COPILOT_HOME` beside `CLAUDECODE=1`. MUTANT: the scrub leaves `COPILOT_HOME`
-        (two harnesses signalled, so no reading is taken)."""
+        """AC2. `COPILOT_HOME`, with `CLAUDECODE` unset. MUTANT: the scrub leaves `COPILOT_HOME`
+        (the run selects the Copilot reader, which finds no session under that home)."""
         with tempfile.TemporaryDirectory() as home:
-            env = harness_free(CLAUDECODE="1", COPILOT_HOME=home)
-            self.assert_scrubbed(env, "copilot (COPILOT_HOME)")
+            env = harness_free(COPILOT_HOME=home)
+            self.assert_scrubbed(env, "the environment (COPILOT_HOME)")
 
     def test_opencodes_database_signal_is_cleared(self) -> None:
         """AC2. `OPENCODE_DB`, with `CLAUDECODE` unset. MUTANT: the scrub leaves a harness's

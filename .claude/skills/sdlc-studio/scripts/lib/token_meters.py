@@ -12,7 +12,10 @@ worse than reporting no figure. So one harness is chosen, and only its reader is
    It wins outright, over every signal and every store; a value naming no harness in
    `HARNESSES` reads nothing, and an empty or blank one counts as unset.
 2. Otherwise the environment: a harness is signalled when one of its `SIGNALS` is set to a
-   non-empty value. Exactly one signalled harness is chosen, whatever stores sit on disk.
+   non-empty value. A variable in `CONFIG_SIGNALS` says where a harness keeps its store, and a
+   user may export it in every shell, so a harness only such variables signal is set aside
+   while a variable outside `CONFIG_SIGNALS` signals any harness. Exactly one signalled harness
+   is chosen, whatever stores sit on disk.
 3. Otherwise the stores on disk: exactly one harness whose store is present, by its reader's
    `store` probe (Claude's: a transcript in its transcript directory).
 4. Otherwise Claude, whose reader then names the directory it found no transcript in.
@@ -57,12 +60,17 @@ HARNESSES = (CLAUDE, CURSOR, COPILOT, OPENCODE, CODEX)
 #: by. It signals Cursor here, not only through that reader's `SIGNALS`, so a run signalled by its
 #: id alone is Cursor's whether or not the reader is installed.
 CURSOR_RUN_ID = "SDLC_STUDIO_CURSOR_AGENT_ID"
-#: The environment variables that signal each harness is the one running this process. A
-#: reader module adds to its own harness's with a `SIGNALS` tuple. Codex's is the thread id a
+#: The environment variables that signal each harness is the one running this process, the
+#: weaker `CONFIG_SIGNALS` among them. A reader module adds to its own harness's with a
+#: `SIGNALS` tuple. Codex's is the thread id a
 #: codex-cli 0.160.0 session set in the shell its command ran in, read from a captured session.
 SIGNALS = {CLAUDE: ("CLAUDECODE",), CURSOR: ("CURSOR_AGENT", CURSOR_RUN_ID),
            COPILOT: ("COPILOT_HOME",), OPENCODE: ("OPENCODE", "OPENCODE_DB"),
            CODEX: ("CODEX_THREAD_ID",)}
+#: The `SIGNALS` that are a user's configuration rather than a sign of the running harness:
+#: Copilot CLI's home directory and OpenCode's database path. Each yields to any signal
+#: outside this set.
+CONFIG_SIGNALS = frozenset({"COPILOT_HOME", "OPENCODE_DB"})
 #: The key a reading, and each stamp taken from one, names its harness under.
 HARNESS = "harness"
 #: The key a reading and a stamp carry the cache reads under, outside `tokens`.
@@ -161,11 +169,15 @@ def _select(repo_root: Path, readers: _Readers, env: Mapping) -> dict:
                 f"{HARNESS_ENV} is {env.get(HARNESS_ENV)!r}, which names none of the harnesses "
                 f"this meter reads ({', '.join(HARNESSES)}), so no store is read")}
         return {HARNESS: named, "selected_by": HARNESS_ENV}
-    signalled = {}
+    signalled, running = {}, set()
     for h in HARNESSES:
         hits = [v for v in _signals(h, readers.get(h) if h != CLAUDE else None) if env.get(v)]
         if hits:
             signalled[h] = ", ".join(hits)
+            if any(v not in CONFIG_SIGNALS for v in hits):
+                running.add(h)
+    if running:
+        signalled = {h: hits for h, hits in signalled.items() if h in running}
     if len(signalled) == 1:
         (h, hits), = signalled.items()
         return {HARNESS: h, "selected_by": f"the environment ({hits})"}

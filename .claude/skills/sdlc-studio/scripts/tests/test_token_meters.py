@@ -234,10 +234,12 @@ class HarnessSelectionTests(_Fixture):
         with installed(copilot=None, opencode=None), self.env(OPENCODE_DB="/x/opencode.db"):
             got = run_state.session_tokens(self.root)
             self.assertEqual((got["tokens"], got[token_meters.HARNESS]), (None, "opencode"))
+        # Two configuration variables, and no running harness's signal, are two candidates; a
+        # configuration variable beside its own harness's running signal is named with it.
         pairs = ({"CLAUDECODE": "1", "CURSOR_AGENT": "1"},
-                 {"COPILOT_HOME": "/x/copilot", "OPENCODE": "1"},
+                 {"COPILOT_HOME": "/x/copilot", "OPENCODE_DB": "/x/opencode.db"},
                  {"CLAUDECODE": "1", "OPENCODE": "1"},
-                 {"CLAUDECODE": "1", "COPILOT_HOME": "/x/copilot"})
+                 {"CURSOR_AGENT": "1", "OPENCODE": "1", "OPENCODE_DB": "/x/opencode.db"})
         for values in pairs:
             both = stub(cursor_reading())
             with self.subTest(signals=values), installed(cursor=both, copilot=both,
@@ -256,8 +258,7 @@ class HarnessSelectionTests(_Fixture):
                 self.assertIn(f"set {token_meters.HARNESS_ENV} to the harness", got["reason"])
                 self.assertNotIn("read", both.calls)
                 self.assert_claude_untouched(spy)
-            # The remedy the refusal names reads the harness it names, whatever else is set:
-            # the way out for a Claude Code session with COPILOT_HOME exported (BG1282).
+            # The remedy the refusal names reads the harness it names, whatever else is set.
             with self.subTest(remedy=values), installed(cursor=both, copilot=both,
                                                         opencode=both), \
                     self.env(SDLC_STUDIO_HARNESS="claude", **values):
@@ -282,6 +283,56 @@ class HarnessSelectionTests(_Fixture):
         self.assertEqual(got["candidates"], ["claude", "cursor"],
                          "a store that cannot be probed may be present")
         self.assertIn("could not be probed (OSError)", got["reason"])
+
+    def test_a_config_variable_yields_to_a_running_process_signal(self) -> None:
+        """BG1282 AC1. `COPILOT_HOME` and `OPENCODE_DB` say where a harness keeps its store, and
+        a user may export either in every shell, so beside another variable's signal they signal
+        nothing: a Claude Code session with either exported reads its own transcript. MUTANTS:
+        either variable left out of `CONFIG_SIGNALS`; a configuration variable kept as a
+        candidate beside a running signal; a reader module's own signal read as configuration."""
+        for config_var, value in (("COPILOT_HOME", "/x/copilot"),
+                                  ("OPENCODE_DB", "/x/opencode.db")):
+            other = stub(cursor_reading())
+            with self.subTest(config=config_var), installed(copilot=other, opencode=other), \
+                    self.env(CLAUDECODE="1", **{config_var: value}):
+                got = run_state.session_tokens(self.root)
+                self.assertEqual((got["tokens"], got[token_meters.HARNESS]), (TOKENS, "claude"))
+                self.assertEqual(got["selected_by"], "the environment (CLAUDECODE)")
+                self.assertEqual([], other.calls, "the configured harness's reader was consulted")
+        extra = stub(cursor_reading(), signals=("STUB_COPILOT_RUN",))
+        for env, harness, by in (
+                ({"CURSOR_AGENT": "1", "COPILOT_HOME": "/x/c"}, "cursor", "CURSOR_AGENT"),
+                ({"OPENCODE": "1", "COPILOT_HOME": "/x/c"}, "opencode", "OPENCODE"),
+                ({"CODEX_THREAD_ID": "t-1", "OPENCODE_DB": "/x/o.db"}, "codex", "CODEX_THREAD_ID"),
+                ({"CLAUDECODE": "1", "COPILOT_HOME": "/x/c", "OPENCODE_DB": "/x/o.db"}, "claude",
+                 "CLAUDECODE"),
+                ({"STUB_COPILOT_RUN": "1", "OPENCODE_DB": "/x/o.db"}, "copilot",
+                 "STUB_COPILOT_RUN")):
+            with self.subTest(env=env), installed(copilot=extra):
+                got = token_meters.select(self.root, None, env)
+                self.assertEqual((got.get(token_meters.HARNESS), got.get("selected_by")),
+                                 (harness, f"the environment ({by})"), got)
+
+    def test_a_config_variable_alone_still_selects_its_harness(self) -> None:
+        """BG1282 AC2. With no other harness variable set, a configuration variable still
+        signals its harness. MUTANTS: configuration variables dropped from the selection
+        outright; dropped beside any variable, an empty one included; two of them, with no
+        running signal, no longer two candidates."""
+        for config_var, value, harness in (("COPILOT_HOME", "/x/copilot", "copilot"),
+                                           ("OPENCODE_DB", "/x/opencode.db", "opencode")):
+            reader = stub(cursor_reading())
+            for beside in ({}, {"CLAUDECODE": ""}):
+                with self.subTest(config=config_var, beside=beside), \
+                        installed(**{harness: reader}), \
+                        self.env(**beside, **{config_var: value}), self.claude_spy() as spy:
+                    got = run_state.session_tokens(self.root)
+                    self.assertEqual((got["tokens"], got[token_meters.HARNESS]), (900, harness))
+                    self.assertEqual(got["selected_by"], f"the environment ({config_var})")
+                    self.assert_claude_untouched(spy)
+        got = token_meters.select(self.root, None,
+                                  {"COPILOT_HOME": "/x/c", "OPENCODE_DB": "/x/o.db"})
+        self.assertEqual((got[token_meters.HARNESS], got["candidates"]),
+                         (None, ["copilot", "opencode"]))
 
     def test_readings_and_stamps_name_the_harness(self) -> None:
         """AC4. Mutants: a stamp without its harness, cache reads folded into `tokens`, a run

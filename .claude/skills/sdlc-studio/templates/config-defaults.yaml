@@ -406,6 +406,17 @@ cost:
   # starts well under it, an agent granted every tool does not. `off` flags none.
   agent_start_budget: 30000
 
+# Model prices, laid over templates/model-prices.json by `lib/prices.py`; each value here is the
+# one it reads when the key is unset. `models` adds a model id's entry or replaces a shipped one
+# whole; `premium_request: null` keeps the shipped price of one Copilot premium request; the
+# table reads as stale once its newest effective date is older than `stale_after_days`.
+# `copilot_billing` is the basis the project's Copilot plan bills on. See reference-config.md.
+pricing:
+  models: {}
+  premium_request: null
+  stale_after_days: 90
+  copilot_billing: tokens  # tokens | requests - requests leaves the Copilot ids unpriced
+
 # Flow-metrics ageing flags (US-level, advisory). Unset = the status ageing advisory is OFF
 # (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When
 # set, `status` names each In Progress unit older than this many days and every Blocked

@@ -38,6 +38,22 @@ CONTRACT = {
                               r"[^.]*, the hand-in path", re.I),
     "no progress": re.compile(r"no progress message unless (you are )?blocked", re.I),
 }
+# The builder's clean-up rule, one pattern per clause, matched over whitespace-joined text: a
+# rule general enough to cover any glob over any shared directory, not the one command run
+# fifteen's builder ran over the shared TMPDIR.
+CLEAN_UP = {
+    "only the paths it created and recorded": re.compile(
+        r"remove only the paths you created and recorded\b", re.I),
+    "never a glob over a shared directory": re.compile(
+        r"never delete by a glob over a shared directory such as `TMPDIR`"),
+}
+
+
+def clean_up_missing(text: str) -> list[str]:
+    """The clean-up clauses the builder card's `## How you work` section omits, every clause
+    when the section is absent."""
+    body = section(text, "How you work") or ""
+    return [clause for clause, pattern in CLEAN_UP.items() if not pattern.search(body)]
 
 
 def frontmatter(text: str) -> dict[str, str]:
@@ -142,8 +158,25 @@ class AgentDefinitionTests(unittest.TestCase):
                 self.assertEqual([], missing, f"{path} omits a worktree instruction")
         self.assertEqual(texts[0], texts[1], "the installed reviewer differs from the template")
 
+    def test_the_builder_card_confines_clean_up_to_paths_the_builder_created(self) -> None:
+        """BG1504 AC1. The shipped builder card tells a builder to remove only what it created
+        and recorded, and never to delete by a glob over a shared directory: run fifteen's
+        builder ran `rm -rf` over `tmp.*` in the TMPDIR every lane shares. MUTANTS: either
+        clause dropped; the rule moved out of `## How you work`; the rule narrowed to the one
+        command the run met. The controls: the section with no rule, and a card forbidding only
+        that one command, are each refused."""
+        self.assertEqual([], clean_up_missing(self._read("sdlc-builder.md")))
+        self.assertEqual(list(CLEAN_UP), clean_up_missing(
+            "## How you work\n\n- Read the brief.\n\n## Hand-back\n\n- Remove only the paths "
+            "you created and recorded; never delete by a glob over a shared directory such as "
+            "`TMPDIR`.\n"))
+        self.assertEqual(list(CLEAN_UP), clean_up_missing(
+            "## How you work\n\n- Never run `rm -rf ~/.cache/sdlc-tmp/tmp.*`.\n"))
+
     def test_this_repository_s_copies_match_the_templates(self) -> None:
-        """AC4. MUTANT: a hand edit to this repository's `.claude/agents/` copy, or a copy missing."""
+        """AC4, and BG1504 AC2. MUTANTS: a hand edit to this repository's `.claude/agents/` copy,
+        or a copy missing; the clean-up rule in the template while the builder copy this
+        repository's builders load stays silent, or both copies silent on it."""
         shipped = sorted(p.name for p in TEMPLATES.glob("*.md"))
         self.assertEqual(sorted(DEFINITIONS), shipped)
         for name in shipped:
@@ -152,6 +185,9 @@ class AgentDefinitionTests(unittest.TestCase):
                 self.assertTrue(ours.is_file(), f"{ours} is missing")
                 self.assertEqual((TEMPLATES / name).read_bytes(), ours.read_bytes(),
                                  f"{ours} has drifted from the shipped template")
+        ours = REPO / ".claude" / "agents" / "sdlc-builder.md"
+        self.assertEqual([], clean_up_missing(ours.read_text(encoding="utf-8")),
+                         f"{ours} is silent on the clean-up rule")
 
 
 # US1132: the references that spawn a builder or reviewer, each with the passage that does it, from
