@@ -1,6 +1,6 @@
 {
   "unit": "US1329",
-  "digest": "666e74e1c393a1b2 at cdf633b4eefe",
+  "digest": "62fa1f587addf0d2 at 44262d3dc428",
   "report": "sdlc-studio/.local/lane/landed/agent-a816949e13af822c1/US1329-mutation-edits.json",
   "mutants": [
     {
@@ -207,6 +207,87 @@
       "old": "the command exits 0 only on `rerun`.",
       "new": "the command exits 0 on `rerun` or `stop`.",
       "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-skill-md-harness-agnostic-again",
+      "file": "sdlc-studio/prd.md",
+      "old": "The first screen of `README.md`, `llms.txt` and",
+      "new": "The first screen of `README.md`, the `SKILL.md` description, `llms.txt` and",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-skill-md-quote-false",
+      "file": "sdlc-studio/prd.md",
+      "old": "says it \"Needs no particular harness\"",
+      "new": "says it \"Runs in any harness unchanged\"",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-copied-for-each-edit",
+      "file": "sdlc-studio/tsd.md",
+      "old": "the tree is copied once into a scratch",
+      "new": "the tree is copied for each edit into a scratch",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tsd-regression-filed-anyway",
+      "file": "sdlc-studio/tsd.md",
+      "old": "names a file in the tree is refused,",
+      "new": "names a file in the tree is filed anyway,",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "checker-agent-skill-unchecked",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "        if not (re.search(r\"(?i)harness-agnostic\", text) and \"Agent Skill\" in text):\n",
+      "new": "        if not re.search(r\"(?i)harness-agnostic\", text):\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "checker-harness-agnostic-unchecked",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "        if not (re.search(r\"(?i)harness-agnostic\", text) and \"Agent Skill\" in text):\n",
+      "new": "        if \"Agent Skill\" not in text:\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "checker-quotes-unchecked",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "    out += [f\"SKILL.md's front matter does not say {q!r}\" for q in quoted if q not in front]\n",
+      "new": "    out += []\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "checker-no-quote-allowed",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "    if not quoted:\n        out.append(\"the row quotes nothing SKILL.md says\")\n",
+      "new": "",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "checker-sentence-ends-in-a-name",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "((?:[^.]|\\.(?=\\S))*)",
+      "new": "([^.]*)",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
       "result": "killed",
       "answer": ""
     }

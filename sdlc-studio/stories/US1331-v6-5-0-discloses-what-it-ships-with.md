@@ -6,7 +6,7 @@
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** docs/known-issues.md, docs/release-notes-v6.5.0.md, docs/evidence.md, tools/known_issues.py, tools/tests/test_known_issues.py, tools/tests/test_lean_release_disclosure_v65.py, changelog.d/US1331.md
+> **Affects:** docs/known-issues.md, docs/release-notes-v6.5.0.md, docs/evidence.md, tools/known_issues.py, tools/tests/test_known_issues.py, tools/tests/test_lean_release_disclosure_v65.py, .githooks/pre-push, tools/tests/test_pre_push_hook.py, changelog.d/US1331.md
 > **Epic:** EP0379
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -78,3 +78,4 @@ and can read each run's record without running the tool
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0631) | Groomed from US1330's AC2, AC3 and AC6, split off at the 8-point ceiling US0854::AC1 refuses: user story, criteria with Verify lines in this story's own test module, Depends on US1327, Release 6.5 |
 | 2026-11-25 | orchestrator (delegate under D0545) | Notes: the barred severities follow each release's bar, per the qa seat's round-one REJECT, replacing grooming's note that `bar` stays Critical and High |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects take .githooks/pre-push and tools/tests/test_pre_push_hook.py for round three: the hook's refusal still names only Critical and High once the v6.5 bar refuses a Medium (the qa seat's round-two REJECT, carried as BG1760) |

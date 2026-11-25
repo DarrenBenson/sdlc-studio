@@ -1,6 +1,6 @@
 {
   "unit": "US1328",
-  "digest": "f40fd3f19288cc89 at 3e9b821b81f6",
+  "digest": "4a29cd605474d916 at 575f6626bf1e",
   "report": "sdlc-studio/.local/lane/landed/agent-a63f862b376dec2e2/US1328-mutation-edits.json",
   "mutants": [
     {
@@ -175,15 +175,6 @@
       "answer": ""
     },
     {
-      "mutant": "6.5 line first",
-      "file": "tools/tests/test_lean_docs_v65.py",
-      "old": "self.assertTrue(lines[0].startswith(\"- **New in 6.5\"),",
-      "new": "self.assertTrue(lines[0].startswith(\"- **New in 6.4\"),",
-      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
-      "result": "killed",
-      "answer": ""
-    },
-    {
       "mutant": "6.5 section order",
       "file": "tools/tests/test_lean_docs_v65.py",
       "old": "[\"From 6.4 to 6.5\", \"From 6.3 to 6.4\"],",
@@ -270,6 +261,123 @@
       "old": "        \"A signature may be entered on the signer's behalf, under delegation, only with \"",
       "new": "        \"A signature may be entered on the signer's behalf, under a delegation, only with \"",
       "test": "tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade.md gate exit 1",
+      "file": ".claude/skills/sdlc-studio/help/upgrade.md",
+      "old": "`gate.py` refuses with exit 2\n",
+      "new": "`gate.py` refuses with exit 1\n",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade.md gate after every lane",
+      "file": ".claude/skills/sdlc-studio/help/upgrade.md",
+      "old": "  before any lane runs, and",
+      "new": "  after every lane runs, and",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona.md report refuses",
+      "file": ".claude/skills/sdlc-studio/help/persona.md",
+      "old": "`report` frames the card",
+      "new": "`report` refuses the card",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "leaders decision optional",
+      "file": "docs/engineering-leaders.md",
+      "old": "only with `--delegated` and `--decision`",
+      "new": "with `--delegated` and, optionally, `--decision`",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade.md Debian name for Arch",
+      "file": ".claude/skills/sdlc-studio/help/upgrade.md",
+      "old": "`python-yaml` on Arch",
+      "new": "`python3-yaml` on Arch",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "existing-users Debian name for Arch",
+      "file": "docs/existing-users.md",
+      "old": "`python-yaml` on Arch",
+      "new": "`python3-yaml` on Arch",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "README 6.4 forecast names nothing",
+      "file": "README.md",
+      "old": "The signed report sets `sprint plan`'s cost and\n  wall-clock forecasts beside the actuals.",
+      "new": "The signed report sets each forecast beside the\n  actual.",
+      "test": "tools/tests/test_lean_docs_v64.py::DocsV64Tests::test_the_public_pages_name_what_64_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "6.5 line below 6.4",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertLess(at[\"6.5\"], at[\"6.4\"],",
+      "new": "self.assertGreater(at[\"6.5\"], at[\"6.4\"],",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused gate ran a lane",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertNotRegex(refused.stdout + refused.stderr, LANE_LINE,",
+      "new": "self.assertRegex(refused.stdout + refused.stderr, LANE_LINE,",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate control prints no lane",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "self.assertRegex(ran.stdout + ran.stderr, LANE_LINE,",
+      "new": "self.assertNotRegex(ran.stdout + ran.stderr, LANE_LINE,",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bare --delegated seals",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "(\"--delegated with no decision\", lambda a, s: [\"--delegated\"], False)",
+      "new": "(\"--delegated with no decision\", lambda a, s: [\"--delegated\"], True)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision without --delegated seals",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "(\"a decision with no --delegated\", lambda a, s: [\"--decision\", a], False)",
+      "new": "(\"a decision with no --delegated\", lambda a, s: [\"--decision\", a], True)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "superseded decision seals",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "lambda a, s: [\"--delegated\", \"--decision\", s], False)",
+      "new": "lambda a, s: [\"--delegated\", \"--decision\", s], True)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds",
       "result": "killed",
       "answer": ""
     }

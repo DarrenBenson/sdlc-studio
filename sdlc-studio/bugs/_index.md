@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 46 |
+| Open | 48 |
 | In Progress | 0 |
 | Fixed | 1242 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1758** |
+| **Total** | **1760** |
 
 ## All Bugs
 
@@ -834,6 +834,8 @@
 | [BG1756](BG1756-a-plan-refused-for-a-criteria-problem-other.md) | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1757](BG1757-a-commit-can-stage-a-review-ledger-row.md) | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1759](BG1759-us1327-did-not-converge-in-review-round-2.md) | US1327 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1760](BG1760-us1331-did-not-converge-in-review-round-2.md) | US1331 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 

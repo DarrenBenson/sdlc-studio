@@ -1,6 +1,6 @@
 # US1329: The PRD, TRD and TSD describe what 6.5 ships
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.5
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
@@ -38,6 +38,7 @@ configuration keys and the records and state each of them writes
   drive`, `gate.py --red-run`, `mutation.py run --edits` or `--distinct-from`, and the flags table
   names none of the four keys.
   - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features
+  - **Verified:** yes (2026-11-25)
 - **AC2:** Given the TRD's data architecture, then each record and state file 6.5 writes is named
   with its writer, read from the code: the committed records table gains the persona review ledger
   `sdlc-studio/reviews/persona-reviews.md` (`persona_review.py record`, `LEDGER_REL`), held to its
@@ -52,6 +53,7 @@ configuration keys and the records and state each of them writes
   `committed_trees()` at HEAD, which omits the author-mutants tree although git tracks 250 files in
   it.
   - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_names_every_record_65_writes
+  - **Verified:** yes (2026-11-25)
 - **AC3:** Given the TSD, then its Mutation Testing section names the author's chosen-mutant runner,
   `mutation.py run --edits <list.json> --scope <id>`: each edit applied in a scratch copy of the
   tree and never the working tree, one verdict each of killed, survived, not-applied or error, an
@@ -64,6 +66,7 @@ configuration keys and the records and state each of them writes
   against the code it describes. Fails on: the TSD at HEAD, which names neither `--edits` nor
   `--red-run`.
   - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy
+  - **Verified:** yes (2026-11-25)
 - **AC4:** Given the three specs after this change, then the `.local/` residue test passes, holding
   each new state row to a write in its writer's code. The refresh tests and the 6.4 specs test stay
   green; other stories' criteria (US1172, US1173 and the refresh stories) and the push's full suite
@@ -71,6 +74,7 @@ configuration keys and the records and state each of them writes
   on: a TRD with no `mutation-edits-<unit>.json` row, as at HEAD; or a state row whose writer writes
   no such path.
   - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py && grep -qF 'mutation-edits-<unit>.json' sdlc-studio/trd.md
+  - **Verified:** yes (2026-11-25)
 
 ## Notes
 

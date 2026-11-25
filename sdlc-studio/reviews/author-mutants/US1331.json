@@ -1,12 +1,147 @@
 {
   "unit": "US1331",
-  "digest": "286a73ad4b5b76b8 at 4841d946b4c0",
+  "digest": "b654e21af1926257 at 1f046369a76f",
   "report": "sdlc-studio/.local/lane/landed/agent-a3b9af2c481ff2ad3/US1331-mutation-edits.json",
   "mutants": [
     {
+      "mutant": "Medium dropped from the v6.5 set",
+      "file": "tools/known_issues.py",
+      "old": "BARRED + (\"Medium\",)",
+      "new": "BARRED",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Medium dropped from the v6.5 set (AC1)",
+      "file": "tools/known_issues.py",
+      "old": "BARRED + (\"Medium\",)",
+      "new": "BARRED",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Medium dropped from the v6.5 set (sets)",
+      "file": "tools/known_issues.py",
+      "old": "BARRED + (\"Medium\",)",
+      "new": "BARRED",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_each_bar_carries_the_severities_it_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest bar's set for every release",
+      "file": "tools/known_issues.py",
+      "old": "return _in_force(_series(release))[2]",
+      "new": "return BARS[0][2]",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_each_bar_carries_the_severities_it_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held_to reads the newest bar whatever the page names",
+      "file": "tools/known_issues.py",
+      "old": "return barred_for(f\"{named[1]}.{named[2]}\") if named else BARRED",
+      "new": "return BARS[0][2] if named else BARRED",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_bar_at_an_older_tag_judges_it_by_its_own_bar",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held_to falls back to the newest bar",
+      "file": "tools/known_issues.py",
+      "old": "return barred_for(f\"{named[1]}.{named[2]}\") if named else BARRED",
+      "new": "return barred_for(f\"{named[1]}.{named[2]}\") if named else BARS[0][2]",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bar reads BARRED, not the page's bar",
+      "file": "tools/known_issues.py",
+      "old": "    barred = held_to(root)\n",
+      "new": "    barred = BARRED\n",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "barred_open ignores the barred it is given",
+      "file": "tools/known_issues.py",
+      "old": "not _is_open(row[1]) or not _matches(row[2], barred)",
+      "new": "not _is_open(row[1]) or not _matches(row[2], BARRED)",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "barred_open default ignores the page",
+      "file": "tools/known_issues.py",
+      "old": "barred = held_to(repo) if barred is None else barred",
+      "new": "barred = BARRED if barred is None else barred",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bar message joins every severity with or",
+      "file": "tools/known_issues.py",
+      "old": "{', '.join(barred[:-1])} or {barred[-1]} ",
+      "new": "{' or '.join(barred)} ",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render's Not carried reads BARRED",
+      "file": "tools/known_issues.py",
+      "old": "_not_carried(repo, barred_for(release))",
+      "new": "_not_carried(repo, BARRED)",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_not_carried_names_what_the_bar_in_force_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render's Not carried reads BARRED (check)",
+      "file": "tools/known_issues.py",
+      "old": "_not_carried(repo, barred_for(release))",
+      "new": "_not_carried(repo, BARRED)",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_check_reads_the_bar_the_page_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render's Not carried reads BARRED (AC1)",
+      "file": "tools/known_issues.py",
+      "old": "_not_carried(repo, barred_for(release))",
+      "new": "_not_carried(repo, BARRED)",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not_carried ignores the barred it is given",
+      "file": "tools/known_issues.py",
+      "old": "        if row is None or not _matches(row[2], barred):\n            continue\n        for status in found:",
+      "new": "        if row is None or not _matches(row[2], BARRED):\n            continue\n        for status in found:",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_not_carried_names_what_the_bar_in_force_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bar in force read strictly below the series",
+      "file": "tools/known_issues.py",
+      "old": "if bar[0] <= series)",
+      "new": "if bar[0] < series)",
+      "test": "tools/tests/test_known_issues.py::BarInForceTests::test_each_bar_carries_the_severities_it_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "no v6.5 row in BARS",
       "file": "tools/known_issues.py",
-      "old": "    ((6, 5), \"v6.5\", \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
+      "old": "    ((6, 5), \"v6.5\", BARRED + (\"Medium\",), \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
       "new": "",
       "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
       "result": "killed",
@@ -15,7 +150,7 @@
     {
       "mutant": "no v6.5 row in BARS (AC1)",
       "file": "tools/known_issues.py",
-      "old": "    ((6, 5), \"v6.5\", \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
+      "old": "    ((6, 5), \"v6.5\", BARRED + (\"Medium\",), \"\"\"\\\n**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for\nthat target rather than for a date. A finding either reaches a terminal status or ships open at\nLow severity, listed below by id.\n\"\"\"),\n",
       "new": "",
       "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
       "result": "killed",
@@ -49,7 +184,7 @@
       "answer": ""
     },
     {
-      "mutant": "Medium dropped from the bar",
+      "mutant": "Medium dropped from the bar sentence",
       "file": "tools/known_issues.py",
       "old": "none at Medium or above.** The release",
       "new": "none at High or above.** The release",
@@ -60,7 +195,7 @@
     {
       "mutant": "v6.0 row dropped",
       "file": "tools/known_issues.py",
-      "old": "    ((6, 0), \"v6.0\", \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
+      "old": "    ((6, 0), \"v6.0\", BARRED, \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
       "new": "",
       "test": "tools/tests/test_known_issues.py::ReleaseNamedTests::test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history",
       "result": "killed",
@@ -69,7 +204,7 @@
     {
       "mutant": "v6.0 row dropped (AC1)",
       "file": "tools/known_issues.py",
-      "old": "    ((6, 0), \"v6.0\", \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
+      "old": "    ((6, 0), \"v6.0\", BARRED, \"\"\"\\\n**Zero open Critical or High finding at the tag, and every open Medium ruled by one triage\ndecision.** A finding either reaches a terminal status with its own verifiers passing, or it\nstays open under the triage target below, which one recorded decision rules for the whole list\nrather than a waiver per finding.\n\"\"\"),\n",
       "new": "",
       "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
       "result": "killed",
@@ -114,8 +249,8 @@
     {
       "mutant": "render passes DISCLOSED",
       "file": "tools/known_issues.py",
-      "old": "return _head(total, release, shipped)",
-      "new": "return _head(total, release, DISCLOSED)",
+      "old": "return (_head(total, release, shipped) +",
+      "new": "return (_head(total, release, DISCLOSED) +",
       "test": "tools/tests/test_known_issues.py::PageProseTests::test_the_ship_open_sentence_names_only_the_severities_the_table_holds",
       "result": "killed",
       "answer": ""
@@ -144,6 +279,15 @@
       "old": "BARRED = (\"medium\", \"high\", \"critical\")",
       "new": "BARRED = (\"high\", \"critical\")",
       "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Medium not barred (Not carried)",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "BARRED = (\"medium\", \"high\", \"critical\")",
+      "new": "BARRED = (\"high\", \"critical\")",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
       "result": "killed",
       "answer": ""
     },
@@ -180,6 +324,42 @@
       "old": "return found, known_issues.unparseable(root)",
       "new": "return found, []",
       "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Not carried status unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "row[1].strip().casefold() in NOT_FIXED",
+      "new": "True",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Not carried severity unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "and row[2].strip().casefold() in BARRED):",
+      "new": "and True):",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Not carried omissions unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "    if wanted - named:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: Not carried extras unchecked",
+      "file": "tools/tests/test_lean_release_disclosure_v65.py",
+      "old": "    if named - wanted:\n",
+      "new": "    if False:\n",
+      "test": "tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650",
       "result": "killed",
       "answer": ""
     },

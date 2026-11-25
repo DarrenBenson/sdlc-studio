@@ -1,6 +1,6 @@
 # US1328: The help, upgrade and public pages describe what 6.5 ships
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.5
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
@@ -37,6 +37,7 @@ answered for a run signed under delegation
   against the command's own output on a fixture. Fails on: the four pages at HEAD, which name none
   of PyYAML, `personas.standard`, `--distinct-from` or `risk-class`.
   - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_pages_name_the_refusals_65_adds
+  - **Verified:** yes (2026-11-25)
 - **AC2:** Given help/review.md's section on the author's self-check, then it names
   `mutation.py run --edits <list.json> --scope <id>` (each edit applied in a scratch copy, one
   verdict line each: killed, survived, not-applied or error), `critic.py self-check record
@@ -47,6 +48,7 @@ answered for a run signed under delegation
   help/review.md at HEAD, whose self-check section shows only `--claims claims.json --mutants
   mutants.json`.
   - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_review_help_names_the_authors_replayed_mutants
+  - **Verified:** yes (2026-11-25)
 - **AC3:** Given README.md, llms.txt and docs/engineering-leaders.md, then README has one 'New in
   6.5' line naming what 6.5 adds (a release held to fewer than 50 open defects and none at Medium or
   above, linking docs/known-issues.md; every persona and seat card held to a written standard; and a
@@ -58,6 +60,7 @@ answered for a run signed under delegation
   6.5 line, llms.txt with no link to the known-issues page, and a Signer bullet that names no
   delegation, all three as the pages stand at HEAD.
   - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_65_adds
+  - **Verified:** yes (2026-11-25)
 - **AC4:** Given docs/existing-users.md, then it has a 'From 6.4 to 6.5' section, first, above 'From
   6.3 to 6.4'. It says: install PyYAML before reinstalling; `migrate`, then `migrate --apply`, owes a
   6.4 project its version stamp, sets `personas.standard: report` for a project holding its own
@@ -70,12 +73,14 @@ answered for a run signed under delegation
   test_lean_docs_v64's `froms[:4]` check, which refuses any section above 6.4's (run at grooming on a
   copy with a 6.5 heading inserted).
   - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_existing_users_has_the_64_to_65_upgrade_path
+  - **Verified:** yes (2026-11-25)
 - **AC5:** Given the changed pages, then README carries its 'New in 6.5' line within
   test_readme_front_door's 1,500-word ceiling, the 6.3 and 6.4 docs tests still pass, and
   `tools/check_links.py`, `tools/lint-style.sh` and `tools/check_budgets.py` pass. Fails on: README
   with no 'New in 6.5' line (as at HEAD), a README over 1,500 words (it is 1,498 at HEAD), a broken
   anchor, or an em dash.
   - **Verify:** shell grep -qE '^- \*\*New in 6\.5' README.md && python3 -m pytest -q tools/tests/test_readme_front_door.py tools/tests/test_lean_docs_v63.py tools/tests/test_lean_docs_v64.py && python3 tools/check_links.py && bash tools/lint-style.sh && python3 tools/check_budgets.py
+  - **Verified:** yes (2026-11-25)
 
 ## Notes
 

@@ -1,0 +1,42 @@
+# BG1760: US1331 did not converge in review: round 2 REJECT findings
+
+> **Status:** Open
+> **Severity:** Low
+> **Points:** 3
+> **Affects:** docs/known-issues.md, docs/release-notes-v6.5.0.md, docs/evidence.md, tools/known_issues.py, tools/tests/test_known_issues.py, tools/tests/test_lean_release_disclosure_v65.py, changelog.d/US1331.md
+> **Created:** 2026-11-25
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+> **Raised-in-batch:** RUN-01M89MN1 - raised during the run, 2026-11-25T21:17:19Z
+
+## Summary
+
+US1331 was rejected at round 2, the review cap, by agent-a99db4ff5609aac1b (qa), so it was carried as a known issue rather than reviewed again. The findings still open: BLOCKING: [regression] The tag gate now prints a false reason when it refuses a 6.5 tag over an open Medium: round two makes `known_issues.py bar` bar Medium under a 6.5 page (`held_to`, tools/known\_issues.py:131, read by `_bar` at :489), but the pre-push hook that acts on that exit still says "a Critical or High finding is open there, or one cannot be parsed" (.githooks/pre-push:95), and its comment still says "The page states zero open Critical or High" (.githooks/pre-push:89). Through the shipped entry point, in a throwaway clone at 1f046369a with one open Medium (BG9901) cut into the 6.5.0 page and committed, `git -c core.hooksPath=.githooks push <bare remote> refs/tags/v6.5.0` printed "release bar NOT met: 1 open finding(s) at a barred severity - BG9901 (Medium)" and then "pre-push: the release bar is not met at tagged commit 48dd571de5df: a Critical or High finding is open there, or one cannot be parsed (named above)". Both hook sentences were true at 4841d946b, where `bar` refused only an open Critical or High or an unparseable finding (`git log -S 'a Critical or High finding is open there'` places them in 85b797868, BG1521). The hook lies outside the declared Affects, so the repair widens them to .githooks/pre-push and has the message name the bar the page states rather than two fixed severities [LC-018]; [pre-existing] `known_issues.py check --at REV` re-renders that commit's corpus with the generator at HEAD (`_check`, tools/known\_issues.py:539), so the unit's AC1 test, like test\_lean\_release\_cut\_v64.py:147, goes red at every later release gate once a later change edits the generator's shared prose: in round one, rewording the Not carried closing sentence made `check --at v6.4.0` exit 1 and failed both AC1 tests. AC1 mandates the check, and no open bug covers it; RULINGS: Round one, "Under the v6.5 bar this diff makes the page state, its Not carried sentence trims the count": CLOSED. docs/known-issues.md now names 40 ruled Won't Fix (the 5 Highs and 35 Mediums, BG1509 among them) and 32 Medium superseded, the same sets my round-one count drew from the corpus, `known_issues.py check` exits 0 ("agrees with the corpus (46 disclosed finding(s))"), `write --release 6.5.0` regenerates both pages byte for byte, and `not_carried` now reads the bar in force (`barred_for(release)`). Round one, "Nothing holds a 6.5-series cut to the v6.5 row's own sentence": CLOSED. In the clone above, `bar` and `bar --at` the cut commit exit 1 on the open Medium, and the real hook refused the v6.5.0 tag. The test case that pinned a 6.5.0 page with an open Medium now renders 6.0.0. `write` still writes such a page, which `check` accepts, but it can no longer be tagged. No regression at older tags: `bar --at` each of v6.4.0, v6.3.0, v6.2.0, v6.1.0, v6.0.0, v6.0.0-rc.1, v5.1.0, v5.0.1, v5.0.0, v4.1.0, v4.0.0, v3.6.0 and v2.0.0 exits as it did at 4841d946b (0, except v5.0.1 and v5.0.0 at 1 for their unparseable finding). Every changelog.d/US1331.md sentence checked TRUE by execution, except "every finding at Medium or above that left without a fix", which reads only Won't Fix and Superseded and leaves the old Closed findings, whose files carry no Resolution, UNVERIFIABLE. Suites in a clean worktree at 1f046369a: test\_known\_issues, test\_lean\_release\_disclosure\_v65, the v62, v63 and v64 cut tests, test\_corpus\_verify\_env, test\_pre\_push\_hook and test\_lean\_release\_notes, 99 passed. My mutants: held\_to reading the major only, Not carried read from `held_to(repo)`, `bar` reading the live repository's page rather than the tree judged, the v6.5 set ordered Medium first, and v6.0 barring Medium were all killed. Dropping the release-side `not_carried_problems` assertion survives, and in isolation a generator-and-page drift is caught first by the fixture control, so that line is redundant but not a gap. Note for the orchestrator, not a finding: in the main working tree `verify_ac run --id US1331 --dry-run` reads AC2 red ("release bar NOT met: 1 open finding(s) at a barred severity - BG1759 (Medium)"), because the untracked BG1759 is an open Medium and AC2 runs `bar` on the working tree before the tag. That is AC2 and D0560 working as written: US1331 cannot reach Done while BG1759 is open at Medium.
+
+## Steps to Reproduce
+
+1. Read the round 2 REJECT of US1331 in the verdict ledger.
+
+## Proposed Fix
+
+Fix each finding above, then deliver US1331 again in a later run.
+
+## Acceptance Criteria
+
+- [ ] **AC1** The round 2 REJECT finding no longer holds: BLOCKING: [regression] The tag gate now prints a false reason when it refuses a 6.5 tag over an open Medium: round two makes `known_issues.py bar` bar Medium under a 6.5 page (`held_to`, tools/known\_issues.py:131, read by `_bar` at :489), but the pre-push hook that acts on that exit still says "a Critical or High finding is open there, or one cannot be parsed" (.githooks/pre-push:95), and its comment still says "The page states zero open Critical or High" (.githooks/pre-push:89). Through the shipped entry point, in a throwaway clone at 1f046369a with one open Medium (BG9901) cut into the 6.5.0 page and committed, `git -c core.hooksPath=.githooks push <bare remote> refs/tags/v6.5.0` printed "release bar NOT met: 1 open finding(s) at a barred severity - BG9901 (Medium)" and then "pre-push: the release bar is not met at tagged commit 48dd571de5df: a Critical or High finding is open there, or one cannot be parsed (named above)". Both hook sentences were true at 4841d946b, where `bar` refused only an open Critical or High or an unparseable finding (`git log -S 'a Critical or High finding is open there'` places them in 85b797868, BG1521). The hook lies outside the declared Affects, so the repair widens them to .githooks/pre-push and has the message name the bar the page states rather than two fixed severities [LC-018]
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+- [ ] **AC2** The round 2 REJECT finding no longer holds: [pre-existing] `known_issues.py check --at REV` re-renders that commit's corpus with the generator at HEAD (`_check`, tools/known\_issues.py:539), so the unit's AC1 test, like test\_lean\_release\_cut\_v64.py:147, goes red at every later release gate once a later change edits the generator's shared prose: in round one, rewording the Not carried closing sentence made `check --at v6.4.0` exit 1 and failed both AC1 tests. AC1 mandates the check, and no open bug covers it
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+- [ ] **AC3** US1331 AC1 still passes: Given `known_issues.py write --release 6.5.0` run for the release, then, judged at the release (the
+  - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650
+- [ ] **AC4** US1331 AC2 still passes: Given the bug corpus at the release (judged as AC1 judges it), then `known_issues.py bar`
+  - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut
+- [ ] **AC5** US1331 AC3 still passes: Given docs/evidence.md, then it is regenerated with `sprint_report.py evidence --out
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/sprint_report.py evidence --out docs/evidence.md --check && grep -q 'RPT0045' docs/evidence.md
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-11-25 | sdlc-studio | Filed |
+| 2026-11-25 | orchestrator (delegate under D0545) | Severity Medium to Low (D0632): the carried defect is a stale sentence in the pre-push hook's refusal message; a Medium carry of US1331 could never pass US1331's own open-Medium check |
