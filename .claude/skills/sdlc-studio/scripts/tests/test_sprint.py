@@ -11836,23 +11836,32 @@ class LaneInFlightCloseTests(unittest.TestCase):
     `lanes_in_flight`; the close's notes about it name `sprint.py lane return --units <ID>`, the
     command that clears a lane whose unit is already terminal."""
 
-    def _closed(self, status: str) -> tuple[str, str, str]:
+    def _closed(self, status: str, schema3: bool = False) -> tuple[str, str, str]:
         """`sprint.py close` over a run whose one unit's lane was briefed (span open) and never
         returned, the unit's file holding `status`: (the close's stdout, its stderr, the
-        judgement's lines)."""
+        judgement's lines). With `schema3` the project is schema 3 and the unit is US-01M6XQJF,
+        filed under its hyphen and held in the run state without it, as `norm_id` keys it."""
         import test_lean_close as lean  # noqa: PLC0415 - the close fixture, shared
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        lean._fixture(root)
+        uid, held = ("US-01M6XQJF", "US01M6XQJF") if schema3 else ("US0101", "US0101")
+        lean._fixture(root, batch=[held])
+        stories = root / "sdlc-studio" / "stories"
+        if schema3:
+            (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                               encoding="utf-8")
+            filed = next(stories.glob("US0101-*.md")).rename(stories / f"{uid}-widget.md")
+            filed.write_text(filed.read_text(encoding="utf-8").replace("US0101", uid),
+                             encoding="utf-8")
         rs = lean._live("lib.run_state")
-        rs.record_lane_start(root, "US0101")
-        rs.record_unit_actual(root, "US0101", rs.UNIT_START_STATUS, False)
-        story = next((root / "sdlc-studio" / "stories").glob("US0101-*.md"))
+        rs.record_lane_start(root, uid)
+        rs.record_unit_actual(root, uid, rs.UNIT_START_STATUS, False)
+        story = next(stories.glob(f"{uid}-*.md"))
         text = story.read_text(encoding="utf-8")
         story.write_text(re.sub(r"(?m)^> \*\*Status:\*\*.*$", f"> **Status:** {status}", text),
                          encoding="utf-8")
-        self.assertEqual(["US0101"], [r["unit"] for r in rs.lanes_in_flight(root)], "premise")
+        self.assertEqual([held], [r["unit"] for r in rs.lanes_in_flight(root)], "premise")
         rc, out, err = lean._close(root)
         self.assertEqual(0, rc, out + err)
         sprint = lean._live("sprint")
@@ -11865,6 +11874,18 @@ class LaneInFlightCloseTests(unittest.TestCase):
                       "and reads NOT MEASURED; US0101 is already terminal, so " + note, out)
         self.assertIn("IN FLIGHT at close: US0101 was briefed at", judged)
         self.assertIn("unattributed; US0101 is already terminal, so " + note, judged)
+
+    def test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it(self) -> None:
+        """The run state keys a schema-3 unit without its hyphen, a spelling no artefact file
+        carries; the clause names the unit, and the `--units` it hands over, as its file spells
+        it, in both notes."""
+        out, _, judged = self._closed("Done", schema3=True)
+        note = ("US-01M6XQJF is already terminal, so `sprint.py lane return --units US-01M6XQJF` "
+                "clears its lane")
+        self.assertIn("its span is left open and reads NOT MEASURED; " + note, out)
+        self.assertIn("unattributed; " + note, judged)
+        self.assertNotIn("US01M6XQJF is already terminal", out + judged)
+        self.assertNotIn("--units US01M6XQJF", out + judged)
 
     def test_a_unit_not_yet_terminal_in_flight_names_no_lane_return(self) -> None:
         """Positive control: the clause is for a unit already terminal; a unit still at Review is
