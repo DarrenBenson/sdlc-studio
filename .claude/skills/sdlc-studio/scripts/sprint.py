@@ -2457,7 +2457,9 @@ def _shared_file_clusters(files_by_unit: dict[str, list[str]],
     return sorted(out, key=lambda c: c["units"])
 
 
-#: A prose page: a file most units append to, which merges cleanly, so sharing one is advisory.
+#: A prose page joins no lane, so sharing one is advisory: units mostly edit separate parts of
+#: it, and two editing one place in it conflict at `lane land`'s rebase, which names the file
+#: and leaves it to the builder to resolve.
 #: Every other shared file is code, which conflicts, so the units sharing it are not parallel.
 PROSE_SUFFIXES = (".md", ".mdx")
 
@@ -2801,8 +2803,9 @@ def _full_partition(units: list[tuple[str, list[str]]]) -> list[list[str]]:
     """Every unit assigned to a group no code file crosses, SINGLETONS INCLUDED (unlike the
     cluster view, which drops units that share nothing). Union-find over the shared files; the
     result is sorted so a given batch always partitions the same way. A shared prose page
-    (`PROSE_SUFFIXES`) joins no one: each unit appends to it and it merges cleanly, so it stays
-    advisory in the cluster report rather than holding a batch to one group."""
+    (`PROSE_SUFFIXES`) joins no one, so it stays advisory in the cluster report rather than
+    holding a batch to one group: two units editing one place in it conflict at `lane land`'s
+    rebase, which names the file and leaves it to the builder to resolve."""
     parent = {uid: uid for uid, _ in units}
 
     def find(x: str) -> str:
@@ -2957,7 +2960,8 @@ def _write_lane_worklists(lanes: list[list[str]], out_dir: Path | str,
         p = out / f"lane-{i:02d}.worklist.txt"
         header = [
             f"# Lane {i} of {len(lanes)} - file-disjoint against the other lanes by declared"
-            " Affects, but for a shared prose page, which merges cleanly.",
+            " Affects, but for a shared prose page, which joins no lane: two lanes editing one"
+            " place in it conflict at `lane land`, which names the file to resolve.",
             "# CAVEAT: disjointness is only as good as the declared Affects. A unit touching a"
             " file it did not declare (an undeclared file) can still collide with another lane -"
             " the guarantee does not cover what was never declared.",
@@ -4805,8 +4809,9 @@ def _render_clusters(data: dict) -> None:
     its own, and a wave is called out as NOT safely parallel once for each pair of its units
     that touch a code file in common, declared in their `Affects` or named in their `Verify:`
     lines alike, naming the pair and the files. Two units joined in one cluster only through a
-    third unit share no file, so they are not warned. A shared prose page is advisory: a page
-    each unit appends to merges cleanly, so it holds no wave back."""
+    third unit share no file, so they are not warned. A shared prose page is advisory and holds
+    no wave back: two units editing one place in it conflict at `lane land`, which names the
+    file to resolve."""
     bd = data.get("breakdown") or {}
     clusters = bd.get("clusters") or []
     if not clusters:
@@ -4818,7 +4823,8 @@ def _render_clusters(data: dict) -> None:
         src = c.get("sources") or {}
         shown = ", ".join(f"{f} [{src.get(f, 'declared')}]" for f in c["files"][:3])
         more = f" (+{len(c['files']) - 3} more)" if len(c["files"]) > 3 else ""
-        prose = (" - prose only, advisory: a shared page merges cleanly"
+        prose = (" - prose only, advisory: two units editing one place in it conflict at "
+                 "`lane land`, which names the file"
                  if all(_is_prose(f) for f in c["files"]) else "")
         print(f"    {', '.join(c['units'])} -> {shown}{more}{prose}")
     pairs = bd.get("code_shares") or []
@@ -5110,8 +5116,8 @@ def _refuse_ungroomed(bd: dict, count: int, sel: str) -> None:
 
 def _breakdown_fix(bd: dict, sel: str) -> str:
     """The repair for each kind of miss the ungroomed units hold, each block once: the Verify
-    line for every unit with a criterion that has no verifier, whatever else it lacks, and the
-    field template unless every unit's only miss is that verifier."""
+    line for every unit none of whose criteria carries a verifier (`ac_why` `no-verifier`),
+    whatever else it lacks, and the field template unless every unit's only miss is that."""
     units = bd.get("ungroomed") or []
     verify_only = [u.get("ac_why") == "no-verifier" and len(u.get("missing") or []) == 1
                    for u in units]
@@ -14661,9 +14667,12 @@ def cmd_decision(args) -> int:
     # is only ever appended to is a log, and this one is read as a state.
     still_deferred = [u for u in (state.get("deferred_units") or [])
                       if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
-    # The block `defer --block` held goes with its answered question, for the same reason.
+    # The block `defer --block` held goes with the unit's last open blocking question, for the
+    # same reason: a unit another open blocking question names stays held, as the list shows it.
+    open_blocks = {sdlc_md.norm_id(p.get("unit") or "") for p in pending if p.get("blocked")}
     still_held = [u for u in (state.get("blocked_units") or [])
-                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")]
+                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get("unit") or "")
+                  or sdlc_md.norm_id(u) in open_blocks]
     run_state.update(root, pending_decisions=pending, resolved_decisions=resolved,
                      deferred_units=still_deferred,
                      **({"blocked_units": still_held} if "blocked_units" in state else {}))

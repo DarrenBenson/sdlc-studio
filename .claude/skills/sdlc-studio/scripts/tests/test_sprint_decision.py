@@ -146,6 +146,41 @@ class DeferBlockTests(unittest.TestCase):
             self.assertEqual(["bg0002", "BG0002", "BG01ABCDEH"], json.loads(
                 (root / STATE_REL).read_text(encoding="utf-8"))["blocked_units"])
 
+    def test_a_unit_stays_held_while_another_of_its_blocking_decisions_is_open(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _bug(root, 1)
+            _open_run(root, ["BG0001"])
+            for _ in range(2):
+                rc, _out, err = _defer(root, "BG0001", "--block")
+                self.assertEqual(0, rc, err)
+            rc, _out, err = _main("decision", "resolve", "--index", "1", "--choice", "a",
+                                  "--root", str(root))
+            self.assertEqual(0, rc, err)
+            state = json.loads((root / STATE_REL).read_text(encoding="utf-8"))
+            self.assertEqual(["BG0001"], state["blocked_units"])
+            held = _status(root)
+            self.assertEqual(1, len(held), held)
+            self.assertTrue(held[0].startswith("Blocked:      BG0001 (Open) - "), held)
+            _rc, out, _err = _main("decision", "list", "--root", str(root))
+            self.assertIn("[1] BG0001 (Open, BLOCKED on the run state)", out)
+            # its last blocking question answered, the block goes with it
+            rc, _out, err = _main("decision", "resolve", "--index", "1", "--choice", "b",
+                                  "--root", str(root))
+            self.assertEqual(0, rc, err)
+            state = json.loads((root / STATE_REL).read_text(encoding="utf-8"))
+            self.assertEqual([], state["blocked_units"])
+            self.assertEqual([], _status(root))
+            # an open question that does not block holds no block once the blocking one goes
+            for extra in (("--block",), ()):
+                rc, _out, err = _defer(root, "BG0001", *extra)
+                self.assertEqual(0, rc, err)
+            rc, _out, err = _main("decision", "resolve", "--index", "1", "--choice", "a",
+                                  "--root", str(root))
+            self.assertEqual(0, rc, err)
+            state = json.loads((root / STATE_REL).read_text(encoding="utf-8"))
+            self.assertEqual([], state["blocked_units"])
+
     def test_resolving_one_decision_keeps_every_other_units_block(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

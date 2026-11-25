@@ -1212,7 +1212,8 @@ def _markdownlint_config(top: Path, rel: str, tracked: list[str] | None = None) 
 def _refuse_markdown(root_top: Path, lanes_: list[_Lane]) -> None:
     """Each worktree's staged markdown linted before anything moves, each file under its nearest
     config, so a hand-in the commit's markdown lane would refuse is refused here, naming the
-    file and the rule, with exit 2. A linter that cannot be found is said, and lands nothing
+    file and the rule, with exit 2. A linter past GIT_TIMEOUT is stopped, what it started with
+    it, and refused the same way. A linter that cannot be found is said, and lands nothing
     less: the commit's own hooks still run."""
     for lane in lanes_:
         staged = _git(lane.top, "diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR",
@@ -1232,9 +1233,16 @@ def _refuse_markdown(root_top: Path, lanes_: list[_Lane]) -> None:
             continue
         failed = []
         for config, rels in groups.items():
-            res = subprocess.run([lint, "--config", str(config), *rels], cwd=str(lane.top),
-                                 capture_output=True, text=True, timeout=GIT_TIMEOUT,
-                                 check=False)
+            # bounded as every landing step is: past the bound the linter's whole process group
+            # is stopped and the landing refused, before anything moved
+            try:
+                res = _bounded([lint, "--config", str(config), *rels], GIT_TIMEOUT,
+                               cwd=str(lane.top), stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+            except subprocess.TimeoutExpired:
+                raise LandError(f"markdownlint ran past {GIT_TIMEOUT}s over the staged markdown "
+                                f"in {lane.top} and was stopped. Nothing was committed: re-run "
+                                f"lane land, or lint the pages by hand.", 2) from None
             if res.returncode:
                 failed.append(_tail(res.stdout + res.stderr))
         if failed:

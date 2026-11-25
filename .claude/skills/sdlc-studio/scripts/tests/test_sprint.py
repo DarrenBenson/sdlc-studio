@@ -2193,6 +2193,21 @@ class BreakdownGateTests(unittest.TestCase):
             _, _, err = self._plan(root)
             self.assertEqual(err.count(self._FIELD_FIX), 1)
             self.assertEqual(err.count(self._VERIFY_FIX), 1)
+        with tempfile.TemporaryDirectory() as d:
+            # a unit one of whose criteria carries a verifier is not a no-verifier unit, though
+            # another criterion has none: it lacks Affects and gets the field template alone
+            root = Path(d)
+            _src(root, "src/a.py")
+            (root / "sdlc-studio" / "bugs").mkdir(parents=True)
+            (root / "sdlc-studio" / "bugs" / "BG0006-x.md").write_text(
+                "# BG0006: b\n\n> **Status:** Open\n> **Severity:** Medium\n> **Points:** 2\n"
+                "## Acceptance Criteria\n\n### AC1: it runs\n\n- **Given** a thing\n"
+                "- **Verify:** pytest src/a.py\n\n### AC2: it says so\n\n- **Given** a thing\n",
+                encoding="utf-8")
+            _, _, err = self._plan(root)
+            self.assertIn("BG0006", err)
+            self.assertEqual(err.count(self._FIELD_FIX), 1)
+            self.assertNotIn(self._VERIFY_FIX, err)
 
     def test_breakdown_prints_the_verify_repair_for_a_no_verifier_unit(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -2341,6 +2356,14 @@ class SharedFileClusterTests(unittest.TestCase):
                            if ln.startswith("    BG0001, BG0002 -> ")]
                 self.assertEqual(1, len(cluster), out)
                 self.assertIn("prose only, advisory", cluster[0])
+                # advisory, never promised to merge: one place edited by two units conflicts
+                self.assertIn("two units editing one place in it conflict at `lane land`, "
+                              "which names the file", cluster[0])
+                self.assertNotIn("merges cleanly", out + err)
+                header = Path(_load()._write_lane_worklists(
+                    [["BG0001"], ["BG0002"]], root / "lanes")[0]).read_text(encoding="utf-8")
+                self.assertIn("shared prose page, which joins no lane", header)
+                self.assertNotIn("merges cleanly", header)
                 self.assertFalse([ln for ln in out.splitlines()
                                   if re.match(r"    \S+, \S+ share ", ln)], out)
                 self.assertNotIn("units sharing a code file", out)

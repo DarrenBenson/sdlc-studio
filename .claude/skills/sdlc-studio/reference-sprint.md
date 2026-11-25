@@ -300,11 +300,11 @@ wave - which means "no one declared a dependency", not "no dependencies exist". 
 genuinely independent batch. The fix is to declare the dependencies (the `--goal design` rung
 below), then re-plan.
 
-**Shared-file clusters.** A `Depends on:` edge is a *declaration*; a shared file is a *fact*. The
-planner derives clusters from the `Affects` it parses and the files `Verify:` lines name: units
-touching one file are **one cluster**. Each pair sharing a code file is named on its own line, and
-a wave is called out as NOT safely parallel once per pair of its own units sharing one (run them
-in sequence, or declare the edge). A shared prose page (`.md`, `.mdx`) is advisory: it merges cleanly.
+**Shared-file clusters.** A `Depends on:` edge is a *declaration*; a shared file is a *fact*. The planner derives
+clusters from the `Affects` it parses and the files `Verify:` lines name: units touching one file are **one cluster**.
+Each pair sharing a code file is named on its own line, and a wave is called out as NOT safely parallel once per pair
+of its own units sharing one (run them in sequence, or declare the edge). A shared prose page (`.md`, `.mdx`) is
+advisory and joins no lane: two units editing one place in it conflict at `lane land`, which names the file.
 Without this the planner reported two units as safely parallel while both rewrote the same module.
 
 **Scope by epic.** A sprint is usually the next epic or two, not a whole status class, so

@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import unittest.mock
 from datetime import datetime, timedelta, timezone
@@ -2165,6 +2166,26 @@ class MarkdownLintChoiceTests(unittest.TestCase):
         self.assertEqual([str(wt / "node_modules/.bin/markdownlint"),
                           str(root / "node_modules/.bin/markdownlint"),
                           str(self.bin / "markdownlint")], found)
+
+    def test_a_linter_past_its_timeout_is_a_refusal_and_its_group_is_stopped(self) -> None:
+        """A markdownlint that runs past the bound is a LandError naming it, exit 2 before
+        anything moved, never a traceback; and what it started is stopped with it."""
+        marker = self.base / "grandchild.ran"
+        _write(self.base, "grandchild.py", "import pathlib, sys, time\ntime.sleep(4)\n"
+                                           "pathlib.Path(sys.argv[1]).write_text('ran')\n")
+        _write(self.bin, "markdownlint",
+               f"#!{sys.executable}\nimport subprocess, sys, time\n"
+               f"subprocess.Popen([sys.executable, {str(self.base / 'grandchild.py')!r}, "
+               f"{str(marker)!r}])\ntime.sleep(30)\n")
+        self._stage(".markdownlint.json", "docs/page.md")
+        with unittest.mock.patch.object(lanes, "GIT_TIMEOUT", 2):
+            with self.assertRaises(lanes.LandError) as caught:
+                self._linted()
+        self.assertEqual(2, caught.exception.code)
+        self.assertIn("markdownlint ran past 2s", str(caught.exception))
+        self.assertIn("Nothing was committed", str(caught.exception))
+        time.sleep(5)                     # past the grandchild's own sleep
+        self.assertFalse(marker.exists(), "the linter's child outlived the bound")
 
 
 if __name__ == "__main__":
