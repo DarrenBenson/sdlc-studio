@@ -60,17 +60,16 @@ the author, and drops the ceremony around each unit that caught nothing.
   `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
 - **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
   carried into the next plan, build and review.
-- **New in 6.4: evidence a change board can read.** `release_cut.py evidence-pack` builds one
-  evidence pack per release from committed records alone: for each change, what changed, which
-  criteria passed, who reviewed it independently, what is known to be wrong and who signed for
-  it. `retro.py seats` keeps each review seat's record, and `escape.py trace` traces an escaped
-  defect to the approval that missed it, which that record then counts. `sprint plan` forecasts
-  a run's cost and wall-clock span, and the signed report sets each forecast beside the actual.
-- **New in 6.3: a cost you can read.** The signed report states the run's priced tokens and
-  estimated US dollars per point, priced per model, read from the store of whichever harness ran
-  it: Claude Code, Codex CLI, Copilot CLI, OpenCode or Cursor. `sprint cost --anatomy` names where
-  the tokens went, and `sprint lane run --harness <h>` runs one unit headless in any of their
-  CLIs.
+- **New in 6.5: a release held to fewer than 50 open defects.** None is at Medium or above, and
+  each is listed in [known issues](docs/known-issues.md). Every persona and seat card is held to
+  a written standard, and a delegated signature names the decision authorising it.
+- **New in 6.4: evidence a change board can read.** `release_cut.py evidence-pack` builds a
+  release's evidence pack from committed records: what changed, what passed, who reviewed and
+  who signed. `retro.py seats` keeps each review seat's record; `escape.py trace` ties an escaped
+  defect to the approval that missed it. The signed report sets each forecast beside the actual.
+- **New in 6.3: a cost you can read.** The signed report states estimated US dollars per point,
+  priced per model from the store of the harness that ran it: Claude Code, Codex CLI, Copilot
+  CLI, OpenCode or Cursor. `sprint lane run --harness <h>` runs one unit headless in any of them.
 
 People and agents work side by side: a new project mints ids that never clash, so several people
 and agents on different machines can file work at once, and `persona generate --team` grows the

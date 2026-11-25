@@ -22,5 +22,6 @@
 ## Evidence
 
 - [Evidence from the runs](docs/evidence.md): every signed run, one row each, read from its signed report
+- [Known issues](docs/known-issues.md): the defects this release ships with, and the bar it is held to
 - [Benchmark protocol](docs/benchmarks/protocol-v2.md): pre-registered measurement against plain AI coding
 - [Latest results](docs/benchmarks/2026-07-08-n5-run.md): the N=5 measured run, published regardless of outcome

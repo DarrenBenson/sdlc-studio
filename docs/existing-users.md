@@ -49,6 +49,30 @@ pre-release as equal to its final release, so it never offers you the final. Lat
 a pre-release below its final, so this happens once. Then run `migrate --apply` again: it restamps
 `sdlc-studio/.version` with the version you now run.
 
+### From 6.4 to 6.5
+
+A project already on 6.4 installs PyYAML, reinstalls and runs `migrate`. The rest of this list is
+what 6.5 changes in how you work.
+
+1. **Install PyYAML first.** 6.5 requires it: run `python3 -m pip install pyyaml` (on a system
+   Python, your package manager's `python3-yaml`). Both installers refuse without it, and so do
+   `gate.py` and every command that reads a present `sdlc-studio/.config.yaml`, rather than read
+   your settings as the shipped defaults.
+2. **Reinstall.** A plain `install.sh` or `install.ps1` fetches the latest published release; pass
+   `main` as the version for the moving branch.
+3. **`migrate`** is the dry run, and `migrate --apply` writes what it lists. A 6.4 project owes it
+   its version stamp in `sdlc-studio/.version`; `personas.standard: report` in
+   `sdlc-studio/.config.yaml` when the project holds its own cards and sets no value; and the
+   removal of `require_ac_verification` where it is set, a key no code read.
+4. **Switch the persona standard on when you are ready.** Under `report` a card that breaks a
+   blocking rule still frames its seat, with one stderr line naming it. Run
+   `persona_review.py check`, fix each card it names, and set `personas.standard: block` once it
+   holds no card ([the persona standard](../.claude/skills/sdlc-studio/reference-persona.md#persona-rules)).
+5. **The new keys are optional.** Each takes its shipped default until you set it:
+   `personas.standard` (`block`), `ci.wait_timeout_minutes` (30), which no shipped script reads
+   yet (BG1613, listed in [known issues](known-issues.md)), `ci.rerun_limit` (1) and
+   `review.rendered_paths` (`[]`).
+
 ### From 6.3 to 6.4
 
 A project already on 6.3 reinstalls and runs `migrate`. The rest of this list is what 6.4 changes

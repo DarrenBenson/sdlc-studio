@@ -60,6 +60,7 @@ mechanical discrepancies.
 | `plans/_index.md` | Status entries matching plan file statuses, summary counts |
 | `test-specs/_index.md` | Status entries matching test-spec file statuses, summary counts |
 | `change-requests/_index.md`, `rfcs/_index.md` | Status entries + **missing rows** (files on disk with no index row) + summary counts, recomputed from a file census |
+| Story `Risk-class` stamps | `risk-class` drift: an open story stamped below the class its Affects get from the component map (`risk.components`); `apply` raises the stamp to the map's class and never lowers one ([risk class](../reference-reconcile.md#risk-class)) |
 | Prose-doc numeric claims | Test counts, version strings, artifact totals in AGENTS.md / CLAUDE.md / README.md / docs/** – REPORTED by default; auto-fixed only with `--fix-counts` |
 | Metadata dates | `**Last Updated:**` on modified files set to today |
 | Changelogs | Revision history entry added to modified files |

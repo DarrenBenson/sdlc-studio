@@ -33,17 +33,29 @@ verified by the refute panel and filed as Bugs or CRs). See `help/audit.md`.
 ## Before a unit review: the author's self-check
 
 A unit's independent review starts from `critic.py brief`, which prints on stderr the claim
-inventory and mutation pass for the author to run first. Record both once they have run:
+inventory and mutation pass for the author to run first. Run the mutants through the runner,
+then record both passes from its report:
 
 ```bash
-python3 <skill>/scripts/critic.py self-check record --unit US0001 --author "<seat>" \
-  --claims claims.json --mutants mutants.json
+python3 <skill>/scripts/mutation.py run --edits <list.json> --scope <id> --report <report>
+python3 <skill>/scripts/critic.py self-check record --unit <id> --author "<seat>" \
+  --claims claims.json --mutants-from <report>
 ```
 
-It is refused, naming the cause and writing nothing, when a claim is unruled, FALSE, or every
-claim is UNVERIFIABLE; when the commit message or a changelog fragment the unit's Affects
+`mutation.py run --edits <list.json> --scope <id>` applies each `{file, old, new, test}` entry,
+one at a time, in a scratch copy of the tree, runs its test there and prints one verdict line
+each: killed, survived, `not-applied` (an edit outside the unit's Affects, or whose old text is
+absent or not unique) or `error`. `critic.py self-check record` with `--mutants-from <report>`
+keeps the report's list in `sdlc-studio/reviews/author-mutants/<id>.json`; `--mutants
+mutants.json` takes a list written by hand instead. `critic.py brief` then replays that list
+against the tree as it stands, marks a mutant whose replayed verdict differs from its recorded
+one, and labels the replay the author's, not the reviewer's own mutation pass.
+
+The record is refused, naming the cause and writing nothing, when a claim is unruled, FALSE, or
+every claim is UNVERIFIABLE; when the commit message or a changelog fragment the unit's Affects
 declares has no claim; or when a mutant names a test file the unit does not declare, has no
-result of killed or survived, or survived with no answer. The row it writes to
+result of killed or survived, or survived with no answer, or is a report row the runner did not
+apply or judge. The row it writes to
 `sdlc-studio/reviews/author-self-checks.md` carries a digest of the unit's Affects content and
 the commit it was taken at. Another unit's commits to a shared file are set aside, hunk by hunk
 where need be, whether they land before or after the author's own or the author's commit is

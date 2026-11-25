@@ -137,6 +137,10 @@ rm sdlc-studio/.version        # Remove version tracking
 
 ## Prerequisites
 
+- Python 3.10+ with PyYAML, which is required: install it with `python3 -m pip install pyyaml`
+  (on a system Python, your package manager's `python3-yaml`). Both installers refuse without
+  it, `gate.py` refuses with exit 2 before any lane runs, and every other command that reads a
+  present `.config.yaml` refuses rather than read the project's settings as the shipped defaults
 - Git repository recommended (for rollback)
 - No active work in progress (commit first)
 

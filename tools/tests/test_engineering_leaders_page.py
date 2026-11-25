@@ -266,6 +266,14 @@ SIGNER_SENTENCES = {
             "critic.py `record` refuses a reviewer who is the author and writes both to the "
             "verdict ledger; sprint.py `_principal_refusals` refuses a signer who authored or "
             "reviewed a unit, and the run record keeps the signer",
+        "A signature may be entered on the signer's behalf, under delegation, only with "
+        "`--delegated` and `--decision` naming the accepted decision in `sdlc-studio/decisions.md` "
+        "that authorises it; the report's Signed by cell and the evidence pack's Accountable line "
+        "then name the delegation and the decision.":
+            "sprint.py `_delegation` refuses a delegated signature with no accepted `--decision` "
+            "and a `--decision` with no `--delegated`; `sprint_report.signed_by` and "
+            "evidence_pack.py `_entry` name the delegation and the decision "
+            "(test_lean_docs_v65.py test_the_public_pages_name_what_65_adds)",
     },
     REFERENCE: {
         "For each unit the named signed reports delivered, the pack states what changed, which "

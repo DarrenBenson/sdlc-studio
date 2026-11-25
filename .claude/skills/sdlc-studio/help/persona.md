@@ -216,6 +216,13 @@ to lift one, in place of a command; `persona_review.py brief` refuses a held rev
 with exit 2 and that seat card's own refusal. A card with no review, or changed since its
 PASS, still frames, and one stderr line names it as owed its persona review.
 
+`personas.standard` in `.config.yaml` sets that refusal. `block`, the default, refuses as
+above; `report` frames the card and prints one `persona card blocked (report mode):` line on
+stderr naming it, each rule it breaks and the command to run next. `migrate --apply` sets
+`report` for a project holding its own cards with no value set; set `block` to switch the
+standard on. See [the key](../reference-config.md#personas-staleness-days) and
+[the persona standard](../reference-persona.md#persona-rules).
+
 `persona_review.py owed` lists every card owed a review, and exits 0 whatever it finds:
 
 ```text

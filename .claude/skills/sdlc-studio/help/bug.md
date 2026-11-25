@@ -40,6 +40,12 @@ files are involved when you file; nobody knows it better at plan time. A project
 recorded `sprint.breakdown: judgement` gets a warning here instead of a refusal, exactly as
 its plan reports instead of blocking.
 
+`file_finding.py file` also refuses a finding that shares every declared `Affects` path with an
+artefact of its type and scores at or above the duplicate bar: it exits 1 and writes nothing,
+naming that artefact, its status, the shared paths, the score and the flag that answers it. If
+you have ruled the two distinct, `--distinct-from <id>` files it anyway and is recorded as a
+`Distinct-from` line in its header.
+
 A defect found in production is filed with `--escaped --shipped-in <release>` and, when you
 know it, `--escaped-via <unit>`, on either creator. The release must be a git tag, named with
 or without its leading `v` and recorded as the tag is spelt, and the unit a story or bug on

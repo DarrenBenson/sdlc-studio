@@ -420,11 +420,14 @@ class DocsV64Tests(unittest.TestCase):
         _assert_links_resolve(self, evidence, WHY)
 
     def test_existing_users_has_the_63_to_64_upgrade_path(self):
-        """Mutant: the upgrade page whose newest section is still 'From 6.2 to 6.3'. AC4."""
+        """Mutant: the upgrade page whose newest section is still 'From 6.2 to 6.3'. The 6.4
+        section is found by name, so a later release's section above it leaves this true. AC4."""
         page = _read(UPGRADE)
         froms = re.findall(r"(?m)^### (From \S+ to \S+)\s*$", page)
-        self.assertEqual(froms[:4], ["From 6.3 to 6.4", "From 6.2 to 6.3", "From 6.1 to 6.2",
-                                     "From 6.0 to 6.1"])
+        self.assertIn("From 6.3 to 6.4", froms, "the upgrade page has no 6.4 section")
+        at = froms.index("From 6.3 to 6.4")
+        self.assertEqual(froms[at:at + 4], ["From 6.3 to 6.4", "From 6.2 to 6.3",
+                                            "From 6.1 to 6.2", "From 6.0 to 6.1"])
         six_four = _flat(_heading_section(page, "### From 6.3 to 6.4"))
         for needle in ("Reinstall", "`migrate`", "`migrate --apply`", "`sdlc-studio/.version`",
                        "retires no config key or command", "`Source` column",

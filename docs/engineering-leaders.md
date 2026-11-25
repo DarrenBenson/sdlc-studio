@@ -46,7 +46,11 @@ one of them held two duties on the same unit
 - **Signer.** One person signs the whole run once, after reading its report. The signature
   refuses a person who authored or reviewed any unit in the run before it writes anything, and
   stops at a unit that has no approval from a reviewer other than its author
-  ([signing a run](../.claude/skills/sdlc-studio/reference-sprint.md#the-loop)).
+  ([signing a run](../.claude/skills/sdlc-studio/reference-sprint.md#the-loop)). A signature may
+  be entered on the signer's behalf, under delegation, only with `--delegated` and `--decision`
+  naming the accepted decision in `sdlc-studio/decisions.md` that authorises it; the report's
+  Signed by cell and the evidence pack's Accountable line then name the delegation and the
+  decision.
 
 Before review, the author can be held to a self-check: every claim in the change's own prose
 ruled true, false or unverifiable, and its tests mutated to show they fail when they should. This is
