@@ -64,11 +64,13 @@ configuration keys and the records and state each of them writes
   against the code it describes. Fails on: the TSD at HEAD, which names neither `--edits` nor
   `--red-run`.
   - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy
-- **AC4:** Given the three specs after this change, then the refresh tests, the 6.4 specs test and
-  the `.local/` residue test pass, the residue test holding each new state row to a write in its
-  writer's code. Fails on: a TRD with no `mutation-edits-<unit>.json` row, as at HEAD; a refresh pin
-  broken by the edit; or a state row whose writer writes no such path.
-  - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py tools/tests/test_lean_specs_v64.py .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py && grep -qF 'mutation-edits-<unit>.json' sdlc-studio/trd.md
+- **AC4:** Given the three specs after this change, then the `.local/` residue test passes, holding
+  each new state row to a write in its writer's code. The refresh tests and the 6.4 specs test stay
+  green; other stories' criteria (US1172, US1173 and the refresh stories) and the push's full suite
+  run them, so this criterion does not run them again inside `verify_ac`'s 120-second bound. Fails
+  on: a TRD with no `mutation-edits-<unit>.json` row, as at HEAD; or a state row whose writer writes
+  no such path.
+  - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py && grep -qF 'mutation-edits-<unit>.json' sdlc-studio/trd.md
 
 ## Notes
 
@@ -96,3 +98,4 @@ configuration keys and the records and state each of them writes
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for EP0379 from the product seat's draft (run twenty-seven, the v6.5.0 release epic): user story, criteria with Verify lines, Release 6.5, Depends on for the wave order, and notes, modelled on EP0314 |
 | 2026-11-25 | orchestrator (delegate under D0545) | At the builder's BLOCKED: AC4's Verify names the residue test at its real path (.claude/skills/sdlc-studio/scripts/tests/, not tools/tests/), and the Affects take that test, whose path reader cannot see a state path built from parts (lib/drive.py) or returned by a same-module helper (lib/lanes.py), so AC2's two state rows can be held to their writers |
+| 2026-11-25 | orchestrator (delegate under D0545) | AC4's Verify narrowed to the residue module and its grep: the five modules it named take about 212 s together, over verify_ac's 120 s bound, and the four refresh and 6.4 specs modules are already run by other stories' criteria and the full suite |
