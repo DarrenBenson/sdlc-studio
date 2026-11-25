@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 48 |
 | In Progress | 0 |
-| Fixed | 1239 |
+| Fixed | 1240 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1757** |
+| **Total** | **1758** |
 
 ## All Bugs
 
@@ -357,7 +357,7 @@
 | [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Fixed | Medium | 2026-11-07 | 2026-11-07 |
 | [BG1280](BG1280-a-codex-reading-names-a-multi-model-session.md) | A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1281](BG1281-remote-gate-sh-push-release-records-an-abbreviated.md) | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for | Won't Fix | Medium | 2026-11-08 | 2026-11-08 |
-| [BG1282](BG1282-copilot-home-and-opencode-db-user-configuration-variables.md) | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1282](BG1282-copilot-home-and-opencode-db-user-configuration-variables.md) | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading | Fixed | Low | 2026-11-08 | 2026-11-08 |
 | [BG1283](BG1283-one-old-codex-thread-whose-rollout-file-is.md) | One old Codex thread whose rollout file is gone makes every later Codex reading in that workspace unmetered, permanently | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1284](BG1284-dollars-per-point-omits-the-coverage-its-dollar.md) | Dollars per point omits the coverage its dollar figure has, and the Priced cost row's reach sentence uses Claude-transcript wording for every harness | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1285](BG1285-a-non-utf-8-legacy-opencode-message-file.md) | A non-UTF-8 legacy OpenCode message file is refused as 'raised UnicodeDecodeError', and a Cursor cloud reading's stamps are given the wrong unpriced reason | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
@@ -833,6 +833,7 @@
 | [BG1755](BG1755-the-prose-escaper-spans-a-bare-url-written.md) | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1756](BG1756-a-plan-refused-for-a-criteria-problem-other.md) | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1757](BG1757-a-commit-can-stage-a-review-ledger-row.md) | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 

@@ -1,0 +1,6 @@
+UNIT: BG1282
+BRIEF: 6704d1489091-58be08e6
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED "the set-aside of a configuration-only harness beside two running harnesses is unpinned": the new subtests at test_token_meters.py:315-322 hold `CLAUDECODE` plus `CURSOR_AGENT` beside `COPILOT_HOME`, and beside both configuration variables, to the candidates claude and cursor, and my round-one mutant (`if running:` to `if len(running) == 1:`, token_meters.py:179) is now killed (2 failed), as is a second one that keeps OpenCode as a candidate whatever runs. CLOSED "test_token_env_isolation.py:120 still names the test": it is now `test_copilots_home_signal_is_cleared`, which matches the fixture with `CLAUDECODE` unset, and the old name survives only in round-one records. verify_ac run --id BG1282 --dry-run: ac=2 pass=2. test_token_meters.py and test_token_env_isolation.py: 24 passed, 62 subtests. The round-two diff touches no code, changelog or reference prose, so the round-one claim inventory still holds.

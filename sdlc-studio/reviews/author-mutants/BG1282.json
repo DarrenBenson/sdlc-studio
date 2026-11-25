@@ -1,6 +1,6 @@
 {
   "unit": "BG1282",
-  "digest": "229c928edbed7e10 at 714c9d9577e6",
+  "digest": "ea5d9cf874e634b7 at a1eaafef1f3f",
   "report": "sdlc-studio/.local/lane/landed/agent-a622928000f1c140c/BG1282-mutation-edits.json",
   "mutants": [
     {
@@ -80,7 +80,34 @@
       "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
       "old": "COPILOT: (\"COPILOT_HOME\",)",
       "new": "COPILOT: ()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::HarnessEnvironmentTests::test_copilot_beside_claude_is_cleared",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::HarnessEnvironmentTests::test_copilots_home_signal_is_cleared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 the isolation case kept on CLAUDECODE beside COPILOT_HOME",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py",
+      "old": "env = harness_free(COPILOT_HOME=home)",
+      "new": "env = harness_free(CLAUDECODE=\"1\", COPILOT_HOME=home)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::HarnessEnvironmentTests::test_copilots_home_signal_is_cleared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 the isolation case expecting the old two-candidate reason",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py",
+      "old": "self.assert_scrubbed(env, \"the environment (COPILOT_HOME)\")",
+      "new": "self.assert_scrubbed(env, \"copilot (COPILOT_HOME)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::HarnessEnvironmentTests::test_copilots_home_signal_is_cleared",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 (the reviewer's) configuration variables yield only to one running signal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "    if running:\n        signalled =",
+      "new": "    if len(running) == 1:\n        signalled =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
       "result": "killed",
       "answer": ""
     }

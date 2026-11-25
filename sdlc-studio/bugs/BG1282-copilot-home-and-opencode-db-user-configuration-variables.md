@@ -1,6 +1,6 @@
 # BG1282: `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1282.md
@@ -26,8 +26,10 @@ Treat config variables as weaker than a running-process signal: when CLAUDECODE,
 
 - [ ] **AC1** Given an environment with `CLAUDECODE` set beside `COPILOT_HOME`, or beside `OPENCODE_DB`, when `token_meters.select` runs, then it selects Claude and takes a reading. Fails on: `harness: None` with two candidates and no token reading.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given an environment where `COPILOT_HOME` or `OPENCODE_DB` is the only harness variable set, when `token_meters.select` runs, then it still selects Copilot or OpenCode. Fails on: a configuration variable ignored outright.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_alone_still_selects_its_harness
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 
