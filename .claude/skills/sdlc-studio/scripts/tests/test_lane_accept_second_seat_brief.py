@@ -219,11 +219,9 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertEqual(base._status(self.root, GREEN), "Review")
         self.assertEqual([r["round"] for r in critic.delivery_rounds(self.root, GREEN)], [1, 1])
 
-    def test_a_held_round_at_the_cap_says_the_second_seats_reject_is_at_the_cap(self) -> None:
-        """The qa seat rejects round 1, the repair lands and the qa seat approves round 2, the
-        default cap of 2: the held APPROVE's output says the second seat's REJECT shares round 2
-        at the cap and opens no repair, and that REJECT then carries the unit. MUTANT: say the
-        REJECT opens the repair whatever the round."""
+    def _held_at_round_two(self) -> str:
+        """The qa seat rejects round 1, the repair lands and the qa seat approves round 2: the
+        held APPROVE's output, whitespace folded."""
         landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
         self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
         rc, out, err = self._accept(GREEN, base.REJECT)
@@ -233,7 +231,14 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         rc, out, err = self._accept(GREEN, APPROVE)
         self.assertEqual(rc, 1, out + err)
         self.assertIn(f"{GREEN}: APPROVE recorded, round 2", out, err)
-        said = " ".join(out.split())
+        return " ".join(out.split())
+
+    def test_a_held_round_at_the_cap_says_the_second_seats_reject_is_at_the_cap(self) -> None:
+        """At the default cap of 2 the held round-2 APPROVE's output says the second seat's
+        REJECT shares round 2 at the cap and opens no repair, and that REJECT is then recorded
+        as round 2, the cap, with no round of its own. No run is open here, so nothing carries
+        the unit. MUTANT: say the REJECT opens the repair whatever the round."""
+        said = self._held_at_round_two()
         self.assertIn("its REJECT shares round 2, the review cap of 2, so it opens no repair",
                       said)
         self.assertNotIn("opens the repair", said)
@@ -243,6 +248,19 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertIn(f"{GREEN}: REJECT recorded, round 2; nothing was moved", out, err)
         self.assertEqual([r["round"] for r in critic.delivery_rounds(self.root, GREEN)],
                          [1, 2, 2])
+
+    def test_a_held_round_below_a_raised_cap_still_opens_the_repair(self) -> None:
+        """The cap is read from `review.max_rounds`, not assumed: at a cap of 3 the held round-2
+        APPROVE's output says the second seat's REJECT opens the repair. MUTANT: take the cap as
+        the shipped default of 2."""
+        config = base._write(self.root, "sdlc-studio/.config.yaml",
+                             "risk:\n  components:\n    src/: high\nreview:\n  max_rounds: 3\n")
+        gitutil.git(["add", "--", str(config)], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: three review rounds"], self.root)
+        self.assertEqual(3, critic.review_ceiling(self.root), "premise: the cap is raised")
+        said = self._held_at_round_two()
+        self.assertIn("its REJECT shares round 2 and opens the repair", said)
+        self.assertNotIn("review cap", said)
 
     def test_the_last_required_seat_approve_moves_a_high_risk_unit(self) -> None:
         """BG1661 AC3. MUTANTS: never move a high-risk unit; count one seat's two APPROVEs as

@@ -1359,7 +1359,7 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     ties to a noted brief is refused, naming the brief to save again. Under
     `review.author_self_check: block` a verdict on a unit with no
     current self-check (`critic.self_check_gap`) is refused, except a REJECT, which moves nothing
-    and is recorded with a warning; under `report` that is a warning; `off` asks nothing."""
+    and goes to the record with a warning; under `report` that is a warning; `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
@@ -1400,12 +1400,14 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
                         f"handed in, and that landing writes the brief "
                         f"(review.author_self_check: block)", 2)
     if gap:
-        _say(f"WARNING {unit}: {gap}, so no self-check covers the diff {rel} is the brief of "
-             + ("; a REJECT moves nothing, so it is recorded (review.author_self_check: block "
-                "refuses an APPROVE)" if mode == "block" else
-                f"(review.author_self_check: {mode}; `block` records a REJECT too and refuses "
+        # printed before the record answers, so a REJECT is said to go to it, not to be recorded:
+        # the record may still refuse its form
+        _say(f"WARNING {unit}: {gap}, so no self-check covers the diff {rel} is the brief of"
+             + ("; a REJECT moves nothing, so it goes to `critic.py record` "
+                "(review.author_self_check: block refuses an APPROVE)" if mode == "block" else
+                f" (review.author_self_check: {mode}; `block` records a REJECT too and refuses "
                 f"an APPROVE)" if rejecting else
-                f"(review.author_self_check: {mode}; `block` refuses the verdict)"), err=True)
+                f" (review.author_self_check: {mode}; `block` refuses the verdict)"), err=True)
     uid, tier = sdlc_md.norm_id(unit), None
     try:
         notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")

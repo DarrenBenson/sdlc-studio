@@ -68,7 +68,10 @@ class LaneAcceptRejectStaleTests(unittest.TestCase):
         said = " ".join(err.split())
         self.assertIn(f"WARNING {GREEN}: the self-check recorded for {GREEN} on {stale['date']} "
                       f"is stale", said)
-        self.assertIn("a REJECT moves nothing, so it is recorded", said)
+        # the warning comes before the record answers, so it says where the REJECT goes, with
+        # no space before its semicolon
+        self.assertIn(f"is the brief of; a REJECT moves nothing, so it goes to `critic.py "
+                      f"record` (review.author_self_check: block refuses an APPROVE)", said)
 
     def test_an_approve_on_a_stale_self_check_is_still_refused(self) -> None:
         """The control beside the REJECT. MUTANT: skip the refusal for every verdict."""
@@ -97,6 +100,12 @@ class LaneAcceptRejectStaleTests(unittest.TestCase):
         self.assertIn("`critic.py record` exited", err)
         self.assertIn("BLOCKING", err)
         self.assertFalse(critic.verdicts_path(self.root).exists(), "a verdict was recorded")
+        # the warning printed before the refusal claims no record. MUTANT: say it is recorded
+        said = " ".join(err.split())
+        self.assertIn("a REJECT moves nothing, so it goes to `critic.py record`", said)
+        self.assertNotIn("recorded (review.author_self_check", said)
+        self.assertLess(said.index("goes to `critic.py record`"),
+                        said.index("`critic.py record` exited"))
 
     def test_report_mode_does_not_say_block_refuses_a_reject(self) -> None:
         """Under `report` the stale self-check is a warning for every verdict; for a REJECT it
@@ -110,6 +119,8 @@ class LaneAcceptRejectStaleTests(unittest.TestCase):
                       f"is stale", said)
         self.assertNotIn("`block` refuses the verdict", said)
         self.assertIn("`block` records a REJECT too and refuses an APPROVE", said)
+        # the report-mode clause keeps its one space after "of", as the block one has none
+        self.assertIn("is the brief of (review.author_self_check: report;", said)
 
     def test_an_unreadable_verdict_on_a_stale_self_check_is_refused(self) -> None:
         """A verdict file whose block names no verdict is read as no REJECT, so the stale
