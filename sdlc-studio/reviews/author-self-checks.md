@@ -891,3 +891,4 @@
 | US1328 | Dani Okafor (engineering) | 2026-11-25 | TRUE 24, FALSE 0, UNVERIFIABLE 1 | killed 41, survived 1 | 4a29cd605474d916 at 575f6626bf1e |
 | US1331 | Dani Okafor (engineering) | 2026-11-25 | TRUE 34, FALSE 0, UNVERIFIABLE 0 | killed 51, survived 1 | b654e21af1926257 at 1f046369a76f |
 | US1327 | Dani Okafor (engineering) | 2026-11-25 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 46, survived 0 | 9d0ce891a0396e5c at b19b5464505c |
+| US1331 | Dani Okafor (engineering) | 2026-11-25 | TRUE 29, FALSE 0, UNVERIFIABLE 0 | killed 54, survived 2 | 20afe55cc5af8fde at e050ddf6042f |

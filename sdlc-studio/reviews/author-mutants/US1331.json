@@ -1,6 +1,6 @@
 {
   "unit": "US1331",
-  "digest": "b654e21af1926257 at 1f046369a76f",
+  "digest": "20afe55cc5af8fde at e050ddf6042f",
   "report": "sdlc-studio/.local/lane/landed/agent-a3b9af2c481ff2ad3/US1331-mutation-edits.json",
   "mutants": [
     {
@@ -87,9 +87,45 @@
     {
       "mutant": "bar message joins every severity with or",
       "file": "tools/known_issues.py",
-      "old": "{', '.join(barred[:-1])} or {barred[-1]} ",
-      "new": "{' or '.join(barred)} ",
+      "old": "return f\"{', '.join(barred[:-1])} or {barred[-1]}\"",
+      "new": "return f\"{' or '.join(barred)}\"",
       "test": "tools/tests/test_known_issues.py::BarInForceTests::test_an_open_medium_is_refused_at_65_and_passed_at_60",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bar's refusal names no severity",
+      "file": "tools/known_issues.py",
+      "old": "release bar NOT met under a bar barring {_either(barred)}: ",
+      "new": "release bar NOT met: ",
+      "test": "tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_an_open_medium_under_the_65_bar_is_named_in_the_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook refusal restored to Critical or High",
+      "file": ".githooks/pre-push",
+      "old": "a finding is open there at a severity the bar its page names bars",
+      "new": "a Critical or High finding is open there",
+      "test": "tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_an_open_medium_under_the_65_bar_is_named_in_the_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hook refusal restored to Critical or High (6.0)",
+      "file": ".githooks/pre-push",
+      "old": "a finding is open there at a severity the bar its page names bars",
+      "new": "a Critical or High finding is open there",
+      "test": "tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_the_60_bar_stays_critical_and_high",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held_to reads the newest bar for every tag (hook)",
+      "file": "tools/known_issues.py",
+      "old": "return barred_for(f\"{named[1]}.{named[2]}\") if named else BARRED",
+      "new": "return BARS[0][2] if named else BARRED",
+      "test": "tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_the_60_bar_stays_critical_and_high",
       "result": "killed",
       "answer": ""
     },

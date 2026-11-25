@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 47 |
+| Open | 48 |
 | In Progress | 0 |
 | Fixed | 1243 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1760** |
+| **Total** | **1761** |
 
 ## All Bugs
 
@@ -836,6 +836,7 @@
 | [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1759](BG1759-us1327-did-not-converge-in-review-round-2.md) | US1327 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1760](BG1760-us1331-did-not-converge-in-review-round-2.md) | US1331 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1761](BG1761-us1331-did-not-converge-in-review-round-3.md) | US1331 did not converge in review: round 3 REJECT findings | Open | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
