@@ -109,13 +109,21 @@ class AcHeadingWithSuffixTests(unittest.TestCase):
                      "### AC2 - UNBLOCKED: BG0525 restated the criterion in decidable terms",
                      "### AC3 - the plan lives in the unit's file; idempotent",
                      "### AC5 and AC6 were WITHDRAWN, and this is why",
-                     "### AC4 (DEFERRED) and more prose", "### AC4 (DEFERRED"):
+                     "### AC4 (DEFERRED) and more prose", "### AC4 (DEFERRED",
+                     "### AC5 (DEFERRED) - moved to US0123 (round two)",
+                     "### AC5 (a) (b)", "### AC5 (a) then prose)"):
             with self.subTest(line=line):
                 self.assertIsNone(sdlc_md.extract_ac_id(line))
         blocks = verify_ac.parse_story(WITHDRAWN)
         self.assertEqual([b.ac_id for b in blocks], ["AC4", "AC5"])
         plan = verify_ac.parse_story(TEST_PLAN)
         self.assertEqual([b.ac_id for b in plan], ["AC1"])
+
+    def test_a_tag_heading_tolerates_trailing_spaces_as_the_colon_form_does(self):
+        self.assertEqual(sdlc_md.extract_ac_id("### AC3 (DEFERRED)  "), ("AC3", "(DEFERRED)"))
+        self.assertEqual(sdlc_md.extract_ac_id("### AC3: title  "), ("AC3", "title"))
+        story = STORY.replace("### AC3 (DEFERRED)", "### AC3 (DEFERRED) ")
+        self.assertEqual([b.ac_id for b in verify_ac.parse_story(story)], ["AC1", "AC2", "AC3"])
 
     def test_a_heading_that_only_starts_like_an_id_opens_nothing(self):
         for line in ("### AC1xyz", "### AC", "### ACE: heading", "### ACs"):
