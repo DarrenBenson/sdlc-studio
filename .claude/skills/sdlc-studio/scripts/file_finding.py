@@ -1711,7 +1711,10 @@ def _md_safe(text) -> str:
     parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
-        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p) for p in pieces[0::2]]
+        # a piece holds no backtick of the author's, so every "``" is two spans this pass left
+        # touching, which render as one span holding literal backticks: they become one span
+        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p).replace("``", "")
+                        for p in pieces[0::2]]
         parts[i] = _escape_lone_bold("".join(pieces), after_span=i > 0,
                                      before_span=i < len(parts) - 1)
     return "`".join(parts)
@@ -1787,7 +1790,9 @@ def _code_urls(text) -> str:
 #: one span and never a directory followed by a spanned file name. It starts only where no path
 #: character, backtick, backslash, `)` or `]` precedes it, so no start can fall inside another
 #: path's run (the scan stays linear in the length of the prose) and a slash after a call or an
-#: index (`unit_cost()/attempts_of`) is no root.
+#: index (`unit_cost()/attempts_of`) is no root. A path right after an open bracket that a
+#: preceding identifier took (`open_x(/tmp_dir`) leaves two spans touching, and `_md_safe` merges
+#: them into one.
 _MD_TOKEN_RE = re.compile(
     r"((?<![\w`\\/~$.\-)\]])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)"
     r"(?:(?:~|\$[A-Za-z_]\w*)?/(?:[\w.\-]+/)*[\w.\-]+|(?:[\w.\-]+/)+[\w.\-]+)"

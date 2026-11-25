@@ -219,6 +219,16 @@ class TitleMarkdownTests(unittest.TestCase):
         for split in ("~/`my_file.txt`", "/`tmp_dir`", "./`a_b`"):
             self.assertNotIn(split, body)
 
+    def test_a_path_argument_in_a_call_or_an_index_touches_no_span(self) -> None:
+        """BG1304: `open_x(/tmp_dir)` and `load_json(~/run_x.json)` (a rooted path taken as the
+        argument of a call) are written with no two spans touching, which would render as one
+        span holding literal backticks. Mutant: the merge of touching spans removed."""
+        summary = "calls open_x(/tmp_dir) and load_json(~/run_x.json) and get_it[./a_b] here"
+        _root, body, _row = self._filed_with("plain", summary, "1. run it", "fix it")
+        self.assertNotIn("``", body, "two code spans touch")
+        self.assertIn("calls `open_x(/tmp_dir`) and `load_json(~/run_x.json`) and "
+                      "`get_it[`./`a_b]` here", body)
+
     def test_a_slash_after_a_call_or_an_index_starts_no_rooted_path(self) -> None:
         """BG1304: `unit_cost()/attempts_of` and `my_list[0]/my_total` are two identifiers and a
         slash, not a rooted path, so the filer writes two spans that do not touch (two touching

@@ -443,6 +443,25 @@ class MdSafeProseTests(unittest.TestCase):
     # out and the push runs it, serially.
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
+    def test_no_generated_prose_comes_back_with_two_touching_spans(self) -> None:
+        """A property of the escaper: for any prose built of identifiers, calls, indexes, slashes
+        and rooted-path starts, no two code spans in the output touch (they would render as one
+        span holding literal backticks), and the output is the input with backticks added. Fixed
+        seed, 4000 inputs. Mutants: a rooted path allowed to start after `)` or `]`; the merge of
+        spans a token pass leaves touching removed."""
+        import random
+        import time
+        pieces = ["unit_cost", "my_list", "a_b", "x", "tmp_dir", "run_x", "_c_d", "()", "[0]",
+                  "(", ")", "[", "]", "/", "~/", "./", "$HOME/", " ", " ", "."]
+        rng = random.Random(20261125)
+        began = time.perf_counter()
+        for _ in range(4000):
+            text = "".join(rng.choice(pieces) for _ in range(rng.randint(1, 9)))
+            out = ff._md_safe(text)
+            self.assertNotIn("``", out, repr(text))
+            self.assertEqual(text, out.replace("`", ""), repr(text))
+        self.assertLess(time.perf_counter() - began, 5.0)
+
     def test_the_escaper_is_linear_in_a_paths_segment_count(self) -> None:
         """A long run of segments is scanned once, not once per slash: 16 KB took 14.7 s when a
         start could follow every slash. Mutant: the start allowed after a path character."""
