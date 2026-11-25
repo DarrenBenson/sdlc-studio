@@ -1,4 +1,4 @@
-# BG1738: A Claude-only run whose sessions all hold their subagents drops a claude -p lane run's delegated total
+# BG1738: A run whose sessions all run on Claude and hold their subagents drops a claude -p lane run's delegated total
 
 > **Status:** Open
 > **Severity:** Low
@@ -32,3 +32,4 @@ Add a delegated record that no reading can hold (an untagged lane-run record) ev
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-24 | Sam Eriksson (qa) | Filed |
+| 2026-11-25 | sdlc-studio | Retitled: was "A Claude-only run whose sessions all hold their subagents drops a claude -p lane run's delegated total" |
