@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, changelog.d/BG1282.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1282.md
 > **Evidence:** the between-releases review before v6.3.0 (D0427, LL0005), code leg A; repro under scratchpad rel63/legs/scratch-a/
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Treat config variables as weaker than a running-process signal: when CLAUDECODE,
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects widened at the builder's BLOCKED: `test_token_env_isolation.py` pins the old reading (`CLAUDECODE` beside `COPILOT_HOME` gives none) that this fix removes, and reference-sprint.md's Token meters step states it |

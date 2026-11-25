@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 49 |
+| Open | 50 |
 | In Progress | 0 |
 | Fixed | 1237 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1756** |
+| **Total** | **1757** |
 
 ## All Bugs
 
@@ -832,6 +832,7 @@
 | [BG1754](BG1754-a-story-moved-to-blocked-by-decision-defer.md) | A story moved to Blocked by decision defer --block stays Blocked after its last blocking decision is resolved | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1755](BG1755-the-prose-escaper-spans-a-bare-url-written.md) | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1756](BG1756-a-plan-refused-for-a-criteria-problem-other.md) | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1757](BG1757-a-commit-can-stage-a-review-ledger-row.md) | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry | Open | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
