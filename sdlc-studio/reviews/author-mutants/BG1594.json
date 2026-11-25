@@ -1,0 +1,43 @@
+{
+  "unit": "BG1594",
+  "digest": "b69f4060ed5bec74 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1594-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "briefed seat ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "who = author or _building_seat(root_top, unit) or lane.name",
+      "new": "who = author or lane.name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_self_check_is_recorded_under_the_briefed_building_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "briefed seat wins over --author",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "who = author or _building_seat(root_top, unit) or lane.name",
+      "new": "who = _building_seat(root_top, unit) or author or lane.name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_an_explicit_author_wins_over_the_briefed_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role alone, not the seat signature",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return critic.seat_signature(root_top, role) if role else None",
+      "new": "return role or None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_self_check_is_recorded_under_the_briefed_building_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no seat ever found",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return critic.seat_signature(root_top, role) if role else None",
+      "new": "return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_accept_after_a_land_names_the_building_seat_and_prints_no_author_warning",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

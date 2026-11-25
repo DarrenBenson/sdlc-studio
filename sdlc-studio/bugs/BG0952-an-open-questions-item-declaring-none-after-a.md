@@ -1,6 +1,6 @@
 # BG0952: An Open Questions item declaring None after a dash is read as unanswered - `_DECLARES_NONE_RE` does not allow a leading dash
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG0952.md
@@ -34,8 +34,10 @@ Allow leading punctuation and whitespace before the declaration, e.g. `^[\s\-\u2
 
 - [ ] **AC1** `- [ ] <U+2014> None ...` (em dash), `- [ ] <U+2013> None` (en dash) and `- [ ] - None.` are not reported as open questions, shown by a test. Fails on: `_DECLARES_NONE_RE` has no leading-dash allowance, so the em dash, en dash and hyphen forms are reported as unresolved.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py -k dash_forms
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** `- [ ] Nonetheless, should we ...?` is still reported (the word boundary still holds). Fails on: nothing yet pins the word boundary, so a loosened pattern that also swallowed `Nonetheless` would pass unnoticed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_declares_none_forms.py -k word_boundary
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1389: sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py, changelog.d/BG1389.md
@@ -26,6 +26,7 @@ Share one rule between the two readers and pin both branches.
 
 - [ ] **AC1** Given a header whose field is empty and recurs later, when `extract_field` and `metadata_fields` read it, then both give the same empty answer. Fails on: '>' returned.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

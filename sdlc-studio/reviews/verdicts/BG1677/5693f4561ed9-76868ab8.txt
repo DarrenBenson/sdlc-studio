@@ -1,0 +1,6 @@
+UNIT: BG1677
+BRIEF: 5693f4561ed9-76868ab8
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's finding ("The new test module's docstring says the bound it pins belongs to `lane land`"): CLOSED. At 7c294458a, `test_lane_script_timeout_group.py:1-6` says `lane accept` and names the four scripts. The claim is TRUE by grep: the only `_script` callers are the four in `_accept` (`lanes.py:1436`, `:1474`, `:1479`, `:1489`), and they run `critic.py record`, `verify_ac.py run`, `transition.py set` and `sprint.py lane return`. The repair changes no code of this unit. `_script` is byte-identical to round one, since my base mutant matched its text exactly once. Against my own worktree at 7c294458a: the base `subprocess.run` body is KILLED (AC1 and AC3 fail), and a group kill replaced by `proc.kill` is KILLED (AC1). Round one's end-to-end probe over the real `verify_ac.py` still holds for the same `_script`. All three Verify lines are green (`verify_ac.py run --id BG1677 --dry-run`: 3 of 3). The module passes whole with the other three touched modules (48 passed). Round one's remark on the unpinned bound value (`timeout * 4` survives) stands as a remark, not a finding.

@@ -1,0 +1,25 @@
+{
+  "unit": "BG1237",
+  "digest": "45832a7b85b87c14 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1237-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "unfiled-id-added",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if action == \"add\" and sdlc_md.find_by_id(root, args.id) is None:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_batch_add_refuses_an_id_with_no_artefact_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none-remark-folded-into-blocking",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return \"none\", m.group(1).lstrip(\" \\t\\r\\n.,;:-\").rstrip()",
+      "new": "    return blocking, \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_blocking_none_before_a_further_section_records_no_blocking_item",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

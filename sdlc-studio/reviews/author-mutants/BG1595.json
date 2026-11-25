@@ -1,0 +1,43 @@
+{
+  "unit": "BG1595",
+  "digest": "ffec856abffcf99c at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1595-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "whitespace splitting only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return [p.strip() for u in args.units for p in u.split(\",\") if p.strip()]",
+      "new": "return [u.strip() for u in args.units if u.strip()]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_comma_separated_units_list_briefs_each_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "empty pieces kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return [p.strip() for u in args.units for p in u.split(\",\") if p.strip()]",
+      "new": "return [p.strip() for u in args.units for p in u.split(\",\")]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_mixed_space_and_comma_units_split_in_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ids reordered",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return [p.strip() for u in args.units for p in u.split(\",\") if p.strip()]",
+      "new": "return sorted(p.strip() for u in args.units for p in u.split(\",\") if p.strip())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_mixed_space_and_comma_units_split_in_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lane land handed the list unsplit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "units = _lane_unit_ids(args) if getattr(args, \"units\", None) else []",
+      "new": "units = getattr(args, \"units\", None) or []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_comma_separated_units_list_lands_each_unit",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

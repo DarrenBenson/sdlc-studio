@@ -1,6 +1,6 @@
 # BG1151: The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, tools/tests/test_persona_coherence.py, changelog.d/BG1151.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, sdlc-studio/personas/index.md
@@ -29,12 +29,16 @@ Treat a row still carrying `{{...}}` as undeclared (or take the example out of c
 
 - [ ] **AC1** A card whose Interface row still carries the template's `{{...}}` slot is treated as declaring no interface, and the missing-interface warning names it. Fails on: `persona_interface_paths` reads the example code spans in the unfilled `{{optional ...}}` slot as declared paths, so the card declares src and bin/run with no warning.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_a_row_with_the_template_slot_declares_no_interface
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** An escaped pipe in the Interface cell does not end the row, so every span after it is read. Fails on: `_INTERFACE_ROW_RE` stops at an escaped pipe, so the spans after it are lost.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaInterfacePathsTests::test_an_escaped_pipe_does_not_end_the_interface_row
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Dropping the ./ normalisation on either side fails a test. Fails on: dropping `removeprefix('./')` at `sdlc_md.py`:2842 or artifact.py:368 leaves every test green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePrimaryTests::test_a_dot_slash_path_matches_on_both_sides
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** validate reports two Primaries whose declared paths are equal or nested, whatever their prose. Fails on: validate.py compares the row text, so two Primaries with different prose and the same or nested paths pass.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

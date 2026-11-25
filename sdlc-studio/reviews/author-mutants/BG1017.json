@@ -1,22 +1,22 @@
 {
   "unit": "BG1017",
-  "digest": "25dc70c7b147b8ca at e1cf8c8645e1",
+  "digest": "22a9dda8769cd889 at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1017-mutation-edits.json",
   "mutants": [
     {
       "mutant": "every line judged",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "        elif under_criterion and _CHILD_VERIFY_RE.match(line):\n            continue\n",
+      "old": "        elif under_criterion and (m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):\n            continue\n",
       "new": "",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_only_a_command_in_criterion_prose_is_warned",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "exempt keyed on no criterion above",
+      "mutant": "exempt with no criterion above",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "        elif under_criterion and _CHILD_VERIFY_RE.match(line):",
-      "new": "        elif _CHILD_VERIFY_RE.match(line):",
+      "old": "        elif under_criterion and (m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):",
+      "new": "        elif (m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_not_beneath_a_criterion_is_still_judged",
       "result": "killed",
       "answer": ""
@@ -24,8 +24,8 @@
     {
       "mutant": "a paragraph does not end the criterion",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "        elif line.strip() and not line[0].isspace():\n            under_criterion = False  # a paragraph at column 0 ends the criterion's items\n",
-      "new": "        elif line.strip() and not line[0].isspace():\n            pass\n",
+      "old": "            under_criterion = False  # a paragraph at column 0 ends the criterion's items",
+      "new": "            pass",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_not_beneath_a_criterion_is_still_judged",
       "result": "killed",
       "answer": ""
@@ -33,11 +33,20 @@
     {
       "mutant": "a flush item taken as a child",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "r\"^[ \\t]+[-*+]\\s+\\*\\*Verify:\\*\\*\\s*\\S\"",
-      "new": "r\"^[ \\t]*[-*+]\\s+\\*\\*Verify:\\*\\*\\s*\\S\"",
+      "old": "(m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):",
+      "new": "(m := sdlc_md.VERIFY_RE.match(line)):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_not_beneath_a_criterion_is_still_judged",
       "result": "survived",
-      "answer": "Equivalent: a flush item matches _CRITERION_ITEM_RE, whose branch runs first in the if/elif chain, so the child pattern is never tried on a line at column 0"
+      "answer": "Equivalent: a flush item matches _CRITERION_ITEM_RE, whose branch runs first in the if/elif chain, so the indent test is never the deciding one for a line at column 0"
+    },
+    {
+      "mutant": "star and plus criteria not recognised",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "r\"^(?:[-*+]|\\d+[.)])\\s\"",
+      "new": "r\"^(?:[-]|\\d+[.)])\\s\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_beneath_a_criterion_is_not_judged_whatever_it_holds",
+      "result": "killed",
+      "answer": ""
     },
     {
       "mutant": "numbered criteria not recognised",
@@ -49,11 +58,20 @@
       "answer": ""
     },
     {
-      "mutant": "bold marker not required",
+      "mutant": "a star or plus Verify taken as the parsed line",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "r\"^[ \\t]+[-*+]\\s+\\*\\*Verify:\\*\\*\\s*\\S\"",
-      "new": "r\"^[ \\t]+[-*+]\\s+\\S\"",
+      "old": "(m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):",
+      "new": "bool(re.match(r\"^[ \\t]+[-*+]\\s+\\*\\*Verify:\\*\\*\\s*\\S\", line)):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_not_beneath_a_criterion_is_still_judged",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "heading does not end the criterion",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "            under_criterion = False\n            continue\n",
+      "new": "            continue\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_criterion_does_not_reach_across_a_heading",
       "result": "killed",
       "answer": ""
     },
@@ -63,15 +81,6 @@
       "old": "`- **Verify:**` line beneath it, which this check does not judge",
       "new": "line of its own",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_only_a_command_in_criterion_prose_is_warned",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a story's flush verify warned",
-      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "        if _CRITERION_ITEM_RE.match(line):\n            under_criterion = True",
-      "new": "        if _CRITERION_ITEM_RE.match(line):\n            under_criterion = False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_a_verify_line_beneath_a_criterion_is_not_judged_whatever_it_holds",
       "result": "killed",
       "answer": ""
     }

@@ -1,32 +1,59 @@
 {
   "unit": "BG1304",
-  "digest": "8417b9907faaed85 at e1cf8c8645e1",
+  "digest": "8fa08e2c743a1ba2 at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1304-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "directories not part of the token",
+      "mutant": "path shape disabled",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
-      "new": "([A-Za-z_]",
+      "old": "    r\"(?:[\\w.\\-]+/)+[\\w.\\-]+\"\n",
+      "new": "    r\"(?!)\"\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "dots and dashes not in a directory",
+      "mutant": "path shape disabled in a request",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
-      "new": "((?:[\\w]+/)*[A-Za-z_]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "path split in a request",
-      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "((?:[\\w.\\-]+/)*[A-Za-z_]",
-      "new": "([A-Za-z_]",
+      "old": "    r\"(?:[\\w.\\-]+/)+[\\w.\\-]+\"\n",
+      "new": "    r\"(?!)\"\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::SuppliedContentLandsTests::test_a_path_with_a_directory_is_never_split_by_a_code_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "root not part of the path",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:~|\\$[A-Za-z_]\\w*)?/?\"",
+      "new": "\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any underscore counts",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "[\\w.\\-~$/]*?[A-Za-z0-9.\\-]_)",
+      "new": "[\\w.\\-~$/]*?_)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no underscore needed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?=[\\w.\\-~$/]*?[A-Za-z0-9.\\-]_)",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a start after a path character",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?<![\\w`\\\\/~$.\\-])(?=",
+      "new": "((?<![\\w`\\\\])(?=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_the_escaper_is_linear_in_a_paths_segment_count",
       "result": "killed",
       "answer": ""
     },

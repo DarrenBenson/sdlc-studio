@@ -1,6 +1,6 @@
 {
   "unit": "BG1695",
-  "digest": "ab208cfb39ea4e96 at 45045c034802",
+  "digest": "ddc3e3a189cbd15f at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1695-mutation-edits.json",
   "mutants": [
     {
@@ -71,6 +71,24 @@
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
       "old": "\"--name-only\", \"-z\").stdout.split(\"\\0\")\n              if p]",
       "new": "\"--name-only\", \"-z\").stdout.split()\n              if p]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the printed staged line splits a spaced path",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_say(f\"  staged: {', '.join(staged) if staged else 'nothing'}\")",
+      "new": "_say(f\"  staged: {', '.join(' '.join(staged).split()) if staged else 'nothing'}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the printed staged line says nothing for none",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "{', '.join(staged) if staged else 'nothing'}",
+      "new": "{', '.join(staged) if staged else ''}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once",
       "result": "killed",
       "answer": ""

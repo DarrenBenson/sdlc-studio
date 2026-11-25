@@ -1,0 +1,61 @@
+{
+  "unit": "BG1292",
+  "digest": "a17f5aef364e2336 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1292-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "never-warned",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if args.action == \"brief\" and (behind := _worktree_behind(root)):",
+      "new": "        if False and (behind := _worktree_behind(root)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warned-at-the-tip",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not behind or behind.returncode != 1:",
+      "new": "    if not behind or behind.returncode not in (0, 1):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_an_up_to_date_worktree_and_the_root_are_not_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "brief-names-no-base",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if base := brief.get(\"base\"):",
+      "new": "    if base := None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_fast_forward_step_and_the_base_to_build_on",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "base-is-this-worktrees-head",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "short = _git(root, \"rev-parse\", \"--short\", main[\"head\"]) if main else None",
+      "new": "short = _git(root, \"rev-parse\", \"--short\", \"HEAD\") if main else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_fast_forward_step_and_the_base_to_build_on",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "detached-base-names-no-commit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "{base['branch'] or base['commit']}` in your worktree",
+      "new": "{base['branch'] or 'HEAD'}` in your worktree",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_fast_forward_step_and_the_base_to_build_on",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-fast-forward-named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "here may be older than the one there: run `git merge --ff-only {branch}` in this \"",
+      "new": "here may be older than the one there: update this \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

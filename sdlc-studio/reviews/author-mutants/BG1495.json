@@ -1,0 +1,34 @@
+{
+  "unit": "BG1495",
+  "digest": "141f13e8c7482c48 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1495-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every cluster unit read as the wave's",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "members = [u for u in wave if u in held]",
+      "new": "members = list(held)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_wave_joined_only_through_a_later_unit_is_not_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a pair warned with no file in common",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "common = [f for f in held[a] if f in held[b]]",
+      "new": "common = list(held[a])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_wave_joined_only_through_a_later_unit_is_not_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only adjacent pairs compared",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "for b in members[n + 1:]:",
+      "new": "for b in members[n + 1:n + 2]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_every_colliding_pair_of_a_wave_is_warned",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

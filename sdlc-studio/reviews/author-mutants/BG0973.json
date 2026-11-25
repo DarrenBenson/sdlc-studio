@@ -1,6 +1,6 @@
 {
   "unit": "BG0973",
-  "digest": "a81e2cf749cb284f at e1cf8c8645e1",
+  "digest": "e793eae68b820ac5 at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG0973-mutation-edits.json",
   "mutants": [
     {
@@ -27,6 +27,24 @@
       "old": "split(\"## Acceptance Criteria\", 1)[1][:400]",
       "new": "split(\"## Acceptance Criteria\", 1)[1][:0]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py::ReviewScaffoldTests::test_a_story_with_the_placeholder_is_still_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the text before the heading read",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "split(\"## Acceptance Criteria\", 1)[1][:400]",
+      "new": "split(\"## Acceptance Criteria\", 1)[0][-400:]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py::ReviewScaffoldTests::test_slots_before_the_section_do_not_warn_a_story_with_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a whole-body slot test kept beside the guard",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "        if \"{{\" in _ac:",
+      "new": "        if \"{{criterion}}\" in _body or \"{{\" in _ac:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py::ReviewScaffoldTests::test_a_review_titled_with_the_slot_is_not_warned",
       "result": "killed",
       "answer": ""
     }

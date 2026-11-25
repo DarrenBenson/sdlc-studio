@@ -1,0 +1,34 @@
+{
+  "unit": "BG1103",
+  "digest": "6b859311ecad482c at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1103-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "run-records-named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "dropped = (\"sdlc-studio/.local/\", run_state.TRACKED_REL.as_posix() + \"/\")",
+      "new": "dropped = (\"sdlc-studio/.local/\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py::CloseNamesBoundUntrackedTests::test_a_close_names_each_untracked_file_it_binds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ignored-files-named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"ls-files\", \"--others\", \"--exclude-standard\", \"-z\", \"--\", \".\")",
+      "new": "\"ls-files\", \"--others\", \"-z\", \"--\", \".\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py::CloseNamesBoundUntrackedTests::test_a_close_names_each_untracked_file_it_binds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "named-without-a-report",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if report_id and (untracked := bound_untracked(root)):",
+      "new": "    if (untracked := bound_untracked(root)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py::CloseNamesBoundUntrackedTests::test_a_close_names_each_untracked_file_it_binds",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

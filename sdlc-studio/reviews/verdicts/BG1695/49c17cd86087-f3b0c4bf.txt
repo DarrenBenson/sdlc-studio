@@ -1,0 +1,6 @@
+UNIT: BG1695
+BRIEF: 49c17cd86087-f3b0c4bf
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's first finding ("AC4's printed half is not pinned"): CLOSED. The AC4 case now also asserts the printed line, "staged: src/lane notes.py, src/plain.py" (`test_lane_run.py:482`), and "staged: nothing" for the empty index (`:487`). Two of my mutants of `lanes.py:1984` are now KILLED by that case. One is round one's own, the printed line naming the spaced path as two. The other is a printed line left empty for no staged path. Round one's second finding ("A bare string statement sits mid-class"): CLOSED. `test_lane_land_replay.py:107-108` is now a comment, and the comment's claim is TRUE. Base re-probe at 7c294458a: with all three sites put back to the whitespace split, the AC1, AC2 and AC4 cases fail and both positive controls pass. The repair touches none of this unit's code. All four Verify lines are green (`verify_ac.py run --id BG1695 --dry-run`: 4 of 4). The touched modules pass whole (48 passed with the other three).

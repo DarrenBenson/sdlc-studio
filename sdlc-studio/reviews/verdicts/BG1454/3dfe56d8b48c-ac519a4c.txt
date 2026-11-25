@@ -1,0 +1,6 @@
+UNIT: BG1454
+BRIEF: 3dfe56d8b48c-ac519a4c
+VERDICT: REJECT
+ISSUES: [new] the prefix test's dash is pinned by no test (sprint.py:9675): mutated to `agent.startswith("agent")` with the same six-character slice, all four LaneReturnAgentPrefixTests pass, because the only kept-as-given control, `xagent-7`, does not open with the word at all, so an id that opens with "agent" and no dash (`agentx9`, read under the mutant as `9` from `agent-9.jsonl`) is unguarded and the changelog's "An id that only contains the word ... is kept as given" is unpinned at its boundary
+BLOCKING: the prefix test's dash is pinned by no test
+RULINGS: Claim inventory: the changelog's priced return for `--agent agent-<id>` is TRUE (AC1 test), both forms reading one transcript TRUE, `xagent-7` kept as given TRUE, a missing transcript still warned as not priced TRUE, and `lane land` printing the builder as `agent-<id>` TRUE by reading (AGENT_WORKTREE, lanes.py:129), not run. By reading, `--agent agent-` with nothing after it now strips to an empty id, which `agent_transcript_tokens` treats as not a plain name and warns unpriced, as the base warned `agent-agent-`, so no finding. My mutants: an `lstrip` of the prefix characters and a strip applied only on land both killed, the dropped dash survived. AC1's Verify passes.

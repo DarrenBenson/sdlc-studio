@@ -1,0 +1,25 @@
+{
+  "unit": "BG1454",
+  "digest": "fd95f45a10418f52 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1454-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "prefix never stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if agent is not None and agent.startswith(\"agent-\"):",
+      "new": "if agent is not None and agent.startswith(\"agent-x-\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py::LaneReturnAgentPrefixTests::test_the_printed_agent_prefixed_id_prices_the_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the word stripped anywhere in the id",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if agent is not None and agent.startswith(\"agent-\"):",
+      "new": "if agent is not None and \"agent-\" in agent:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py::LaneReturnAgentPrefixTests::test_a_bare_id_holding_agent_but_not_as_its_prefix_is_kept",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

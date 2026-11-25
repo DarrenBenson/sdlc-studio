@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1495.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1495.md
 > **Evidence:** EP0314 grooming, 2026-11-16: `sprint.py plan --worklist` over BG1487, BG1493, BG1494, US1170, US1171, US1172 and US1173
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -34,3 +34,4 @@ Judge a wave from the pairwise intersection of its own units' Affects, not from 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects widened for the SPB repair round: reference-sprint.md (about lines 305-307) still describes the wave warning's old rule, which this unit's change makes untrue |

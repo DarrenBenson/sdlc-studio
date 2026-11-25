@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-24
+**Last Updated:** 2026-11-25
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 91 |
+| Open | 79 |
 | In Progress | 0 |
-| Fixed | 1180 |
+| Fixed | 1194 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1741** |
+| **Total** | **1743** |
 
 ## All Bugs
 
@@ -27,7 +27,7 @@
 | [BG0949](BG0949-an-inline-ruled-or-decided-ruling-is-never.md) | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0950](BG0950-a-verdict-that-follows-critic-py-brief-s.md) | A verdict that follows `critic.py brief`'s return contract to the letter is refused by `critic.py record --from-verdict` | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0951](BG0951-critic-tier-for-reads-the-raw-difficulty-band.md) | `critic.tier_for` reads the raw difficulty band and skips every critic-role policy `route.pick` applies, so code units get a light review the routing policy says should be medium | Won't Fix | High | 2026-10-06 | 2026-10-06 |
-| [BG0952](BG0952-an-open-questions-item-declaring-none-after-a.md) | An Open Questions item declaring None after a dash is read as unanswered - `_DECLARES_NONE_RE` does not allow a leading dash | Open | Low | 2026-10-06 | 2026-10-06 |
+| [BG0952](BG0952-an-open-questions-item-declaring-none-after-a.md) | An Open Questions item declaring None after a dash is read as unanswered - `_DECLARES_NONE_RE` does not allow a leading dash | Fixed | Low | 2026-10-06 | 2026-10-06 |
 | [BG0953](BG0953-full-template-story-and-tsd-ship-unrendered-config.md) | Full-template story and TSD ship unrendered {{config.story_quality.*}} placeholders | Open | Low | 2026-10-06 | 2026-10-06 |
 | [BG0954](BG0954-a-draft-story-transitions-straight-to-done-the.md) | A Draft story transitions straight to Done - the Definition of Ready is never required | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0955](BG0955-test-lean-backlog-sweep-reads-only-the-live.md) | `test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements | Fixed | Medium | 2026-10-06 | 2026-10-06 |
@@ -48,7 +48,7 @@
 | [BG0970](BG0970-critic-py-brief-says-nothing-when-the-unit.md) | `critic.py brief` says nothing when the unit's Affects carry uncommitted changes, though it sends the reviewer to an isolated worktree that cannot see them | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0971](BG0971-sprint-close-dry-run-reports-later-chain-steps.md) | sprint close --dry-run reports later chain steps in the past tense ('lessons lifted', 'summary regenerated', 'anchor refreshed') although nothing was written | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
 | [BG0972](BG0972-artifact-py-retitle-quotes-the-old-title-verbatim.md) | `artifact.py retitle` quotes the old title verbatim in its revision row, so a retitle made to remove an em dash or a bare identifier puts it straight back | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
-| [BG0973](BG0973-artifact-py-new-type-review-warns-its-acceptance.md) | artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0973](BG0973-artifact-py-new-type-review-warns-its-acceptance.md) | artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0974](BG0974-the-filing-tools-do-not-markdown-safe-the.md) | The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0975](BG0975-critic-py-brief-rejoinder-derives-a-light-tier.md) | critic.py brief --rejoinder derives a light tier from the risk band even when the round it answers was taken at an explicit full tier | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0976](BG0976-the-pre-push-hook-prints-its-ssh-keepalive.md) | The pre-push hook prints its ssh keepalive warning on every push, even when the clone already carries a keepalive | Fixed | Low | 2026-10-07 | 2026-10-07 |
@@ -101,7 +101,7 @@
 | [BG1023](BG1023-verify-ac-s-vitest-and-jest-verbs-fold.md) | verify_ac's vitest and jest verbs fold the whole tail into the -t pattern and call a bare binary, so `vitest <file> -t "name"` can never select its test | Fixed | Medium | 2026-10-11 | 2026-10-11 |
 | [BG1024](BG1024-verify-ac-s-grep-verb-takes-a-leading.md) | verify_ac's grep verb takes a leading flag as the pattern, so `grep -q -e X file` and `grep -E ... file` Verify lines fail | Open | Low | 2026-10-11 | 2026-10-11 |
 | [BG1025](BG1025-sprint-sign-moves-every-batch-unit-to-its.md) | sprint sign moves every batch unit to its terminal status, overriding a unit an operator ruling deliberately left open (Watching), and the seal then blocks transition from restoring it | Fixed | Medium | 2026-10-12 | 2026-10-12 |
-| [BG1026](BG1026-an-ac-heading-with-a-suffix-after-its.md) | An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above | Open | Low | 2026-10-12 | 2026-10-12 |
+| [BG1026](BG1026-an-ac-heading-with-a-suffix-after-its.md) | An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above | Fixed | Low | 2026-10-12 | 2026-10-12 |
 | [BG1027](BG1027-the-commit-time-links-lane-resolves-a-link.md) | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns CI red | Fixed | Medium | 2026-10-12 | 2026-10-12 |
 | [BG1028](BG1028-there-is-no-supported-way-to-run-only.md) | There is no supported way to run only the release verify lane: `gate.py --release --only verify` is refused for deselecting the bound lanes, and the refusal's advice (drop --release) leads to `unknown check name(s): verify` | Won't Fix | Low | 2026-10-12 | 2026-10-12 |
 | [BG1029](BG1029-critic-record-splits-a-verdict-s-findings-on.md) | critic record splits a verdict's findings on every ';', so reviewer prose with a semicolon is refused as an untagged finding | Superseded | Low | 2026-10-12 | 2026-10-12 |
@@ -226,7 +226,7 @@
 | [BG1148](BG1148-revalidate-s-real-date-guard-has-no-test.md) | revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1149](BG1149-rfc0048-s-resolved-d6-still-states-a-120s.md) | RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20 | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1150](BG1150-sprint-py-still-says-the-planner-reads-the.md) | sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358 | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
-| [BG1151](BG1151-the-interface-path-persona-router-reads-a-template.md) | The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1151](BG1151-the-interface-path-persona-router-reads-a-template.md) | The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap | Fixed | Low | 2026-11-01 | 2026-11-01 |
 | [BG1152](BG1152-artifact-py-batch-writes-a-list-valued-affects.md) | artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push'] | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1153](BG1153-executes-verifiers-s-docstring-says-verify-ac-reads.md) | EXECUTES_VERIFIERS's docstring says verify_ac reads it, but verify_ac keeps its own VERIFIABLE_PREFIXES, and the TRD says an un-decomposed CR 'reaches Done' | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1154](BG1154-trevor-s-card-says-a-sign-off-on.md) | Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
@@ -268,7 +268,7 @@
 | [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Fixed | Medium | 2026-11-03 | 2026-11-03 |
 | [BG1191](BG1191-the-batch-s-phase-plugin-reads-serial-only.md) | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker | Won't Fix | Low | 2026-11-03 | 2026-11-03 |
 | [BG1192](BG1192-us1113-ac3-s-one-at-a-time-pin.md) | US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other | Won't Fix | Low | 2026-11-03 | 2026-11-03 |
-| [BG1193](BG1193-sdlc-md-corpus-cache-hands-later-callers-the.md) | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1193](BG1193-sdlc-md-corpus-cache-hands-later-callers-the.md) | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile | Fixed | Low | 2026-11-04 | 2026-11-04 |
 | [BG1194](BG1194-remote-gate-sh-s-release-route-does-not.md) | remote-gate.sh's release route does not send SDLC_GATE_BOUNDARY, so a value set in the shell changes the local release gate but not the host's | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
 | [BG1195](BG1195-four-test-modules-of-tools-remote-gate-sh.md) | Four test modules of tools/remote-gate.sh name no test-census-subject, so a commit to the script runs only one of the five | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
 | [BG1196](BG1196-no-test-pins-the-host-s-sdlc-studio.md) | No test pins the host's SDLC_STUDIO_BOUNDARY_SUITE=1 export for remote-gate.sh's push and suite jobs | Won't Fix | Low | 2026-11-04 | 2026-11-04 |
@@ -382,7 +382,7 @@
 | [BG1304](BG1304-artifact-py-new-wraps-a-file-name-inside.md) | `artifact.py new` wraps a file name inside a path in backticks, so tools/tests/x.py in a CR's Impact or criteria is written as tools/tests/`x.py` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1305](BG1305-the-cursor-meter-drops-the-model-the-cursor.md) | The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1306](BG1306-critic-py-brief-never-tells-a-reviewer-probing.md) | `critic.py brief` never tells a reviewer probing confinement or environment-isolation code to run its mutants with HOME set to a temporary directory, so a mutant can write outside the scratch tree | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
-| [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1309](BG1309-a-cursor-composer-or-grok-session-in-fast.md) | A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1310](BG1310-tools-skill-tests-sh-the-unittest-runner-npm.md) | `tools/skill-tests.sh`, the unittest runner `npm test` uses, loads no conftest, so the harness-variable scrub BG1197 added never runs there and the meter tests fail under a Cursor session | Fixed | Medium | 2026-11-09 | 2026-11-09 |
@@ -464,7 +464,7 @@
 | [BG1386](BG1386-timing-tests-fail-under-parallel-load-test-status.md) | Timing tests fail under parallel load: test_status GatherPerformanceTests read 4.9 s against a 3 s limit and a verify_ac criterion failed once at load 8.6 | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1387](BG1387-test-cli-grammar-realtreemarkertests-copies-the-whole-tree.md) | test_cli_grammar RealTreeMarkerTests copies the whole tree into /tmp and fails with EDQUOT on a small tmpfs | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1388](BG1388-an-sdlc-md-root-discovery-test-fails-when.md) | An sdlc_md root-discovery test fails when TMPDIR is inside a repository, because it assumes its temporary directory lies outside any project | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
-| [BG1389](BG1389-sdlc-md-extract-field-reads-an-empty-field.md) | sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1389](BG1389-sdlc-md-extract-field-reads-an-empty-field.md) | sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned | Fixed | Low | 2026-11-13 | 2026-11-13 |
 | [BG1390](BG1390-test-lean-tracked-run-record-test-this-repos.md) | test_lean_tracked_run_record test_this_repos_signed_reports_check_in_a_clean_clone fails in a harness worktree | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1391](BG1391-the-report-s-dollar-cost-row-does-not.md) | The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1392](BG1392-prices-and-token-meters-have-untested-edges-rates.md) | prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
@@ -691,7 +691,7 @@
 | [BG1613](BG1613-ci-wait-timeout-minutes-has-no-reader-the.md) | ci.wait_timeout_minutes has no reader: the trunk guidance's wait fence hardcodes `timeout 30m`, so a project's override changes nothing | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1614](BG1614-lane-accept-records-a-second-seat-s-verdict.md) | lane accept records a second seat's verdict against the unit's saved qa brief, not the brief the verdict file names | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1615](BG1615-mutation-py-run-edits-counts-an-edit-that.md) | mutation.py run --edits counts an edit that does not compile as killed and exits 0, and silently ignores --format and --max-mutations | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1616](BG1616-lane-land-s-several-worktree-landing-moves-a.md) | lane land's several-worktree landing moves a body line shaped like a trailer into the trailers, and three of its refusals have no test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1616](BG1616-lane-land-s-several-worktree-landing-moves-a.md) | lane land's several-worktree landing moves a body line shaped like a trailer into the trailers, and three of its refusals have no test | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1617](BG1617-lane-land-resume-compares-unit-ids-as-raw.md) | lane land --resume compares unit ids as raw strings, a landing stopped at rebase records no commit, and two refusals have no test | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1618](BG1618-the-plan-s-unmetered-warning-gives-a-false.md) | The plan's unmetered warning gives a false reason on a re-plan, one of its test assertions cannot fail, and a fallback sentence is reached by no test | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1619](BG1619-sprint-sign-prints-nothing-when-its-retro-write.md) | sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro | Open | Low | 2026-11-19 | 2026-11-19 |
@@ -752,7 +752,7 @@
 | [BG1674](BG1674-no-test-pins-card-not-utf8-s-severity.md) | No test pins card-not-utf8's severity split (a warning for persona cards, an error for seat cards) or the exit code validate.py seats gives for it | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1676](BG1676-reconcile-stops-on-an-index-that-is-not.md) | reconcile stops on an index that is not UTF-8 without naming the file or how to fix it | Won't Fix | Low | 2026-11-21 | 2026-11-21 |
-| [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
@@ -770,7 +770,7 @@
 | [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Fixed | Low | 2026-11-21 | 2026-11-21 |
-| [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Fixed | Low | 2026-11-21 | 2026-11-21 |
 | [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1698](BG1698-a-unit-approved-in-a-ruled-round-past.md) | A unit approved in a ruled round past the cap stays dropped from the batch, so the close and the report do not credit it | Fixed | Low | 2026-11-22 | 2026-11-22 |
@@ -788,13 +788,13 @@
 | [BG1710](BG1710-bg1482-did-not-converge-in-review-round-2.md) | BG1482 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1711](BG1711-bg1483-did-not-converge-in-review-round-2.md) | BG1483 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1712](BG1712-nine-whole-file-rewrites-of-tracked-workspace-files.md) | Nine whole-file rewrites of tracked workspace files still truncate in place instead of going through sdlc_md.atomic_write, so an interrupted write can leave the file half-written | Won't Fix | Low | 2026-11-22 | 2026-11-22 |
-| [BG1713](BG1713-two-lanes-of-one-parallel-drive-wave-create.md) | Two lanes of one parallel drive wave create their worktrees at the same moment, and git's concurrent worktree add can refuse one, stopping that unit at build | Open | Low | 2026-11-22 | 2026-11-22 |
+| [BG1713](BG1713-two-lanes-of-one-parallel-drive-wave-create.md) | Two lanes of one parallel drive wave create their worktrees at the same moment, and git's concurrent worktree add can refuse one, stopping that unit at build | Fixed | Low | 2026-11-22 | 2026-11-22 |
 | [BG1714](BG1714-bg1532-did-not-converge-in-review-round-2.md) | BG1532 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1715](BG1715-bg1229-did-not-converge-in-review-round-2.md) | BG1229 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1716](BG1716-bg1492-did-not-converge-in-review-round-2.md) | BG1492 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1717](BG1717-bg1625-did-not-converge-in-review-round-2.md) | BG1625 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1718](BG1718-the-duplicate-lens-counts-a-v3-artefact-s.md) | The duplicate lens counts a v3 artefact's own ULID suffix as a word, so two v3 duplicates score lower than the same pair with v2 ids | Fixed | Low | 2026-11-23 | 2026-11-23 |
-| [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Open | Low | 2026-11-23 | 2026-11-23 |
+| [BG1719](BG1719-artifact-py-new-and-batch-and-the-low.md) | artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file | Fixed | Low | 2026-11-23 | 2026-11-23 |
 | [BG1720](BG1720-bg1549-did-not-converge-in-review-round-2.md) | BG1549 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1721](BG1721-bg1550-did-not-converge-in-review-round-2.md) | BG1550 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-23 | 2026-11-23 |
 | [BG1722](BG1722-conformance-adopt-after-takes-a-schema-v3-cutoff.md) | `conformance.adopt_after` takes a schema v3 cutoff on a schema v2 project, so the conformance lane exempts every sequential unit | Open | Low | 2026-11-23 | 2026-11-23 |
@@ -814,9 +814,11 @@
 | [BG1736](BG1736-the-commit-msg-attribution-note-advises-a-schema.md) | The commit-msg attribution note advises a schema 3 id by its dashless key | Fixed | Low | 2026-11-24 | 2026-11-24 |
 | [BG1737](BG1737-bg1204-did-not-converge-in-review-round-2.md) | BG1204 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-24 | 2026-11-24 |
 | [BG1738](BG1738-a-claude-only-run-whose-sessions-all-hold.md) | A Claude-only run whose sessions all hold their subagents drops a claude -p lane run's delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
-| [BG1739](BG1739-critic-py-record-refuses-a-finding-whose-bare.md) | critic.py record refuses a finding whose bare URL is followed by an escaped semicolon | Open | Low | 2026-11-24 | 2026-11-24 |
+| [BG1739](BG1739-critic-py-record-refuses-a-finding-whose-bare.md) | critic.py record refuses a finding whose bare URL is followed by an escaped semicolon | Fixed | Low | 2026-11-24 | 2026-11-24 |
 | [BG1740](BG1740-reference-review-md-lists-the-optional-claim-surfaces.md) | reference-review.md lists the optional claim surfaces without the declared pages | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1741](BG1741-the-retro-judges-a-run-whole-from-another.md) | The retro judges a run whole from another harness's session when the closing session has no closing stamp, and drops a supplied delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
+| [BG1742](BG1742-bg1026-did-not-converge-in-review-round-2.md) | BG1026 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1743](BG1743-bg1296-did-not-converge-in-review-round-2.md) | BG1296 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 

@@ -1,0 +1,43 @@
+{
+  "unit": "BG1335",
+  "digest": "174abb0c9a1f4414 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1335-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "bug-sent-to-transition",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if args.block and hit and \"Blocked\" not in sdlc_md.status_vocab(hit[1], root):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "block-not-held",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if args.block and args.unit not in held:\n            held.append(args.unit)",
+      "new": "        if False:\n            held.append(args.unit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "list-hides-the-block",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            shown = f\" ({p['status']}{', BLOCKED on the run state' if p['blocked'] else ''})\"",
+      "new": "            shown = f\" ({p['status']})\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolve-keeps-the-block",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "**({\"blocked_units\": still_held} if \"blocked_units\" in state else {}))",
+      "new": "**{})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

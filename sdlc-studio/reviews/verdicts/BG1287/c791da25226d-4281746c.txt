@@ -1,0 +1,6 @@
+UNIT: BG1287
+BRIEF: c791da25226d-4281746c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac --dry-run gives 2 of 2 passing. Through `sprint lane brief` on a project whose trunk is `trunk`, the landing obligation reads "The lane is landed by `sprint lane land` onto the root's branch: open no PR and push no branch, unless `release_strategy` is `pr-required`." No obligation row names main or a fast-forward, and the brief keeps its "Do not commit" line. My mutants were all killed: template item 5 drifted from the shipped text (killed by tools/tests/test_doc_claims.py LaneObligationDocsTests), the obligation naming main, and the obligation adding a fast-forward. The author's three replayed killed. test_trunk_integration, test_lane_builder_brief, test_doc_claims and test_sprint's obligation tests are green. No stale copy of the old wording remains outside the review ledger (git grep). Claims: the changelog fragment and template item 5 are TRUE. The BG1292 Base line's `git merge --ff-only` sits outside the obligations, which is all AC1 governs.

@@ -1,0 +1,6 @@
+UNIT: BG1649
+BRIEF: 557ec53b52a3-328f2270
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's "the finishing step the refusal names is not the return `lane accept` would have run": CLOSED. The hint and the return now come from one `_return_argv`, and the criterion's test follows the hinted command and finds the builder's 1200 tokens recorded (the author's mutant dropping the flags from the hint replays killed). My probe pasted the hint through bash on the LaneAcceptTests fixture, with an open run and a `--proof` value holding an apostrophe: the printed command, `sprint.py lane return --units US0101 --claimed 'Done on an independent APPROVE (round 1)' --timeout 300 --tokens 1200 --minutes 3.0 --proof ...`, exits 0, records the delegated 1200 tokens and empties `lanes_in_flight`. My mutant joining the hint with spaces rather than `shlex.join` is killed by the AC1 test. `verify_ac.py run --id BG1649 --dry-run` ac=3 pass=3, and the five BG1649 tests pass in my detached worktree. Claim inventory: the fragment's widened sentence, the `_return_argv` docstring and the commit body's BG1649 paragraph are TRUE against the probe and tests above.

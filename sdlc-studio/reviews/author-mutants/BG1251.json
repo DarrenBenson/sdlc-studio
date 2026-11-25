@@ -1,0 +1,52 @@
+{
+  "unit": "BG1251",
+  "digest": "949c39b5a1184eca at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1251-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "sibling-line-never-printed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if siblings:\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_brief_names_sibling_lanes_in_one_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warning-for-every-sibling",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if sdlc_md.norm_id(row[\"unit\"]) not in briefed:\n                continue",
+      "new": "            if False:\n                continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_brief_names_sibling_lanes_in_one_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "markdown-never-linted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _refuse_markdown(root_top, lanes_)\n",
+      "new": "    pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_fragment_that_fails_markdownlint_is_refused_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lint-failure-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if res.returncode:\n                failed.append",
+      "new": "            if False:\n                failed.append",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_fragment_that_fails_markdownlint_is_refused_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hand-in-names-no-test-files",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"files, {', '.join(tests)}\" if tests else \"\"),",
+      "new": "f\"files, {', '.join(tests)}\" if False else \"\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_hand_in_line_names_the_accepted_rulings_and_test_files",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

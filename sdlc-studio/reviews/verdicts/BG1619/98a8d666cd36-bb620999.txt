@@ -1,0 +1,6 @@
+UNIT: BG1619
+BRIEF: 98a8d666cd36-bb620999
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory, all TRUE by execution: the three changelog claims and the cmd_sign comment that the named retro is checked before the seal. All three AC tests fail against the parent commit's sprint.py and pass at HEAD, and verify_ac dry-run gives 3 of 3 pass. Own mutation pass, 7 mutants, all killed: the named retro unchecked, the refusal exiting 0, the failure said on stdout, its output lines dropped, its exit status dropped, the tail preferring the scaffolded retro, and the tail skipping the close's recorded retro. Probed `sign --retro` spellings through `sprint.main` against HEAD and the parent: RETRO-0002 and retro0002 still seal and write that id exactly as before, so the new check refuses no form `_retro_path` resolves, and RETRO0002-x is now refused with exit 2 and the run left running where the parent sealed it. test_lean_close.py is declared in Affects but unchanged.

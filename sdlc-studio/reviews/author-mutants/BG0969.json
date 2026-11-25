@@ -1,0 +1,25 @@
+{
+  "unit": "BG0969",
+  "digest": "bd65f7df024502fa at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG0969-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "supplied-verdict-dropped-again",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if args.goal_verdict:\n            print(f\"close refused: --goal-verdict is ignored with --file-and-close",
+      "new": "        if False:\n            print(f\"close refused: --goal-verdict is ignored with --file-and-close",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_file_and_close_goal_verdict.py::FileAndCloseGoalVerdictTests::test_a_supplied_verdict_not_silently_dropped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-exits-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "--file-and-close and without --goal-verdict\", file=sys.stderr)\n            return 2",
+      "new": "--file-and-close and without --goal-verdict\", file=sys.stderr)\n            return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_file_and_close_goal_verdict.py::FileAndCloseGoalVerdictTests::test_a_supplied_verdict_not_silently_dropped",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

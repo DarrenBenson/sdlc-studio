@@ -1,6 +1,6 @@
 # BG1695: lane land names a conflicting path that holds a space as two paths
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1695.md
@@ -26,12 +26,16 @@ List the conflicting names with git diff --name-only --diff-filter=U -z and spli
 
 - [ ] **AC1** Given a lane and main that both edit `docs/release notes.md` so the replay conflicts, when `sprint.py lane land` refuses, then the refusal's Conflicting files names `docs/release notes.md` once. Fails on: `.stdout.split()` at the replay refusal names `docs/release` and `notes.md`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_names_a_path_holding_a_space_once
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given the same conflict met by `_rebase` (a lane committed on its branch), when lane land refuses, then it names `docs/release notes.md` once. Fails on: `_rebase` splits the same listing on whitespace.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_rebase_conflict_names_a_path_holding_a_space_once
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a conflict in `plain.md`, when either refusal fires, then it names `plain.md` alone (positive control). Fails on: a NUL split that returns an empty trailing name.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_still_names_an_ordinary_path
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** Given a lane run whose worktree stages `docs/release notes.md`, when `sprint.py lane run` records and prints its staged paths, then the path is recorded and printed once. Fails on: `lanes._run` reads `diff --cached --name-only` with `.split()`, the same split AC1 and AC2 remove.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_staged_path_holding_a_space_is_recorded_once
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

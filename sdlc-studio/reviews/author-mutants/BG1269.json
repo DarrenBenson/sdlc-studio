@@ -1,0 +1,52 @@
+{
+  "unit": "BG1269",
+  "digest": "33fac40f7efb2239 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1269-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "prose-couples-the-partition",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if not _is_prose(f):\n                by_file.setdefault(f, []).append(uid)",
+      "new": "            if True:\n                by_file.setdefault(f, []).append(uid)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "code-pairs-take-prose",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "set(files_by_unit[b])\n                            if not _is_prose(f))",
+      "new": "set(files_by_unit[b])\n                            if True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_pair_sharing_a_code_file_is_named_on_its_own_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "wave-warning-takes-prose",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "common = [f for f in held[a] if f in held[b] and not _is_prose(f)]",
+      "new": "common = [f for f in held[a] if f in held[b]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_pair_sharing_a_code_file_is_named_on_its_own_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mdx-not-prose",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "PROSE_SUFFIXES = (\".md\", \".mdx\")",
+      "new": "PROSE_SUFFIXES = (\".md\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "code-share-uncouples",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if not _is_prose(f):\n                by_file.setdefault(f, []).append(uid)",
+      "new": "            if _is_prose(f):\n                by_file.setdefault(f, []).append(uid)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_units_sharing_a_code_file_are_never_parallel",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

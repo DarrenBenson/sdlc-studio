@@ -1,6 +1,6 @@
 # BG1719: artifact.py new and batch, and the Low-finding consolidator, write a title's bare snake_case identifier into the H1 and the index row, so markdownlint refuses the file
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, changelog.d/BG1719.md
@@ -26,8 +26,10 @@ Route the title through the same markdown-safing `file_finding.py` now applies t
 
 - [ ] **AC1** Given a title holding two bare identifiers that begin or contain underscores, when artifact.py new and artifact.py batch create a bug from it, then the new file and the index row pass markdownlint and each identifier sits inside a code span. Fails on: MD037 on the H1 or the row.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py -k title_identifier_is_markdown_safe
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given Low findings the consolidator merges under such a title, when `consolidate_low_finding` writes the consolidated artefact, then its file and index row pass markdownlint. Fails on: MD037 on either.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py -k consolidated_title_is_markdown_safe
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

@@ -1,0 +1,43 @@
+{
+  "unit": "BG1342",
+  "digest": "d693c380e274281a at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1342-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "json lines kept on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "human = sys.stderr if args.format == \"json\" else sys.stdout",
+      "new": "human = sys.stdout",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanJsonTests::test_plan_write_json_stdout_is_one_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "text lines sent to stderr",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "human = sys.stderr if args.format == \"json\" else sys.stdout",
+      "new": "human = sys.stderr",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanJsonTests::test_plan_write_text_keeps_its_lines_on_stdout",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rolling policy always on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "_render_policy(policy, human)",
+      "new": "_render_policy(policy, sys.stdout)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanJsonTests::test_plan_write_json_stdout_is_one_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "run-opening line back on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        print(f\"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}\", file=human)",
+      "new": "        print(f\"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::FreshSessionTests::test_warn_names_the_projected_re_read_above_80k_and_nothing_at_or_under_it",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "unit": "BG1677",
-  "digest": "25b9e4e55fffd0cb at 45045c034802",
+  "digest": "14a2bdf368c18eec at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1677-mutation-edits.json",
   "mutants": [
     {

@@ -1,6 +1,6 @@
 # BG1677: lane land's sibling-script timeout stops only the script, leaving its child processes running
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py, changelog.d/BG1677.md
@@ -26,10 +26,13 @@ Run `_script` through the bounded runner lane L's units introduce (`lanes._bound
 
 - [ ] **AC1** Given `lanes._script` runs a sibling script that starts a child which outlives the bound, when the bound passes, then the LandError is raised and the child is no longer running. Fails on: `subprocess.run` kills only the direct child, so the grandchild keeps running.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_a_timed_out_script_leaves_no_child_running
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a script that exits within the bound, when `_script` runs it, then it returns the CompletedProcess with stdout, stderr and returncode as before (positive control). Fails on: a fix that drops the captured output.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_a_script_inside_the_bound_returns_its_output
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given `lanes._script`, when its source is read, then it runs through `lanes._bounded`, not `subprocess.run`. Fails on: `_script` still calling `subprocess.run`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_script_timeout_group.py::LaneScriptTimeoutGroupTests::test_script_runs_through_the_bounded_runner
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

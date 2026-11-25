@@ -1,37 +1,91 @@
 {
   "unit": "BG1026",
-  "digest": "62dd9cc1d2035899 at 7c6165d2c235",
+  "digest": "0134d74907708d54 at d776d08d56e2",
   "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1026-mutation-edits.json",
   "mutants": [
     {
       "mutant": "colon only again",
       "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "(?:(?::\\s*|\\s+)(.*))?$",
+      "old": "(?:(?::\\s*|\\s+(?=\\([^)]*\\)\\s*$))(.*))?$",
       "new": "(?::\\s*(.*))?$",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_suffixed_heading_opens_its_own_criterion",
       "result": "killed",
       "answer": ""
     },
     {
+      "mutant": "any suffix accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?:(?::\\s*|\\s+(?=\\([^)]*\\)\\s*$))(.*))?$",
+      "new": "(?:(?::\\s*|\\s+)(.*))?$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_prose_headings_that_start_with_an_id_are_not_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag class widened to any text",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\\([^)]*\\)\\s*$",
+      "new": "\\(.*\\)\\s*$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_prose_headings_that_start_with_an_id_are_not_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag class widened to non-paren-open",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\\([^)]*\\)\\s*$",
+      "new": "\\([^(]*\\)\\s*$",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_prose_headings_that_start_with_an_id_are_not_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag need not close",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "(?=\\([^)]*\\)\\s*$)",
+      "new": "(?=\\()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_prose_headings_that_start_with_an_id_are_not_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag may be followed by prose",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\\)\\s*$)",
+      "new": "\\))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_prose_headings_that_start_with_an_id_are_not_criteria",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailing spaces refused",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\\)\\s*$)",
+      "new": "\\)$)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_tag_heading_tolerates_trailing_spaces_as_the_colon_form_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trailing tag allows only one space",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "\\)\\s*$)",
+      "new": "\\) ?$)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_tag_heading_tolerates_trailing_spaces_as_the_colon_form_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "id prefix matches (guard)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "(AC\\d+[a-z]?)(?:(?::\\s*|\\s+)(.*))?$",
-      "new": "(AC\\d)\\d*[a-z]?(?:(?::\\s*|\\s+)(.*))?$",
+      "old": "(AC\\d+[a-z]?)(?:(?::",
+      "new": "(AC\\d)\\d*[a-z]?(?:(?::",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_ac10_is_not_ac1_with_a_suffix",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "suffix needs no separator",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
-      "old": "(?:(?::\\s*|\\s+)(.*))?$",
-      "new": "(?:(?::\\s*|\\s*)(.*))?$",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_heading_that_only_starts_like_an_id_opens_nothing",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "letter suffix dropped",
+      "mutant": "letter dropped",
       "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
       "old": "(AC\\d+[a-z]?)(?:(?::",
       "new": "(AC\\d+)(?:(?::",

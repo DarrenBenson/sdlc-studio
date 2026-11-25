@@ -1,6 +1,6 @@
 {
   "unit": "BG1657",
-  "digest": "931822603996c36f at e1cf8c8645e1",
+  "digest": "9ec65b9129c4a92f at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1657-mutation-edits.json",
   "mutants": [
     {
@@ -17,7 +17,7 @@
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
       "old": "        if not was_open and fence is None:",
       "new": "        if True:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_glob_in_a_step_command_is_escaped_outside_a_fence_only",
       "result": "killed",
       "answer": ""
     },

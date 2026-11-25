@@ -1,0 +1,43 @@
+{
+  "unit": "BG1449",
+  "digest": "40959edc5b603332 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1449-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every verdict refused under block",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if gap and mode == \"block\" and not rejecting:",
+      "new": "if gap and mode == \"block\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_on_a_stale_self_check_is_recorded_and_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no verdict refused under block",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if gap and mode == \"block\" and not rejecting:",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_an_approve_on_a_stale_self_check_is_still_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unreadable verdict read as a REJECT",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except ValueError:      # no readable verdict: judged as one that could move the unit\n        rejecting = False",
+      "new": "    except ValueError:      # no readable verdict: judged as one that could move the unit\n        rejecting = True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_an_unreadable_verdict_on_a_stale_self_check_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the recorded REJECT's warning not said",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                \"refuses an APPROVE)\" if mode == \"block\" else",
+      "new": "                \"refuses an APPROVE)\" if False else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_on_a_stale_self_check_is_recorded_and_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

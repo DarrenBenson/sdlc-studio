@@ -1,0 +1,6 @@
+UNIT: BG1151
+BRIEF: fbbf9276bed7-09aff53c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the Primaries the `persona-one-primary` error names are unpinned" CLOSED: the three-card case added to `test_validate_reports_two_primaries_with_overlapping_declared_paths` (`tools/tests/test_persona_coherence.py`:459) kills my round-one mutant naming every declared Primary. Round-one finding "the `_shared_interface` docstring's claim that a nested overlap" CLOSED: the `same Interface (src):` assertion for both nesting orders (:458) kills `min` to `max`. The repair changes tests only\; the four criteria pass (verify_ac dry run: ac=4 pass=4) and the touched modules pass at f61970331. My new mutants: the names joined in reverse order KILLED\; naming only the first shared path of a pair SURVIVES, a listing of several shared paths that neither the criteria nor the docstring claim.

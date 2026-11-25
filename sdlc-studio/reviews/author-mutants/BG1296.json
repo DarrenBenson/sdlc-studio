@@ -1,6 +1,6 @@
 {
   "unit": "BG1296",
-  "digest": "d243606e1e004db0 at 45045c034802",
+  "digest": "f77fa134cc15ce74 at dcd36fa096cc",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1296-mutation-edits.json",
   "mutants": [
     {
@@ -18,6 +18,42 @@
       "old": "    unit = sdlc_md.display_id(root, unit)\n    try:\n        said",
       "new": "    try:\n        said",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_reads_the_brief_by_the_normalised_unit_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resume compares units as exact strings",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            sorted(sdlc_md.norm_id(u) for u in record[\"units\"]) != \\\n            sorted(sdlc_md.norm_id(u) for u in units):",
+      "new": "            sorted(record[\"units\"]) != sorted(units):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_resume_compares_the_units_of_a_unit_no_artefact_carries_by_normalised_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resume reads the record's units as written",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    record[\"units\"] = [sdlc_md.display_id(root_top, u) for u in record.get(\"units\") or []]\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_landing_recorded_under_another_spelling_resumes_by_either",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resume reads the record's owners as written",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    record[\"owners\"] = {sdlc_md.display_id(root_top, u): owner\n                        for u, owner in (record.get(\"owners\") or {}).items()}\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_landing_recorded_under_another_spelling_resumes_by_either",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resume reads the briefed units as written",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    record[\"briefed\"] = [sdlc_md.display_id(root_top, u) for u in record.get(\"briefed\") or []]\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_resume_keeps_the_brief_a_record_spelt_otherwise_says_was_written",
       "result": "killed",
       "answer": ""
     }

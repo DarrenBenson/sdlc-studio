@@ -1,6 +1,6 @@
 {
   "unit": "BG1151",
-  "digest": "e025707e9039107b at 7c6165d2c235",
+  "digest": "b4c53e24206c041c at f619703312f0",
   "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1151-mutation-edits.json",
   "mutants": [
     {
@@ -67,15 +67,6 @@
       "answer": ""
     },
     {
-      "mutant": "only nested counted, equal ignored",
-      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
-      "old": "if x == y or x.startswith(y + \"/\")",
-      "new": "if x.startswith(y + \"/\") and x != y",
-      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
-      "result": "killed",
-      "answer": ""
-    },
-    {
       "mutant": "prefix by name only",
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
       "old": "x.startswith(y + \"/\") or y.startswith(x + \"/\")",
@@ -107,6 +98,33 @@
       "file": ".claude/skills/sdlc-studio/scripts/validate.py",
       "old": "    if a[0] != b[0]:\n        return []\n",
       "new": "",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "named by the inner path",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "min(x, y, key=len)",
+      "new": "max(x, y, key=len)",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every Primary named",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "for p, _ in declared if p in overlapping)",
+      "new": "for p, _ in declared)",
+      "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "overlap set never filled",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "overlapping.update((p, q))",
+      "new": "pass",
       "test": "tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_validate_reports_two_primaries_with_overlapping_declared_paths",
       "result": "killed",
       "answer": ""

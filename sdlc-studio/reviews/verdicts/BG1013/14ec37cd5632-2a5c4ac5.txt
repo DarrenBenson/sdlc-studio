@@ -1,0 +1,6 @@
+UNIT: BG1013
+BRIEF: 14ec37cd5632-2a5c4ac5
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 holds by execution: verify_ac run --dry-run passes 1 of 1, and both recorded author mutants replay killed. The test takes the remedy from each of the three surfaces (the close's checklist step, the pre-flight's checklist rows and `render_checklist`), fills its placeholders and runs it through the real decisions.py, which writes the waiver row with "[authorised by: Pat Operator]". A grep of the shipped scripts finds no other printed checklist waiver remedy: sprint.py:6887 and sprint.py:8558 and sprint_report.py:2537 all call `sprint_report.waiver_command`, and reference-sprint.md and help/sprint.md already carried `--authorised-by`. Reviewer mutants against the AC test: the pre-flight row hand-written without `--authorised-by`, the report's line hand-written the same way, and the item dropped from the subject were all KILLED. Claims checked: the changelog command matches `waiver_command` word for word, and its docstring's "which decisions.py waive refuses a checklist waiver without" is decisions.py:375. test_sprint.py, test_sprint_report.py and the sibling modules: 1156 passed.

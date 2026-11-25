@@ -1,6 +1,6 @@
 # BG1193: sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py, changelog.d/BG1193.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -28,6 +28,7 @@ Key the cache on the resolved root and hand each caller paths under the root it 
 
 - [ ] **AC1** Inside `corpus_cache()`, a relative-root read followed by an absolute-root `reconcile._census_filenames` returns the same names as outside the cache, with no ValueError. Fails on: the cache hands later callers the first walk's path spelling, so a relative root then an absolute one raises ValueError in `_census_filenames`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_corpus_cache_roots.py::CorpusCacheRootsTests::test_a_relative_then_an_absolute_root_returns_the_same_names
+  - **Verified:** yes (2026-11-24)
 
 ## Impact
 

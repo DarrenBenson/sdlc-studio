@@ -1,0 +1,6 @@
+UNIT: BG1389
+BRIEF: 925d7204cf6e-ec71bd30
+VERDICT: REJECT
+ISSUES: [new] the case-folded `seen` check this diff adds to `metadata_fields` (sdlc_md.py:1214, `if name.lower() in seen`) is pinned in one direction only: `test_the_first_occurrence_of_a_name_wins_whatever_its_case` (`test_empty_field_read.py`:33) writes the capitalised name first, so a mutant checking `name in seen` passes `test_empty_field_read.py` and `test_sdlc_md.py`, yet reads `> **next:**` then `> **Next:** b` as `{'next': 'b'}` where head reads `{}`\; a probe asserting `{}` for that order kills it
+BLOCKING: the case-folded `seen` check this diff adds to `metadata_fields`
+RULINGS: Claim inventory, every claim TRUE by execution: the changelog fragment and both docstrings (an empty `**Affects:**` reads None at head and `>` at base, and an empty first occurrence is no longer filled by a later one). Over all 4,707 markdown files under sdlc-studio/, `metadata_fields` and eleven `extract_field` names read identically with the base and the head code, so no header in the corpus changes reading. AC1's Verify fails four tests at base and passes at head\; verify_ac dry run: ac=1 pass=1. My other mutants: a value needing one character and the trailing space kept KILLED\; a space-only separator in place of `[^\S\n]*` SURVIVES, a tab separator the criteria do not name.

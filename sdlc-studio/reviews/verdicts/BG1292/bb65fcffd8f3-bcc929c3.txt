@@ -1,0 +1,6 @@
+UNIT: BG1292
+BRIEF: bb65fcffd8f3-bcc929c3
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac --dry-run gives 3 of 3 passing. In my mutation pass these were killed: a warning at or ahead of the tip, the ancestry check reversed, and the warning sent to stdout. The author's six replayed killed. Two survivors, each re-tested alone, are not findings. First, dropping the `not ref` guard for a detached main worktree is equivalent: git refuses the empty ref with exit 128, so the exit-1 test returns no warning anyway. Second, dropping the Base line's "unless its HEAD is X or a descendant of it" clause changes no outcome, since `git merge --ff-only` from a descendant is a no-op, and AC3's step and base are pinned. The tree was clean afterwards. Claims: the changelog fragment and the `_worktree_behind`, `_lane_base` and `_main_worktree` docstrings are TRUE.

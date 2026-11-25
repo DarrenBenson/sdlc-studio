@@ -1,0 +1,6 @@
+UNIT: BG0973
+BRIEF: 5c2f5c15d73c-de8d1e1d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one, "The section guard is bypassed by the whole-body": CLOSED. The repair drops the whole-body `{{criterion}}` disjunct (artifact.py:1755 now reads only the section window), and `artifact.py new --type review --title 'the {{criterion}} slot survives'` prints no NOT FINISHED line. `test_a_review_titled_with_the_slot_is_not_warned` kills the restored disjunct. Round one, "Nothing pins that the window is read after the heading" (pre-existing): CLOSED, because the before-heading mutant is now killed by `test_slots_before_the_section_do_not_warn_a_story_with_criteria`. Regression check: no shipped template or creator writes `{{criterion}}` (only validate.py reads it). Across all 33 type and template pairs (eleven types under minimal, planning and full), the NOT FINISHED line is identical at the repair and at its parent c1aa3b055. Claim inventory: the changelog's "whatever slot text its title or body holds" is TRUE by execution. Its "given only when the file has that section and a placeholder sits in its first 400 characters" is TRUE against artifact.py:1753-1755. Verify (`verify_ac.py run --id BG0973 --dry-run`) passes 1/1, and the module passes 5 tests. The author's five mutants were replayed as killed, and my two re-applied mutants were both killed.

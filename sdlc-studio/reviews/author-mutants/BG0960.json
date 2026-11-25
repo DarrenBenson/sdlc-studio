@@ -1,0 +1,43 @@
+{
+  "unit": "BG0960",
+  "digest": "979f4bb3a0144a98 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG0960-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "verify-repair-never-printed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if any(u.get(\"ac_why\") == \"no-verifier\" for u in units):\n        blocks.append(VERIFY_FIX)",
+      "new": "    if False:\n        blocks.append(VERIFY_FIX)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_the_refusal_names_the_unit_what_it_lacks_and_the_fix_for_a_missing_verifier",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "field-repair-always-printed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not all(verify_only):\n",
+      "new": "    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_the_refusal_names_the_unit_what_it_lacks_and_the_fix_for_a_missing_verifier",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one-repair-for-both-misses",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not all(verify_only):\n",
+      "new": "    if not any(verify_only):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_each_kind_of_miss_gets_its_own_repair",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "breakdown-verify-repair-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if any(u.get(\"ac_why\") == \"no-verifier\" for u in units):\n",
+      "new": "    if any(u.get(\"ac_why\") == \"no-such-reason\" for u in units):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::BreakdownGateTests::test_breakdown_prints_the_verify_repair_for_a_no_verifier_unit",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

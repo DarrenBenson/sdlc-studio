@@ -1,6 +1,6 @@
 # BG1616: lane land's several-worktree landing moves a body line shaped like a trailer into the trailers, and three of its refusals have no test
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1616.md
@@ -26,10 +26,13 @@ Treat only known trailer keys, or only the final paragraph, as trailers; add a t
 
 - [ ] **AC1** Given two worktrees whose commit-msg.txt hold a body paragraph `Note: keep this` placed last, before the `Refs:` trailer paragraph, when `_combined_message` joins them, then `Note: keep this` stays in the body and the trailer block holds only the known trailers (`Refs:`, `Mentions:`). Fails on: the last paragraph is moved into the trailers whenever every line matches `_TRAILER`, so the note joins `Refs:` (reproduced at HEAD).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_body_line_shaped_like_a_trailer_stays_in_the_body
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given the same two worktrees with a real `Refs: BG1616` and `Mentions: X` trailer paragraph, when they are joined, then both trailers still reach the trailer block once each (positive control). Fails on: a fix that stops reading any trailer.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a later worktree holding commits ahead of main, when the land refuses and the operator re-runs it naming that worktree first, then the land succeeds, which is what the refusal's advice relies on. Fails on: no test pins the advised re-run (the test at test_lane_land.py:1589 pins only the refusal).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_naming_a_worktree_with_commits_ahead_first_lands_it
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

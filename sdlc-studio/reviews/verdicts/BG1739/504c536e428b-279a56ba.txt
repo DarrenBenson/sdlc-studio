@@ -1,0 +1,6 @@
+UNIT: BG1739
+BRIEF: 504c536e428b-279a56ba
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1, AC2 and AC3 hold by execution: `verify_ac.py run --id BG1739 --dry-run` reports pass=3 fail=0, and test_file_finding_bare_url.py with test_critic_ledger_lints.py pass at e1cf8c864 (13 tests). Probed at both refs: `_code_urls("see https://example.com/a\; next")` spanned the backslash at the base 74903e754 and leaves it outside at e1cf8c864, as does the parenthesised form, while an inner `\_` and a trailing `\|` stay in the span as before. AC2 goes through `critic.main(["record", ...])`, the CLI's own entry, and a finding is parsed back as one. My mutant dropping the backslash from the trailing strip set is KILLED by the AC2 selector alone, so that Verify fails on the defect. Claim inventory: the changelog's three statements and the `_code_url` docstring are TRUE by execution.

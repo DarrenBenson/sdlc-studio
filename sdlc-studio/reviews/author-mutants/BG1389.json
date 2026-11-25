@@ -1,6 +1,6 @@
 {
   "unit": "BG1389",
-  "digest": "29cd5f01bc6d2638 at 7c6165d2c235",
+  "digest": "dea59c6ee7c165f6 at f619703312f0",
   "report": "sdlc-studio/.local/lane/landed/agent-aeae04f336a68f898/BG1389-mutation-edits.json",
   "mutants": [
     {
@@ -35,6 +35,24 @@
       "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
       "old": "        if name.lower() in seen:\n            continue\n",
       "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_the_first_occurrence_of_a_name_wins_whatever_its_case",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seen check not case folded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "if name.lower() in seen:",
+      "new": "if name in seen:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_the_first_occurrence_of_a_name_wins_whatever_its_case",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seen add not case folded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "seen.add(name.lower())",
+      "new": "seen.add(name)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_empty_field_read.py::EmptyFieldReadTests::test_the_first_occurrence_of_a_name_wins_whatever_its_case",
       "result": "killed",
       "answer": ""

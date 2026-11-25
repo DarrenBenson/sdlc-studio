@@ -1,6 +1,6 @@
 {
   "unit": "BG1713",
-  "digest": "2c014b4917eec3d2 at 45045c034802",
+  "digest": "35c88c993a6f6c83 at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1713-mutation-edits.json",
   "mutants": [
     {
@@ -81,6 +81,24 @@
       "old": "    except ImportError:\n        yield\n        return\n    lock = common",
       "new": "    except ZeroDivisionError:\n        yield\n        return\n    lock = common",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_where_flock_is_unavailable_the_add_goes_ahead_unlocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lock is taken in the git dir",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "found = _run_git(root_top, \"rev-parse\", \"--git-common-dir\")",
+      "new": "found = _run_git(root_top, \"rev-parse\", \"--git-dir\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_a_linked_worktree_root_locks_in_the_main_checkouts_common_dir",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lock is taken in the root's .git",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "(root_top / found.stdout.strip()).resolve())",
+      "new": "(root_top / \".git\").resolve())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_worktree_concurrent.py::LaneWorktreeConcurrentTests::test_a_linked_worktree_root_locks_in_the_main_checkouts_common_dir",
       "result": "killed",
       "answer": ""
     }

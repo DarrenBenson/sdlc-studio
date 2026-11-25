@@ -1,0 +1,34 @@
+{
+  "unit": "BG1589",
+  "digest": "8a95a1d25bc32c25 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1589-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every rung owes the signature",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "owes = signature_owed and str(rung or \"done\").lower() == \"done\"",
+      "new": "owes = signature_owed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py::AwaitingSignatureStatusTests::test_a_design_rung_anchor_owes_no_signature_and_never_reads_running",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "goal verdict dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return f\"{words} (goal verdict: {verdict})\" if verdict else words",
+      "new": "return words",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_close_anchor_of_an_awaiting_run_says_awaiting_signature_and_the_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a sealed run read as awaiting",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if outcome != run_state.RUNNING:\n        return f\"closed {outcome}\"",
+      "new": "    if False:\n        return f\"closed {outcome}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_sealed_anchor_says_the_sealed_outcome_not_awaiting",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

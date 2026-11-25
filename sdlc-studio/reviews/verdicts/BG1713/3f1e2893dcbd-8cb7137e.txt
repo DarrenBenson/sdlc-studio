@@ -1,0 +1,6 @@
+UNIT: BG1713
+BRIEF: 3f1e2893dcbd-8cb7137e
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's finding ("No test pins the lock to the git common dir"): CLOSED. `test_a_linked_worktree_root_locks_in_the_main_checkouts_common_dir` adds the lane from a linked-worktree root. It asserts that the lock file is in the main checkout's `.git` and that none is under `.git/worktrees`. It then checks that a lane from the linked root waits on a lock another process holds there. Against my own worktree at 7c294458a, round one's two survivors are now KILLED by that case: `--git-dir` for `--git-common-dir`, and the root's own `.git` hard-coded. So is a third mutant: a linked root falling back to its own git dir. Base re-probe: six of the nine cases fail against the base `_lane_worktree`. The fragment's new paragraph, "lanes started from the main checkout and from a linked worktree of it exclude each other", is TRUE by that case's waiting half and by round one's linked-root probe. The new case's docstring is TRUE. The repair changes no code of this unit. All three Verify lines are green (`verify_ac.py run --id BG1713 --dry-run`: 3 of 3). The module passes whole (48 passed with the other three touched modules). The author's "lock is kept after the add" survivor stays accepted as equivalent on CPython, as ruled in round one.

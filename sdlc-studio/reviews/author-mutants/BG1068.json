@@ -1,6 +1,6 @@
 {
   "unit": "BG1068",
-  "digest": "a9a10a90e9137d94 at e1cf8c8645e1",
+  "digest": "fd1fa1eeaf509bde at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1068-mutation-edits.json",
   "mutants": [
     {
@@ -33,17 +33,26 @@
     {
       "mutant": "other link text retexted",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "        if (lead is None or text[lead.end():] != old_title",
+      "old": "        if (lead is None or text[lead.end():] not in olds",
       "new": "        if (lead is None",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
       "result": "killed",
       "answer": ""
     },
     {
+      "mutant": "the escaped old title not read back",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "safe, olds = escaped(new_title), {old_title, escaped(old_title)}",
+      "new": "safe, olds = escaped(new_title), {old_title}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_an_escaped_bracket_text_is_read_back_by_the_next_retitle",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "brackets left unescaped",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "safe = new_title.replace(\"[\", \"\\\\[\").replace(\"]\", \"\\\\]\")",
-      "new": "safe = new_title",
+      "old": "        return title.replace(\"[\", \"\\\\[\").replace(\"]\", \"\\\\]\")",
+      "new": "        return title",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_a_title_with_brackets_keeps_the_link_whole",
       "result": "killed",
       "answer": ""
@@ -51,8 +60,8 @@
     {
       "mutant": "fenced links retexted",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "        if is_fence_line or fence is not None:\n            out.append(line)\n            continue\n        segs = line.split(\"`\")\n        segs[0::2] = [_LINK_TEXT_RE",
-      "new": "        if False:\n            out.append(line)\n            continue\n        segs = line.split(\"`\")\n        segs[0::2] = [_LINK_TEXT_RE",
+      "old": "        if is_fence_line or fence is not None:\n            out.append(line)\n            continue\n        out.append(_LINK_OR_SPAN_RE",
+      "new": "        if False:\n            out.append(line)\n            continue\n        out.append(_LINK_OR_SPAN_RE",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
       "result": "killed",
       "answer": ""
@@ -60,9 +69,27 @@
     {
       "mutant": "code-span links retexted",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "        segs[0::2] = [_LINK_TEXT_RE.sub(repl, s) for s in segs[0::2]]",
-      "new": "        segs[:] = [_LINK_TEXT_RE.sub(repl, s) for s in segs]",
+      "old": "    r\"(?P<span>`[^`\\n]*`)\"\n",
+      "new": "    r\"(?!)\"\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_any_other_link_text_is_left_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a span in the link text not read",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "|\\\\.|`[^`\\n]*`|\\[[^\\[\\]\\n]*\\])*)",
+      "new": "|\\\\.|\\[[^\\[\\]\\n]*\\])*)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_a_link_text_holding_a_code_span_is_retexted_through_new_and_retitle",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nested brackets not read",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "|`[^`\\n]*`|\\[[^\\[\\]\\n]*\\])*)",
+      "new": "|`[^`\\n]*`)*)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py::RetitleLinkTextTests::test_plain_nested_brackets_in_the_old_text_are_retexted",
       "result": "killed",
       "answer": ""
     },

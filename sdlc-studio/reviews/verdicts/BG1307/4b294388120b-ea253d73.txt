@@ -1,0 +1,6 @@
+UNIT: BG1307
+BRIEF: 4b294388120b-ea253d73
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory, every claim TRUE: the `PERSONA_ROLES` comment names the six cast roles reference-persona.md:202 declares\; the heading comment, the docstring and the changelog by execution: this repository's index reads Graham Doyle as `served` with his card at 7c6165d2c, absent at 74903e754, and the other five entries and roles are unchanged. AC1 and AC2 fail at base and pass at head\; AC3's control test is unchanged and passes at both. verify_ac dry run: ac=3 pass=3. My mutants: a non-role heading keeping the previous role, the three-role tuple restored and the role case kept KILLED\; any heading level SURVIVES (the `^#{2,}` grammar is unchanged from the base). The not-available reason at sdlc_md.py:2924 still names only Primary, Secondary and Negative\; it stays true (an index with none of the six role headings has none of those three) and the line is unchanged, so it is a remark, not a finding.

@@ -1,6 +1,6 @@
 # BG1739: critic.py record refuses a finding whose bare URL is followed by an escaped semicolon
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py, changelog.d/BG1739.md
@@ -26,10 +26,13 @@ Stop the URL match before a backslash that escapes a semicolon, as the address p
 
 - [ ] **AC1** Given the text `see https://example.com/a\; next`, when `file_finding._code_urls` runs, then the code span is `https://example.com/a` and the `\;` stays outside it. Fails on: `_BARE_URL_RE` runs to the next space, so the span is `` `https://example.com/a\` `` and the backslash sits inside it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py::BareUrlTests::test_a_url_stops_before_a_backslash_that_escapes_a_semicolon
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given `critic.py record --issues '[new] see https://example.com/a\; then more'`, when it runs, then it records the finding and does not refuse it for an odd backtick count. Fails on: the closing backtick follows a backslash, which `critic._TICK_RUN` reads as escaped, so the span never closes and the record is refused.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_ledger_lints.py::LedgerLintTests::test_a_url_followed_by_an_escaped_semicolon_is_recorded
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given a URL with a backslash inside its path (`https://example.com/a`) and one ending at a plain `;`, when spanned, then the first is kept whole and the second loses only the `;` (the controls beside AC1). Fails on: a fix that cuts a URL at any backslash.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py::BareUrlTests::test_an_inner_backslash_stays_in_the_url_and_a_plain_semicolon_stays_outside
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

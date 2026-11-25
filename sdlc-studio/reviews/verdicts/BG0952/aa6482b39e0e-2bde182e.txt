@@ -1,0 +1,6 @@
+UNIT: BG0952
+BRIEF: aa6482b39e0e-2bde182e
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory, every claim TRUE by execution: the `_DECLARES_NONE_RE` comment (sdlc_md.py:2382), the changelog fragment and the test docstring. Through the shipped entry point, `validate.py check` over a fixture of Fixed bugs reports the hyphen, en dash, em dash and hyphen-then-N/A items as open questions at 74903e754 and none of them at 7c6165d2c, while the em-dash question, `- Nonetheless, should we?` and `Nonetheless, should we ship it?` are reported at both\; `transition.py set BG0003 Closed --dry-run` drops the open-question requirement for the hyphen form at head only. AC1's Verify fails five of five dash subtests at base and passes at head\; AC2's is a guard that passes at both, and the author's loosened-boundary mutants kill it. verify_ac dry run: ac=2 pass=2. My mutants: no space allowed after the dash and case-sensitive matching KILLED\; a space required after the dash, any non-word prefix, a mandatory slash in `n/a`, a colon prefix and a repeatable prefix SURVIVE, none of which the criteria ask for (the `n/?a` form is unchanged from the base).

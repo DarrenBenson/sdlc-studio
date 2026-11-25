@@ -1,6 +1,6 @@
 # BG1307: The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint`
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG1307.md
@@ -28,10 +28,13 @@ Read every cast role the persona guide declares (Primary, Secondary, Supplementa
 
 - [ ] **AC1** Given a `personas/index.md` with a `## Served` heading listing one card beside Primary, Secondary and Negative entries, when `sdlc_md.persona_registry` reads it, then the Served entry is returned with role `served` and its card path, beside the other three. Fails on: a Served persona invisible to every command that reads the registry.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_a_served_entry_is_returned_beside_the_three_roles
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC2** Given an index that also holds Supplemental and Customer headings, a `## Secondary (served, never at the Primary's expense)` heading and a `## Review seats` heading, when the reader parses it, then every cast role the persona guide declares is read under its own name, the parenthesis names no role, and no seat card is returned as a persona. Fails on: a role read from a heading's parenthesis, or a non-role heading's bullets registered.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_every_declared_cast_role_is_read_and_a_parenthesis_names_none
+  - **Verified:** yes (2026-11-24)
 - [ ] **AC3** Given the control index holding only Primary, Secondary and Negative, when the reader parses it, then it returns exactly the entries and roles it returns today. Fails on: the wider grammar changing what an existing registry declares.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::PersonaRegistryTests::test_registry_parses_each_declared_role
+  - **Verified:** yes (2026-11-24)
 
 ## Revision History
 

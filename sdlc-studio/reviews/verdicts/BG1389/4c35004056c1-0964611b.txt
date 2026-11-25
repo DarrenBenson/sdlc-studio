@@ -1,0 +1,6 @@
+UNIT: BG1389
+BRIEF: 4c35004056c1-0964611b
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the case-folded `seen` check this diff adds to `metadata_fields`" CLOSED: the two lower-case-first assertions added at `test_empty_field_read.py`:36-37 kill my round-one `name in seen` mutant (1 failed, 5 passed), and the author's case-folding mutants on the check and the add replay killed. The repair changes the test only\; AC1 passes (verify_ac dry run: ac=1 pass=1). My new mutant, a later occurrence overwriting the first, SURVIVES as an equivalent mutant: the `seen` check already stops a second occurrence reaching the write.

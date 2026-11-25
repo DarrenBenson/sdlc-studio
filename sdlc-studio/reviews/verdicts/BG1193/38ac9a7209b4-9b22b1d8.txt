@@ -1,0 +1,6 @@
+UNIT: BG1193
+BRIEF: 38ac9a7209b4-9b22b1d8
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory, every claim TRUE by execution: the changelog fragment and the cache comment at sdlc_md.py:2085. Inside `corpus_cache()`, five root-spelling pairs (`.` then absolute, `../ws` then absolute, a symlinked root then `.`, absolute then `.`, absolute then `../ws/../ws`) raise ValueError in `reconcile._census_filenames` at 74903e754 for four of them and return the names read outside the cache for all five at 7c6165d2c. AC1's Verify fails at base and passes at head\; verify_ac dry run: ac=1 pass=1. My mutants: always yielding the absolute path, the memo text not seeded and the memo keyed by the caller's spelling all KILLED by `test_corpus_cache_roots.py`, `test_sdlc_md.py` and `test_reconcile.py`.

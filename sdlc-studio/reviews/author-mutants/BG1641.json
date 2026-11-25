@@ -1,6 +1,6 @@
 {
   "unit": "BG1641",
-  "digest": "13d9c90222e8dc21 at 45045c034802",
+  "digest": "d6a9277b4ba6e2e2 at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1641-mutation-edits.json",
   "mutants": [
     {
@@ -40,24 +40,6 @@
       "answer": ""
     },
     {
-      "mutant": "fingerprint hashed with the line",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "return critic.brief_fingerprint(_REVIEWER_LINE_RE.sub(\"\", text, count=1))",
-      "new": "return critic.brief_fingerprint(text)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "fingerprint strip anywhere in the text",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "r\"\\A\" + re.escape(REVIEWER_LINE)",
-      "new": "r\"\" + re.escape(REVIEWER_LINE)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_fingerprint_leaves_out_only_the_line_at_the_head",
-      "result": "killed",
-      "answer": ""
-    },
-    {
       "mutant": "an answered reject still names the reviewer",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
       "old": "    if not row or not str(row.get(\"verdict\") or \"\").upper().startswith(critic.REJECT):\n        return None\n    who",
@@ -85,15 +67,6 @@
       "answer": ""
     },
     {
-      "mutant": "the reviewer is not named in the line",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "return (f\"{REVIEWER_LINE}{who} - this repair",
-      "new": "return (f\"{REVIEWER_LINE}someone - this repair",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
-      "result": "killed",
-      "answer": ""
-    },
-    {
       "mutant": "the saved brief is hashed unstripped by lane accept",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
       "old": "        fp = saved_brief_fingerprint(saved)\n",
@@ -103,9 +76,54 @@
       "answer": ""
     },
     {
-      "mutant": "approved hashes the brief unstripped",
+      "mutant": "record --brief-file hashes the file whole",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                 else saved_brief_fingerprint(saved))",
+      "new": "                 else brief_fingerprint(saved))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_brief_verdict_path.py::BriefVerdictPathTests::test_a_saved_repair_brief_is_recorded_and_read_against_the_printed_fingerprint",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line is stripped anywhere in the text",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_REVIEWER_LINE_RE = re.compile(r\"\\A\" + re.escape(REVIEWER_LINE)",
+      "new": "_REVIEWER_LINE_RE = re.compile(r\"\" + re.escape(REVIEWER_LINE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_fingerprint_leaves_out_only_the_line_at_the_head",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line is not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return brief_fingerprint(_REVIEWER_LINE_RE.sub(\"\", text, count=1))",
+      "new": "return brief_fingerprint(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_fingerprint_leaves_out_only_the_line_at_the_head",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the reviewer is not named in the line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return (f\"{critic.REVIEWER_LINE}{who} - this repair",
+      "new": "return (f\"{critic.REVIEWER_LINE}someone - this repair",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lanes hashes the saved brief whole",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    return critic.saved_brief_fingerprint(text)",
+      "new": "    return critic.brief_fingerprint(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_brief_opens_with_the_reviewer_whose_reject_it_answers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resume_brief hashes the saved brief whole",
       "file": ".claude/skills/sdlc-studio/scripts/lib/resume_brief.py",
-      "old": "fp = lanes.saved_brief_fingerprint(brief.read_text(encoding=\"utf-8\", errors=\"replace\"))",
+      "old": "fp = critic.saved_brief_fingerprint(brief.read_text(encoding=\"utf-8\", errors=\"replace\"))",
       "new": "fp = critic.brief_fingerprint(brief.read_text(encoding=\"utf-8\", errors=\"replace\"))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::RepairBriefApprovalTests::test_a_repair_brief_with_a_reviewer_line_reads_its_reject",
       "result": "killed",

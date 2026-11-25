@@ -1,0 +1,25 @@
+{
+  "unit": "BG1128",
+  "digest": "6b2a10b4dd952811 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1128-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "newest-round-only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if rnd.get(\"amended_from\"):\n            break\n    return out",
+      "new": "        break\n    return out",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_the_close_panel_reads_every_round_on_the_latest_wording",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "carry-from-the-newest-prior-round",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "standing = [s for s, _rnd in seat_verdicts_on_wording(prior_rounds, amend_from)]",
+      "new": "standing = [s for s in (prior.get(\"seats\") or []) if isinstance(s, dict)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_the_next_amendment_carries_from_every_round_on_the_prior_wording",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "unit": "BG1006",
+  "digest": "a137f4fea64e242b at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1006-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "warn-add-not-said-added",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        anyway = \"added anyway under `sprint.affects_check: warn`\"",
+      "new": "        anyway = \"refused\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_warned_add_says_it_added_the_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "phrase-read-as-a-path",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return bool(re.search(r\"\\s\", text)) and not re.search(r\"\\.[A-Za-z0-9]+$\", text)",
+      "new": "    return False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_non_path_affects_is_named_as_not_a_path",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

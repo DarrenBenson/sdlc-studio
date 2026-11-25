@@ -1,0 +1,25 @@
+{
+  "unit": "BG1013",
+  "digest": "57bc2035eeeca1f5 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1013-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "remedy-drops-authorised-by",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "--rationale '<why>' \"\n            f\"--authorised-by '<the operator>'\")",
+      "new": "--rationale '<why>'\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_waiver_remedy_runs.py::WaiverRemedyTests::test_each_printed_remedy_records_as_printed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "close-remedy-hand-written",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "why (`{sprint_report.waiver_command()}`) - closing without an ",
+      "new": "why (`decisions.py waive --subject rule:sprint-checklist:<item> --rationale '<why>'`) - closing without an ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_waiver_remedy_runs.py::WaiverRemedyTests::test_each_printed_remedy_records_as_printed",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

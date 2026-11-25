@@ -1,6 +1,6 @@
 {
   "unit": "BG1476",
-  "digest": "ee314a771092e2d9 at e1cf8c8645e1",
+  "digest": "e36ef7ca53355174 at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1476-mutation-edits.json",
   "mutants": [
     {
@@ -17,6 +17,15 @@
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
       "old": "if state.get(\"outcome\") == run_state.RUNNING and state.get(\"run_id\"):",
       "new": "if state.get(\"run_id\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only one outcome read as closed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "if state.get(\"outcome\") == run_state.RUNNING and state.get(\"run_id\"):",
+      "new": "if state.get(\"outcome\") != \"goal-reached\" and state.get(\"run_id\"):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open",
       "result": "killed",
       "answer": ""

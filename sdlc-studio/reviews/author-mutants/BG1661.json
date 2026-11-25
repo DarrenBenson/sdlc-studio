@@ -1,0 +1,124 @@
+{
+  "unit": "BG1661",
+  "digest": "01743e8b41583163 at de4e256f0922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1661-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "lane accept owes no second seat",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "owed = critic.second_seat_owed(root, unit)",
+      "new": "owed = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_high_risk_first_seat_approve_defers_done",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "deferred with no hold",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            critic.hold_for_second_seat(root, unit)\n        except",
+      "new": "            pass\n        except",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_high_risk_first_seat_approve_defers_done",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one seat's APPROVE is enough",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if len(approving) >= 2:\n        return \"\"",
+      "new": "    if len(approving) >= 1:\n        return \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_high_risk_first_seat_approve_defers_done",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never moved",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if len(approving) >= 2:\n        return \"\"",
+      "new": "    if len(approving) >= 3:\n        return \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_the_last_required_seat_approve_moves_a_high_risk_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewers counted rather than seats",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        latest[verdict_seat(repo_root, row.get(\"reviewer\") or \"\")] = str(",
+      "new": "        latest[row.get(\"reviewer\") or \"\"] = str(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_the_last_required_seat_approve_moves_a_high_risk_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a held APPROVE closes the delivery outside a run",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if str(r.get(\"verdict\") or \"\").upper() == APPROVE and not r.get(\"held\")]",
+      "new": "if str(r.get(\"verdict\") or \"\").upper() == APPROVE]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_the_last_required_seat_approve_moves_a_high_risk_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the next seat takes a round of its own",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        shares = _shares_round(repo_root, prev, row.get(\"reviewer\") or \"\")",
+      "new": "        shares = False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_second_seat_reject_on_a_deferred_high_risk_unit_is_round_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the same seat shares the held round",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                and verdict_seat(repo_root, reviewer or \"\")\n                != verdict_seat(",
+      "new": "                and verdict_seat(repo_root, reviewer or \"\")\n                == verdict_seat(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_second_seat_reject_on_a_deferred_high_risk_unit_is_round_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cap counted over rows",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return int(rows[-1].get(\"round\") or len(rows)) if rows else 0",
+      "new": "    return len(rows)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_second_seat_reject_on_a_deferred_high_risk_unit_is_round_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the split read over the held APPROVE",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "[r for r in rows if not r.get(\"held\")]))",
+      "new": "rows))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_second_seat_reject_on_a_deferred_high_risk_unit_is_round_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal ignores a shared round",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return spent if _shares_round(repo_root, prior[-1] if prior else None, reviewer) else spent + 1",
+      "new": "    return spent + 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_second_seat_after_a_held_round_two_approve_shares_round_two",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a note's unit read unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                and isinstance(note.get(\"unit\"), str) and sdlc_md.norm_id(note[\"unit\"]) == uid):",
+      "new": "                and sdlc_md.norm_id(note[\"unit\"]) == uid):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_damaged_holds_file_holds_only_its_readable_notes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drive counts the delivery's rows",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "    rounds = critic.rounds_spent(critic.delivery_rounds(root, unit))",
+      "new": "    rounds = len(critic.delivery_rounds(root, unit))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_reject_sharing_a_held_round_is_not_at_the_cap",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

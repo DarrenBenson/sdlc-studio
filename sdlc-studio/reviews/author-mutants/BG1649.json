@@ -1,17 +1,8 @@
 {
   "unit": "BG1649",
-  "digest": "090b8c261f5545c9 at 45045c034802",
+  "digest": "63f9cfbcf8cb55f5 at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1649-mutation-edits.json",
   "mutants": [
-    {
-      "mutant": "the refusal names no finishing step",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "once the move is possible, run `transition.py set --id {unit} --status \"\n             f\"{target}`, then `sprint.py lane return --units {unit}` to clear its lane\",",
-      "new": "once the move is possible, run `transition.py set --id {unit} --status \"\n             f\"{target}`\",",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_refused_transition_names_the_lane_return_that_finishes_the_unit",
-      "result": "killed",
-      "answer": ""
-    },
     {
       "mutant": "the refusal names no transition",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
@@ -63,6 +54,24 @@
       "old": "so `sprint.py lane return --units {shown}` \"",
       "new": "so `sprint.py lane accept --units {shown}` \"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_terminal_unit_in_flight_names_the_lane_return_that_clears_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hinted return drops the accept's flags",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"{target}`, then `sprint.py {shlex.join(finish)}` to clear its lane, as this \"",
+      "new": "f\"{target}`, then `sprint.py lane return --units {unit}` to clear its lane, as this \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_refused_transition_names_the_lane_return_that_finishes_the_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the accept's own return drops its flags",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "*passthrough]\n",
+      "new": "]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_records_verifies_transitions_and_returns",
       "result": "killed",
       "answer": ""
     }

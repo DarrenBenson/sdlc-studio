@@ -1,12 +1,57 @@
 {
   "unit": "BG1616",
-  "digest": "cdafaeb88b35924f at 45045c034802",
+  "digest": "a8512e1614e2836e at 7c294458ab3c",
   "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1616-mutation-edits.json",
   "mutants": [
     {
+      "mutant": "a later worktree with commits ahead is refused whatever is named first",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if ahead != \"0\":\n            raise LandError(f\"{lane.top} holds",
+      "new": "        if ahead != \"1000\":\n            raise LandError(f\"{lane.top} holds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_naming_a_worktree_with_commits_ahead_first_lands_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every line becomes any line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if rest and all(_TRAILER.match(line) for line in rest[-1]):",
+      "new": "if rest and any(_TRAILER.match(line) for line in rest[-1]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_last_paragraph_mixing_a_note_and_a_trailer_stays_in_the_body",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Co-Authored-By is body text",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_attribution_trailers_reach_the_trailer_block_once_each",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Claude-Session is body text",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Signed-off-by): \\S\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_attribution_trailers_reach_the_trailer_block_once_each",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Signed-off-by is body text",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session): \\S\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_attribution_trailers_reach_the_trailer_block_once_each",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "any Key: value last paragraph is a trailer",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
       "new": "_TRAILER = re.compile(r\"^[A-Za-z][A-Za-z0-9-]*: \\S\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_body_line_shaped_like_a_trailer_stays_in_the_body",
       "result": "killed",
@@ -15,8 +60,8 @@
     {
       "mutant": "trailer match is case-sensitive",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
-      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\")",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
       "result": "killed",
       "answer": ""
@@ -24,8 +69,8 @@
     {
       "mutant": "Mentions is not a known trailer",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
-      "new": "_TRAILER = re.compile(r\"^(?:Refs): \\S\", re.I)",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Refs|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
       "result": "killed",
       "answer": ""
@@ -33,18 +78,9 @@
     {
       "mutant": "Refs is not a known trailer",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions): \\S\", re.I)",
-      "new": "_TRAILER = re.compile(r\"^(?:Mentions): \\S\", re.I)",
+      "old": "_TRAILER = re.compile(r\"^(?:Refs|Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
+      "new": "_TRAILER = re.compile(r\"^(?:Mentions|Co-Authored-By|Claude-Session|Signed-off-by): \\S\", re.I)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_known_trailers_still_reach_the_trailer_block",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a later worktree with commits ahead is refused whatever is named first",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if ahead != \"0\":\n            raise LandError(f\"{lane.top} holds",
-      "new": "        if ahead != \"1000\":\n            raise LandError(f\"{lane.top} holds",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_naming_a_worktree_with_commits_ahead_first_lands_it",
       "result": "killed",
       "answer": ""
     }

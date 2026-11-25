@@ -1,6 +1,6 @@
 {
   "unit": "BG1152",
-  "digest": "3d84b4ee80e0f16f at e1cf8c8645e1",
+  "digest": "ef7f2cf0870a6e82 at 3c54cf3a2e36",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1152-mutation-edits.json",
   "mutants": [
     {
@@ -13,9 +13,18 @@
       "answer": ""
     },
     {
+      "mutant": "a non-path element accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
+      "old": "            if not isinstance(a, str):",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_element_that_is_not_a_path_string_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "blank paths kept",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "for a in f[\"affects\"] if str(a).strip())}",
+      "old": "for a in f[\"affects\"] if a.strip())}",
       "new": "for a in f[\"affects\"])}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_string_affects_and_a_list_with_blanks_are_written_as_before",
       "result": "killed",
@@ -24,8 +33,8 @@
     {
       "mutant": "paths not stripped",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "\", \".join(str(a).strip() for a in f[\"affects\"]",
-      "new": "\", \".join(str(a) for a in f[\"affects\"]",
+      "old": "\", \".join(a.strip() for a in f[\"affects\"]",
+      "new": "\", \".join(a for a in f[\"affects\"]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_string_affects_and_a_list_with_blanks_are_written_as_before",
       "result": "killed",
       "answer": ""
@@ -42,8 +51,8 @@
     {
       "mutant": "batch not normalised",
       "file": ".claude/skills/sdlc-studio/scripts/artifact.py",
-      "old": "    items = [_affects_text(dict(it)) for it in items]",
-      "new": "    items = [dict(it) for it in items]",
+      "old": "            it.update(_affects_text(it))  # a list of paths becomes the path line; a non-path refused",
+      "new": "            pass",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_valued_affects_renders_as_a_path_list",
       "result": "killed",
       "answer": ""

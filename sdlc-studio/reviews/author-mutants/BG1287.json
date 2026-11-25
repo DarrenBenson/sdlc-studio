@@ -1,0 +1,34 @@
+{
+  "unit": "BG1287",
+  "digest": "47c4d10406584d97 at c1aa3b055e7e",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1287-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "old-landing-obligation",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    \"The lane is landed by `sprint lane land` onto the root's branch: open no PR and push no \"\n    \"branch, unless `release_strategy` is `pr-required`.\",",
+      "new": "    \"Land the unit on `main`: open no PR and push no branch, fast-forwarding a local \"\n    \"worktree onto `main` within the lane, unless `release_strategy` is `pr-required`.\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_names_lane_land_and_no_branch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exception-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    \"branch, unless `release_strategy` is `pr-required`.\",\n)",
+      "new": "    \"branch.\",\n)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_keeps_the_pr_required_exception",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lands-onto-main",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "onto the root's branch: open no PR and push no ",
+      "new": "onto `main`: open no PR and push no ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_trunk_integration.py::TrunkIntegrationTests::test_the_lane_brief_forbids_a_pr_or_pushed_branch",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

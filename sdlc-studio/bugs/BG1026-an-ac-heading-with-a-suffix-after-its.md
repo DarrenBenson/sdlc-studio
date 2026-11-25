@@ -1,6 +1,6 @@
 # BG1026: An AC heading with a suffix after its id (`### AC3 (DEFERRED)`) is not parsed as a criterion, so its Verify line is folded into the criterion above
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py, changelog.d/BG1026.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
@@ -25,8 +25,10 @@ Accept any text after the id that is not a further id character, so `### AC3 (DE
 
 - [ ] **AC1** Given a story whose third criterion heading is `### AC3 (DEFERRED)` with its own `Verify: manual` line, when `verify_ac` lists the story's criteria, then AC3 is listed with the manual Verify line and AC2 keeps only its own. Fails on: `AC_HEADING_RE` accepts only a colon and title after the id, so `### AC3 (DEFERRED)` opens no criterion and its Verify line folds into AC2.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_a_suffixed_heading_opens_its_own_criterion
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a heading `### AC10: title`, when the criteria are parsed, then it opens AC10, never AC1 with a suffix. Fails on: a loosened heading pattern that matches the id prefix would read `AC10` as AC1 with a suffix; today nothing tests it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ac_heading_with_suffix.py::AcHeadingWithSuffixTests::test_ac10_is_not_ac1_with_a_suffix
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

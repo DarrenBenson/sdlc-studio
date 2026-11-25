@@ -1,6 +1,6 @@
 # BG0973: artifact.py new --type review warns 'its acceptance criteria are still the scaffold placeholder' although the review scaffold has no Acceptance Criteria section
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG0973.md
@@ -26,6 +26,7 @@ Do not emit the grooming warning for meta types (review, retro, handoff, report)
 
 - [ ] **AC1** Minting a review record prints no grooming warning about a section its template lacks. Fails on: `artifact.py new --type review` prints the NOT FINISHED grooming line for a template that has no Acceptance Criteria section.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact_review_scaffold.py -k no_ac_warning_for_review
+  - **Verified:** yes (2026-11-25)
 
 ## Triage
 

@@ -1,0 +1,6 @@
+UNIT: BG1103
+BRIEF: 99a13412a5b9-c08b96c8
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 holds by execution: verify_ac run --dry-run passes 1 of 1, and the three recorded author mutants replay killed. The message's own claim was run end to end: over the test's git fixture with `scratch.txt` untracked, the close names it as bound, and `sign` then passes the tree check and stops on an unrelated owed APPROVE. With `scratch.txt` deleted after the close, `sign` refuses with "1 file(s) changed since the close ... scratch.txt". `bound_untracked` drops the same two prefixes `tree_digest` removes from its index (`sdlc-studio/.local/` and `run_state.TRACKED_REL`), and `_file_awaiting_record`, which writes after the digest, writes only under the dropped `reports/runs`. Reviewer mutants against the AC test: `sdlc-studio/.local/` not dropped, the line suppressed, and only the first file named were all KILLED. The changelog and the docstring were checked against that run and hold. test_sprint.py with the six sibling modules: 1156 passed.
