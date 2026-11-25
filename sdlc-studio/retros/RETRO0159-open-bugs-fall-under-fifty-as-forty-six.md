@@ -120,13 +120,7 @@ All five are Low and filed from this run's reviews. BG1753 lets a high-risk unit
 
 **0 of 51 unit(s) measured; 46 of 51 forecast at plan time.**
 
-**Priced cost: 146,414,637 priced input-equivalent tokens**, 1,901,489 per point over 77 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $362.06, $4.70 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 9,590 x1
-- output: 3,531,434 x5
-- cache write 5m: 28,428,549 x1.25
-- cache write 1h: 1,148,046 x2
-- cache read: 909,160,988 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 430,099** (33,117,619 tokens over 77 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
