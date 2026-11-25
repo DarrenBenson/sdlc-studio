@@ -7,8 +7,10 @@ changelog fragments, a theme with its units cut, a quality count with its decisi
 a changed default with its replacement cut, a Breaking fragment left out, a refusal the code does
 not make, a configuration default `reference-config.md` contradicts, and a cost figure with its
 report cut, its value changed, summed across reports or its report unsigned. The decisions, the
-Won't Fix counts, the defaults and the figures are read from their sources when the test runs,
-never typed here, and the upgrade path is checked by running the notes' own steps on projects
+defaults and the figures are read from their sources when the test runs, never typed here; the
+Won't Fix counts are read from the bug corpus as the commit that recorded each decision left it,
+so a bug reopened since or a later Won't Fix bug citing the decision leaves them as ruled; and the
+upgrade path is checked by running the notes' own steps on projects
 v6.4.0's `init.py` created.
 
 The 6.5.0 skill is the v6.5.0 tag's tree once the tag exists, and before then this tree with its
@@ -28,6 +30,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 SKILL_REL = ".claude/skills/sdlc-studio"
@@ -270,8 +273,10 @@ def decision_rows(path: Path = DECISIONS) -> dict[str, str]:
     return {m.group(1): m.group(0) for m in re.finditer(r"^\| (D\d{4}) \|.*$", text, re.M)}
 
 
-def wont_fix(bugs: Path = BUGS) -> dict[str, int]:
-    """Each quality decision -> the bugs at Won't Fix whose Resolution section names it."""
+def wont_fix(bugs: Path | None = None) -> dict[str, int]:
+    """Each quality decision -> the bugs at Won't Fix whose Resolution section names it, in
+    `bugs`, or where `BUGS` points when the call is made."""
+    bugs = BUGS if bugs is None else bugs
     counts = dict.fromkeys(QUALITY, 0)
     for p in sorted(bugs.glob("BG*.md")):
         text = p.read_text(encoding="utf-8")
@@ -284,13 +289,48 @@ def wont_fix(bugs: Path = BUGS) -> dict[str, int]:
     return counts
 
 
-def quality_problems(text: str, rows: dict[str, str], closed: dict[str, int]) -> list[str]:
+def ruled_at(dec: str) -> str:
+    """The commit that recorded `dec`'s row in the decisions log, the oldest whose change adds
+    or removes that row: the commit that applied its Won't Fix list."""
+    proc = _run("git", "-C", str(REPO), "log", "--reverse", "--format=%H", "-S", f"| {dec} |",
+                "--", "sdlc-studio/decisions.md")
+    commits = proc.stdout.split()
+    if proc.returncode != 0 or not commits:
+        raise AssertionError(f"git log found no commit recording {dec} (exit {proc.returncode}): "
+                             f"{proc.stderr.strip()}")
+    return commits[0]
+
+
+def ruled_counts(decisions: tuple[str, ...] = ("D0564", "D0613")) -> dict[str, int]:
+    """Each Won't Fix decision -> `wont_fix`'s count for it in the bug corpus as the commit that
+    recorded the decision left it, never the working tree, so a bug reopened since, or a later
+    Won't Fix bug citing the decision, leaves the count as ruled."""
+    out = {}
+    for dec in decisions:
+        commit = ruled_at(dec)
+        found = _run("git", "-C", str(REPO), "grep", "-l", "-F", dec, commit, "--",
+                     "sdlc-studio/bugs")
+        if found.returncode not in (0, 1):
+            raise AssertionError(f"git grep failed at {commit}: {found.stderr.strip()}")
+        with tempfile.TemporaryDirectory() as d:
+            for ref in found.stdout.splitlines():
+                blob = _run("git", "-C", str(REPO), "show", ref)
+                if blob.returncode != 0:
+                    raise AssertionError(f"git show {ref} failed: {blob.stderr.strip()}")
+                (Path(d) / ref.rsplit("/", 1)[1]).write_text(blob.stdout, encoding="utf-8")
+            out[dec] = wont_fix(Path(d))[dec]
+    return out
+
+
+def quality_problems(text: str, rows: dict[str, str],
+                     closed: dict[str, int] | None) -> list[str]:
     """AC2: the quality theme states D0560's bar, the count the drive started from, the re-check
     by two independent seats (D0563) and both Won't Fix lists, and leaves the count at the cut to
     the disclosure line. Every number in a sentence about open defects, their severity or a Won't
     Fix list, anywhere but the disclosure line, is carried by the quality decision named nearest
     after it in that sentence (or, with none after, the nearest before), and each Won't Fix count
-    equals the bugs at Won't Fix whose Resolution names its decision (`closed`)."""
+    equals the bugs at Won't Fix whose Resolution names its decision (`closed`, as
+    `ruled_counts` reads them; None judges no count against the corpus)."""
     problems = []
     for unit in units(text):
         if COUNT_LINE.match(unit.strip()) or not OPEN_TALK.search(unit):
@@ -336,7 +376,7 @@ def quality_problems(text: str, rows: dict[str, str], closed: dict[str, int]) ->
         if not carried or carried.group(1) != said.group(1):
             problems.append(f"the theme gives {dec}'s Won't Fix list as {said.group(1)}, where "
                             f"{dec} approves {carried.group(1) if carried else 'no count'}")
-        if closed.get(dec) != int(said.group(1)):
+        if closed is not None and closed.get(dec) != int(said.group(1)):
             problems.append(f"the bug corpus holds {closed.get(dec)} bugs at Won't Fix under "
                             f"{dec}, "
                             f"where the notes say {said.group(1)}")
@@ -781,20 +821,21 @@ class ReleaseNotesTests(unittest.TestCase):
         (139 read as 140, 99 as 98); a count read against a decision the bar does not rest on
         (D0613 renamed D0630); an open-defect count stated outside the disclosure line, with no
         decision or with D0560 named; the re-check's second seat cut; the disclosure sentence
-        reworded; a Won't Fix count the bug corpus does not hold; a decisions log whose D0564 row
-        approves another count. `wont_fix` is checked on a fixture corpus: a bug at Won't Fix
-        naming the decision outside its Resolution, or naming it while still open, is not
-        counted."""
-        rows, closed = decision_rows(), wont_fix()
-        quality = lambda text: quality_problems(text, rows, closed)  # noqa: E731
+        reworded; a decisions log whose D0564 row approves another count; a Won't Fix count the
+        bug corpus as the ruling left it does not hold, and the counts read from the working
+        tree, where a D0613 bug reopened since (BG0971) and a later Won't Fix bug citing D0564
+        would move them to 127 and 140. `wont_fix` is checked on a fixture corpus: a bug at Won't
+        Fix naming the decision outside its Resolution, or naming it while still open, is not
+        counted. The corpus is read through git, so that subtest alone is skipped in a tree that
+        is not a git clone."""
+        rows = decision_rows()
+        quality = lambda text: quality_problems(text, rows, None)  # noqa: E731
         self.assertFlags(quality(shipped(NOTES_64_REL).replace("6.4.0", "6.5.0")),
                          "no quality theme")
         self.assertFlags(quality(self.mutant("Medium or above (D0560).**", "Medium or above.**")),
                          "a count with no decision named")
         self.assertFlags(quality(self.mutant("139 Low bugs", "140 Low bugs")),
                          "D0564 does not carry the count 140")
-        self.assertFlags(quality(self.mutant("139 Low bugs", "140 Low bugs")),
-                         "where the notes say 140")
         self.assertFlags(quality(self.mutant("99 of them Medium", "98 of them Medium")),
                          "the count the drive started from")
         self.assertFlags(quality(self.mutant("(D0613)", "(D0630)")),
@@ -812,11 +853,8 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertFlags(quality(self.mutant("The count this release ships",
                                              "The tally this release ships")),
                          "disclosure line")
-        self.assertFlags(quality_problems(self.text, rows, {**closed, "D0613": 127}),
-                         "the bug corpus holds 127 bugs at Won't Fix under D0613")
         moved = {**rows, "D0564": rows["D0564"].replace("approved 139 of", "approved 138 of")}
-        self.assertFlags(quality_problems(self.text, moved, closed),
-                         "where D0564 approves 138")
+        self.assertFlags(quality_problems(self.text, moved, None), "where D0564 approves 138")
         self.assertEqual([], quality(self.text))
 
         head = "# BG{n}: x\n\n> **Status:** {status}\n\n## Summary\n\n{summary}\n\n"
@@ -831,6 +869,31 @@ class ReleaseNotesTests(unittest.TestCase):
                     head.format(n=n, status=status, summary=summary)
                     + f"## Resolution\n\n{resolution}\n", encoding="utf-8")
             self.assertEqual({"D0560": 0, "D0563": 0, "D0564": 1, "D0613": 1}, wont_fix(Path(d)))
+
+        with self.subTest("the Won't Fix counts, read from the corpus as each ruling left it"):
+            self.needs_cli()
+            ruled = ruled_counts()
+            self.assertEqual([], quality_problems(self.text, rows, ruled))
+            self.assertFlags(quality_problems(self.mutant("139 Low bugs", "140 Low bugs"), rows,
+                                              ruled), "where the notes say 140")
+            self.assertFlags(quality_problems(self.text, rows, {**ruled, "D0613": 127}),
+                             "the bug corpus holds 127 bugs at Won't Fix under D0613")
+            # The live corpus moved after the rulings: a D0613 bug reopened, and a later Won't
+            # Fix bug citing D0564. The counts read as ruled stay where they were.
+            with tempfile.TemporaryDirectory() as d:
+                live = Path(d) / "bugs"
+                shutil.copytree(BUGS, live)
+                for bug in live.glob("BG0971-*.md"):
+                    bug.write_text(re.sub(r"(?m)^> \*\*Status:\*\* .*$", "> **Status:** Open",
+                                          bug.read_text(encoding="utf-8"), count=1),
+                                   encoding="utf-8")
+                (live / "BG-ZZZZZZZZ-a-later-wont-fix-fixture.md").write_text(
+                    "# BG9999: later\n\n> **Status:** Won't Fix\n\n## Resolution\n\n"
+                    "Won't Fix on the grounds D0564 accepted.\n", encoding="utf-8")
+                self.assertEqual(wont_fix(BUGS)["D0564"] + 1, wont_fix(live)["D0564"],
+                                 "premise: the later bug moves the live D0564 count")
+                with mock.patch.dict(ruled_counts.__globals__, BUGS=live):
+                    self.assertEqual(ruled, ruled_counts())
 
     def test_every_changed_behaviour_names_what_to_do(self) -> None:
         """AC3. MUTANTS: a section copied from the entries filed under Changed alone, which never
@@ -915,16 +978,16 @@ class ReleaseNotesTests(unittest.TestCase):
     def test_the_64_upgrade_path_is_given(self) -> None:
         """AC4. MUTANTS: the PyYAML install cut, or given after the reinstall; notes telling a 6.4
         project a reinstall is all it needs (no `migrate` lines); the two `migrate` steps in the
-        wrong order; a step naming a flag the shipped CLI refuses (`--write` for `--apply`); the
-        reinstall URL misspelt (`instal.sh`); `--apply` said to write more than the dry run
-        listed; the dry run's version stamp misquoted, and its persona line unquoted; a default
-        `reference-config.md` contradicts (`2` for `1`); `reference-config.md` with a default
-        moved, and with a row cut; `review.rendered_paths` left out, and a key 6.5 does not add
-        named; a claim that `ci.wait_timeout_minutes` bounds a wait; the BG1613 clause cut while
-        BG1613 is open, or with BG1613 alone cut; a `migrate.py` that writes a file and a config
-        key of its own, on a bare project and on one holding seat cards. The notes' own steps are
-        run on three projects v6.4.0's `init.py` made: in a tree that is not a git clone that
-        part is skipped, and every check of the text still runs."""
+        wrong order; a step naming a flag the shipped CLI refuses (`--write` for `--apply`); the dry
+        run's 'writes nothing' cut; the reinstall URL misspelt (`instal.sh`); `--apply` said to
+        write more than the dry run listed; the dry run's version stamp misquoted, and its persona
+        line unquoted; a default `reference-config.md` contradicts (`2` for `1`);
+        `reference-config.md` with a default moved, and with a row cut; `review.rendered_paths` left
+        out, and a key 6.5 does not add named; a claim that `ci.wait_timeout_minutes` bounds a wait;
+        the BG1613 clause cut while BG1613 is open, or with BG1613 alone cut; a `migrate.py` that
+        writes a file and a config key of its own, on a bare project and on one holding seat cards.
+        The notes' own steps are run on three projects v6.4.0's `init.py` made: in a tree that is
+        not a git clone that part is skipped, and every check of the text still runs."""
         old = section(self.text, UPGRADE)
         steps = [ln for ln in old.splitlines() if "/migrate.py" in ln and ln.startswith("python3")]
         self.assertEqual(2, len(steps), steps)
@@ -941,6 +1004,9 @@ class ReleaseNotesTests(unittest.TestCase):
                          "`migrate` then `migrate --apply`")
         self.assertFlags(upgrade_problems(self.mutant("main/install.sh |", "main/instal.sh |")),
                          "not one docs/INSTALL.md gives")
+        self.assertFlags(upgrade_problems(self.mutant("is the dry run: it writes nothing.",
+                                                      "is the dry run.")),
+                         "does not say the dry run writes nothing")
         self.assertFlags(upgrade_problems(self.mutant("writes exactly what the dry run listed",
                                                       "writes what it finds")),
                          "writes what the dry run listed")
