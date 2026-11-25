@@ -1,0 +1,55 @@
+# EP0379: v6.5.0 ships with paperwork that matches the code
+
+> **Status:** Draft
+> **Created:** 2026-11-25
+> **Created-by:** sdlc-studio new
+> **Raised-by:** sdlc-studio; agent; v1
+
+## Summary
+
+The 6.5.0 release paperwork: the release notes and the document updates for what 6.5 ships, then
+the cut. 6.5 is the release the operator held to a stricter bar (D0560): fewer than 50 open defects
+and none at Medium or above. Open bugs fell from 473 (99 Medium) after run twenty to 46, all Low, at
+RPT0045's sign, by re-checking every open bug at HEAD (D0563), fixing most of the rest, and the
+operator's two approved Won't Fix lists (139 under D0564, 128 under D0613). Beside that drive, 6.5
+ships: every persona and seat card held to a written standard (EP0285, EP0287); a sprint that walks
+a wave from build to paperwork and wakes the model only at a stop, with the author's own mutants
+replayed to the reviewer (EP0326, EP0327); a delegated signature that names the decision that
+authorised it, and a run awaiting its signature that no longer holds up the next (EP0366); PyYAML
+required, so a gate a project switched on is never read as off (EP0368); a written policy for a red
+CI run on main (EP0340); harness-agnostic public pages (EP0377); and a duplicate-finding refusal and
+the plan's test advisories (EP0378). Modelled on EP0314 (v6.4.0). The tag, the evidence pack, the
+publish and the site stay with the operator (D0545's exclusions).
+
+### Story order and wave plan
+
+| Wave | Story | Points | Depends on |
+| --- | --- | --- | --- |
+| 1 | US1327: The v6.5 release notes lead with what changed for the person answering for the release | 5 | none |
+| 1 | US1328: The help, upgrade and public pages describe what 6.5 ships | 5 | none |
+| 1 | US1329: The PRD, TRD and TSD describe what 6.5 ships | 5 | none |
+| 2 | US1330: v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page | 8 | US1327, US1328, US1329 |
+
+- **Wave one builds in parallel.** The three stories' Affects share no file: US1327 writes only
+  `docs/release-notes-v6.5.0.md` and its own test; US1328 only help pages, README, llms.txt and two
+  docs pages; US1329 only the three specs and `tools/tests/test_lean_trd_refresh.py`. Each writes
+  its own `changelog.d/<ID>.md`.
+- **The cut goes last, alone.** It depends on all three, and it shares files with each:
+  `docs/release-notes-v6.5.0.md` (US1327), `README.md` (US1328), `sdlc-studio/prd.md`, `trd.md`,
+  `tsd.md` and `tools/tests/test_lean_trd_refresh.py` (US1329), and `changelog.d/`, which it
+  empties. It is the release commit.
+- Total 23 points.
+
+## Story Breakdown
+
+- [ ] [US1327: The v6.5 release notes lead with what changed for the person answering for the release](../stories/US1327-the-v6-5-release-notes-lead-with-what.md)
+- [ ] [US1328: The help, upgrade and public pages describe what 6.5 ships](../stories/US1328-the-help-upgrade-and-public-pages-describe-what.md)
+- [ ] [US1329: The PRD, TRD and TSD describe what 6.5 ships](../stories/US1329-the-prd-trd-and-tsd-describe-what-6.md)
+- [ ] [US1330: v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page](../stories/US1330-v6-5-0-is-cut-version-changelog-known.md)
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-25 | orchestrator (delegate under D0545) | Groomed for run twenty-seven from the product seat's draft, modelled on EP0314 |

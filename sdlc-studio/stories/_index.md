@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-11-23
+**Last Updated:** 2026-11-25
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 158 |
-| Ready | 0 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 94 |
 | Blocked | 0 |
-| **Total** | **1326** |
+| **Total** | **1330** |
 
 ## All Stories
 
@@ -364,6 +364,10 @@
 | [US1324](US1324-file-finding-refuses-a-finding-that-duplicates-an.md) | file_finding refuses a finding that duplicates an artefact of its type, sharing every Affects path and scoring at or above the duplicate bar, before it mints an id, unless the filer names it with --distinct-from | Done | EP0378 | 2026-11-23 | 2026-11-23 |
 | [US1325](US1325-the-audit-finder-template-and-the-backlog-triage.md) | The audit finder template and the backlog triage briefs carry a persona seat's render, and the agent prompt template refuses a brief that names no seat | Draft | EP0378 | 2026-11-23 | 2026-11-23 |
 | [US1326](US1326-sprint-plan-lists-per-unit-the-test-modules.md) | sprint plan lists, per unit, the test modules outside its Affects that import or run a script its Affects names, as an advisory grooming list | Done | EP0378 | 2026-11-23 | 2026-11-23 |
+| [US1327](US1327-the-v6-5-release-notes-lead-with-what.md) | The v6.5 release notes lead with what changed for the person answering for the release | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1328](US1328-the-help-upgrade-and-public-pages-describe-what.md) | The help, upgrade and public pages describe what 6.5 ships | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1329](US1329-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.5 ships | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1330](US1330-v6-5-0-is-cut-version-changelog-known.md) | v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
