@@ -5,7 +5,7 @@
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_specs_v65.py, tools/tests/test_lean_trd_refresh.py, changelog.d/US1329.md
+> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_specs_v65.py, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/US1329.md
 > **Epic:** EP0379
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -68,7 +68,7 @@ configuration keys and the records and state each of them writes
   the `.local/` residue test pass, the residue test holding each new state row to a write in its
   writer's code. Fails on: a TRD with no `mutation-edits-<unit>.json` row, as at HEAD; a refresh pin
   broken by the edit; or a state row whose writer writes no such path.
-  - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py tools/tests/test_lean_specs_v64.py tools/tests/test_lean_v61_review_residue.py && grep -qF 'mutation-edits-<unit>.json' sdlc-studio/trd.md
+  - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py tools/tests/test_lean_specs_v64.py .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py && grep -qF 'mutation-edits-<unit>.json' sdlc-studio/trd.md
 
 ## Notes
 
@@ -95,3 +95,4 @@ configuration keys and the records and state each of them writes
 | --- | --- | --- |
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for EP0379 from the product seat's draft (run twenty-seven, the v6.5.0 release epic): user story, criteria with Verify lines, Release 6.5, Depends on for the wave order, and notes, modelled on EP0314 |
+| 2026-11-25 | orchestrator (delegate under D0545) | At the builder's BLOCKED: AC4's Verify names the residue test at its real path (.claude/skills/sdlc-studio/scripts/tests/, not tools/tests/), and the Affects take that test, whose path reader cannot see a state path built from parts (lib/drive.py) or returned by a same-module helper (lib/lanes.py), so AC2's two state rows can be held to their writers |
