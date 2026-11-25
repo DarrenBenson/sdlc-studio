@@ -84,47 +84,215 @@ def _str_constants(tree: ast.Module) -> dict:
     return out
 
 
-def keys_read(scripts: Path = SCRIPTS) -> dict:
-    """{config key: the first `file:line` reading it} over `scripts/*.py` and `scripts/lib/*.py`:
-    the key of each `config.get(<root>, <key>, ...)`, a string or a module-level string constant,
-    and, in a file that reads a whole block that way (`config.get(root, "pricing")`), each
-    `<block>.get(<key>)` or `<block>[<key>]` on a name spelt as the block, as `<block>.<key>`.
-    A key built at run time, an f-string's, is not seen. `sdlc_md.project_override` reads the
-    project's own file with no defaults, so its keys are not this scan's."""
-    found: dict = {}
+#: The calls a script reads its configuration through: `config.get` and
+#: `config.feature_enabled` (which reads `<feature>.enabled`) over the merged configuration,
+#: `config.load_config`, the whole of it, and `project_override`, the project's own file.
+READERS = ("get", "feature_enabled", "load_config", "project_override")
+_DEFS = (ast.FunctionDef, ast.AsyncFunctionDef)
+
+
+def _reader(node) -> str | None:
+    """Which of `READERS` a call is, or None; a `get` counts only as `config.get`."""
+    if not isinstance(node, ast.Call):
+        return None
+    f = node.func
+    name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+    if name == "get" and getattr(getattr(f, "value", None), "id", None) != "config":
+        return None
+    return name if name in READERS else None
+
+
+class _Script:
+    """One script, and what a key it reads is resolved against: its module constants, a
+    sibling's, the loops and parameters a name is bound by, and the blocks it reads whole."""
+
+    def __init__(self, scripts: Path, path: Path) -> None:
+        self.scripts, self.rel = scripts, str(path.relative_to(scripts))
+        self.tree = ast.parse(path.read_text(encoding="utf-8"))
+        self.consts = _str_constants(self.tree)
+        self.calls = [n for n in ast.walk(self.tree) if isinstance(n, ast.Call)]
+        self.top, self.helpers, self.assigns = set(), {}, {}
+        self.live = any(_reader(c) for c in self.calls)
+        if not self.live:
+            return
+        self.parent = {c: p for p in ast.walk(self.tree) for c in ast.iter_child_nodes(p)}
+        for s in ast.walk(self.tree):
+            if isinstance(s, ast.Assign) and len(s.targets) == 1 \
+                    and isinstance(s.targets[0], ast.Name):
+                self.assigns.setdefault((self._scope(s), s.targets[0].id), []).append(s.value)
+        # A name spelt as a top-level key read whole is that block, wherever it is bound.
+        self.top = {v for c in self.calls if _reader(c) in ("get", "project_override")
+                    and len(c.args) > 1 for v in self.values(c.args[1]) or [] if "." not in v}
+        # A function holding a reader that returns a block is a helper returning that block.
+        for c in self.calls:
+            fn = self._scope(c) if _reader(c) else None
+            for ret in (n for n in ast.walk(fn) if isinstance(n, ast.Return)) if fn else ():
+                got = self.block(ret.value) if ret.value is not None else None
+                if got is not None:
+                    self.helpers[fn.name] = got
+
+    def _scope(self, node):
+        while node in self.parent:
+            node = self.parent[node]
+            if isinstance(node, _DEFS):
+                return node
+        return None
+
+    def _up(self, node):
+        while node in self.parent and not isinstance(node, _DEFS):
+            node = self.parent[node]
+            yield node
+
+    def _assigned(self, name: ast.Name) -> list:
+        """The values the enclosing function, or the module, assigns to `name`."""
+        return self.assigns.get((self._scope(name), name.id), [])
+
+    def values(self, node, depth: int = 0) -> list | None:
+        """Every string `node` can hold, or None when any one of them is out of reach."""
+        if depth > 12 or node is None:
+            return None
+        if isinstance(node, ast.Constant):
+            return [node.value] if isinstance(node.value, str) else None
+        if isinstance(node, ast.JoinedStr):
+            out = [""]
+            for part in node.values:
+                got = [part.value] if isinstance(part, ast.Constant) else \
+                    self.values(part.value, depth + 1)
+                if got is None:
+                    return None
+                out = [head + str(tail) for head in out for tail in got]
+            return out
+        if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+            for path in (self.scripts / f"{node.value.id}.py",
+                         self.scripts / "lib" / f"{node.value.id}.py"):
+                if path.is_file():
+                    got = _str_constants(ast.parse(path.read_text(encoding="utf-8")))
+                    return [got[node.attr]] if isinstance(got.get(node.attr), str) else None
+            return None
+        if not isinstance(node, ast.Name):
+            return None
+        for up in self._up(node):
+            for gen in [up] if isinstance(up, ast.For) else getattr(up, "generators", []):
+                first = gen.target.elts[0] if isinstance(gen.target, ast.Tuple) else gen.target
+                if getattr(first, "id", None) == node.id:
+                    return self._items(gen.iter, depth)
+        fn = self._scope(node)
+        if fn is not None and node.id in [a.arg for a in fn.args.args]:
+            return self._passed(fn, node.id, depth)
+        if isinstance(self.consts.get(node.id), str):
+            return [self.consts[node.id]]
+        got = self._assigned(node)
+        return self.values(got[0], depth + 1) if len(got) == 1 else None
+
+    def _items(self, it, depth: int) -> list | None:
+        """The strings a loop over `it` binds: a literal, or a module constant, of strings."""
+        if isinstance(it, ast.Call) and getattr(it.func, "attr", None) in ("items", "keys"):
+            it = it.func.value
+        if isinstance(it, (ast.Tuple, ast.List, ast.Set)):
+            got = [self.values(e, depth + 1) for e in it.elts]
+            return None if None in got else [v for vs in got for v in vs]
+        held = self.consts.get(getattr(it, "id", None))
+        if isinstance(held, (tuple, list, set, dict)) and all(isinstance(v, str) for v in held):
+            return list(held)
+        return None
+
+    def _passed(self, fn, param: str, depth: int) -> list | None:
+        """Every value this script's callers of `fn` pass as `param`, its default where a caller
+        leaves it out; None with no caller, or with one out of reach."""
+        names = [a.arg for a in fn.args.args]
+        defaults = dict(zip(names[len(names) - len(fn.args.defaults):], fn.args.defaults))
+        at = names.index(param) - (names[:1] == ["self"])
+        out = []
+        for call in (c for c in self.calls
+                     if getattr(c.func, "id", getattr(c.func, "attr", None)) == fn.name):
+            arg = next((k.value for k in call.keywords if k.arg == param),
+                       call.args[at] if at < len(call.args) else defaults.get(param))
+            got = self.values(arg, depth + 1)
+            if got is None:
+                return None
+            out += got
+        return out or None
+
+    def block(self, node, depth: int = 0) -> tuple | None:
+        """The key path of the block `node` holds, `()` for the whole configuration, or None."""
+        if depth > 12:
+            return None
+        if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or):
+            return self.block(node.values[0], depth + 1)
+        if isinstance(node, ast.IfExp):
+            got = self.block(node.body, depth + 1)
+            return got if got is not None else self.block(node.orelse, depth + 1)
+        kind = _reader(node)
+        if kind == "load_config":
+            return ()
+        if kind in ("get", "project_override"):
+            got = self.values(node.args[1]) if len(node.args) > 1 else None
+            return tuple(got[0].split(".")) if got and len(got) == 1 else None
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) in self.helpers:
+            return self.helpers[node.func.id]
+        if isinstance(node, ast.Name):
+            for value in self._assigned(node):
+                got = self.block(value, depth + 1)
+                if got is not None:
+                    return got
+            return (node.id,) if node.id in self.top else None
+        path, subs = self.taken(node, depth)
+        return path + (subs[0],) if path is not None and subs and len(subs) == 1 else None
+
+    def taken(self, node, depth: int = 0) -> tuple:
+        """`(block path, [keys])` for `<block>.get(<key>)` or `<block>[<key>]`, the keys None
+        when out of reach; `(None, None)` for anything else."""
+        if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "get" \
+                and node.args and _reader(node) is None:
+            base, key = node.func.value, node.args[0]
+        elif isinstance(node, ast.Subscript):
+            base, key = node.value, node.slice
+        else:
+            return None, None
+        path = self.block(base, depth + 1)
+        return path, (self.values(key) if path is not None else None)
+
+    def reads(self) -> tuple:
+        """`([(line, key)], [line])`: each key this script reads, and each read whose key the
+        scan cannot resolve."""
+        found, lost = [], []
+        for node in ast.walk(self.tree) if self.live else ():
+            kind, line = _reader(node), getattr(node, "lineno", 0)
+            if kind in ("get", "feature_enabled", "project_override"):
+                arg = node.args[1] if len(node.args) > 1 else None
+                keys = self.values(arg)
+                if keys is None and isinstance(arg, ast.JoinedStr) \
+                        and isinstance(arg.values[0], ast.Constant):
+                    keys = [arg.values[0].value.rstrip(".")]   # a map keyed at run time
+                found += [(line, k + ".enabled" * (kind == "feature_enabled")) for k in keys or []]
+                lost += [] if keys else [line]
+            # A key out of reach on a block is a map keyed at run time (a model id), read as the
+            # block the read that produced it already holds; on the whole configuration it is
+            # a read out of reach, but in config.py, which is the reader itself.
+            path, subs = self.taken(node)
+            if subs:
+                found += [(line, ".".join(path + (sub,))) for sub in subs]
+            elif path == () and self.rel != "config.py":
+                lost.append(line)
+        return found, lost
+
+
+def keys_read(scripts: Path = SCRIPTS) -> tuple:
+    """`({config key: the first file:line reading it}, [file:line of each read out of reach])`
+    over `scripts/*.py` and `scripts/lib/*.py`. A key is read when one of `READERS` is passed it
+    as a string, a constant (a sibling script's too), a name assigned one, a loop over a literal
+    or a constant, an f-string of those, or a parameter every caller in the script fills that
+    way; and when `.get(<key>)` or `[<key>]` is taken on a block a reader returns, held in a
+    name, returned by a helper, chained, or defaulted with `or` or `if`, as `<block>.<key>`. A key
+    built at run time inside a block, a model id or an artefact type, reads as that block."""
+    found, lost = {}, []
     for path in sorted([*scripts.glob("*.py"), *(scripts / "lib").glob("*.py")]):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        names = _str_constants(tree)
-
-        def text(node: ast.expr):
-            got = node.value if isinstance(node, ast.Constant) else (
-                names.get(node.id) if isinstance(node, ast.Name) else None)
-            return got if isinstance(got, str) else None
-
-        where = f"{path.relative_to(scripts)}:%d"
-        blocks = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
-                    and node.func.attr == "get" and isinstance(node.func.value, ast.Name) \
-                    and node.func.value.id == "config" and len(node.args) >= 2:
-                key = text(node.args[1])
-                if key:
-                    found.setdefault(key, where % node.lineno)
-                    if "." not in key:
-                        blocks.add(key)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
-                    and node.func.attr == "get" and isinstance(node.func.value, ast.Name) \
-                    and node.func.value.id in blocks and node.args:
-                block, sub = node.func.value.id, text(node.args[0])
-            elif isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) \
-                    and node.value.id in blocks:
-                block, sub = node.value.id, text(node.slice)
-            else:
-                continue
-            if sub:
-                found.setdefault(f"{block}.{sub}", where % node.lineno)
-    return found
+        script = _Script(scripts, path)
+        got, out = script.reads()
+        for line, key in sorted(got):
+            found.setdefault(key, f"{script.rel}:{line}")
+        lost += [f"{script.rel}:{line}" for line in sorted(set(out))]
+    return found, lost
 
 
 _ABSENT = object()
@@ -323,11 +491,17 @@ class ConfigKeysReadTests(unittest.TestCase):
 
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
     def test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults(self) -> None:
-        """BG1497 AC3. Every key the scripts read through `config.get` is named in
-        reference-config.md and declared in config-defaults.yaml. MUTANTS: a key the scan
-        sees dropped from either file (`report.enabled`, `pricing.copilot_billing`); the
-        scan losing its named-constant keys, its block reads or its first reader's line; a near
-        miss (`a.bc`, `x.a.b`) read as naming the key; a declared null read as undeclared."""
+        """BG1497 AC3. Every key the scripts read, through any of `READERS` on any route, is
+        named in reference-config.md and declared in config-defaults.yaml, and no read is out
+        of the scan's reach. MUTANTS: a key the scan sees dropped from either file
+        (`report.enabled`, `pricing.copilot_billing`, `version_check.ttl_hours`,
+        `complexity.cognitive_high`); `project_override`, `feature_enabled` or `load_config`
+        left out of `READERS`; the scan losing its named-constant keys, a sibling's constant,
+        its loops, its helper parameters, its helper-returned blocks, its chained or `or`- or
+        `if`-defaulted blocks, its f-string block, its reads out of reach or its first reader's
+        line; a near miss (`a.bc`, `x.a.b`) read as naming the key; a declared null read as
+        undeclared; a block read through a helper renamed in a script (`route.py`,
+        `.get("models")` to `.get("modelz")`)."""
         defaults = yaml.safe_load(DEFAULTS.read_text(encoding="utf-8")) or {}
         here = {"a.b": "x.py:1"}
         self.assertEqual([], undocumented(here, "set `a.b` to 1", {"a": {"b": None}}))
@@ -352,12 +526,48 @@ class ConfigKeysReadTests(unittest.TestCase):
                '    blk.get("via_get")\n'
                '    return blk.get("via_get"), blk[SUB], blk[n]\n')
             _w(Path(d), "unscanned/elsewhere.py", 'config.get(root, "never.seen")\n')
-            self.assertEqual({"top.literal": "lib/reader.py:4", "blk.named": "lib/reader.py:5",
-                              "blk": "lib/reader.py:7", "blk.via_get": "lib/reader.py:10",
-                              "blk.via_constant": "lib/reader.py:11"}, keys_read(Path(d)))
-        keys = keys_read()
-        for key in ("sprint.fresh_session", "pricing.copilot_billing", "pricing.stale_after_days",
-                    "routing.effort", "report.enabled"):
+            _w(Path(d), "names.py", 'SIBLING = "sib.key"\n')
+            _w(Path(d), "routes.py",
+               'import names\nMOMENTS = ("first", "second")\n'
+               'def _routing(root):\n'
+               '    return config.get(root, "routing", None) or {}\n'
+               'def _cfg(root, key, default):\n'
+               '    return config.get(root, f"param.{key}", default)\n'
+               'def g(root, flag, name):\n'
+               '    _cfg(root, "one", 1)\n'
+               '    _cfg(root, key="two", default=2)\n'
+               '    sdlc_md.project_override(root, "own.file", 0)\n'
+               '    config.feature_enabled(root, "feat")\n'
+               '    for m in MOMENTS:\n'
+               '        config.get(root, f"moment.{m}")\n'
+               '    config.get(root, names.SIBLING)\n'
+               '    whole = config.load_config(root)\n'
+               '    sizing = ((whole.get("story") or {}).get("sizing") or {})\n'
+               '    sizing.get("max_ac")\n'
+               '    _routing(root).get("models")\n'
+               '    picked = config.get(root, "cond", None) if flag else {}\n'
+               '    picked.get("k")\n'
+               '    config.get(root, name)\n'
+               '    whole[name]\n')
+            self.assertEqual(({"top.literal": "lib/reader.py:4", "blk.named": "lib/reader.py:5",
+                               "top": "lib/reader.py:6", "blk": "lib/reader.py:7",
+                               "blk.via_get": "lib/reader.py:10",
+                               "blk.via_constant": "lib/reader.py:11",
+                               "routing": "routes.py:4", "param.one": "routes.py:6",
+                               "param.two": "routes.py:6", "own.file": "routes.py:10",
+                               "feat.enabled": "routes.py:11", "moment.first": "routes.py:13",
+                               "moment.second": "routes.py:13", "sib.key": "routes.py:14",
+                               "story": "routes.py:16", "story.sizing": "routes.py:16",
+                               "story.sizing.max_ac": "routes.py:17",
+                               "routing.models": "routes.py:18", "cond": "routes.py:19",
+                               "cond.k": "routes.py:20"},
+                              ["routes.py:21", "routes.py:22"]), keys_read(Path(d)))
+        keys, lost = keys_read()
+        self.assertEqual([], lost, "a read the scan cannot resolve to a key")
+        for key in ("sprint.fresh_session", "pricing.copilot_billing", "routing.models",
+                    "complexity.cognitive_high", "version_check.ttl_hours", "triage.enabled",
+                    "triage.session_cap", "test_execution.at_release", "story_quality.sizing.max_ac",
+                    "status_vocab", "report.enabled"):
             self.assertIn(key, keys, "premise: the scan finds each route's keys")
         self.assertEqual([], undocumented(keys, REFERENCE.read_text(encoding="utf-8"), defaults))
 

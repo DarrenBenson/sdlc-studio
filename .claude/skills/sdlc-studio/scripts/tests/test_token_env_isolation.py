@@ -117,7 +117,7 @@ class HarnessEnvironmentTests(unittest.TestCase):
         `HARNESS_ENV` out (the run selects the Cursor reader and fails)."""
         self.assert_scrubbed(harness_free(SDLC_STUDIO_HARNESS="cursor"), "the cursor reader")
 
-    def test_copilot_beside_claude_is_cleared(self) -> None:
+    def test_copilots_home_signal_is_cleared(self) -> None:
         """AC2. `COPILOT_HOME`, with `CLAUDECODE` unset. MUTANT: the scrub leaves `COPILOT_HOME`
         (the run selects the Copilot reader, which finds no session under that home)."""
         with tempfile.TemporaryDirectory() as home:

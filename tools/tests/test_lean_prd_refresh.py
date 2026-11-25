@@ -1855,7 +1855,8 @@ class PrdFlagDefaultsTests(unittest.TestCase):
     def test_section_9_names_every_gate_key_that_ships_off(self):
         """BG1525 AC1. The keys are read from the defaults file and the scripts, not kept by
         hand. Mutants: the defaults file shipping `sprint.breakdown` as `judgement`, or adding a
-        block whose `enforce` is false; a script reading `quality.require_full_sections` on;
+        block whose `enforce` is false; a script reading a key the defaults file does not
+        declare (`probe.require_x`) on, or the scripts route dropped;
         one key dropped from the introduction; one named without its reason; the single-
         exception sentence put back."""
         defaults = DEFAULTS.read_text(encoding="utf-8")
@@ -1873,11 +1874,15 @@ class PrdFlagDefaultsTests(unittest.TestCase):
             self.assertEqual([f"the introduction does not name `{key}`",
                               f"the introduction gives `{key}` no incremental-adoption reason"],
                              flag_intro_problems(self.prd, grown), key)
-        on = {**sources, "tiers.py": sources["tiers.py"].replace(
-            '"quality.require_full_sections", False)', '"quality.require_full_sections", True)')}
-        self.assertNotEqual(on, sources)
-        self.assertEqual({"quality.require_full_sections"},
-                         set(off) - set(gate_keys_off(defaults, on)))
+        # The scripts route, on a key the defaults file does not declare: a script reading it
+        # with a `False` fallback ships it off, and the same read with `True` does not.
+        probe = 'sdlc_md.project_override(root, "probe.require_x", False)\n'
+        self.assertNotRegex(defaults, r"(?m)^ *require_x:", "premise: the defaults lack the key")
+        probed = gate_keys_off(defaults, {**sources, "probe.py": probe})
+        self.assertEqual({"probe.require_x": "false"},
+                         {k: v for k, v in probed.items() if k not in off})
+        on = gate_keys_off(defaults, {**sources, "probe.py": probe.replace("False)", "True)")})
+        self.assertEqual(set(off), set(on))
         intro = section(self.prd, "### Feature Flags")
         for key in off:
             mutant = self.prd.replace(intro, intro.replace(f"`{key}`", "a key", 1), 1)

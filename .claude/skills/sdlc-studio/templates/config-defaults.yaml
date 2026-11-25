@@ -246,6 +246,7 @@ provenance:
 # Agentic triage (schema v3 only - dormant under schema_version: 2). Noise controls on
 # artefact creation, so a flood of agent-filed findings never buries the few that matter.
 triage:
+  enabled: null            # unset: the controls follow the schema (on at 3); true or false decides
   session_cap: 20          # max findings one session may file; the N+1th is refused loudly
                            # (start a fresh session with SDLC_TRIAGE_SESSION, or raise the cap)
   low_consolidation: false # true folds a Low-severity finding into a themed consolidation CR
@@ -328,8 +329,8 @@ capacity:
 
 # Tokens-per-point override. Unset, the plan re-measures the rate from VELOCITY.md; set, it
 # prices the plan, and the forecast basis names it an operator override beside the measured rate.
-# estimate:
-#   tokens_per_point: 200000   # a plain integer; 1e5 reads as text and is ignored
+estimate:
+  tokens_per_point: null   # e.g. 200000, a plain integer; 1e5 reads as text and is ignored
 
 # Run appetite - the unattended-run circuit breaker (Shape Up's fixed timebox). A run declares
 # how much it may spend; the breaker (`loop_guard budget`) is evaluated at unit BOUNDARIES and
@@ -360,6 +361,7 @@ sprint:
   points_split_above: 8  # the Points: value above which the plan refuses a unit and asks for a split
   affects_check: warn    # warn | block - what an Affects the unit's own content contradicts does
   fresh_session: warn    # warn | block | off - a session over 80,000 tokens at `sprint resume` or `plan --write`: warn names its re-read cost, block also refuses resume, off reads nothing
+  wsjf_inputs_stale_days: 7  # days before the seats' scores in .local/wsjf-inputs.json read as stale (advisory)
 
 # Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
 # stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open
@@ -368,16 +370,24 @@ sprint:
 lessons:
   validity_days: 90  # days a project lesson holds before re-validation is due
   loop: enforce      # enforce | judgement - judgement makes the close's lessons lanes advisory
+  carried_max: 5     # lessons the carried set (retros/LESSONS-TOP.md) holds
+  repeat_threshold: 2  # repeats a carried lesson must exceed before the retro proposes work for it
 
 # The sprint report page. `enabled: false` withholds the rendered text page; the run's data is
 # still recorded.
 report:
   enabled: true
 
-# Mutation probe cost ceiling per run (`mutation.py run`); enumerations beyond it are counted as
-# truncated, never silently clean.
+# Quality gates. `done_requires_verified: false` makes the Done-gate on red or never-run
+# executable ACs advisory; `epic_requires_test_spec: false` makes `verify_ac epic-ts` advisory;
+# `require_full_sections: true` judges every story and epic on its sections, stamped or not.
+# `mutation_max` is the mutation probe's cost ceiling per run (`mutation.py run`); enumerations
+# beyond it are counted as truncated, never silently clean.
 quality:
+  done_requires_verified: true
+  epic_requires_test_spec: true
   mutation_max: 25
+  require_full_sections: false
 
 # Estimate attribution. `default` names the estimator a unit with no `Estimated-by` is credited
 # to (unset: unattributed). `compulsory_after` maps an id prefix to the first id whose size was
@@ -421,5 +431,40 @@ pricing:
 # (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When
 # set, `status` names each In Progress unit older than this many days and every Blocked
 # unit with how long it has been stuck. `flow.py compute` is the full read, always available.
-# flow:
-#   ageing_days: 14
+# `forecast_bucket` is the throughput bucket a forecast uses when no flag names one.
+flow:
+  ageing_days: null        # e.g. 14
+  forecast_bucket: day     # day | week | sprint
+
+# What the plan prices the gate as running at each moment: full, selected (the suites whose
+# surface changed) or none. The plan reports a per-commit value the commit hook does not run.
+test_execution:
+  per_commit: selected     # full | selected | none
+  at_close: full
+  at_release: full
+
+# The keys below are read from the project's own .config.yaml alone; each value here is the one
+# its script falls back to when the key is unset. See reference-config.md#other-settings.
+profile: full              # full | lite - see reference-config.md#profile
+serves_coverage: false     # true turns the Serves: persona-coverage check on before any tag
+batch_size:                # the advisory batch-size lane; off while both are unset
+  max_lines: null
+  max_files: null
+docs:
+  latest_max_lines: 80     # the line ceiling on reviews/LATEST.md
+engagement_floor:          # a bare `engagement_floor: judgement` sets the mode alone
+  mode: floor              # floor | judgement
+  adopt_after: null        # forward-only id cutoff: units up to it are exempt
+gate:
+  budget_seconds: 45       # the gate cost report's budget for the standard lanes
+indexes:
+  archive_after: 30        # terminal rows a live index carries before reconcile advises archive.py
+instructions:
+  working_model_opt_out: null  # a working-model element, or a list, scoped out of the check
+conventions:               # the tolerant convention layer (lib/conventions.py)
+  status_column: []
+  companion_suffixes: [consultations]
+  bug_ready_sections:
+    repro: [Steps to Reproduce, Reproduction Steps, [Symptom, Root cause]]
+    fix: [Proposed Fix, Fix Description, Fix (proposed)]
+  templates: {}

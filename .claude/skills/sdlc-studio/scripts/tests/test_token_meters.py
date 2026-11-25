@@ -312,6 +312,14 @@ class HarnessSelectionTests(_Fixture):
                 got = token_meters.select(self.root, None, env)
                 self.assertEqual((got.get(token_meters.HARNESS), got.get("selected_by")),
                                  (harness, f"the environment ({by})"), got)
+        # Two running harnesses: the configured one is still set aside, so the refusal names
+        # the two that run. MUTANT: the configuration variables yield only to one running signal.
+        for config in ({"COPILOT_HOME": "/x/c"}, {"COPILOT_HOME": "/x/c", "OPENCODE_DB": "/x/o"}):
+            with self.subTest(two_running=config):
+                got = token_meters.select(self.root, None,
+                                          {"CLAUDECODE": "1", "CURSOR_AGENT": "1", **config})
+                self.assertEqual((got[token_meters.HARNESS], got["candidates"]),
+                                 (None, ["claude", "cursor"]), got)
 
     def test_a_config_variable_alone_still_selects_its_harness(self) -> None:
         """BG1282 AC2. With no other harness variable set, a configuration variable still
