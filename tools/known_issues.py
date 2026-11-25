@@ -11,7 +11,7 @@ cut shipped, and filing or closing a finding moves neither.
     python3 tools/known_issues.py write --release 5.2.0   # the cut: the page and the notes' count
     python3 tools/known_issues.py check [--at REV]        # 1 when page and corpus disagree
     python3 tools/known_issues.py check --at REV --release 5.2.0   # ...or a page cut for another series
-    python3 tools/known_issues.py bar [--at REV]          # 1 while a barred finding is open
+    python3 tools/known_issues.py bar [--at REV]          # 1: bar not met, or a finding unreadable
 
 Repo-only tooling: not shipped with the skill. Pure stdlib.
 """
@@ -66,28 +66,29 @@ _SEVERITY = re.compile(r"^> \*\*Severity:\*\* *(.+)$", re.M)
 _HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
 
 #: Every bar a release has been held to, newest first, as `(series, heading version, barred
-#: severities, prose)`. A page states the bar in force for the series being cut - the newest
+#: severities, open-finding limit, prose)`, the limit being the count the open findings must stay
+#: below, or None for a bar that sets none. A page states the bar in force for the series being cut - the newest
 #: recorded at or below it - and keeps every older one below as history, because a reader needs
 #: to know which bar the list in front of them serves. A new bar is a new first row; the rows
 #: below it never change.
 BARS = (
-    ((6, 5), "v6.5", BARRED + ("Medium",), """\
+    ((6, 5), "v6.5", BARRED + ("Medium",), 50, """\
 **Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for
 that target rather than for a date. A finding either reaches a terminal status or ships open at
 Low severity, listed below by id.
 """),
-    ((6, 0), "v6.0", BARRED, """\
+    ((6, 0), "v6.0", BARRED, None, """\
 **Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
 decision.** A finding either reaches a terminal status with its own verifiers passing, or it
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 """),
-    ((5, 1), "v5.1", BARRED, """\
+    ((5, 1), "v5.1", BARRED, None, """\
 **Zero open High-severity bugs at the tag, and every Medium disposed of or ruled.** A
 finding either reaches a terminal status with its own verifiers passing, or it stays open
 carrying a dated ruling that says why it ships.
 """),
-    ((5, 0), "v5.0.0", BARRED, """\
+    ((5, 0), "v5.0.0", BARRED, None, """\
 **Zero open High-severity bugs at the tag.** Every High finding raised against v5 was
 fixed and closed before the tag was cut. The bar was originally zero open bugs of any
 severity; it moved on 2026-08-11, because holding a release for findings that are real
@@ -128,13 +129,34 @@ def barred_for(release: str) -> tuple[str, ...]:
     return _in_force(_series(release))[2]
 
 
-def held_to(repo: Path | None = None) -> tuple[str, ...]:
-    """The severities the tree under `repo` is barred from shipping open: those of the bar in
-    force for the series its page's heading names, or BARRED where no page names one. Read from
-    the tree judged, so `bar --at` an older tag judges it by that release's own bar."""
+def _named_bar(repo: Path | None) -> tuple | None:
+    """The BARS row in force for the series the page under `repo` names in its heading, or None
+    where no page names one. Read from the tree judged, so `bar --at` an older tag judges it by
+    that release's own bar."""
     page = (repo or REPO) / PAGE_REL
     named = _BAR_HEADING.search(page.read_text(encoding="utf-8")) if page.is_file() else None
-    return barred_for(f"{named[1]}.{named[2]}") if named else BARRED
+    return _in_force(_series(f"{named[1]}.{named[2]}")) if named else None
+
+
+def held_to(repo: Path | None = None) -> tuple[str, ...]:
+    """The severities the tree under `repo` is barred from shipping open: those of the bar its
+    page names, or BARRED where no page names one."""
+    bar = _named_bar(repo)
+    return bar[2] if bar else BARRED
+
+
+def limit_at(repo: Path | None = None) -> int | None:
+    """The count the open findings under `repo` must stay below, as the bar its page names sets
+    it, or None where that bar sets none or no page names one."""
+    bar = _named_bar(repo)
+    return bar[3] if bar else None
+
+
+def open_count(repo: Path | None = None) -> int:
+    """How many findings under `repo` are open, at any severity. A finding nobody can parse is
+    not counted: `bar` refuses it on its own."""
+    rows = (_read(path) for path in sorted(((repo or REPO) / BUGS_REL).glob("BG*.md")))
+    return sum(1 for row in rows if row is not None and _is_open(row[1]))
 
 
 #: The page's prose is DERIVED from the count it sits above, because a sentence that is true of
@@ -161,7 +183,7 @@ def _head(count: int, release: str, shipped: tuple[str, ...]) -> str:
             "different things, and only one of them is checkable.\n")
     in_force = _in_force((major, minor))
     history = "".join(f"## The bar {name} was held to, kept as history\n\n{prose}\n"
-                      for series, name, _barred, prose in BARS if series < in_force[0])
+                      for series, name, _barred, _limit, prose in BARS if series < in_force[0])
     return f"""# Known issues
 
 The defects SDLC Studio knows about and has chosen to ship. This page is the disclosure
@@ -170,7 +192,7 @@ rather than read.
 
 ## The bar v{major}.{minor} is held to
 
-{in_force[3]}
+{in_force[4]}
 {body}
 {history}## Triaged to {target}
 
@@ -452,7 +474,9 @@ def main(argv: list[str] | None = None) -> int:
                             "another series than this version's")
     bar = sub.add_parser("bar", help="exit 1 when any finding at a severity barred by the bar "
                                      "the page names (Critical and High where it names none) is "
-                                     "still open or a finding cannot be parsed, 2 when the corpus "
+                                     "still open, when as many findings are open as that bar's "
+                                     "limit or more, or when a finding cannot be parsed, 2 when "
+                                     "the corpus "
                                      "cannot be read at REV. A RELEASE-boundary "
                                      "check the pre-push hook runs at each tagged commit: an open "
                                      "High is ordinary mid-sprint and is only a defect at the tag")
@@ -485,25 +509,35 @@ def _either(barred: tuple[str, ...]) -> str:
 
 
 def _bar(root: Path) -> int:
-    """0 when no finding at a severity `root`'s bar bars is open under it, 1 when one is, or when
-    a finding cannot be parsed. The bar is the one its page names (`held_to`)."""
+    """0 when the bar `root`'s page names holds under it, 1 when a finding at a severity that
+    bar bars is open, when as many findings are open as the limit it sets or more, or when a
+    finding cannot be parsed. Each refusal line names the part of the bar it applies; where no
+    page names a bar, `root` is held to BARRED and to no limit."""
     # Named on this path too, and BEFORE the verdict. A severity in neither set is
     # dropped by both readers, so it does not hold the bar - but saying nothing about
     # it is how it stayed invisible, and this is the surface a release is judged on.
     _warn_unclassifiable(root)
-    barred = held_to(root)
+    barred, limit = held_to(root), limit_at(root)
     open_barred = barred_open(root, barred)
+    opened = open_count(root)
     # A finding neither reader can parse is NOT evidence of a clean corpus. Reported before
     # the verdict and it refuses, because the three guards this replaced each dropped such a
     # file silently, and silence read exactly like "bar met".
     blind = unparseable(root)
     if blind:
-        print(f"release bar UNKNOWN: {len(blind)} finding(s) neither the bar nor the "
+        print(f"release bar UNKNOWN under a bar barring {_either(barred)}: {len(blind)} "
+              f"finding(s) neither the bar nor the "
               f"disclosure page can parse, so their status and severity are invisible to "
               f"both - {', '.join(blind)}. Repair the heading, status or severity field; a "
               f"finding nobody can read must never count as a corpus with nothing in it")
-    if not open_barred and not blind:
-        print(f"release bar met: no open finding at {_either(barred)} severity")
+    over = limit is not None and opened >= limit
+    if over:
+        print(f"release bar NOT met under a bar of fewer than {limit} open findings: {opened} "
+              f"are open. Fix or rule enough of them, or change the bar in a recorded decision, "
+              f"but do not tag against a bar the corpus contradicts.", file=sys.stderr)
+    if not open_barred and not blind and not over:
+        counted = f", and {opened} open, fewer than {limit}" if limit is not None else ""
+        print(f"release bar met: no open finding at {_either(barred)} severity{counted}")
         return 0
     if not open_barred:
         return 1

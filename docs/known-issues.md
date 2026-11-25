@@ -90,8 +90,9 @@ buy honestly.
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
 | `BG1760` | Low | US1331 did not converge in review: round 2 REJECT findings |
+| `BG1761` | Low | US1331 did not converge in review: round 3 REJECT findings |
 
-47 findings: 0 Medium, 47 Low.
+48 findings: 0 Medium, 48 Low.
 
 ## Not carried
 

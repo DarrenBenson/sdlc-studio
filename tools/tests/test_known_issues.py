@@ -925,6 +925,48 @@ class BarInForceTests(unittest.TestCase):
         self.assertNotIn("BG0002", earlier)
         self.assertNotIn("superseded", earlier)
 
+    def test_the_unknown_line_names_the_bar_it_applies(self) -> None:
+        """MUTANT: the UNKNOWN line restored to naming no bar ("release bar UNKNOWN: 1
+        finding(s) ..."), so a refusal over a finding nobody can parse names no severity of the
+        bar. A 6.0 page names Critical or High, and a tree with no page is held to BARRED."""
+        for release, named in (("6.5.0", "Critical, High or Medium"),
+                               ("6.0.0", "Critical or High"), (None, "Critical or High")):
+            with self.subTest(release=release):
+                root = self._tree([("BG9001", "Open", "Low")], release)
+                (root / ki.BUGS_REL / "BG9902-unreadable.md").write_text(
+                    "# no id here\n\n> **Status:** Open\n", encoding="utf-8")
+                rc, said = self._run("bar", "--root", str(root))
+                self.assertEqual(1, rc, said)
+                self.assertIn(f"release bar UNKNOWN under a bar barring {named}: 1 finding(s) "
+                              "neither the bar nor the disclosure page can parse", said)
+
+    def test_the_65_bar_refuses_at_its_open_finding_limit(self) -> None:
+        """MUTANTS: (1) no limit on the v6.5 row, so 50 open Low findings under a page saying
+        "Fewer than 50" meet its bar; (2) the limit compared with `>`, so 50 passes; (3) the
+        limit read for every page, so a 6.0 page is held to it; (4) every status counted, so a
+        Fixed finding holds the bar. 49 open under a 6.5 page is the positive control, as are
+        49 open beside a 50th that is Fixed, and 50 under a 6.0 page or under no page."""
+        def lows(n: int) -> list:
+            return [(f"BG{9000 + i}", "Open", "Low") for i in range(n)]
+        rc, said = self._run("bar", "--root", str(self._tree(lows(49), "6.5.0")))
+        self.assertEqual(0, rc, said)
+        self.assertIn("release bar met: no open finding at Critical, High or Medium severity, "
+                      "and 49 open, fewer than 50\n", said)
+        rc, said = self._run("bar", "--root",
+                             str(self._tree([*lows(49), ("BG9999", "Fixed", "Low")], "6.5.0")))
+        self.assertEqual(0, rc, said)
+        rc, said = self._run("bar", "--root", str(self._tree(lows(50), "6.5.0")))
+        self.assertEqual(1, rc, said)
+        self.assertIn("release bar NOT met under a bar of fewer than 50 open findings: 50 are "
+                      "open.", said)
+        self.assertNotIn("release bar met", said)
+        for release in ("6.0.0", None):
+            with self.subTest(release=release):
+                rc, said = self._run("bar", "--root", str(self._tree(lows(50), release)))
+                self.assertEqual(0, rc, said)
+                self.assertIn("release bar met: no open finding at Critical or High severity\n",
+                              said)
+
     def test_check_reads_the_bar_the_page_names(self) -> None:
         """MUTANT: `check` re-renders the Not carried section under Critical and High whatever
         the page names, so a 6.5 page that leaves out its Medium `Won't Fix` finding agrees with

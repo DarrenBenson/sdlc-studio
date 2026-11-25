@@ -670,9 +670,59 @@ class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
     #: The hook's own refusal line for an unmet bar, which names no severity of its own: `bar`,
     #: printed just above it, names the severities of the bar the tagged page states.
     REFUSAL = ("pre-push: the release bar is not met at tagged commit {sha}: a finding is open "
-               "there at a severity the bar its page names bars, or one cannot be parsed (named "
-               "above) - fix it, or change the bar in a recorded decision, then tag the commit "
-               "that holds the fix")
+               "there at a severity the bar its page names bars, as many findings are open as "
+               "that bar's limit or more, or one cannot be parsed (named above) - fix it, or "
+               "change the bar in a recorded decision, then tag the commit that holds the fix")
+
+    def test_each_refusal_cause_names_the_bar_it_applies(self) -> None:
+        """MUTANTS: `bar`'s UNKNOWN line naming no severity of the bar, so a tag refused over a
+        finding nobody can parse names none; no limit on the v6.5 bar, so a tag over 50 open Low
+        findings under a page saying "Fewer than 50" is let through; the hook's refusal naming
+        no count cause. The positive control is a v6.5.0 tag over 49 open Low findings, pushed
+        with the bar met; the 50th is then refused, and so is an unparseable finding."""
+        fx = _Clone()
+        try:
+            self.assertEqual(0, fx.push().returncode)
+            fx.argv.unlink(missing_ok=True)
+            bugs = fx.clone / known_issues.BUGS_REL
+            bugs.mkdir(parents=True, exist_ok=True)
+            for i in range(49):
+                (bugs / f"BG{9000 + i}-a-low.md").write_text(
+                    f"# BG{9000 + i}: a low\n\n> **Status:** Open\n> **Severity:** Low\n",
+                    encoding="utf-8")
+            (fx.clone / known_issues.PAGE_REL).write_text(known_issues.render(fx.clone, "6.5.0"),
+                                                          encoding="utf-8")
+            _git(fx.clone, "add", "-A")
+            _git(fx.clone, "commit", "-q", "-m", "49 open")
+            _git(fx.clone, "tag", "v6.5.0")
+            ok = fx.push("v6.5.0")
+            self.assertEqual(0, ok.returncode, ok.stderr)
+            self.assertIn("release bar met: no open finding at Critical, High or Medium severity, "
+                          "and 49 open, fewer than 50", ok.stderr)
+            fx.argv.unlink(missing_ok=True)
+            sha = self._tag(fx, "Low", "6.5.0", "v6.5.1")      # BG9901, the 50th open finding
+            r = fx.push("v6.5.1")
+            self.assertNotEqual(0, r.returncode, "a tag over 50 open findings was let through")
+            self.assertIn(self.REFUSAL.format(sha=sha), r.stderr.splitlines(), r.stderr)
+            self.assertIn("release bar NOT met under a bar of fewer than 50 open findings: 50 are "
+                          "open.", r.stderr)
+            (bugs / "BG9901-a-finding.md").unlink()
+            (bugs / "BG9902-unreadable.md").write_text("# no id here\n\n> **Status:** Open\n",
+                                                       encoding="utf-8")
+            (fx.clone / known_issues.PAGE_REL).write_text(known_issues.render(fx.clone, "6.5.0"),
+                                                          encoding="utf-8")
+            _git(fx.clone, "add", "-A")
+            _git(fx.clone, "commit", "-q", "-m", "an unreadable finding")
+            _git(fx.clone, "tag", "v6.5.2")
+            sha = _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+            r = fx.push("v6.5.2")
+            self.assertNotEqual(0, r.returncode, "a tag over an unreadable finding was let through")
+            self.assertIn(self.REFUSAL.format(sha=sha), r.stderr.splitlines(), r.stderr)
+            self.assertIn("release bar UNKNOWN under a bar barring Critical, High or Medium: 1 "
+                          "finding(s) neither", r.stderr)
+            self.assertEqual([], fx.gate_calls(), "the gate ran past a refused tag")
+        finally:
+            fx.cleanup()
 
     @staticmethod
     def _tag(fx: _Clone, severity: str, release: str, tag: str) -> str:

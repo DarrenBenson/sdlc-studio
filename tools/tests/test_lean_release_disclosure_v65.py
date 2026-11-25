@@ -7,10 +7,10 @@ its `docs/known-issues.md` differs from HEAD's (the cut being committed now), el
 last wrote that page. AC1 reads the page and the notes there, and holds the page's Not carried
 section to every finding at Medium or above that left without a fix, since the v6.5 bar bars
 Medium. AC2 counts the open findings in that commit's corpus against the operator's bar for 6.5
-(fewer than 50 open, none at Medium or above). `known_issues.py bar` holds a tree to the
-severities of the bar its page names, Medium among them for 6.5, but not to the count of fewer
-than 50, which is this test's alone; AC2 runs that command too, at the tag, or on the working
-tree before the tag exists. Each check returns its problems and is run on a mutated copy, which
+(fewer than 50 open, none at Medium or above). `known_issues.py bar` holds a tree to the bar
+its page names, Medium among its severities for 6.5 and fewer than 50 open as its count; AC2
+counts both itself and runs that command too, at the tag, or on the working tree before the tag
+exists. Each check returns its problems and is run on a mutated copy, which
 it must refuse. The git helpers and the page's heading and count patterns are the 6.4 cut's own,
 imported from its test module.
 
@@ -228,8 +228,8 @@ class DisclosureTests(unittest.TestCase):
         self.assertEqual([], disclosure_problems(page, notes))
         self.assertEqual(["the page states the bar for 6.4, not v6.5"], disclosure_problems(
             page.replace("## The bar v6.5 is held to", "## The bar v6.4 is held to"), notes))
-        v60 = next(prose for _s, name, _b, prose in known_issues.BARS if name == "v6.0")
-        v65 = next(prose for _s, name, _b, prose in known_issues.BARS if name == "v6.5")
+        v60 = next(prose for _s, name, _b, _limit, prose in known_issues.BARS if name == "v6.0")
+        v65 = next(prose for _s, name, _b, _limit, prose in known_issues.BARS if name == "v6.5")
         self.assertIn(v65, page)
         self.assertEqual(
             [f"the v6.5 bar reads {BAR_V60!r}, not D0560's {BAR_V65!r}"],
