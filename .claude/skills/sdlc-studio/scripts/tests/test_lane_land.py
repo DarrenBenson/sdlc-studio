@@ -870,6 +870,37 @@ sys.exit(bad)
                          (self.root / lanes.BRIEFS / f"{A}-qa.txt").read_text(encoding="utf-8"))
         self.assertTrue(all(p.name.startswith(A) for p in (self.root / lanes.BRIEFS).iterdir()))
 
+    def test_a_resume_compares_the_units_of_a_unit_no_artefact_carries_by_normalised_id(self) -> None:
+        """BG1296: a unit no artefact carries lands with no self-check, and its record keeps the
+        spelling `--units` gave it (`us9999`); resumed as `US9999` it is the same landing.
+        Control: another unit is still refused."""
+        self._stage("src/a.py", "A = 2\n")
+        self._stage("src/refuse.py", "X = 1\n")
+        self._hand_in(units=("us9999",), self_check=False)
+        r = self._land("us9999")
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn(REFUSAL, r.stderr)
+        path = self.root / lanes.LANDED / lanes.LAND_RECORD.format(name=self.wt.name)
+        self.assertEqual(["us9999"], json.loads(path.read_text(encoding="utf-8"))["units"])
+        (self.root.parent / "hooks" / "pre-commit").write_text(
+            f'#!/bin/sh\ngit rev-parse --show-toplevel >> "{self.log}"\nexit 0\n', encoding="utf-8")
+
+        def resume(unit: str) -> subprocess.CompletedProcess:
+            return subprocess.run(
+                [sys.executable, "-B", str(SPRINT), "lane", "land", "--resume", "--worktree",
+                 str(self.wt), "--units", unit, "--root", str(self.root)],
+                capture_output=True, text=True, timeout=600, cwd=str(self.root),
+                env=self._env(), check=False)
+
+        other = resume("US9998")
+        self.assertEqual(2, other.returncode, other.stdout + other.stderr)
+        self.assertIn("resume it as it was begun", other.stderr)
+        same = resume("US9999")
+        self.assertNotIn("resume it as it was begun", same.stderr)
+        self.assertEqual(1, same.returncode, same.stdout + same.stderr)
+        self.assertIn("us9999: self-check NOT RECORDED", same.stderr)
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+
     def test_an_unknown_unit_id_is_kept_as_given(self) -> None:
         """A unit no artefact carries keeps the spelling it was given: the canonical form is read
         from the artefact, never guessed."""
