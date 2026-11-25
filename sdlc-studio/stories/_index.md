@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 158 |
-| Ready | 2 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 981 |
+| Done | 982 |
 | Won't Implement | 96 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -368,7 +368,7 @@
 | [US1328](US1328-the-help-upgrade-and-public-pages-describe-what.md) | The help, upgrade and public pages describe what 6.5 ships | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1329](US1329-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.5 ships | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1330](US1330-v6-5-0-is-cut-version-changelog-known.md) | v6.5.0 is cut: version, changelog, install pins and the specs' baseline | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
-| [US1331](US1331-v6-5-0-discloses-what-it-ships-with.md) | v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1331](US1331-v6-5-0-discloses-what-it-ships-with.md) | v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 

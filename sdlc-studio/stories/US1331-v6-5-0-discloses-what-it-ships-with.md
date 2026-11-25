@@ -1,6 +1,6 @@
 # US1331: v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1327
 > **Release:** 6.5
 > **Created:** 2026-11-25
@@ -33,6 +33,7 @@ and can read each run's record without running the tool
   sentence, "Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
   decision"; or a count line that disagrees with the page.
   - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650
+  - **Verified:** yes (2026-11-25)
 - **AC2:** Given the bug corpus at the release (judged as AC1 judges it), then `known_issues.py bar`
   judged there exits 0 (`bar --at v6.5.0` once the tag exists, the working tree before it), and the
   operator's bar holds there: the test counts the open findings in that commit's corpus and finds
@@ -41,11 +42,13 @@ and can read each run's record without running the tool
   of them Medium; `bar --at v6.5.0` at HEAD, which exits 2 because no such tag exists; or a cut made
   while 50 or more findings, or any at Medium or above, are open.
   - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut
+  - **Verified:** yes (2026-11-25)
 - **AC3:** Given docs/evidence.md, then it is regenerated with `sprint_report.py evidence --out
   docs/evidence.md` and lists every signed report through RPT0045 at least, and `--check` exits 0.
   Fails on: the page at HEAD, whose newest report is RPT0035 and on which `--check` notes RPT0036 to
   RPT0045 as not yet on the page.
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/sprint_report.py evidence --out docs/evidence.md --check && grep -q 'RPT0045' docs/evidence.md
+  - **Verified:** yes (2026-11-25)
 
 ## Notes
 

@@ -89,10 +89,8 @@ buy honestly.
 | `BG1755` | Low | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch |
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
-| `BG1760` | Low | US1331 did not converge in review: round 2 REJECT findings |
-| `BG1761` | Low | US1331 did not converge in review: round 3 REJECT findings |
 
-48 findings: 0 Medium, 48 Low.
+46 findings: 0 Medium, 46 Low.
 
 ## Not carried
 

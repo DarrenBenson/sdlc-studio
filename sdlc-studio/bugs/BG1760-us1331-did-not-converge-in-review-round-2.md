@@ -1,6 +1,6 @@
 # BG1760: US1331 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** docs/known-issues.md, docs/release-notes-v6.5.0.md, docs/evidence.md, tools/known_issues.py, tools/tests/test_known_issues.py, tools/tests/test_lean_release_disclosure_v65.py, changelog.d/US1331.md
@@ -29,10 +29,13 @@ Fix each finding above, then deliver US1331 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC3** US1331 AC1 still passes: Given `known_issues.py write --release 6.5.0` run for the release, then, judged at the release (the
   - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_known_issues_page_is_cut_for_650
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** US1331 AC2 still passes: Given the bug corpus at the release (judged as AC1 judges it), then `known_issues.py bar`
   - **Verify:** pytest tools/tests/test_lean_release_disclosure_v65.py::DisclosureTests::test_the_release_bars_hold_at_the_cut
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC5** US1331 AC3 still passes: Given docs/evidence.md, then it is regenerated with `sprint_report.py evidence --out
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/sprint_report.py evidence --out docs/evidence.md --check && grep -q 'RPT0045' docs/evidence.md
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

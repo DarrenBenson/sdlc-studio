@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 48 |
+| Open | 46 |
 | In Progress | 0 |
-| Fixed | 1243 |
+| Fixed | 1245 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -835,8 +835,8 @@
 | [BG1757](BG1757-a-commit-can-stage-a-review-ledger-row.md) | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1759](BG1759-us1327-did-not-converge-in-review-round-2.md) | US1327 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1760](BG1760-us1331-did-not-converge-in-review-round-2.md) | US1331 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-25 | 2026-11-25 |
-| [BG1761](BG1761-us1331-did-not-converge-in-review-round-3.md) | US1331 did not converge in review: round 3 REJECT findings | Open | Low | 2026-11-25 | 2026-11-25 |
+| [BG1760](BG1760-us1331-did-not-converge-in-review-round-2.md) | US1331 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-25 | 2026-11-25 |
+| [BG1761](BG1761-us1331-did-not-converge-in-review-round-3.md) | US1331 did not converge in review: round 3 REJECT findings | Fixed | Low | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
