@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 48 |
+| Open | 46 |
 | In Progress | 0 |
-| Fixed | 1240 |
+| Fixed | 1242 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -572,7 +572,7 @@
 | [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1495](BG1495-sprint-plan-warns-a-wave-is-not-safely.md) | sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave | Fixed | Low | 2026-11-16 | 2026-11-16 |
 | [BG1496](BG1496-bg1487-s-readme-opening-guard-lets-a-reworded.md) | BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
-| [BG1497](BG1497-two-config-keys-the-code-reads-are-undocumented.md) | Two config keys the code reads are undocumented: sprint.fresh_session is missing from reference-config.md and pricing.copilot_billing from config-defaults.yaml | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1497](BG1497-two-config-keys-the-code-reads-are-undocumented.md) | Two config keys the code reads are undocumented: sprint.fresh_session is missing from reference-config.md and pricing.copilot_billing from config-defaults.yaml | Fixed | Low | 2026-11-16 | 2026-11-16 |
 | [BG1498](BG1498-the-push-gate-s-noise-check-holds-each.md) | The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their budget refuses a push CI would pass; and its report counts modules that leaked nothing | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1499](BG1499-us1058-still-reads-status-ready-though-run-thirteen.md) | US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1500](BG1500-help-retro-md-says-an-escaped-defect-is.md) | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on or before the bug's Created day | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
@@ -833,7 +833,7 @@
 | [BG1755](BG1755-the-prose-escaper-spans-a-bare-url-written.md) | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1756](BG1756-a-plan-refused-for-a-criteria-problem-other.md) | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template | Open | Low | 2026-11-25 | 2026-11-25 |
 | [BG1757](BG1757-a-commit-can-stage-a-review-ledger-row.md) | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry | Open | Low | 2026-11-25 | 2026-11-25 |
-| [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1758](BG1758-bg1497-did-not-converge-in-review-round-2.md) | BG1497 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
