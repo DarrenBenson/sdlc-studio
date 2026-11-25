@@ -1,14 +1,14 @@
-# US1330: v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page
+# US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline
 
 > **Status:** Ready
-> **Depends on:** US1327, US1328, US1329
+> **Depends on:** US1327, US1328, US1329, US1331
 > **Release:** 6.5
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, sdlc-studio/.version, README.md, docs/INSTALL.md, docs/enterprise.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, changelog.d/US1330.md, docs/known-issues.md, docs/release-notes-v6.5.0.md, docs/evidence.md, tools/known_issues.py, tools/tests/test_known_issues.py, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v65.py
+> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, sdlc-studio/.version, README.md, docs/INSTALL.md, docs/enterprise.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, changelog.d/US1330.md, docs/release-notes-v6.5.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v65.py
 > **Epic:** EP0379
-> **Points:** 8
+> **Points:** 5
 > **Persona:** Abena Osei
 
 ## User Story
@@ -16,13 +16,11 @@
 **As a** head of engineering whose teams install or upgrade to the release she takes to the change
 board (Abena)
 **I want** v6.5.0 cut through the shipped release path: one version in every home, this
-repository's own project stamp included, a CHANGELOG section composed from the fragments, a
-known-issues page that states the bar 6.5 was held to and shows it met, install commands pinned to
-the new tag on every page that gives one, specs that name the release they cover, and an evidence
-page that lists every signed run
-**So that** what my teams install, what the notes say, what the CHANGELOG lists, what the
-disclosure page claims and what the specs describe are the same release, and the board is shown
-every defect it ships with against the bar it was promised
+repository's own project stamp included, a CHANGELOG section composed from the fragments, install
+commands pinned to the new tag on every page that gives one, and specs that name the release they
+cover
+**So that** what my teams install, what the notes say, what the CHANGELOG lists and what the specs
+describe are the same release
 
 ## Acceptance Criteria
 
@@ -41,50 +39,28 @@ every defect it ships with against the bar it was promised
   CHANGELOG range from the `[6.5.0]` heading to the `[6.4.0]` heading as holding US1321 (rechecked at the cut) and
   not the sentence ending 'in every project whose cast holds no Sam'.
   - **Verify:** shell python3 tools/check_versions.py --strict && python3 -m pytest -q tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_every_version_home_and_the_section_name_650
-- **AC2:** Given `known_issues.py write --release 6.5.0` run at the cut, then, judged at the commit
-  that cut 6.5.0, `known_issues.py check` exits 0, the page's heading names the v6.5 bar and states
-  it as D0560 rules it (fewer than 50 open defects and none at Medium or above), which needs a 6.5
-  entry in `tools/known_issues.py`'s `BARS` with the v6.0 bar kept as history, and the 6.5.0 notes
-  carry exactly one filled `**v6.5.0 discloses N open defects: N Medium, N Low.**` line whose figures
-  equal the page's. Fails on: the page at HEAD, cut for v6.4 with 369 findings (65 Medium);
-  `known_issues.render(REPO, "6.5.0")` at HEAD, which heads "The bar v6.5 is held to" with v6.0's
-  sentence, "Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
-  decision"; or a count line that disagrees with the page.
-  - **Verify:** pytest tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_known_issues_page_is_cut_for_650
-- **AC3:** Given the bug corpus at the commit that cut 6.5.0, then `known_issues.py bar` judged
-  there exits 0 (`bar --at v6.5.0` once the tag exists, the working tree before it), and the
-  operator's bar holds there: the test counts the open findings in that commit's corpus and finds
-  fewer than 50, and none at Medium, High or Critical. Fails on: the commit that last wrote
-  docs/known-issues.md at HEAD (cd0e478ec, the 6.4.0 page), whose corpus holds 369 open findings, 65
-  of them Medium; `bar --at v6.5.0` at HEAD, which exits 2 because no such tag exists; or a cut made
-  while 50 or more findings, or any at Medium or above, are open.
-  - **Verify:** pytest tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_release_bars_hold_at_the_cut
-- **AC4:** Given README, docs/INSTALL.md and docs/enterprise.md, then every install and version
+- **AC2:** Given README, docs/INSTALL.md and docs/enterprise.md, then every install and version
   example pins `--version v6.5.0` (`-Version v6.5.0` in PowerShell); README links the 6.5.0 notes
   and its release-notes list calls 6.5.0, and only 6.5.0, the current release; and the 6.5.0 notes'
   CHANGELOG link is re-pointed from `#unreleased` to the 6.5.0 section. Fails on: README and INSTALL
   pinned at v6.4.0, and enterprise.md's "Pin a release" line at `v6.4.0`, which no test reads, as at
   HEAD; two releases called current.
   - **Verify:** shell grep -qE '[]][(]docs/release-notes-v6[.]5[.]0[.]md[)]' README.md && python3 -m pytest -q tools/tests/test_lean_public_docs_retired.py tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_notes_link_the_650_section tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_every_install_pin_names_the_release
-- **AC5:** Given the PRD, TRD and TSD at the commit that cut 6.5.0, then each Coverage line, and the
+- **AC3:** Given the PRD, TRD and TSD at the commit that cut 6.5.0, then each Coverage line, and the
   PRD's inventory baseline, reads v6.5.0 as cut, plus the 6.6 work on `main`; the refresh tests read
   that baseline from package.json through `release_baseline()` and refuse the stale "v6.4.0 as cut,
   plus the 6.5 work" as they refuse 6.3's. Fails on: the specs at HEAD, whose Coverage lines read
   v6.4.0 as cut; a refresh test that passes with the 6.4.0 baseline put back.
   - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_specs_name_650_as_cut tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py
-- **AC6:** Given docs/evidence.md, then it is regenerated with `sprint_report.py evidence --out
-  docs/evidence.md` and lists every signed report through RPT0045 at least, and `--check` exits 0.
-  Fails on: the page at HEAD, whose newest report is RPT0035 and on which `--check` notes RPT0036 to
-  RPT0045 as not yet on the page.
-  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/sprint_report.py evidence --out docs/evidence.md --check && grep -q 'RPT0045' docs/evidence.md
 
 ## Notes
 
 - Serves: Abena Osei, End goals 1 and 3 (quoted under US1327).
-- Built LAST, as the release commit, after US1327, US1328 and US1329 are on main. Modelled on
-  US1173: bump the homes, `release_cut.py changelog-cut --version 6.5.0`, `known_issues.py write
-  --release 6.5.0`, `migrate.py --apply` for `.version`, `sprint_report.py evidence --out
-  docs/evidence.md`, then `check_versions.py --strict`.
+- Built LAST, as the release commit, after US1327, US1328, US1329 and US1331 are on main, so
+  `changelog-cut` composes every one of their fragments into the 6.5.0 section. Modelled on US1173:
+  bump the homes, `release_cut.py changelog-cut --version 6.5.0`, `migrate.py --apply` for
+  `.version`, then `check_versions.py --strict`. The known-issues page, the release bar and the
+  evidence page are US1331's.
 - `.version` (BG1301, Won't Fix): the cut restamps it through `migrate.py --apply`, as the D0500
   commit did for 6.4.0. Rehearsed at grooming on a copy of this workspace with the skill's version
   read as 6.5.0: the dry run lists one deterministic upgrade, `sdlc-studio/.version stale (skill
@@ -100,11 +76,6 @@ every defect it ships with against the bar it was promised
   test_lean_public_docs_retired (2, the pins and the README notes link), each cleared by this
   unit's own edits. The three refresh tests are in Affects to add the stale 6.4.0 mutant, as US1173
   added 6.3.0's; test_lean_public_docs_retired reads the release from package.json and needs no edit.
-- `tools/known_issues.py` and `tools/tests/test_known_issues.py` are in Affects for AC2's `BARS`
-  entry. Without it the 6.5.0 page states the v6.0 bar under a v6.5 heading, which is weaker than
-  the bar 6.5 was held to. `bar` itself stays Critical and High (its `BARRED`); the stricter count
-  is the cut test's, as the grooming brief asked. Existing `test_known_issues` cases render 5.1.1,
-  6.0.0 and 6.1.0 and are unaffected by a (6, 5) entry; add one for 6.5.0.
 - docs/enterprise.md is in Affects because line 59 pins `--version v6.4.0` and no test reads it
   (`test_lean_public_docs_retired` reads README, CONTRIBUTING and INSTALL only). AC4's new test
   holds it to package.json's release so a later cut cannot leave it behind.
@@ -122,9 +93,8 @@ every defect it ships with against the bar it was promised
   not refuse; the operator may want the reviews before the tag.
 - The criteria must stay true after later releases, because `gate.py --release` executes every
   story's Verify at each cut: the version tests read 'at or above 6.5.0', the CHANGELOG range is
-  bounded by the 6.4.0 heading, AC2, AC3 and AC5 judge the commit that cut 6.5.0 (the tag once it
-  exists, else the working tree while the cut is uncommitted, else the commit that last wrote the
-  page), and AC6 reads 'RPT0045 at least'.
+  bounded by the 6.4.0 heading, and AC3 judges the commit that cut 6.5.0 (the tag once it exists,
+  else the working tree while the cut is uncommitted, else the commit that last wrote the page).
 - Run `conformance.py check` on the whole workspace and `tools/run-suite.sh all` on the gate host
   before review. A file outside Affects that needs a change is a finding to report, not an edit.
 - Out of this unit, after its review and the run's sign (D0545 leaves the tag, the publish and the
@@ -141,3 +111,4 @@ every defect it ships with against the bar it was promised
 | --- | --- | --- |
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for EP0379 from the product seat's draft (run twenty-seven, the v6.5.0 release epic): user story, criteria with Verify lines, Release 6.5, Depends on for the wave order, and notes, modelled on EP0314 |
+| 2026-11-25 | orchestrator (delegate under D0631) | Split at 8 points, the ceiling US0854::AC1 refuses on any open unit: the known-issues page, the release bar and the evidence page (AC2, AC3, AC6) moved to US1331, which lands before this cut so its fragment is in the 6.5.0 section; AC4 and AC5 renumbered AC2 and AC3; Points 8 to 5; Depends on adds US1331 |

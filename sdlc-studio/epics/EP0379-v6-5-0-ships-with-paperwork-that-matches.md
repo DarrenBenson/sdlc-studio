@@ -28,16 +28,20 @@ publish and the site stay with the operator (D0545's exclusions).
 | 1 | US1327: The v6.5 release notes lead with what changed for the person answering for the release | 5 | none |
 | 1 | US1328: The help, upgrade and public pages describe what 6.5 ships | 5 | none |
 | 1 | US1329: The PRD, TRD and TSD describe what 6.5 ships | 5 | none |
-| 2 | US1330: v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page | 8 | US1327, US1328, US1329 |
+| 2 | US1331: v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run | 3 | US1327 |
+| 3 | US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline | 5 | US1327, US1328, US1329, US1331 |
 
 - **Wave one builds in parallel.** The three stories' Affects share no file: US1327 writes only
   `docs/release-notes-v6.5.0.md` and its own test; US1328 only help pages, README, llms.txt and two
   docs pages; US1329 only the three specs and `tools/tests/test_lean_trd_refresh.py`. Each writes
   its own `changelog.d/<ID>.md`.
-- **The cut goes last, alone.** It depends on all three, and it shares files with each:
-  `docs/release-notes-v6.5.0.md` (US1327), `README.md` (US1328), `sdlc-studio/prd.md`, `trd.md`,
-  `tsd.md` and `tools/tests/test_lean_trd_refresh.py` (US1329), and `changelog.d/`, which it
-  empties. It is the release commit.
+- **The disclosure follows the notes.** US1331 writes the known-issues page, the notes' disclosure
+  line and the evidence page; it shares `docs/release-notes-v6.5.0.md` with US1327, so it lands
+  after it, and may build while US1328 and US1329 finish (D0631).
+- **The cut goes last, alone.** It depends on all four, and it shares files with each:
+  `docs/release-notes-v6.5.0.md` (US1327, US1331), `README.md` (US1328), `sdlc-studio/prd.md`,
+  `trd.md`, `tsd.md` and `tools/tests/test_lean_trd_refresh.py` (US1329), and `changelog.d/`, which
+  it empties, so every story's fragment is in the 6.5.0 section. It is the release commit.
 - Total 23 points.
 
 ## Story Breakdown
@@ -45,7 +49,8 @@ publish and the site stay with the operator (D0545's exclusions).
 - [ ] [US1327: The v6.5 release notes lead with what changed for the person answering for the release](../stories/US1327-the-v6-5-release-notes-lead-with-what.md)
 - [ ] [US1328: The help, upgrade and public pages describe what 6.5 ships](../stories/US1328-the-help-upgrade-and-public-pages-describe-what.md)
 - [ ] [US1329: The PRD, TRD and TSD describe what 6.5 ships](../stories/US1329-the-prd-trd-and-tsd-describe-what-6.md)
-- [ ] [US1330: v6.5.0 is cut: version, changelog, known issues under the operator's bar, install pins, the specs' baseline and the evidence page](../stories/US1330-v6-5-0-is-cut-version-changelog-known.md)
+- [ ] [US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline](../stories/US1330-v6-5-0-is-cut-version-changelog-known.md)
+- [ ] [US1331: v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run](../stories/US1331-v6-5-0-discloses-what-it-ships-with.md)
 
 ## Revision History
 
@@ -53,3 +58,4 @@ publish and the site stay with the operator (D0545's exclusions).
 | --- | --- | --- |
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for run twenty-seven from the product seat's draft, modelled on EP0314 |
+| 2026-11-25 | orchestrator (delegate under D0631) | US1330 split at the 8-point ceiling: the disclosure is US1331 (3 points, wave 2), the cut US1330 (5 points, wave 3); still 23 points |
