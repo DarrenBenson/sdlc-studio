@@ -54,8 +54,9 @@ a pre-release below its final, so this happens once. Then run `migrate --apply` 
 A project already on 6.4 installs PyYAML, reinstalls and runs `migrate`. The rest of this list is
 what 6.5 changes in how you work.
 
-1. **Install PyYAML first.** 6.5 requires it: run `python3 -m pip install pyyaml` (on a system
-   Python, your package manager's `python3-yaml`). Both installers refuse without it, and so do
+1. **Install PyYAML first.** 6.5 requires it: run `python3 -m pip install pyyaml`, or install
+   your distribution's PyYAML package (such as `python3-yaml` on Debian and Ubuntu, or
+   `python-yaml` on Arch). Both installers refuse without it, and so do
    `gate.py` and every command that reads a present `sdlc-studio/.config.yaml`, rather than read
    your settings as the shipped defaults.
 2. **Reinstall.** A plain `install.sh` or `install.ps1` fetches the latest published release; pass

@@ -45,6 +45,7 @@ import persona_review  # noqa: E402
 import sprint  # noqa: E402
 import sprint_report  # noqa: E402
 import test_lean_docs_v64 as v64  # noqa: E402
+import test_lean_sign_principal as sp  # noqa: E402
 import test_persona_review_block as pb  # noqa: E402
 
 _read, _flat = v64._read, v64._flat
@@ -53,6 +54,14 @@ _config_ref_default, _shipped_default = v64._config_ref_default, v64._shipped_de
 #: The configuration keys 6.5 adds, each with the dotted path its shipped default sits at.
 NEW_KEYS = ("personas.standard", "ci.wait_timeout_minutes", "ci.rerun_limit",
             "review.rendered_paths")
+
+#: What a page says of PyYAML's system package: the distribution's own, named per distribution.
+DISTRO_PACKAGE = ("your distribution's PyYAML package", "`python3-yaml` on Debian and Ubuntu",
+                  "`python-yaml` on Arch")
+#: The wording that gave Debian's name as every system's package.
+ONE_PACKAGE = "package manager's `python3-yaml`"
+#: A gate lane's result line, as the gate prints one for each lane it runs.
+LANE_LINE = r"(?m)^\s*\[(?:PASS|FAIL|WARN|SKIP)\] "
 
 #: A qa seat card that breaks a blocking rule: a demographic token in its identity.
 TOKEN_CARD = pb._seat("qa", "Ivy Cole", extra=" She is 42 years old.")
@@ -153,8 +162,9 @@ class DocsV65Tests(unittest.TestCase):
         pre = _flat(_section(_read(page), "## Prerequisites"))
         self.assertTrue(pre, "help/upgrade.md has no Prerequisites section")
         for needle in ("Python 3.10+", "PyYAML", f"`{gate.PYYAML_INSTALL}`", "installers",
-                       "`gate.py`", "`.config.yaml`", "refuse"):
+                       "`gate.py`", "`.config.yaml`", "refuse", *DISTRO_PACKAGE):
             self.assertIn(needle, pre, f"the Prerequisites section does not say {needle!r}")
+        self.assertNotIn(ONE_PACKAGE, pre, "the page gives Debian's package name for every system")
         _links_resolve(self, pre, page)
         self.assertEqual(gate.PYYAML_INSTALL, "python3 -m pip install pyyaml")
         for installer in ("install.sh", "install.ps1"):
@@ -170,6 +180,10 @@ class DocsV65Tests(unittest.TestCase):
             self.assertEqual(refused.returncode, 2, refused.stdout + refused.stderr)
             self.assertIn("PyYAML is required", refused.stdout + refused.stderr)
             self.assertIn(gate.PYYAML_INSTALL, refused.stdout + refused.stderr)
+            self.assertIn(f"`gate.py` refuses with exit {refused.returncode} before any lane runs",
+                          pre, "the page states another exit, or another order, than the gate's")
+            self.assertNotRegex(refused.stdout + refused.stderr, LANE_LINE,
+                                "the refused gate ran a lane")
             read = fx.run("config.py", "--root", str(fx.root), "show")
             self.assertEqual(read.returncode, 1, read.stdout + read.stderr)
             self.assertIn("PyYAML", read.stderr)
@@ -177,12 +191,15 @@ class DocsV65Tests(unittest.TestCase):
             fx.env.pop("PYTHONPATH")
             read = fx.run("config.py", "--root", str(fx.root), "show")
             self.assertEqual(read.returncode, 0, "the positive control: with PyYAML it reads")
+            ran = fx.run("gate.py", "--root", str(fx.root))
+            self.assertRegex(ran.stdout + ran.stderr, LANE_LINE,
+                             "the positive control: with PyYAML the gate prints its lanes")
 
         # help/persona.md: the standard's two modes, against real resolutions.
         page = HELP / "persona.md"
         review = _flat(_section(_read(page), "### review"))
         self.assertTrue(review, "help/persona.md has no review section")
-        for needle in ("`personas.standard`", "`block`, the default", "`report`",
+        for needle in ("`personas.standard`", "`block`, the default", "`report` frames the card",
                        f"`{REPORT_LINE}`", "`migrate --apply`", "its own cards",
                        "no value set", "](../reference-persona.md#persona-rules)"):
             self.assertIn(needle, review, f"the persona review section does not say {needle!r}")
@@ -386,8 +403,9 @@ class DocsV65Tests(unittest.TestCase):
             self.assertIn(needle, new, f"README's 6.5 line does not say {needle!r}")
         _links_resolve(self, new, README)
         lines = [ln for ln in readme.splitlines() if ln.startswith("- **New in ")]
-        self.assertTrue(lines[0].startswith("- **New in 6.5"),
-                        "README's 6.5 line is not the first 'New in' line")
+        at = {v: next(i for i, ln in enumerate(lines) if ln.startswith(f"- **New in {v}"))
+              for v in ("6.5", "6.4")}
+        self.assertLess(at["6.5"], at["6.4"], "README's 6.5 line is not above its 6.4 line")
 
         llms = _read(LLMS)
         self.assertIn("](docs/known-issues.md)", llms, "llms.txt does not link the known issues")
@@ -396,7 +414,8 @@ class DocsV65Tests(unittest.TestCase):
         signer = _flat(next((b for b in re.split(r"\n(?=- )|\n\s*\n", _read(LEADERS))
                              if b.startswith("- **Signer.**")), ""))
         self.assertTrue(signer, "engineering-leaders.md has no Signer bullet")
-        for needle in ("under delegation", "`--decision`", "accepted decision",
+        for needle in ("under delegation", "only with `--delegated` and `--decision`",
+                       "accepted decision",
                        "`sdlc-studio/decisions.md`", "Signed by", "Accountable",
                        "evidence pack", "the delegation and the decision"):
             self.assertIn(needle, signer, f"the Signer bullet does not say {needle!r}")
@@ -413,6 +432,32 @@ class DocsV65Tests(unittest.TestCase):
         self.assertIn("accepted decision in sdlc-studio/decisions.md", why)
         did, why = sprint._delegation(root, argparse.Namespace(delegated=False, decision="D0001"))
         self.assertIn("not marked --delegated", why)
+        # Through `sprint.py sign` on a closed run: only `--delegated` with an accepted
+        # `--decision` seals a delegated signature; an entered one needs neither.
+        cases = (("entered", lambda a, s: [], True),
+                 ("a decision with no --delegated", lambda a, s: ["--decision", a], False),
+                 ("--delegated with no decision", lambda a, s: ["--delegated"], False),
+                 ("--delegated with a superseded decision",
+                  lambda a, s: ["--delegated", "--decision", s], False),
+                 ("--delegated with the accepted decision",
+                  lambda a, s: ["--delegated", "--decision", a], True))
+        for label, argv_of, seals in cases:
+            with self.subTest(label), tempfile.TemporaryDirectory() as tmp:
+                fx = v64._Fixture(Path(tmp))
+                sp._closed_run(fx.root)
+                accepted, superseded = sp._decisions(fx.root)
+                argv = argv_of(accepted, superseded)
+                done = fx.run("sprint.py", "sign", "--report", "RPT0001", "--principal",
+                              "Ada Lane", *argv, "--root", str(fx.root))
+                signature = sp._read(fx.root).get("signature")
+                if not seals:
+                    self.assertNotEqual(done.returncode, 0, f"{argv} sealed a signature")
+                    self.assertIsNone(signature, f"{argv} wrote a signature")
+                    continue
+                self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+                want = ("Ada Lane" if "--delegated" not in argv else
+                        f"Ada Lane (entered under delegation, authorised by decision {accepted})")
+                self.assertEqual(sprint_report.signed_by(signature), want)
         signed = {"principal": "Ada Lane", "signed_at": "2026-11-25T10:00:00Z",
                   "fingerprint": "abc", "delegated": True, "decision": "D0001"}
         self.assertEqual(sprint_report.signed_by(signed),
@@ -438,8 +483,9 @@ class DocsV65Tests(unittest.TestCase):
                        "`migrate --apply`", "`sdlc-studio/.version`",
                        "`personas.standard: report`", "its own cards", "`require_ac_verification`",
                        "`persona_review.py check`", "`personas.standard: block`",
-                       "holds no card", "optional"):
+                       "holds no card", "optional", *DISTRO_PACKAGE):
             self.assertIn(needle, six_five, f"the 6.5 section does not say {needle!r}")
+        self.assertNotIn(ONE_PACKAGE, six_five, "the page gives Debian's name for every system")
         self.assertLess(six_five.index("PyYAML"), six_five.index("Reinstall"),
                         "the 6.5 section does not put PyYAML before the reinstall")
         for key in NEW_KEYS:

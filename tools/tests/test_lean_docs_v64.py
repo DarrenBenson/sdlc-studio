@@ -402,7 +402,8 @@ class DocsV64Tests(unittest.TestCase):
         new = _flat(new[0])
         for needle in ("evidence pack", "change board", "`release_cut.py evidence-pack`",
                        "each review seat's record", "`retro.py seats`", "escaped defect",
-                       "approval that missed it", "`escape.py trace`", "forecast", "actual"):
+                       "approval that missed it", "`escape.py trace`", "forecast", "actual",
+                       "`sprint plan`'s cost and wall-clock forecasts"):
             self.assertIn(needle, new, f"README's 6.4 line does not say {needle!r}")
         self.assertIn("evidence-pack", _read(SCRIPTS / "release_cut.py"))
         _assert_links_resolve(self, new, README)
