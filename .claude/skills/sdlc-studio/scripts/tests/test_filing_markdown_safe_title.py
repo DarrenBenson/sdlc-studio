@@ -219,6 +219,17 @@ class TitleMarkdownTests(unittest.TestCase):
         for split in ("~/`my_file.txt`", "/`tmp_dir`", "./`a_b`"):
             self.assertNotIn(split, body)
 
+    def test_a_slash_after_a_call_or_an_index_starts_no_rooted_path(self) -> None:
+        """BG1304: `unit_cost()/attempts_of` and `my_list[0]/my_total` are two identifiers and a
+        slash, not a rooted path, so the filer writes two spans that do not touch (two touching
+        spans render as one span holding literal backticks). Mutant: a rooted path allowed to
+        start on a slash right after `)` or `]`."""
+        summary = "the unit_cost()/attempts_of pair drifts, and my_list[0]/my_total too"
+        _root, body, _row = self._filed_with("plain", summary, "1. run it", "fix it")
+        self.assertNotIn("``", body, "two code spans touch")
+        self.assertIn("the `unit_cost()`/`attempts_of` pair drifts, and "
+                      "`my_list[0]`/`my_total` too", body)
+
     def test_a_glob_in_a_step_command_is_escaped_outside_a_fence_only(self) -> None:
         """What the escape costs a copied command, as `_steps_safe` says: a glob `**` on a step
         or an indented code line is escaped, and the same line in a fence is kept as written."""

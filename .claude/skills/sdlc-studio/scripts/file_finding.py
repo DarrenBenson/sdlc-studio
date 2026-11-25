@@ -1785,10 +1785,11 @@ def _code_urls(text) -> str:
 #: `src/my_pkg/main.py`): a rooted one (`/abs`, `~/`, `$HOME/`) with one or more segments after
 #: its root (`/tmp_dir`, `~/my_file.txt`), or an unrooted one of two or more. It is
 #: one span and never a directory followed by a spanned file name. It starts only where no path
-#: character, backtick or backslash precedes it, so no start can fall inside another path's run
-#: and the scan stays linear in the length of the prose.
+#: character, backtick, backslash, `)` or `]` precedes it, so no start can fall inside another
+#: path's run (the scan stays linear in the length of the prose) and a slash after a call or an
+#: index (`unit_cost()/attempts_of`) is no root.
 _MD_TOKEN_RE = re.compile(
-    r"((?<![\w`\\/~$.\-])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)"
+    r"((?<![\w`\\/~$.\-)\]])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)"
     r"(?:(?:~|\$[A-Za-z_]\w*)?/(?:[\w.\-]+/)*[\w.\-]+|(?:[\w.\-]+/)+[\w.\-]+)"
     r"|(?<![\w`\\])[A-Za-z_][\w.]*_[\w().\[\]]*"
     r"|(?<![\w`\\])(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")

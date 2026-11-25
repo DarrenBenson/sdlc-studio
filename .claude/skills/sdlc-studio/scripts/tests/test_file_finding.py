@@ -475,6 +475,9 @@ class MdSafeProseTests(unittest.TestCase):
         self.assertEqual("`~/my_file.txt` `/tmp_dir` `./a_b`.",
                          ff._md_safe("~/my_file.txt /tmp_dir ./a_b."))
         self.assertEqual("a / b and x/ y", ff._md_safe("a / b and x/ y"))
+        # a slash after a call or an index is no root: two spans, never touching
+        self.assertEqual("`unit_cost()`/`attempts_of` x", ff._md_safe("unit_cost()/attempts_of x"))
+        self.assertEqual("`my_list[0]`/`my_total` x", ff._md_safe("my_list[0]/my_total x"))
         # a bare call keeps its parentheses: the path shape needs a slash to claim a word
         self.assertEqual("calls `resolve_canonical(x)` now", ff._md_safe("calls resolve_canonical(x) now"))
         # near misses: a path with no underscore, and `and/or`, hold nothing to wrap
