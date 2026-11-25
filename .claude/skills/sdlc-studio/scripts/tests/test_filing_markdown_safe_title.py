@@ -229,6 +229,18 @@ class TitleMarkdownTests(unittest.TestCase):
         self.assertIn("calls `open_x(/tmp_dir`) and `load_json(~/run_x.json`) and "
                       "`get_it[`./`a_b]` here", body)
 
+    def test_a_path_written_against_an_authors_span_touches_it_not(self) -> None:
+        """BG1304: a rooted path straight after (or an identifier straight before) a span the
+        author wrote stays bare there, so no span of ours touches theirs (two touching spans
+        render as one span holding literal backticks). Filed through `file_finding.py file`.
+        Mutant: the span boundary guard removed."""
+        summary = "see `$REPO`/tools/run_x.py and /tmp/run_x.py`HOME` and my_total`x` and `y`my_total"
+        _root, body, _row = self._filed_with("plain", summary, "1. run it", "fix it")
+        for author in ("`$REPO`", "`HOME`", "`x`", "`y`"):
+            self.assertRegex(body, rf"(?<!`){re.escape(author)}(?!`)", f"{author} touches a span")
+        self.assertIn("see `$REPO`/tools/run_x.py and /tmp/run_x.py`HOME` and my_total`x` "
+                      "and `y`my_total", body)
+
     def test_a_slash_after_a_call_or_an_index_starts_no_rooted_path(self) -> None:
         """BG1304: `unit_cost()/attempts_of` and `my_list[0]/my_total` are two identifiers and a
         slash, not a rooted path, so the filer writes two spans that do not touch (two touching

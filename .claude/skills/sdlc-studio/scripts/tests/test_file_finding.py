@@ -443,23 +443,59 @@ class MdSafeProseTests(unittest.TestCase):
     # out and the push runs it, serially.
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
+    def test_a_token_stops_short_of_an_authors_span_edge(self) -> None:
+        """Only the piece edges that sit against the author's span are guarded: a token reaching
+        one is left bare, a token with trailing punctuation before the span is spanned short of
+        it, and a token at the edge of a piece that sits against a link destination is spanned.
+        Mutants: the start guard, the end guard or its trailing-punctuation test removed; the
+        guards applied to every piece rather than the first and the last."""
+        for text, want in (
+                ("`AA`a_b", "`AA`a_b"),
+                ("a_b`AA`", "a_b`AA`"),
+                ("see a_b.`AA` now", "see `a_b`.`AA` now"),
+                ("`AA`.a_b", "`AA`.`a_b`"),
+                ("`AA` [l](a/b.md)my_tok", "`AA` [l](a/b.md)`my_tok`"),
+                ("[my_tok](d/e.md) and `AA`", "[`my_tok`](d/e.md) and `AA`"),
+                ("`AA` $REPO/tools/run_x.py", "`AA` `$REPO/tools/run_x.py`"),
+                ("`$REPO`/tools/run_x.py", "`$REPO`/tools/run_x.py")):
+            with self.subTest(text=text):
+                self.assertEqual(want, ff._md_safe(text))
+
     def test_no_generated_prose_comes_back_with_two_touching_spans(self) -> None:
-        """A property of the escaper: for any prose built of identifiers, calls, indexes, slashes
-        and rooted-path starts, no two code spans in the output touch (they would render as one
-        span holding literal backticks), and the output is the input with backticks added. Fixed
-        seed, 4000 inputs. Mutants: a rooted path allowed to start after `)` or `]`; the merge of
-        spans a token pass leaves touching removed."""
+        """A property of the escaper over prose built of identifiers, calls, indexes, slashes,
+        rooted-path starts, a URL and the author's own code spans (single and double backtick),
+        some written straight against a path or an identifier. In the output no span of the
+        escaper's touches another span (they would render as one span holding literal
+        backticks), every author span survives exactly and untouched, and the output is the
+        input with backticks added. Fixed seed, 4000 inputs. A URL is always set apart by
+        spaces: `_code_urls` must span it whole, so a span the author wrote against it is the
+        author's to separate. Mutants: a rooted path allowed to start after `)` or `]`; the
+        merge of touching spans removed; the span boundary guard removed."""
         import random
+        import re
         import time
+        authors = ["`AA`", "``B`B``", "`$REPO`", "`c d`"]
         pieces = ["unit_cost", "my_list", "a_b", "x", "tmp_dir", "run_x", "_c_d", "()", "[0]",
-                  "(", ")", "[", "]", "/", "~/", "./", "$HOME/", " ", " ", "."]
+                  "(", ")", "[", "]", "/", "~/", "./", "$HOME/", " ", " ", ".", " https://x.io/a_b "]
         rng = random.Random(20261125)
         began = time.perf_counter()
+        checked = 0
         for _ in range(4000):
-            text = "".join(rng.choice(pieces) for _ in range(rng.randint(1, 9)))
+            text = "".join(rng.choice(pieces + authors * 2) for _ in range(rng.randint(1, 9)))
+            if sum(text.count(a) for a in authors) != sum(
+                    len(re.findall(rf"(?<!`){re.escape(a)}(?!`)", text)) for a in authors):
+                continue  # the input itself touches two of the author's spans
             out = ff._md_safe(text)
-            self.assertNotIn("``", out, repr(text))
-            self.assertEqual(text, out.replace("`", ""), repr(text))
+            checked += 1
+            for a in authors:
+                self.assertEqual(text.count(a), len(re.findall(
+                    rf"(?<!`){re.escape(a)}(?!`)", out)), (text, out, a))
+            bare = out
+            for a in authors:
+                bare = bare.replace(a, "\x00")
+            self.assertNotIn("``", bare, (text, out))
+            self.assertEqual(text.replace("`", ""), out.replace("`", ""), (text, out))
+        self.assertGreater(checked, 2500)
         self.assertLess(time.perf_counter() - began, 5.0)
 
     def test_the_escaper_is_linear_in_a_paths_segment_count(self) -> None:

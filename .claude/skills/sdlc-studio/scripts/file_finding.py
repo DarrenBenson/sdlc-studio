@@ -1711,10 +1711,10 @@ def _md_safe(text) -> str:
     parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         pieces = _LINK_DEST_RE.split(parts[i])  # odd pieces are link destinations
-        # a piece holds no backtick of the author's, so every "``" is two spans this pass left
-        # touching, which render as one span holding literal backticks: they become one span
-        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p).replace("``", "")
-                        for p in pieces[0::2]]
+        last = len(pieces) - 1 - (len(pieces) - 1) % 2  # the last piece outside a destination
+        pieces[0::2] = [_wrap_tokens(p, at_start=i > 0 and k == 0,
+                                     at_end=i < len(parts) - 1 and 2 * k == last)
+                        for k, p in enumerate(pieces[0::2])]
         parts[i] = _escape_lone_bold("".join(pieces), after_span=i > 0,
                                      before_span=i < len(parts) - 1)
     return "`".join(parts)
@@ -1732,6 +1732,23 @@ def _escape_lone_bold(text: str, after_span: bool = False, before_span: bool = F
     touching the span is not alone."""
     edged = ("x" if after_span else " ") + text + ("x" if before_span else " ")
     return _LONE_BOLD_RE.sub(r"\\*\\*", edged)[1:-1]
+
+
+def _wrap_tokens(piece: str, at_start: bool, at_end: bool) -> str:
+    """`_MD_TOKEN_RE` over one piece of prose outside code spans, each token as a code span, with
+    no span of ours touching another span or a backtick of the author's. `at_start` and `at_end`
+    say a code span sits against the piece's start or end: a token reaching that edge is left
+    bare, since a span written against one renders as one span holding literal backticks. Two
+    spans of ours left touching inside the piece (`open_x(` and a path after it) are merged. A
+    piece holds no backtick of the author's, so every "``" in it is two of ours."""
+    def wrap(m: re.Match) -> str:
+        wrapped = _wrap_token(m)
+        if (at_start and m.start() == 0) or (
+                at_end and m.end() == len(piece) and wrapped.endswith("`")):
+            return m.group(0)
+        return wrapped
+
+    return _MD_TOKEN_RE.sub(wrap, piece).replace("``", "")
 
 
 def _wrap_token(m: re.Match) -> str:
