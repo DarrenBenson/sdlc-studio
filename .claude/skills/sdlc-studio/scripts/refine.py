@@ -808,11 +808,12 @@ def _resolve_and_require_affects(repo_root: Path | str, request_id: str, parent_
 # the "now being worked" signal. A request already terminal or without a working state is left be.
 _WORKING_STATUS = {"cr": "In Progress", "rfc": "In Review"}
 
-def _validate_into_target(root: Path, into_epic: str, allow_terminal: bool = False) -> None:
+def _validate_into_target(root: Path, into_epic: str, allow_done: bool = False) -> None:
     """Refuse (before anything is minted) an `--into` target that is unknown, not an epic, or
     terminal - a closed epic cannot take new stories, and only an epic holds stories at all.
-    `allow_terminal` lets a Done epic through, for a request that already decomposed into it:
-    the stories minted there reopen it."""
+    `allow_done` lets a Done epic through, for a request that already decomposed into it: the
+    stories minted there reopen it. Any other terminal epic (a Superseded one records a ruling)
+    is refused whoever names it."""
     hit = sdlc_md.find_by_id(root, into_epic)
     if not hit:
         raise ValueError(f"--into target {into_epic} does not exist; nothing minted")
@@ -823,7 +824,8 @@ def _validate_into_target(root: Path, into_epic: str, allow_terminal: bool = Fal
     estatus = sdlc_md.canonical_status(
         sdlc_md.extract_field(epath.read_text(encoding="utf-8"), "Status"),
         sdlc_md.status_vocab("epic", root))
-    if not allow_terminal and sdlc_md.is_terminal_status("epic", estatus or ""):
+    if sdlc_md.is_terminal_status("epic", estatus or "") and not (
+            allow_done and estatus == sdlc_md.default_terminal_status("epic")):
         raise ValueError(f"--into target {into_epic} is terminal ({estatus}); a closed epic "
                          f"cannot take new stories. Nothing minted")
 
@@ -879,7 +881,7 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
                          "(decompose into an existing epic), not both and not neither")
     if into_epic:
         # refuse a bad target BEFORE anything is minted
-        _validate_into_target(root, into_epic, allow_terminal=named)
+        _validate_into_target(root, into_epic, allow_done=named)
     else:
         sdlc_md.require_single_line("epic title", epic_title)
     for title, _, _ in stories:

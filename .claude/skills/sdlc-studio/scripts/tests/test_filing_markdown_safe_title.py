@@ -185,8 +185,10 @@ class TitleMarkdownTests(unittest.TestCase):
                                            "1. run it", "escape the ** marker")
         self.assertEqual("# BG0001: a \\*\\* b flips the flag", body.splitlines()[0])
         self.assertIn("| a \\*\\* b flips the flag |", row)
-        self._lint(next((root / "sdlc-studio" / "bugs").glob("BG*.md")))
-        self._lint(root / "sdlc-studio" / "bugs" / "_index.md")
+        for target in (next((root / "sdlc-studio" / "bugs").glob("BG*.md")),
+                       root / "sdlc-studio" / "bugs" / "_index.md"):
+            r = self._lint(target)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
 
     def test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed(self) -> None:
         """AC2. Mutants: only the title safed; the Steps (written as given) left out; a marker
@@ -202,6 +204,13 @@ class TitleMarkdownTests(unittest.TestCase):
         bare = re.sub(r"(?s)```.*?```", "", body)
         bare = re.sub(r"`[^`\n]*`", "", bare)
         self.assertNotRegex(bare, r"(?<!\S)\*\*(?!\S)")
+
+    def test_a_glob_in_a_step_command_is_escaped_outside_a_fence_only(self) -> None:
+        """What the escape costs a copied command, as `_steps_safe` says: a glob `**` on a step
+        or an indented code line is escaped, and the same line in a fence is kept as written."""
+        steps = "1. ls ** | wc -l\n       ls ** | wc -l\n```\nls ** | wc -l\n```"
+        out = file_finding._steps_safe(steps)
+        self.assertEqual("1. ls \\*\\* | wc -l\n       ls \\*\\* | wc -l\n```\nls ** | wc -l\n```", out)
 
     def test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept(self) -> None:
         """AC3, the controls. Mutants: every asterisk pair escaped; the marker inside a code

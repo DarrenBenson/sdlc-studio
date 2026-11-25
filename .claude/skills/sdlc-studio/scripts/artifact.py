@@ -123,10 +123,15 @@ def _list(f: dict, key: str) -> list[str]:
 def _affects_text(f: dict) -> dict:
     """`f` with a list-valued `affects` joined into the comma-separated path line the `Affects`
     field is, each path stripped and a blank one dropped. A list written as a value would be
-    rendered as its Python repr (`['a.py']`), which parses to one bracketed token. Any other
-    value is left as it was."""
+    rendered as its Python repr (`['a.py']`), which parses to one bracketed token. An element
+    that is not text (`null`, a number, a nested list) is refused by position and kind, since its
+    Python spelling is no path. A value that is not a list is left as it was."""
     if isinstance(f.get("affects"), (list, tuple)):
-        f = {**f, "affects": ", ".join(str(a).strip() for a in f["affects"] if str(a).strip())}
+        for n, a in enumerate(f["affects"], 1):
+            if not isinstance(a, str):
+                raise ValueError(f"affects entry {n} is {type(a).__name__} {a!r}, not a path "
+                                 f"string: name each file as text, e.g. [\"a.py\", \"b.py\"]")
+        f = {**f, "affects": ", ".join(a.strip() for a in f["affects"] if a.strip())}
     return f
 
 
@@ -985,14 +990,15 @@ def _wire_story_to_epic(root: Path, epic_id: str, disp: str, title: str,
 
 def _reopen_done_epic(root: Path, epic_id: str) -> list[str]:
     """Reopen the epic a story was just minted into when it reads Done, and the requests it
-    delivers when they read terminal; the notes of what could not be reopened.
+    delivers when they read Complete (an RFC, Delivered); the notes of what could not be reopened.
 
     A minted story is work nobody has built, so an epic left Done over it is wrong, and a request
     left Complete over it is derived Complete again by the next `reconcile apply`. Both moves go
     through `transition`, so each runs its own gates; the request moves to the working status
     `refine` gives a request it decomposes (`refine._WORKING_STATUS`). Only the delivered
-    terminal reopens: a `Superseded` epic records a ruling, not a delivery, and is left as it
-    is. A refusal never fails a completed mint, it is returned as a note to print."""
+    terminal reopens: a `Superseded` epic, or a Superseded or Rejected request, records a ruling,
+    not a delivery, and is left as it is. A refusal never fails a completed mint, it is returned
+    as a note to print."""
     ep = _find_epic(root, epic_id) if epic_id else None
     if ep is None:
         return []
@@ -1017,10 +1023,9 @@ def _reopen_done_epic(root: Path, epic_id: str) -> list[str]:
     for parent in sdlc_md.parent_refs(text):
         hit = sdlc_md.find_by_id(root, parent)
         working = refine._WORKING_STATUS.get(hit[1]) if hit else None  # noqa: SLF001
-        if working is None or not sdlc_md.is_terminal_status(
-                hit[1], sdlc_md.canonical_status(
-                    sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"),
-                    sdlc_md.status_vocab(hit[1], root)) or ""):
+        if working is None or sdlc_md.canonical_status(
+                sdlc_md.extract_field(hit[0].read_text(encoding="utf-8"), "Status"),
+                sdlc_md.status_vocab(hit[1], root)) != sdlc_md.default_terminal_status(hit[1]):
             continue
         reopen(sdlc_md.extract_record_id(hit[0].stem) or parent, working)
     return notes
@@ -1379,13 +1384,14 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
     today = date.today().isoformat()
     if not items:
         raise ValueError("batch is empty")
-    items = [_affects_text(dict(it)) for it in items]  # resolution rewrites fields; the caller's stay
+    items = [dict(it) for it in items]   # resolution rewrites fields; never mutate the caller's
     # Validate the whole batch BEFORE writing anything (atomic) - a story wired to a
     # missing epic is an orphan; a colliding id would corrupt the run.
     groom_preview = (_select_render(root, type_, template)
                      if type_ in file_finding.GROOMED_TYPES else None)
     for i, it in enumerate(items, 1):
         try:  # an injected line in item N aborts the batch here, before any id is reserved
+            it.update(_affects_text(it))  # a list of paths becomes the path line; a non-path refused
             # ... as does a key nobody reads, on the terms `--fields-file` refuses one: a
             # misspelt key otherwise mints an artefact with that field silently missing.
             unknown = sorted(k for k in it if k not in BATCH_ITEM_KEYS)
@@ -1746,7 +1752,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         # no Acceptance Criteria (a review, a retro, an epic) has other slots, not these.
         _ac = _body.split("## Acceptance Criteria", 1)[1][:400] if (
             "## Acceptance Criteria" in _body) else ""
-        if "{{criterion}}" in _body or "{{" in _ac:
+        if "{{" in _ac:
             print("  NOT FINISHED: its acceptance criteria are still the scaffold placeholder. "
                   "Author them before planning or reviewing this - `sprint plan` refuses an "
                   "ungroomed unit, and a criterion nobody wrote is one nothing can check.")
@@ -2190,8 +2196,13 @@ class _WriteJournal:
         return unrestored
 
 
-#: A markdown link: its text, then its target up to the closing parenthesis.
-_LINK_TEXT_RE = re.compile(r"\[([^\]\n]*)\]\(([^)\s]+)\)")
+#: An inline code span, or a markdown link: the text (code spans, escaped characters and one level
+#: of nested brackets allowed in it), then the target up to the closing parenthesis. A span is
+#: tried first at each position, so a link written inside one is code and left alone, while a
+#: link whose text holds a span starts at its `[`, before the span, and is read whole.
+_LINK_OR_SPAN_RE = re.compile(
+    r"(?P<span>`[^`\n]*`)"
+    r"|\[(?P<text>(?:[^\[\]\n`\\]|\\.|`[^`\n]*`|\[[^\[\]\n]*\])*)\]\((?P<target>[^)\s]+)\)")
 
 #: The id at the head of a link text that names an artefact (`US1080`, `US-1080`, a ULID form).
 _LINK_ID_RE = re.compile(r"^([A-Za-z]+(?:-[0-9A-Za-z]{8,}|-?\d+)): ")
@@ -2203,15 +2214,23 @@ def _retext_inbound_links(body: str, new_name: str, file_id: str, old_title: str
     `<ID>: <old title>` to `<ID>: <new title>`, the id as the link spelt it. Any other link text
     is left alone, as is a link to another file, and a link in a fenced block or an inline code
     span, which `link_refs.rewrite_inbound_links` leaves alone too. A bracket in the new title
-    is escaped so the link still closes."""
+    is escaped so the link still closes, and an old title is read back as written or with its
+    brackets escaped, so a link this function wrote is retexted again by the next retitle. A link
+    text holding a code span (a title with a code-spanned identifier) is read whole."""
     if not old_title or old_title == new_title:
         return body
-    safe = new_title.replace("[", "\\[").replace("]", "\\]")
+
+    def escaped(title: str) -> str:
+        return title.replace("[", "\\[").replace("]", "\\]")
+
+    safe, olds = escaped(new_title), {old_title, escaped(old_title)}
 
     def repl(m: re.Match) -> str:
-        text, target = m.group(1), m.group(2)
+        if m.group("span") is not None:
+            return m.group(0)
+        text, target = m.group("text"), m.group("target")
         lead = _LINK_ID_RE.match(text)
-        if (lead is None or text[lead.end():] != old_title
+        if (lead is None or text[lead.end():] not in olds
                 or sdlc_md.norm_id(lead.group(1)) != sdlc_md.norm_id(file_id)
                 or Path(target.split("#", 1)[0]).name != new_name):
             return m.group(0)
@@ -2224,9 +2243,7 @@ def _retext_inbound_links(body: str, new_name: str, file_id: str, old_title: str
         if is_fence_line or fence is not None:
             out.append(line)
             continue
-        segs = line.split("`")
-        segs[0::2] = [_LINK_TEXT_RE.sub(repl, s) for s in segs[0::2]]
-        out.append("`".join(segs))
+        out.append(_LINK_OR_SPAN_RE.sub(repl, line))
     return "\n".join(out)
 
 

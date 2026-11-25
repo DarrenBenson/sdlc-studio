@@ -106,6 +106,56 @@ class RetitleLinkTextTests(unittest.TestCase):
         text = self._retitle(f"- [ ] [US1080: {OLD}]({self.old_link})", title)
         self.assertIn(f"[US1080: the \\[fixed\\] title](../stories/{new_name})", text)
 
+    def test_a_link_text_holding_a_code_span_is_retexted_through_new_and_retitle(self) -> None:
+        """A title with a code-spanned identifier, through `artifact.new` and `artifact.retitle`
+        end to end: the minted link holds the span and is read whole, the retitle rewrites it, and
+        a second retitle rewrites it again. Mutant: the line split on backticks before the link
+        is matched."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            (repo / "sdlc-studio" / "epics").mkdir(parents=True)
+            (repo / "sdlc-studio" / "epics" / "EP0001-x.md").write_text(
+                "# EP0001: x\n\n> **Status:** Draft\n\n## Story Breakdown\n\n_No stories yet._\n\n"
+                "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n",
+                encoding="utf-8")
+            (repo / "sdlc-studio" / "stories").mkdir()
+            (repo / "sdlc-studio" / "stories" / "_index.md").write_text(
+                "# Index\n\n## All\n\n| ID | Title | Status | Epic | Created | Updated |\n"
+                "| --- | --- | --- | --- | --- | --- |\n", encoding="utf-8")
+            minted = artifact.new(repo, "story", "the _check reader drops a field",
+                                  {"epic": "EP0001"})
+            epic = repo / "sdlc-studio" / "epics" / "EP0001-x.md"
+            self.assertIn("[US0001: the `_check` reader drops a field](", epic.read_text())
+            artifact.retitle(repo, minted["id"], "the corrected title")
+            self.assertIn("[US0001: the corrected title](../stories/US0001-the-corrected-title.md)",
+                          epic.read_text())
+            artifact.retitle(repo, minted["id"], "the [draft] title")
+            self.assertIn("[US0001: the \\[draft\\] title](", epic.read_text())
+            artifact.retitle(repo, minted["id"], "final title")
+            self.assertIn("[US0001: final title](../stories/US0001-final-title.md)",
+                          epic.read_text())
+
+    def test_an_escaped_bracket_text_is_read_back_by_the_next_retitle(self) -> None:
+        """The escape one retitle writes is understood by the next, and a text the wiring wrote
+        with plain nested brackets is retexted too. Mutants: the old title compared only as
+        written; the pattern stopping at the first closing bracket."""
+        bracketed = "the [fixed] title"
+        text = self._retitle(f"- [ ] [US1080: {OLD}]({self.old_link})", bracketed)
+        new_name = f"US1080-{file_finding._slug(bracketed)}.md"
+        self.assertIn(f"[US1080: the \\[fixed\\] title](../stories/{new_name})", text)
+        artifact.retitle(self.root, "US1080", "final title")
+        epic = next((self.root / "sdlc-studio" / "epics").glob("EP*.md")).read_text()
+        self.assertIn(f"[US1080: final title](../stories/US1080-final-title.md)", epic)
+
+    def test_plain_nested_brackets_in_the_old_text_are_retexted(self) -> None:
+        """A story minted with a bracketed title, whose breakdown text the wiring writes
+        unescaped, is retexted."""
+        story = _story(self.root, "the [draft] title")
+        old_link = f"../stories/{story.name}"
+        epic = _epic(self.root, f"- [ ] [US1080: the [draft] title]({old_link})")
+        artifact.retitle(self.root, "US1080", NEW)
+        self.assertIn(f"[US1080: {NEW}](../stories/{self.new_name})", epic.read_text())
+
     def test_a_retitle_to_a_new_case_only_still_retexts_the_link(self) -> None:
         """The slug is the same, so the target is unchanged and nothing but the text moves."""
         title = OLD.upper()

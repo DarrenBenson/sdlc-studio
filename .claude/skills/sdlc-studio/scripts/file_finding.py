@@ -1037,20 +1037,17 @@ def criteria_block(type_: str, fields: dict) -> str:
 #: A list item at column 0: a criterion, which may hold child items beneath it.
 _CRITERION_ITEM_RE = re.compile(r"^(?:[-*+]|\d+[.)])\s")
 
-#: A `- **Verify:**` item indented beneath a criterion: the line `checklist_block` writes under a
-#: request's criterion for each `verify` entry, and the criterion's check rather than its prose.
-_CHILD_VERIFY_RE = re.compile(r"^[ \t]+[-*+]\s+\*\*Verify:\*\*\s*\S")
-
 
 def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
     """Every command-shaped pseudo-`Verify:` inside an artefact's Acceptance Criteria section, as
     (1-based line number, the line, the offending command). The read-only counterpart of
     `check_prose_acs`, for the instances already on disk (the validator's warning lane).
 
-    Only a criterion's PROSE is judged, as `check_prose_acs` judges it. A `- **Verify:**` item
-    indented beneath a criterion (`_CHILD_VERIFY_RE`) is the check the filer writes there and is
-    skipped; a `Verify:` inside the criterion's own line, or on an item not beneath one, is
-    judged as before."""
+    Only a criterion's PROSE is judged, as `check_prose_acs` judges it. An indented line that
+    `sdlc_md.VERIFY_RE` (the reader `verify_ac` uses) reads as a Verify line, beneath a criterion
+    item, is the check the filer writes there (`- **Verify:** <selector>`) and is skipped; a
+    `Verify:` inside the criterion's own line, or on a line not beneath one, or in a form that
+    reader does not take (a `*` or `+` bullet), is judged as before."""
     out: list[tuple[int, str, str]] = []
     in_ac = False
     under_criterion = False
@@ -1065,7 +1062,7 @@ def scan_prose_acs(text: str) -> list[tuple[int, str, str]]:
             under_criterion = True
         elif line.strip() and not line[0].isspace():
             under_criterion = False  # a paragraph at column 0 ends the criterion's items
-        elif under_criterion and _CHILD_VERIFY_RE.match(line):
+        elif under_criterion and (m := sdlc_md.VERIFY_RE.match(line)) and m.group(1):
             continue
         cmd = pseudo_verify(line)
         if cmd:
@@ -1784,10 +1781,16 @@ def _code_urls(text) -> str:
 #: A token after `\` is left alone: `\_name` is already escaped, and a backtick after the
 #: backslash would be escaped in turn, leaving an unbalanced span (MD038). The leading-underscore
 #: shape also skips a token after `/` or `#`, which is a URL path, link target or anchor. The
-#: first shape takes the directories before it (`tools/tests/test_x.py`), so a path is one span
-#: and never a directory followed by a spanned file name.
+#: first shape is a path of two or more segments, optionally rooted (`/abs`, `~/`, `$HOME/`),
+#: holding an underscore inside a word (`tools/tests/test_x.py`, `src/my_pkg/main.py`), so it is
+#: one span and never a directory followed by a spanned file name. It starts only where no path
+#: character, backtick or backslash precedes it, so no start can fall inside another path's run
+#: and the scan stays linear in the length of the prose.
 _MD_TOKEN_RE = re.compile(
-    r"(?<![\w`\\])((?:[\w.\-]+/)*[A-Za-z_][\w.]*_[\w().\[\]]*|(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
+    r"((?<![\w`\\/~$.\-])(?=[\w.\-~$/]*?[A-Za-z0-9.\-]_)(?:~|\$[A-Za-z_]\w*)?/?"
+    r"(?:[\w.\-]+/)+[\w.\-]+"
+    r"|(?<![\w`\\])[A-Za-z_][\w.]*_[\w().\[\]]*"
+    r"|(?<![\w`\\])(?<![/#])_[A-Za-z]\w*(?:\.\w+)*)")
 
 
 # The `**Field:**` declaration shape at either place `extract_field` anchors a field: a line
@@ -1812,15 +1815,19 @@ def _prose_safe(text) -> str:
 
 
 def _steps_safe(text: str) -> str:
-    """A Steps to Reproduce value as its author wrote it, so a repro command copied out of the
-    filed bug still runs. `_prose_safe` back-ticks underscored names, and inside a shell command
-    a backtick is command substitution, so no line here is told apart as a command or prose: no
-    backtick, fence, list marker or indentation is added and no prompt is dropped. Three changes
-    remain, and neither tells a command from prose:
+    """A Steps to Reproduce value as its author wrote it, with three exceptions, so a repro
+    command copied out of the filed bug still runs unless it holds a lone glob `**` (the first).
+    `_prose_safe` back-ticks underscored names, and inside a shell command a backtick is command
+    substitution, so no line here is told apart as a command or prose: no backtick, fence, list
+    marker or indentation is added and no prompt is dropped. The three exceptions do not tell a
+    command from prose either:
 
     - a lone `**` between spaces on a line outside any fenced block and outside its inline code
       spans is backslash-escaped, since markdownlint reads one as spaces inside emphasis
-      markers (MD037); a fenced block is the author's, as written;
+      markers (MD037). A command line holding a glob `**` (`ls ** | wc -l`) reads
+      `ls \\*\\* | wc -l` once filed, which a shell runs with a literal pair of asterisks; the
+      same holds of a line indented as a code block under a step, since only a fence marks a
+      command here. A fenced block is the author's, as written;
     - the metadata-line guard `_prose_safe` applies (`_META_DECL_RE`) runs over the whole value,
       inside a fenced block the author wrote too, since `extract_field` reads a `**Field:**`
       declaration there as readily as outside: that declaration's bold markers are escaped;
@@ -2587,13 +2594,43 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
                 child_id = sdlc_md.norm_id(result["id"])
                 if child_id not in existing:
                     sdlc_md.write_decomposed(parent_path, [*existing, child_id])
-                # the parent's index row projects that line: bring its spawned-work cell up to
-                # date now, as reconcile's own apply does, so the next commit finds no drift
-                # (it also fills any other row of that index the census can see past)
-                reconcile.apply_spawned_column(root, types=[parent_type])
+                # the parent's index row projects that line: bring its spawned-work cell, and
+                # that one row, up to date now so the next commit finds no drift
+                _sync_parent_cell(root, parent_type, parent)
     if warnings:
         result["duplicate_warnings"] = warnings
     return result
+
+
+def _sync_parent_cell(root: Path, parent_type: str, parent_id: str) -> None:
+    """Write the spawned-work cell of the parent's own index row from the census, as
+    `reconcile.apply_spawned_column` writes it, and touch no other row. That apply reads every
+    row of every request index, one census scan each, while the caller holds the allocation lock;
+    this scans the corpus once, for the one parent. A cell naming work the census cannot see is
+    left as it is (the safe direction, as there), and so is a cell that already agrees."""
+    index = Path(root) / sdlc_md.ARTIFACT_TYPES[parent_type][0] / "_index.md"
+    if not index.is_file():
+        return
+    text = sdlc_md.read_text_safe(index)
+    lines = text.splitlines(True)
+    want = sdlc_md.norm_id(parent_id)
+    actual: set[str] | None = None
+    for line_no, cells, col, rid in reconcile._spawned_column_rows(text):  # noqa: SLF001
+        if rid != want:
+            continue
+        if actual is None:
+            actual = {sdlc_md.norm_id(cid) for cid, _t in sdlc_md.children_of(root, parent_id)}
+        claimed = {sdlc_md.norm_id(x) for x in sdlc_md.ID_SEARCH_RE.findall(cells[col] or "")}
+        if claimed == actual or claimed - actual:
+            continue
+        line = lines[line_no]
+        row = reconcile._split_row_cells(line)  # noqa: SLF001
+        if col >= len(row):
+            continue
+        row[col] = ", ".join(sorted(actual)) or "--"
+        lines[line_no] = "| " + " | ".join(row) + " |" + ("\n" if line.endswith("\n") else "")
+        sdlc_md.atomic_write(index, "".join(lines))
+        return
 
 
 def _file_finding_locked(root: Path, type_: str, spec: dict, title: str, fields: dict,

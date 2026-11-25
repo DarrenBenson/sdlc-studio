@@ -44,6 +44,30 @@ class ReviewScaffoldTests(unittest.TestCase):
         self.assertNotIn("## Acceptance Criteria", body, "premise: it has no such section")
         self.assertNotIn(NOT_FINISHED, r.stdout + r.stderr)
 
+    def test_a_review_titled_with_the_slot_is_not_warned(self) -> None:
+        """The section guard is the only test: a review whose title names `{{criterion}}` holds no
+        Acceptance Criteria section, so it is not warned. Mutant: a whole-body `{{criterion}}`
+        test kept beside the guard."""
+        r = _new(self.root, "review", "the {{criterion}} slot survives")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertNotIn(NOT_FINISHED, r.stdout + r.stderr)
+
+    def test_slots_before_the_section_do_not_warn_a_story_with_criteria(self) -> None:
+        """The window is read AFTER the heading: a story with authored criteria still holds
+        `{{role}}` slots in its user story above them and is not warned. Mutant: the 400
+        characters before the heading read instead."""
+        subprocess.run([sys.executable, str(SCRIPT), "new", "--type", "epic", "--title", "e",
+                        "--root", str(self.root)], capture_output=True, text=True, check=True)
+        r = subprocess.run([sys.executable, str(SCRIPT), "new", "--type", "story", "--epic",
+                            "EP0001", "--title", "s", "--ac", "it holds", "--root",
+                            str(self.root)], capture_output=True, text=True, check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        body = next((self.root / "sdlc-studio" / "stories").glob("US*.md")).read_text(
+            encoding="utf-8")
+        self.assertIn("{{", body.split("## Acceptance Criteria", 1)[0], "premise: slots above")
+        self.assertNotIn("{{", body.split("## Acceptance Criteria", 1)[1][:400], "premise")
+        self.assertNotIn(NOT_FINISHED, r.stdout + r.stderr)
+
     def test_no_ac_warning_for_the_other_records_without_criteria(self) -> None:
         """The same line is not given for a retro, which holds no criteria either."""
         for type_ in ("retro",):

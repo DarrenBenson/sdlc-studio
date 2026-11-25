@@ -96,7 +96,9 @@ class RequestVerifyLineTests(unittest.TestCase):
                     ("after a paragraph", f"- [ ] it works\n\nplain words\n\n"
                                           f"  - **Verify:** {COMMAND}"),
                     ("no criterion yet", f"  - **Verify:** {COMMAND}"),
-                    ("child without the bold marker", f"- [ ] it works\n  - Verify: {COMMAND}")):
+                    ("child without the bold marker", f"- [ ] it works\n  - Verify: {COMMAND}"),
+                    ("star bullet child", f"- [ ] it works\n  * **Verify:** {COMMAND}"),
+                    ("plus bullet child", f"- [ ] it works\n  + **Verify:** {COMMAND}")):
                 with self.subTest(name):
                     root = Path(d) / name.replace(" ", "-")
                     self.assertEqual(1, len(_pseudo(root, _write_cr(root, body))), body)
@@ -109,11 +111,26 @@ class RequestVerifyLineTests(unittest.TestCase):
                     ("labelled", f"- [ ] **AC1** it works\n  - **Verify:** {COMMAND}"),
                     ("ticked", f"- [x] it works\n  - **Verify:** {COMMAND}"),
                     ("numbered", f"1. it works\n   - **Verify:** {COMMAND}"),
+                    ("star criterion", f"* [ ] it works\n  - **Verify:** {COMMAND}"),
+                    ("plus criterion", f"+ [ ] it works\n  - **Verify:** {COMMAND}"),
                     ("second child", f"- [ ] it works\n  - **Verify:** pytest a.py::B::c\n"
                                      f"  - **Verify:** {COMMAND}")):
                 with self.subTest(name):
                     root = Path(d) / name.replace(" ", "-")
                     self.assertEqual([], _pseudo(root, _write_cr(root, body)), body)
+
+    def test_a_criterion_does_not_reach_across_a_heading(self) -> None:
+        """A second criteria section opening on an indented Verify line has no criterion above
+        it, whatever an earlier section held. Mutant: the reset on a level-two heading deleted."""
+        path = self.root / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+        path.parent.mkdir(parents=True)
+        path.write_text(
+            "# CR-0001: x\n\n> **Status:** Proposed\n> **Priority:** P3\n\n"
+            "## Acceptance Criteria\n\n- [ ] it works\n\n## Notes\n\nplain words\n\n"
+            f"## Acceptance Criteria\n\n  - **Verify:** {COMMAND}\n\n## Revision History\n\n"
+            "| Date | Author | Change |\n| --- | --- | --- |\n| 2026-07-14 | a | Raised |\n",
+            encoding="utf-8")
+        self.assertEqual(1, len(_pseudo(self.root, path)))
 
     def test_a_missing_empty_or_binary_file_is_not_a_crash(self) -> None:
         """The reader's malformed inputs reach the same lane: an empty criteria section, an

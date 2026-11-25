@@ -638,6 +638,70 @@ class DoneEpicReopensTests(unittest.TestCase):
             self.assertEqual("In Progress", _status_of(repo, "change-requests", "CR0001-x"))
             self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
 
+    def test_a_request_that_records_a_ruling_is_not_reopened(self) -> None:
+        """A Superseded or Rejected request is a ruling, not a delivery, so a Done epic reopened
+        under it leaves it as it is, as a Superseded epic is. Mutant: every terminal request
+        reopened."""
+        for status in ("Superseded", "Rejected"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _finished_request(repo, request_status=status)
+                request = repo / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+                before = request.read_bytes()
+                r = self._mint(repo)
+                self.assertEqual("In Progress", _status_of(repo, "epics", "EP0001-x"))
+                self.assertEqual(before, request.read_bytes())
+                self.assertNotIn("ac_warnings", r)
+
+    def test_a_delivered_rfc_goes_to_the_rfc_working_status(self) -> None:
+        """The RFC branch: a Delivered RFC parent moves to the status `refine` gives an RFC it
+        decomposes. Mutant: every request sent to In Progress."""
+        import refine
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            cr = repo / "sdlc-studio" / "change-requests" / "CR0001-x.md"
+            rfcs = repo / "sdlc-studio" / "rfcs"
+            rfcs.mkdir(parents=True)
+            (rfcs / "RFC0001-x.md").write_text(
+                "# RFC-0001: x\n\n> **Status:** Delivered\n> **Decomposed-into:** EP0001\n\n"
+                "## Summary\n\ns\n\n## Revision History\n\n| Date | Author | Change |\n"
+                "| --- | --- | --- |\n| 2026-11-01 | sdlc | Raised |\n", encoding="utf-8")
+            epic = repo / "sdlc-studio" / "epics" / "EP0001-x.md"
+            epic.write_text(epic.read_text(encoding="utf-8").replace(
+                "> **Parent:** CR0001", "> **Parent:** RFC0001"), encoding="utf-8")
+            cr.unlink()
+            r = self._mint(repo)
+            self.assertEqual(refine._WORKING_STATUS["rfc"], _status_of(repo, "rfcs", "RFC0001-x"))
+            self.assertNotEqual("In Progress", refine._WORKING_STATUS["rfc"], "premise")
+            self.assertNotIn("ac_warnings", r)
+
+    def test_a_refused_reopen_in_a_batch_is_a_note_the_cli_prints(self) -> None:
+        """The batch path carries the notes in its result and the CLI prints them as warnings.
+        Mutants: the notes dropped from `new_batch`'s return; the `cmd_batch` print deleted."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            with mock.patch.object(artifact.transition, "transition",
+                                   side_effect=ValueError("a gate refused")):
+                r = artifact.new_batch(repo, "story", [{"title": "second slice", "epic": "EP0001"}])
+            self.assertEqual(2, len(r["ac_warnings"]))
+            self.assertIn("EP0001 could not be reopened to In Progress (a gate refused)",
+                          r["ac_warnings"][0])
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _finished_request(repo)
+            spec = repo / "spec.json"
+            spec.write_text('[{"title": "second slice", "epic": "EP0001"}]', encoding="utf-8")
+            err = io.StringIO()
+            with mock.patch.object(artifact.transition, "transition",
+                                   side_effect=ValueError("a gate refused")), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                rc = artifact.main(["batch", "--type", "story", "--spec", str(spec),
+                                    "--root", str(repo)])
+            self.assertEqual(0, rc)
+            self.assertIn("warning: EP0001 could not be reopened to In Progress", err.getvalue())
+
     def test_a_live_request_is_left_alone(self) -> None:
         """A Done epic whose request still reads In Progress or Approved: only the epic reopens,
         the request is not written and draws no note. Mutant: the terminal check inverted, so a
@@ -780,6 +844,26 @@ class BatchAffectsTests(unittest.TestCase):
         self.assertIn("> **Affects:** src/thing.py\n", self._batch([" src/thing.py ", "", " "]))
         self.assertIn("> **Affects:** src/a.py, src/thing.py\n",
                       self._batch([" src/a.py ", " src/thing.py "]))
+
+    def test_a_list_element_that_is_not_a_path_string_is_refused(self) -> None:
+        """A null or a nested list is no path, and its Python spelling (`None`, `['a.py']`) is
+        what this unit removes, so the batch refuses it by item, position and kind, with nothing
+        minted. Mutants: `str()` of every element; the check run for a string list only."""
+        for bad, kind in (([None, "a.py"], "NoneType"), ([["a.py"], "b.py"], "list"),
+                          (["a.py", 3], "int")):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as d:
+                repo = Path(d)
+                _index(repo, "bug", "| ID | Title | Status | Severity | Created |")
+                item = {"title": "a defect", "severity": "Low", "points": 1, "summary": "s",
+                        "steps": "r", "fix": "f", "acs": ["it holds"], "affects": bad}
+                with self.assertRaises(ValueError) as cm:
+                    artifact.new_batch(repo, "bug", [item])
+                self.assertIn("batch item 1: affects entry", str(cm.exception))
+                self.assertIn(kind, str(cm.exception))
+                self.assertEqual([], list((repo / "sdlc-studio" / "bugs").glob("BG*.md")))
+                with self.assertRaises(ValueError):
+                    artifact.new(repo, "bug", "a defect", {k: v for k, v in item.items()
+                                                           if k != "title"})
 
     def test_a_single_creation_takes_a_list_the_same_way(self) -> None:
         """`new` shares the field with `new_batch`, so a list there is a path list too."""

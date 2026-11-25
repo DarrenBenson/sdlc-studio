@@ -19,6 +19,7 @@ import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for gitutil
+import pytest  # noqa: E402
 import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 try:
@@ -438,6 +439,20 @@ class MdSafeProseTests(unittest.TestCase):
     def test_already_backticked_not_doubled(self) -> None:
         self.assertEqual(ff._md_safe("uses `_next_number` here"), "uses `_next_number` here")
 
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially.
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
+    def test_the_escaper_is_linear_in_a_paths_segment_count(self) -> None:
+        """A long run of segments is scanned once, not once per slash: 16 KB took 14.7 s when a
+        start could follow every slash. Mutant: the start allowed after a path character."""
+        import time
+        for text in ("a/" * 16000 + "x", "a_b/" * 8000 + "x", "/".join(["d"] * 16000) + "/t_x.py"):
+            began = time.perf_counter()
+            out = ff._md_safe(text)
+            self.assertLess(time.perf_counter() - began, 1.0, text[:12])
+            self.assertEqual(text.replace("`", ""), out.replace("`", ""), "only spans added")
+
     def test_a_slash_joined_path_is_one_token(self) -> None:
         """BG1304 AC2. Mutants: the path split at its last slash, the file name wrapped alone;
         the identifier pass switched off; a span re-wrapped."""
@@ -450,6 +465,12 @@ class MdSafeProseTests(unittest.TestCase):
         self.assertEqual("then `test_foo` and `_cache_dir`",
                          ff._md_safe("then test_foo and _cache_dir"))
         self.assertEqual("in `tools/tests/test_x.py` ok", ff._md_safe("in `tools/tests/test_x.py` ok"))
+        # rooted paths are one token with their root, and a directory-only underscore counts
+        self.assertEqual("see `/abs/dir/test_x.py` now", ff._md_safe("see /abs/dir/test_x.py now"))
+        self.assertEqual("`~/.cache/sdlc-tmp/run_x.json` ok",
+                         ff._md_safe("~/.cache/sdlc-tmp/run_x.json ok"))
+        self.assertEqual("`$HOME/bin/do_it`.", ff._md_safe("$HOME/bin/do_it."))
+        self.assertEqual("`src/my_pkg/main.py` here", ff._md_safe("src/my_pkg/main.py here"))
         # near misses: a path with no underscore, and `and/or`, hold nothing to wrap
         self.assertEqual("see docs/guide.md and/or src/main.py",
                          ff._md_safe("see docs/guide.md and/or src/main.py"))
@@ -2383,9 +2404,12 @@ class RaisedInBatchStampTests(unittest.TestCase):
         self.assertEqual(run_state.RUNNING, state["outcome"])  # the premise: open means this
         self.assertEqual("RUN-X close, 2026-09-24T00:00:00Z",
                          self._stamp(_batch="RUN-X close, 2026-09-24T00:00:00Z"))
-        state["outcome"] = "achieved"
-        self._state_path().write_text(json.dumps(state), encoding="utf-8")
-        self.assertRegex(self._stamp(), none_open)  # a closed run is not an open one
+        opened_state = self._state_path().read_text(encoding="utf-8")
+        for outcome in run_state.CLOSED:  # each outcome `run_state.close_run` writes
+            with self.subTest(closed_as=outcome):
+                self._state_path().write_text(opened_state, encoding="utf-8")
+                self.assertEqual(outcome, run_state.close_run(self.root, outcome)["outcome"])
+                self.assertRegex(self._stamp(), none_open)  # a closed run is not an open one
         self._state_path().write_text(json.dumps({"outcome": run_state.RUNNING}),
                                       encoding="utf-8")
         self.assertRegex(self._stamp(), none_open)  # an open state with no id names no run

@@ -934,6 +934,20 @@ class BreakdownFileTests(unittest.TestCase):
             self.assertEqual("EP0001, EP0002", sdlc_md.extract_field(
                 request.read_text(encoding="utf-8"), "Decomposed-into"))
 
+    def test_a_named_epic_that_records_a_ruling_is_still_refused(self) -> None:
+        """Only a Done epic the request names takes a further slice: a named Superseded epic is
+        refused as it was, and nothing is minted. Mutant: any terminal named epic let through."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["the request is satisfied"])
+            refine.refine(root, "CR0001", "First slice", [("A", 2, None)], skip_personas=True)
+            self._set_status(root, "epics", "EP0001", "Superseded")
+            rc, msg = self._cli(["apply", "--request", "CR0001", "--root", str(root),
+                                 "--into", "EP0001", "--skip-personas", "--story", "B|3"])
+            self.assertEqual(2, rc, msg)
+            self.assertIn("terminal (Superseded)", msg)
+            self.assertEqual(["A"], [t for t, _, _ in self._units(root)])
+
     def test_a_closed_epic_the_request_does_not_name_still_refuses_into(self) -> None:
         """The refusal beside the allowance: a terminal epic is refused for a request that has
         not decomposed into it, as before."""

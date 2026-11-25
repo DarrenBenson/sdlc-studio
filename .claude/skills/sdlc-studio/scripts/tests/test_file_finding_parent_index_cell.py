@@ -21,6 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import file_finding  # noqa: E402
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 import reconcile  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
@@ -107,6 +108,90 @@ class ParentIndexCellTests(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertEqual("--", _cell(self.root, "RFC-0001"))
         self.assertEqual(["RFC0001"], [d["id"] for d in self._drift()])
+
+    def test_only_the_parents_own_row_is_written(self) -> None:
+        """The scope is the one row, not the type: a second parent whose cell disagrees with the
+        census stays as it is. Mutant: every row of the index synced."""
+        r = _file(self.root, "rfc", "the second parent")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        r = _file(self.root, "cr", "child of the first", "--parent", "RFC-0001")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        index = self.root / "sdlc-studio" / "rfcs" / "_index.md"
+        index.write_text(index.read_text(encoding="utf-8").replace("CR0001", "--"),
+                         encoding="utf-8")
+        self.assertEqual("--", _cell(self.root, "RFC-0001"), "premise: an earlier row disagrees")
+        r = _file(self.root, "cr", "child of the second", "--parent", "RFC-0002")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("CR0002", _cell(self.root, "RFC-0002"))
+        self.assertEqual("--", _cell(self.root, "RFC-0001"))
+
+    def test_a_cell_naming_work_the_census_cannot_see_is_held(self) -> None:
+        """The safe direction, as `reconcile apply` keeps it: a cell holding an id no child
+        record backs is the only record that link exists, so it is not rewritten."""
+        index = self.root / "sdlc-studio" / "rfcs" / "_index.md"
+        index.write_text(index.read_text(encoding="utf-8").replace(
+            "| -- |", "| CR0099 |"), encoding="utf-8")
+        before = _cell(self.root, "RFC-0001")
+        self.assertEqual("CR0099", before, "premise")
+        r = _file(self.root, "cr", "a child", "--parent", "RFC-0001")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("CR0099", _cell(self.root, "RFC-0001"))
+
+    def test_the_sync_scans_the_census_once_whatever_the_index_holds(self) -> None:
+        """A child filing reads the corpus once for its one parent, not once per request row:
+        the cost bound the whole-index apply broke (ten times dearer on a 70-RFC index).
+        Mutant: the whole-type apply, which asks for the children of every row."""
+        import unittest.mock
+        from lib import sdlc_md
+        for n in range(6):
+            r = _file(self.root, "rfc", f"extra parent {n}")
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        r = _file(self.root, "cr", "a child", "--parent", "RFC-0001")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        index = self.root / "sdlc-studio" / "rfcs" / "_index.md"
+        index.write_text(index.read_text(encoding="utf-8").replace("CR0001", "--"),
+                         encoding="utf-8")
+        calls = []
+        real = sdlc_md.children_of
+        with unittest.mock.patch.object(
+                sdlc_md, "children_of", side_effect=lambda *a: calls.append(a) or real(*a)):
+            file_finding._sync_parent_cell(self.root, "rfc", "RFC-0001")
+        self.assertEqual(1, len(calls), "one census scan, for the one parent")
+        self.assertEqual("CR0001", _cell(self.root, "RFC-0001"))
+        # and the filing path itself makes no more: the library call, in this process
+        index.write_text(index.read_text(encoding="utf-8").replace("CR0001", "--"),
+                         encoding="utf-8")
+        del calls[:]
+        with unittest.mock.patch.object(
+                sdlc_md, "children_of", side_effect=lambda *a: calls.append(a) or real(*a)), \
+                quiet.diagnostics():
+            file_finding.file_finding(self.root, "cr", "a second child", {
+                "summary": "s", "priority": "Low", "size": "S", "affects": "src/thing.py",
+                "parent": "RFC-0001"})
+        self.assertLessEqual(len(calls), 1, "a child filing scans the census at most once")
+        self.assertIn("CR0001", _cell(self.root, "RFC-0001"))
+
+    def test_a_parent_with_no_index_file_is_left_alone(self) -> None:
+        """A root whose request index is missing has no row to write: no error, no file made.
+        Mutant: the missing-file guard deleted."""
+        import shutil
+        index = self.root / "sdlc-studio" / "rfcs" / "_index.md"
+        index.unlink()
+        file_finding._sync_parent_cell(self.root, "rfc", "RFC-0001")
+        self.assertFalse(index.exists())
+        shutil.rmtree(self.root / "sdlc-studio" / "rfcs")
+        file_finding._sync_parent_cell(self.root, "rfc", "RFC-0001")
+
+    def test_an_agreeing_cell_is_not_rewritten(self) -> None:
+        """A cell that already agrees with the census is not written again. Mutant: the equality
+        guard narrowed so an agreeing cell is rewritten."""
+        import unittest.mock
+        from lib import sdlc_md
+        r = _file(self.root, "cr", "a child", "--parent", "RFC-0001")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        with unittest.mock.patch.object(sdlc_md, "atomic_write") as write:
+            file_finding._sync_parent_cell(self.root, "rfc", "RFC-0001")
+        write.assert_not_called()
 
     def test_a_dry_run_writes_no_cell(self) -> None:
         """Mutant: the cell synced in a preview, which writes nothing else."""
