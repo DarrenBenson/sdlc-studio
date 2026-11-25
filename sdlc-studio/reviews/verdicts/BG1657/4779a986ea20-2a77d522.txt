@@ -1,0 +1,6 @@
+UNIT: BG1657
+BRIEF: 4779a986ea20-2a77d522
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one "AC1's Verify never reads markdownlint's verdict" is CLOSED: the AC1 test now asserts a zero return code for the bug file and the index, and my round-one mutant pointing `CONFIG` at a missing file is now KILLED by that test alone. Round one "The `_steps_safe` docstring the unit edits is now wrong twice" is CLOSED: the docstring now names three exceptions in words that fit three, and says a repro command still runs unless it holds a lone glob `**`, which a shell then runs as a literal pair of asterisks, on a step line or an indented code line, with a fence kept as written\; changelog.d/BG1657.md says the same, and `test_a_glob_in_a_step_command_is_escaped_outside_a_fence_only` pins all three lines (my mutant sparing the indented line is KILLED). AC1, AC2 and AC3 hold by execution: the three Verify selectors pass, `verify_ac.py run --id BG1657 --dry-run` reports pass=3 fail=0, the test file passes (19 tests, 16 subtests), and the repaired changelog passes markdownlint. Claim inventory: the remaining two exceptions leave a copied command alone, since the metadata guard anchors at a line start (file_finding.py:1803) and the third only appends a closing fence.

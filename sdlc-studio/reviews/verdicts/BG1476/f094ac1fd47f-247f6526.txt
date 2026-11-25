@@ -1,0 +1,6 @@
+UNIT: BG1476
+BRIEF: f094ac1fd47f-247f6526
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one "The closed-run case is pinned with an outcome no tool writes" is CLOSED: `test_no_open_run_still_reads_none_open` now closes the fixture run through `run_state.close_run` with each outcome in `run_state.CLOSED`, one subtest each, and asserts the stamp reads none open for every one. My round-one mutant (`state.get("outcome") != "achieved"` in `_raised_in_batch`) is now KILLED, and so is a mutant reading a `partial` run as open, which fails only its own subtest. The repair changes the test alone\; `_raised_in_batch`, the changelog and resume_brief are as round one left them, and those were judged TRUE then. AC1 and AC2 hold by execution: both Verify selectors pass and `verify_ac.py run --id BG1476 --dry-run` reports pass=2 fail=0.

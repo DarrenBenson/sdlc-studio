@@ -1,6 +1,6 @@
 # BG1657: file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG1657.md
@@ -25,10 +25,13 @@ Code-span (or escape) a bare emphasis marker in the title, summary, steps and fi
 
 - [ ] **AC1** Given a bug filed with a title and summary holding a bare ` ** ` between spaces, when `file_finding.py` writes it, then the H1, the body and the `bugs/_index.md` row hold the marker code-spanned or escaped, and markdownlint passes on both files. Fails on: `_md_safe` leaves `**` as written, so MD037 refuses the bug file and the index.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_the_title_passes_markdownlint_in_file_and_index
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a summary, steps and fix each holding a bare ` ** `, when the bug is filed, then none holds an unescaped `**` outside a code span. Fails on: only the title path is safed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_bare_double_asterisk_in_summary_steps_and_fix_is_safed
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a real `**bold**` pair, a `**Field:**` declaration line and a marker already in a code span, when filed, then each is written as given (the controls beside AC1). Fails on: a fix that escapes every asterisk pair.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_real_bold_a_field_declaration_and_a_spanned_marker_are_kept
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

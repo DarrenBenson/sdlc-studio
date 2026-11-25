@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG1304.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG1304.md
 > **Evidence:** CR0689 as first written on 2026-11-09 (Impact and AC2, AC5 and AC6), corrected by hand before commit
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Treat a slash-joined path as one token: wrap the whole path, or leave it unwrapp
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects widened for the carry round (BG1744): the one-segment rooted path is pinned through `file_finding.py file` in the filer's title and body test, beside the other markdown-safe filing cases |

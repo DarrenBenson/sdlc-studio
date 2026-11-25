@@ -1,6 +1,6 @@
 # BG1476: file_finding stamps Raised-in-batch as none open for a finding filed while a run is open
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/lib/resume_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1476.md
@@ -28,8 +28,10 @@ Stamp the open run's id when a run is open, falling back to 'none open' only whe
 
 - [ ] **AC1** Given a run opened with `sprint.py plan --write`, when `file_finding.py file --type bug` files a finding, then its Raised-in-batch line names that run's id and ends with the moment of filing. Fails on: the stamp reading none open while a run is open, or the moment no longer being the stamp's last token.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_a_finding_filed_in_an_open_run_names_the_run
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given no open run, when a finding is filed, then the stamp reads none open with the moment of filing; and given a caller that names its own batch, that value is stamped unchanged. Fails on: a closed or absent run named as open, or the close's own stamp overwritten.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

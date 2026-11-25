@@ -1,6 +1,6 @@
 # BG1068: artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG1068.md
@@ -26,6 +26,7 @@ When an inbound link's text is the artefact's own `<ID>: <old title>`, rewrite i
 
 - [ ] **AC1** After `retitle`, an epic's breakdown link to the retitled story carries the new title as its text as well as the new path. Fails on: retitle rewrites the link target only, so the epic breakdown link text still reads `US1080: <old title>`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_link_text.py -k breakdown_link_text_follows_the_retitle
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # BG1328: `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, .claude/skills/sdlc-studio/reference-scripts-create.md, changelog.d/BG1328.md
@@ -28,10 +28,13 @@ Reopen a Done epic (and re-derive its parent) when a non-terminal story joins it
 
 - [ ] **AC1** Given an epic that is Done with every story Done, when `artifact.py new --type story --epic <epic>` mints a Draft story into it, then the epic's Status is no longer Done. Fails on: an epic reading Done over a story nobody has built.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_a_draft_story_minted_into_a_done_epic_reopens_it
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given that epic's parent request reading Complete, when the story is minted and `reconcile apply` then runs, then the request is In Progress and stays so. Fails on: the request derived Complete again while a slice of it is Draft.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::DoneEpicReopensTests::test_the_parent_request_is_not_derived_complete_after_the_mint
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a request already decomposed into an epic, when `refine.py apply --request <request> --into <that epic>` gives a further slice, then the stories are minted into the epic, the request lists the epic once and a Done epic is reopened; `--into` an epic the request does not name is still refused as before. Fails on: 'already decomposed' leaving a hand mint as the only route.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_refine.py::BreakdownFileTests::test_apply_into_an_epic_the_request_already_names_adds_the_slice
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

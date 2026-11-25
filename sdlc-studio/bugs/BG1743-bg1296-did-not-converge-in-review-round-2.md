@@ -1,6 +1,6 @@
 # BG1743: BG1296 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1296.md
@@ -27,8 +27,10 @@ Fix each finding above, then deliver BG1296 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1296 AC1 still passes: Given `US0101-qa.txt` left by an earlier landing, when `sprint lane land --units us0101` lands a repair with no self-check, then `US0101-qa.txt` is removed, the note is written as `US0101-qa.none`, and no file named for the lower-case spelling exists under the briefs directory. Fails on: `us0101-qa.none` written beside the earlier round's `US0101-qa.txt`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_lower_case_unit_id_names_the_canonical_brief_and_note
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** BG1296 AC2 still passes: Given that landing, under `review.author_self_check: report`, when `sprint lane accept --unit US0101` is given an APPROVE, then it is refused for want of a brief and nothing is recorded, and `--unit us0101` is refused the same way. Fails on: the verdict recorded against the earlier round's brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_reads_the_brief_by_the_normalised_unit_id
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

@@ -1,0 +1,6 @@
+UNIT: BG1017
+BRIEF: 7943874f7edd-33a04cde
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one "The child-Verify exemption is wider than the parsed Verify line" is CLOSED: the exemption is now `sdlc_md.VERIFY_RE.match(line)` with an indent, beneath a criterion item (file_finding.py:1065), and through `validate.py check --file` a `*` or `+` bullet Verify beneath a criterion draws one warning again while the filer's `- **Verify:**` line draws none\; the new star and plus subtests pin it, and my mutant restoring the round-one bullet set is KILLED. Round one "Two further branches of the new parse are unpinned" is CLOSED: `test_a_criterion_does_not_reach_across_a_heading` kills the deleted heading reset, and the star and plus criterion subtests kill narrowing `_CRITERION_ITEM_RE` to a dash. A mutant keying the exemption on the word Verify is KILLED. AC1 holds by execution: the Verify selector passes, `verify_ac.py run --id BG1017 --dry-run` reports pass=1 fail=0, and the test file passes (5 tests, 13 subtests). An indented `**Verify:**` with no bullet beneath a criterion is exempt too, which matches the reader, since `VERIFY_RE` takes an optional dash. Claim inventory: the revised changelog and the `scan_prose_acs` docstring are TRUE by execution\; d776d08d5 after the repair changes only `AC_HEADING_RE` in lib/sdlc_md.py, not `VERIFY_RE`.

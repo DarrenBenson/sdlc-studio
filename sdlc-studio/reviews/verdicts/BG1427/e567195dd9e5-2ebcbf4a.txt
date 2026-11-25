@@ -1,0 +1,6 @@
+UNIT: BG1427
+BRIEF: e567195dd9e5-2ebcbf4a
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one "Every `--parent` filing now pays a whole-census drift scan while it holds the allocation lock" is CLOSED: `_sync_parent_cell` reads the parent's own index and calls `sdlc_md.children_of` once, for the parent alone, so on this repository's tree the same `file_finding.py file --type cr --parent RFC0057` filing took 5.0 s of CPU after the repair against 21.5 s at round one and 2.5 s at the base 74903e754 (measured back to back at load 3), and `spawned_column_drift` reports RFC0057 at the base and nothing after the repair. The new writer compares the same id sets as the detector, writes the sorted census list as `apply_spawned_column` does, and holds a cell naming unseen work. My mutants writing only the last child and dropping the held guard are each KILLED, and a bug filed under an epic parent, whose index has no spawned column, is filed without error. AC1 holds by execution: the Verify selector passes, `verify_ac.py run --id BG1427 --dry-run` reports pass=1 fail=0, and the test file passes (11 tests). The author's "missing index not skipped" survivor is equivalent, as answered. Claim inventory: the revised changelog is TRUE by execution: one row, one corpus scan inside the lock, no other row touched, an unseen-work cell left as it is.

@@ -1,6 +1,6 @@
 # BG1152: artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push']
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, changelog.d/BG1152.md
@@ -27,6 +27,7 @@ Join a list-valued affects with ', ' before rendering, as a string affects is wr
 
 - [ ] **AC1** A batch spec item with a list-valued affects renders `> **Affects:** a, b`, and the minted unit's Affects parses to those paths. Fails on: `artifact.py batch` renders a list-valued affects as a Python repr, so the Affects line reads `['hooks/pre-push']` and parses to one bracketed token.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::BatchAffectsTests::test_a_list_valued_affects_renders_as_a_path_list
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

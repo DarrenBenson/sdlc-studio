@@ -1,6 +1,6 @@
 # BG1427: file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py, changelog.d/BG1427.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
@@ -26,6 +26,7 @@ When --parent writes the parent's Decomposed-into, sync that parent's index cell
 
 - [ ] **AC1** Given a finding filed with --parent naming an RFC that has an index row, when the filer returns, then reconcile detect reports no spawned-column drift for that parent. Fails on: a parent row whose spawned-work cell omits the new child.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py::ParentIndexCellTests
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

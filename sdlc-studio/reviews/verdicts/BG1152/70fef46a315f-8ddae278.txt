@@ -1,0 +1,6 @@
+UNIT: BG1152
+BRIEF: 70fef46a315f-8ddae278
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one, "A list element that is not a path string is written as its Python spelling": CLOSED. `_affects_text` now refuses any element that is not a `str`, by position and kind (artifact.py:130-133). Through `artifact.py batch --spec` and `artifact.py new --fields-file`, the elements `null`, a nested list and `true` are each refused ("batch item 2: affects entry 1 is NoneType None, not a path string" and the like). A two-item batch whose second item is bad mints nothing, and a list with padded and blank strings still mints `a.py, b.py`. Moving the call into the per-item validation leaves the caller's dict untouched, because it updates the copy. Claim inventory: the changelog's "refused by position and kind, naming the batch item, with nothing minted" is TRUE by execution, and the docstring's kinds and "A value that is not a list is left as it was" are TRUE. Verify (`verify_ac.py run --id BG1152 --dry-run`) passes 1/1. The new subtests cover None, list and int. My own mutants were both killed: the check narrowed to `None`, and the call moved back above the per-item prefix.

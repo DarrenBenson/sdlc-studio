@@ -1,0 +1,6 @@
+UNIT: BG1296
+BRIEF: 99fa2f1f7e62-0be4a2f4
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two's "the normalised-id comparison the repair adds to `_resume` is pinned by no test": CLOSED. dcd36fa09 adds only test_a_resume_compares_the_units_of_a_unit_no_artefact_carries_by_normalised_id, which lands `us9999` (no artefact, no self-check, the hook refusing the commit), asserts the record holds `us9999`, then resumes as `US9998` (refused, rc 2) and as `US9999` (taken up, rc 1, self-check NOT RECORDED). It is my round-two probe made a test. My mutants in a detached worktree at dcd36fa09, each applied once with pycache purged: the exact-string compare is killed at test_lane_land.py:899 ("resume it as it was begun" for `US9999`), and dropping the unit compare altogether is killed by the `US9998` control at test_lane_land.py:896. The author's equivalence answer is withdrawn and the six recorded mutants replay killed. `verify_ac.py run --id BG1296 --dry-run` ac=2 pass=2, and the unit's five tests pass. The lanes.py change between 7c294458a and dcd36fa09 is c1aa3b055's markdown preflight for another lane, which leaves `_resume` and `land` as round two judged them. The fragment's "units are compared by their normalised id" is now TRUE and pinned.

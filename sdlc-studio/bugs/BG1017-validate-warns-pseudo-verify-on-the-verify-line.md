@@ -1,6 +1,6 @@
 # BG1017: validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Depends on:** US1025
@@ -27,6 +27,7 @@ Judge only a criterion's prose, as the filer's own `check_prose_acs` does, skipp
 
 - [ ] **AC1** Given a CR filed by `file_finding.py file --type cr` with a `verify` entry, and a CR whose criterion prose ends `Verify: rg -qi effort sprint.py`, when `validate.py check --file` runs on each, then the first draws no pseudo-verify warning and the second does, advising a `- **Verify:**` line beneath the criterion. Fails on: `scan_prose_acs` judging every line of the section (today), or an exemption keyed on the word Verify rather than the parsed block.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_request_verify_line.py::RequestVerifyLineTests::test_only_a_command_in_criterion_prose_is_warned
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

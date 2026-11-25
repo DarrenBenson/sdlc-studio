@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 79 |
+| Open | 71 |
 | In Progress | 0 |
-| Fixed | 1194 |
+| Fixed | 1204 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1743** |
+| **Total** | **1745** |
 
 ## All Bugs
 
@@ -92,7 +92,7 @@
 | [BG1014](BG1014-revert-check-rewrites-production-files-in-place-without.md) | revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file | Won't Fix | Low | 2026-10-09 | 2026-10-09 |
 | [BG1015](BG1015-persona-resolve-py-resolve-refuses-a-seat-role.md) | persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Won't Fix | Low | 2026-10-09 | 2026-10-09 |
-| [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Fixed | Low | 2026-10-09 | 2026-10-09 |
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Superseded | Low | 2026-10-09 | 2026-10-09 |
@@ -143,7 +143,7 @@
 | [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1066](BG1066-the-product-seat-approves-only-stories-that-serve.md) | The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Superseded | Low | 2026-10-19 | 2026-10-19 |
-| [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Fixed | Low | 2026-10-19 | 2026-10-19 |
 | [BG1069](BG1069-critic-escalation-reads-verdicts-across-a-reopen-a.md) | critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE | Fixed | Low | 2026-10-19 | 2026-10-19 |
 | [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1071](BG1071-the-project-seat-card-s-design-persona-check.md) | The project seat card's design-persona check stops at a full stop, so a name followed by a file path before 'design persona' passes | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
@@ -227,7 +227,7 @@
 | [BG1149](BG1149-rfc0048-s-resolved-d6-still-states-a-120s.md) | RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20 | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1150](BG1150-sprint-py-still-says-the-planner-reads-the.md) | sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358 | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1151](BG1151-the-interface-path-persona-router-reads-a-template.md) | The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap | Fixed | Low | 2026-11-01 | 2026-11-01 |
-| [BG1152](BG1152-artifact-py-batch-writes-a-list-valued-affects.md) | artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push'] | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1152](BG1152-artifact-py-batch-writes-a-list-valued-affects.md) | artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push'] | Fixed | Low | 2026-11-01 | 2026-11-01 |
 | [BG1153](BG1153-executes-verifiers-s-docstring-says-verify-ac-reads.md) | EXECUTES_VERIFIERS's docstring says verify_ac reads it, but verify_ac keeps its own VERIFIABLE_PREFIXES, and the TRD says an un-decomposed CR 'reaches Done' | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1154](BG1154-trevor-s-card-says-a-sign-off-on.md) | Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
 | [BG1155](BG1155-decisions-read-once-s-change-detection-is-pinned.md) | decisions.read_once's change detection is pinned only by a growing file: dropping inode, mtime or ctime from its identity stays green | Won't Fix | Low | 2026-11-01 | 2026-11-01 |
@@ -371,7 +371,7 @@
 | [BG1293](BG1293-a-codex-lane-that-times-out-or-prints.md) | A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its spend reaches a Codex-metered run zero times | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1294](BG1294-sprint-lane-accept-s-stale-self-check-refusal.md) | `sprint lane accept`'s stale-self-check refusal tells the operator to land the unit again, which `lane land` refuses after an out-of-band repair, and its refusal prints a doubled full stop | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1295](BG1295-no-test-pins-lane-accept-s-off-and.md) | No test pins `lane accept`'s `off` and unrecognised `review.author_self_check` branches, so asking for the self-check gap under `off`, or reading a mistyped mode as off, survives every lane accept test | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
-| [BG1296](BG1296-sprint-lane-land-names-a-unit-s-brief.md) | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.txt` and leaves the canonical brief in place | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1296](BG1296-sprint-lane-land-names-a-unit-s-brief.md) | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.txt` and leaves the canonical brief in place | Fixed | Low | 2026-11-08 | 2026-11-08 |
 | [BG1297](BG1297-the-6-3-0-release-notes-test-checks.md) | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1298](BG1298-the-trd-s-path-row-pin-checks-its.md) | The TRD's path-row pin checks its depth rule in one direction only, so loosening `_matches` to accept the directory itself or a deeper file leaves the suite green | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1299](BG1299-a-commit-that-changes-sdlc-studio-trd-md.md) | A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push | Superseded | Low | 2026-11-09 | 2026-11-09 |
@@ -403,7 +403,7 @@
 | [BG1325](BG1325-a-hand-run-mutation-pass-can-leave-a.md) | A hand-run mutation pass can leave a stale `.pyc` that Python reuses after the source is restored, so a later test run, the commit hook's among them, judges the mutant rather than the code | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1326](BG1326-sprint-py-handoff-writes-a-resume-brief-while.md) | `sprint.py handoff` writes a resume brief while a lane is still in flight, so the wave boundary reference-sprint.md defines is stated but not enforced, and four files still say no command writes a handoff | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1327](BG1327-a-verdict-file-s-escape-which-the-review.md) | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
-| [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1329](BG1329-run-nine-s-close-push-is-refused-by.md) | Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use | Fixed | High | 2026-11-09 | 2026-11-09 |
 | [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Fixed | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Fixed | Medium | 2026-11-10 | 2026-11-10 |
@@ -502,7 +502,7 @@
 | [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1426](BG1426-transition-py-refuses-an-rfc-at-accepted-until.md) | transition.py refuses an RFC at Accepted until every change request it spawned is resolved, though the RFC status flow says Accepted means its decisions are made | Superseded | Low | 2026-11-14 | 2026-11-14 |
-| [BG1427](BG1427-file-finding-py-parent-writes-the-parent-s.md) | file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift | Open | Low | 2026-11-14 | 2026-11-14 |
+| [BG1427](BG1427-file-finding-py-parent-writes-the-parent-s.md) | file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift | Fixed | Low | 2026-11-14 | 2026-11-14 |
 | [BG1428](BG1428-the-per-unit-dollars-cell-prices-a-unit.md) | The per-unit dollars cell prices a unit's Grok agent read from a session total with no lower-bound label, and BG1391's changelog says the label holds wherever models are summed | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
 | [BG1429](BG1429-a-project-grok-price-entry-with-a-lower.md) | A project Grok price entry with a lower long-context threshold is still booked at the shipped 200,000 threshold, so a long prompt is priced at the short rate and reads exact | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1430](BG1430-verify-ac-s-signal-relay-raises-its-running.md) | verify_ac's signal relay raises its running count outside the try, so a raise in that window leaves every later returning handler refused, and no test pins the per-signal refresh of the settle bound | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
@@ -551,7 +551,7 @@
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Fixed | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Fixed | Low | 2026-11-15 | 2026-11-15 |
@@ -716,7 +716,7 @@
 | [BG1638](BG1638-config-defaults-yaml-still-calls-two-backlog-enforce.md) | config-defaults.yaml still calls two_backlog.enforce the one gate-bearing key that ships off | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1639](BG1639-the-prd-drift-checkers-accept-rewordings-of-the.md) | The PRD drift checkers accept rewordings of the claims they exist to refuse | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1640](BG1640-install-sh-s-sidecar-refusals-for-an-empty.md) | install.sh's sidecar refusals for an empty body, a transport fault and wget are unpinned | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
-| [BG1641](BG1641-a-repair-s-qa-brief-does-not-name.md) | A repair's QA brief does not name the reviewer whose REJECT it answers, so a fresh reviewer's round two is refused at record | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1641](BG1641-a-repair-s-qa-brief-does-not-name.md) | A repair's QA brief does not name the reviewer whose REJECT it answers, so a fresh reviewer's round two is refused at record | Fixed | Low | 2026-11-20 | 2026-11-20 |
 | [BG1642](BG1642-config-py-show-prints-a-runtimeerror-traceback-without.md) | config.py show prints a RuntimeError traceback without PyYAML instead of the one-line refusal | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1643](BG1643-the-trd-checks-left-by-run-nineteen-s.md) | The TRD checks left by run nineteen's TRD repairs accept rewordings and leave three claims unpinned | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1644](BG1644-markdownevidencelinttests-reads-the-live-sdlc-studio-reviews-tree.md) | MarkdownEvidenceLintTests reads the live sdlc-studio/reviews/ tree, so committing the author-mutant records turns the push gate red | Fixed | High | 2026-11-20 | 2026-11-20 |
@@ -732,7 +732,7 @@
 | [BG1654](BG1654-a-reviewer-cannot-check-a-verdict-file-before.md) | A reviewer cannot check a verdict file before hand-back: critic.py record refuses an odd backtick count only when the operator records it | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1655](BG1655-seat-persona-unknown-reads-a-capitalised-word-after.md) | seat-persona-unknown reads a capitalised word after a seat card's role phrase as a persona name, and US1052's standard makes the rule block | Fixed | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1656](BG1656-the-consult-s-load-step-never-classifies-a.md) | The consult's load step never classifies a flat Served card, and BG1535's tests accept the stakeholder declaration anywhere on the card | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
-| [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Fixed | Low | 2026-11-20 | 2026-11-20 |
 | [BG1658](BG1658-the-goal-brief-s-no-current-batch-answer.md) | The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test | Fixed | Low | 2026-11-20 | 2026-11-20 |
 | [BG1659](BG1659-five-behaviours-persona-review-py-and-its-reference.md) | Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1660](BG1660-us1040-did-not-converge-in-review-round-2.md) | US1040 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-20 | 2026-11-20 |
@@ -818,7 +818,9 @@
 | [BG1740](BG1740-reference-review-md-lists-the-optional-claim-surfaces.md) | reference-review.md lists the optional claim surfaces without the declared pages | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1741](BG1741-the-retro-judges-a-run-whole-from-another.md) | The retro judges a run whole from another harness's session when the closing session has no closing stamp, and drops a supplied delegated total | Open | Low | 2026-11-24 | 2026-11-24 |
 | [BG1742](BG1742-bg1026-did-not-converge-in-review-round-2.md) | BG1026 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
-| [BG1743](BG1743-bg1296-did-not-converge-in-review-round-2.md) | BG1296 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1743](BG1743-bg1296-did-not-converge-in-review-round-2.md) | BG1296 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1744](BG1744-bg1304-did-not-converge-in-review-round-2.md) | BG1304 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1745](BG1745-bg1649-did-not-converge-in-review-round-2.md) | BG1649 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-25 | 2026-11-25 |
 
 ## Archived Releases
 
