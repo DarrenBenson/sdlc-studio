@@ -14,7 +14,7 @@ ran in, so the table cannot show it; CR0743 adds that record.
 ## The runs
 
 <!-- BEGIN GENERATED -->
-The newest report this page covers is RPT0035, signed at 2026-11-18T15:16:02Z.
+The newest report this page covers is RPT0045, signed at 2026-11-25T13:43:47Z.
 
 Each column reads one field of the report its row names:
 
@@ -28,6 +28,16 @@ Each column reads one field of the report its row names:
 
 | Run | Report | Goal verdict | Verdict note | Dollars per point | Model | Hours to signature |
 | --- | --- | --- | --- | --- | --- | --- |
+| RUN-01M87B5M | RPT0045 | Judged achieved | - | $4.70 | claude-opus-5-5, claude-sonnet-5-5 | 0.2 |
+| RUN-01M866KQ | RPT0044 | Judged achieved | - | $2.94 | claude-opus-5-5, claude-sonnet-5-5 | 0.1 |
+| RUN-01M84Z8Z | RPT0043 | Judged achieved | - | $2.94 | claude-opus-5-5, claude-sonnet-5-5 | 0.1 |
+| RUN-01M836YT | RPT0042 | Judged partial | 24 of the 25 planned Medium bugs fixed, each on an independent APPROVE with a test that fails without the fix; BG0967 (Medium) did not converge in three rounds and is carried under BG1723 for a rule-based redesign in run twenty-four | $4.17 | claude-opus-5-5, claude-sonnet-5-5 | 0.1 |
+| RUN-01M80RTZ | RPT0041 | Judged partial | 25 of the 28 planned Medium bugs are Fixed, each with a test that fails without its fix (every unit approved by an independent qa review, 13 of them in a ruled third round); BG1475, BG1532 and BG1625 were rejected in their ruled third rounds and carry to the next run under BG1707, BG1714 and BG1717. Three Lows filed this run (BG1700 to BG1702) were added and Fixed. | $4.79 | claude-opus-5-5 | 0.1 |
+| RUN-01M7YPFD | RPT0040 | Judged partial | 31 of the 32 Medium bugs in the sprint, lane, transition and verify scripts are Fixed, each with a test its mutation pass shows fails without the fix; BG1534 is carried open after its ruled third round rejected | $3.65 | claude-opus-5-5 | 0.1 |
+| RUN-01M7VNR0 | RPT0039 | Judged partial | Partial. Clause two (each seat's goal brief uses its own card) is achieved by all three close-time seats; clause three (persona docs match the code) by two of three, product reading partial over BG1669's missing persona_review.py owed entry. Clause one is partial by all three: the enforced standard holds (persona_review.py check blocks=0, and every entry point that frames from a card refuses a held one), but this repository's own seven cards carry no Evidence section and are owed a review (BG1666), so the cards meet the blocking rules only. The close panel reads the partial answers as unanswered (BG1673). | $2.88 | claude-opus-5-5, claude-sonnet-5-5 | 13.2 |
+| RUN-01M7TTK3 | RPT0038 | Judged achieved | - | $2.05 | claude-opus-5-5, claude-sonnet-5-5 | 0.2 |
+| RUN-01M7SS62 | RPT0037 | Judged achieved | - | $2.64 | claude-opus-5-5 | 0.1 |
+| RUN-01M7QMZ0 | RPT0036 | Judged partial | The repository's front door is done: the GitHub About box, the README first screen, docs/harnesses.md, docs/enterprise.md, the skill metadata and llms.txt present SDLC Studio as harness-agnostic with people in the lead, every claim checked against the tree. CR0742 names the website home page as the third front-door surface; it lives in the website's own repository and is delivered by a change request run there next, so a reviewer who lands on the site still reads the old positioning. | $2.18 | claude-opus-5-5 | 0.2 |
 | RUN-01M7NTY5 | RPT0035 | Judged partial | Every gate the audit named now refuses work it never judged, and a run closed in the operator's absence awaits a signature that must name its authority; BG1582 leaves one sign path (HEAD past the close commit, no later run open) that skips the whole-tree check, deferred to the operator | $2.00 | claude-opus-5-5 | 4.9 |
 | RUN-01M7HA6R | RPT0034 | Judged achieved | - | $2.08 | claude-opus-5-5 | 0.1 |
 | RUN-01M7GEHM | RPT0033 | Judged achieved | - | $2.18 | claude-opus-5-5 | 0.1 |

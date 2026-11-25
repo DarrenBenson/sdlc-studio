@@ -698,6 +698,26 @@ class ReleaseNamedTests(unittest.TestCase):
         self.assertIn("no bar is recorded for v4.1", err.getvalue())
         self.assertFalse((root / ki.PAGE_REL).exists())
 
+    def test_a_650_cut_states_the_v65_bar_and_keeps_v60_as_history(self) -> None:
+        """MUTANTS: (1) no v6.5 row in BARS, so a 6.5.0 cut heads "The bar v6.5 is held to" with
+        v6.0's sentence; (2) the v6.0 row dropped when the v6.5 row was added, so no history
+        keeps it; (3) the v6.5 row recorded for an earlier series, so a 6.4.0 cut states it. The
+        6.4.0 cut is the control: it still states v6.0's bar, with no v6.5 one."""
+        _root, page = self._cut("6.5.0")
+        self.assertIn("## The bar v6.5 is held to\n\n**Fewer than 50 open bugs at the tag, and "
+                      "none at Medium or above.**", page)
+        self.assertIn("## The bar v6.0 was held to, kept as history\n\n**Zero open Critical or "
+                      "High finding at the tag", page)
+        self.assertLess(page.index("## The bar v6.5 is held to"),
+                        page.index("## The bar v6.0 was held to"),
+                        "the bar in force comes first; the earlier ones are history below it")
+        self.assertIn("## The bar v5.0.0 was held to, kept as history", page)
+        self.assertIn("## Triaged to v6.6", page)
+        _root, earlier = self._cut("6.4.0")
+        self.assertIn("## The bar v6.4 is held to\n\n**Zero open Critical or High", earlier)
+        self.assertNotIn("Fewer than 50", earlier, "a 6.4 cut states the v6.5 bar")
+        self.assertNotIn("The bar v6.0 was held to", earlier)
+
     def test_a_release_that_is_not_a_version_is_refused(self) -> None:
         """MUTANTS: (1) delete the cut's version guard; (2) drop the grammar's end anchor. Each
         refused release has notes of its own, so the refusal is the grammar's and not a missing
@@ -742,13 +762,30 @@ class PageProseTests(unittest.TestCase):
         """MUTANT: HEAD's order - the paragraph emitted after the history, so it reads as the
         v5.0.0 bar's."""
         with tempfile.TemporaryDirectory() as d:
-            page = ki.render(self._corpus(Path(d), [("BG9001", "Open", "Medium")]), "6.0.0")
+            page = ki.render(self._corpus(Path(d), [("BG9001", "Open", "Medium"),
+                                                    ("BG9002", "Open", "Low")]), "6.0.0")
         para = page.index("**Medium and Low findings ship open")
         self.assertLess(page.index("## The bar v6.0 is held to\n"), para)
         self.assertLess(para, page.index("kept as history"),
                         "the ship-open paragraph follows a history heading, so it reads as "
                         "part of an older bar")
         self.assertIn("ship open", self._section(page, "The bar v6.0 is held to"))
+
+    def test_the_ship_open_sentence_names_only_the_severities_the_table_holds(self) -> None:
+        """MUTANTS: (1) the sentence fixed at "Medium and Low", which a release shipping no
+        Medium, as 6.5.0 does, contradicts; (2) the severities compared with `==` rather than
+        as the classifiers compare them, so a finding written `low` names no severity. Closed
+        findings are controls: a Fixed Medium names no Medium."""
+        cases = (([("BG9001", "Open", "Medium"), ("BG9002", "Open", "Low")], "Medium and Low"),
+                 ([("BG9001", "Fixed", "Medium"), ("BG9002", "Open", "Low")], "Low"),
+                 ([("BG9001", "Open", "Medium"), ("BG9002", "Closed", "Low")], "Medium"),
+                 ([("BG9001", "Open", "low")], "Low"))
+        for bugs, named in cases:
+            with self.subTest(bugs=bugs), tempfile.TemporaryDirectory() as d:
+                page = ki.render(self._corpus(Path(d), bugs), "6.5.0")
+                self.assertIn(f"\n**{named} findings ship open, listed here by id, triaged to "
+                              "v6.6.** Each is a real\n", page)
+                self.assertEqual(1, page.count("findings ship open"))
 
     def test_not_carried_is_derived_from_the_corpus(self) -> None:
         """MUTANT: HEAD's constant 'Three ... and one was superseded'. The Closed and Fixed

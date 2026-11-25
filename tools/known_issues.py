@@ -68,6 +68,11 @@ _HEADING = re.compile(r"^# (BG-?\d+): (.+)$", re.M)
 #: and keeps every older one below as history, because a reader needs to know which bar the list
 #: in front of them serves. A new bar is a new first row; the rows below it never change.
 BARS = (
+    ((6, 5), "v6.5", """\
+**Fewer than 50 open bugs at the tag, and none at Medium or above.** The release waits for
+that target rather than for a date. A finding either reaches a terminal status or ships open at
+Low severity, listed below by id.
+"""),
     ((6, 0), "v6.0", """\
 **Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
 decision.** A finding either reaches a terminal status with its own verifiers passing, or it
@@ -113,13 +118,15 @@ def _series(release: str, *, cut: bool = False) -> tuple[int, int]:
 #: The page's prose is DERIVED from the count it sits above, because a sentence that is true of
 #: fifteen findings is false of none: "they ship open, listed here by id" describes an empty
 #: table as a list of findings, and "each id below is a file" promises files nobody can open.
-def _head(count: int, release: str) -> str:
+#: It names only the severities the table holds, `shipped`: "Medium and Low findings ship open"
+#: is false of a release that ships no Medium.
+def _head(count: int, release: str, shipped: tuple[str, ...]) -> str:
     major, minor = _series(release)
     target = f"v{major}.{minor + 1}"
     if count:
         body = (
-            f"**Medium and Low findings ship open, listed here by id, triaged to {target}.** "
-            "Each is a real\n"
+            f"**{' and '.join(shipped)} findings ship open, listed here by id, triaged to "
+            f"{target}.** Each is a real\n"
             "defect with a reproduction and, in most cases, a proposed fix. None of them stops the\n"
             "lifecycle running. They are listed rather than closed, because closing a bug to make a\n"
             "release look clean is the practice this tool exists to prevent.\n\n"
@@ -339,7 +346,8 @@ def render(repo: Path | None, release: str) -> str:
         lines.append(f"| `{bug_id}` | {sev} | {title} |")
     total, mediums, lows = _split(found)
     lines += ["", f"{total} findings: {mediums} Medium, {lows} Low."]
-    return _head(total, release) + "\n".join(lines) + "\n" + _not_carried(repo) + TAIL
+    shipped = tuple(s for s in DISCLOSED if any(_matches(sev, (s,)) for sev, _t in found.values()))
+    return _head(total, release, shipped) + "\n".join(lines) + "\n" + _not_carried(repo) + TAIL
 
 
 def _git(root: Path, *args: str, text: bool = True) -> subprocess.CompletedProcess:
