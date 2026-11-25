@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 50 |
+| Open | 48 |
 | In Progress | 0 |
-| Fixed | 1237 |
+| Fixed | 1239 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
@@ -487,7 +487,7 @@
 | [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1410](BG1410-bg1330-s-re-pointed-clean-run-test-lost.md) | BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1411](BG1411-the-unpriced-gap-remedy-lane-return-units-id.md) | The unpriced-gap remedy 'lane return --units <id> --agent A' cannot work after the close | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
-| [BG1412](BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md) | templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1412](BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md) | templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run | Fixed | Low | 2026-11-13 | 2026-11-13 |
 | [BG1413](BG1413-a-ctrl-c-during-lane-run-s-2.md) | A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1414](BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md) | The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1415](BG1415-no-test-pins-the-line-number-verify-ac.md) | No test pins the line number verify_ac's lint prints | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
@@ -579,7 +579,7 @@
 | [BG1501](BG1501-test-lean-release-notes-v64-fails-in-a.md) | test_lean_release_notes_v64 fails in a tree that is not a git clone: its text checks read v6.3.0 through git, so FrozenNotesTests' copy goes red and the push gate refuses | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1502](BG1502-critic-py-self-check-record-refuses-a-unit.md) | critic.py self-check record refuses a unit until it claims its changelog.d fragment, though the release cut has already merged that fragment into CHANGELOG.md | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1503](BG1503-release-cut-py-changelog-cut-joins-a-fragment.md) | release_cut.py changelog-cut joins a fragment that does not start with a bullet onto the entry above it, so about 60 of 6.4.0's 131 entries run together in CHANGELOG.md | Fixed | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Fixed | Low | 2026-11-16 | 2026-11-16 |
 | [BG1505](BG1505-6-4-0-s-changelog-says-a-fragment.md) | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
 | [BG1506](BG1506-us0996-s-ac3-test-fails-whenever-test-sprint.md) | US0996's AC3 test fails whenever test_sprint_report's CloseReportTests ran first in the same pytest process, so the release gate and CI's corpus check read it red | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1507](BG1507-a-reviewer-that-sets-a-throwaway-home-and.md) | A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config | Fixed | High | 2026-11-16 | 2026-11-16 |

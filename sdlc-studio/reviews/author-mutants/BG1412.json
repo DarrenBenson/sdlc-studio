@@ -1,0 +1,106 @@
+{
+  "unit": "BG1412",
+  "digest": "54b0198e0f441d1a at 714c9d9577e6",
+  "report": "sdlc-studio/.local/lane/landed/agent-a622928000f1c140c/BG1412-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "K1 template run without --dry-run",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "`verify_ac.py run --id <unit> --dry-run`",
+      "new": "`verify_ac.py run --id <unit>`",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_each_card_runs_the_criteria_with_dry_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K2 installed copy run without --dry-run",
+      "file": ".claude/agents/sdlc-builder.md",
+      "old": "`verify_ac.py run --id <unit> --dry-run`",
+      "new": "`verify_ac.py run --id <unit>`",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_each_card_runs_the_criteria_with_dry_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K3 a second, bare run added to the template",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "`--dry-run` keeps",
+      "new": "`verify_ac.py run --id <unit>` without `--dry-run` keeps",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_each_card_runs_the_criteria_with_dry_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K4 the run deleted from the template",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "(`verify_ac.py run --id <unit> --dry-run`) ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_each_card_runs_the_criteria_with_dry_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K5 the run cut at the first space",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.;]*\")",
+      "new": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b\\S*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K6 wrapped lines not joined",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN.finditer(\" \".join(text.split()))",
+      "new": "RUN.finditer(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K7 any text holding dry read as a dry run",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "\"--dry-run\" not in r",
+      "new": "\"dry\" not in r",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K8 the run carried past its sentence",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.;]*\")",
+      "new": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`;]*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K9 the run carried past its clause",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.;]*\")",
+      "new": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.]*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K10 the run carried past its code span",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.;]*\")",
+      "new": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^.;]*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K11 .py required",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py",
+      "old": "RUN = re.compile(r\"verify_ac(?:\\.py)?\\s+run\\b[^`.;]*\")",
+      "new": "RUN = re.compile(r\"verify_ac\\.py\\s+run\\b[^`.;]*\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests::test_the_reader_tells_a_bare_run_from_a_dry_one",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py, changelog.d/BG1497.md
+> **Affects:** .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1497.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) US1170 builder hand-back, 2026-11-16.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Document `sprint.fresh_session` in reference-config.md and add `pricing.copilot_
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-25 | orchestrator (delegate under D0545) | Affects widened at the builder's BLOCKED: AC3 declares `quality.require_full_sections` in config-defaults.yaml, and `test_lean_prd_refresh.py`'s section 9 check pins that key as undeclared there, so it moves to a key the defaults do not declare |

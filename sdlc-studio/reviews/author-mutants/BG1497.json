@@ -1,0 +1,214 @@
+{
+  "unit": "BG1497",
+  "digest": "cd0c21f3fd7261e2 at 714c9d9577e6",
+  "report": "sdlc-studio/.local/lane/landed/agent-a622928000f1c140c/BG1497-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "R1 fresh_session row default block",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `sprint.fresh_session` | `warn` |",
+      "new": "| `sprint.fresh_session` | `block` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_fresh_session_is_documented_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R2 off not documented as a mode",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "`off` reads nothing. Any other value reads as `warn`.",
+      "new": "off reads nothing. Any other value reads as `warn`.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_fresh_session_is_documented_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R3 the fresh_session row gone",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `sprint.fresh_session` | `warn` | What a session",
+      "new": "| `sprint.fresh_sessions` | `warn` | What a session",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_fresh_session_is_documented_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R4 report.enabled undocumented",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `report.enabled` | `true` |",
+      "new": "| `report.page` | `true` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R5 gate_budget keys undocumented",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `gate_budget.seconds`, `gate_budget.baseline_seconds`, `gate_budget.baseline_date` |",
+      "new": "| `gate_budget` keys |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R6 quality.mutation_max undocumented",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "  # quality.mutation_max (default 25)",
+      "new": "  # mutation_max (default 25)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "R7 estimator.compulsory_after undocumented",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `estimator.default`, `estimator.compulsory_after` |",
+      "new": "| `estimator.default` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "D1 requests shipped",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  copilot_billing: tokens  #",
+      "new": "  copilot_billing: requests  #",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_copilot_billing_ships_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "D2 copilot_billing not declared",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  copilot_billing: tokens  # tokens | requests - requests leaves the Copilot ids unpriced\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_copilot_billing_ships_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "D3 stale_after_days shipped as 60",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  stale_after_days: 90\n",
+      "new": "  stale_after_days: 60\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_copilot_billing_ships_with_the_default_the_code_uses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "D4 premium_request not declared",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  premium_request: null\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "D5 models not declared",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  models: {}\n  premium_request",
+      "new": "  premium_request",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 dotted keys read as blocks",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "if \".\" not in key:",
+      "new": "if \".\" in key:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 named-constant keys lost",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "names.get(node.id) if isinstance(node, ast.Name) else None)",
+      "new": "None if isinstance(node, ast.Name) else None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 subscript block reads lost",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "elif isinstance(node, ast.Subscript) and",
+      "new": "elif False and isinstance(node, ast.Subscript) and",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T4 a dotted suffix read as the key",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "rf\"(?<![\\w.]){re.escape(key)}(?!\\w)\"",
+      "new": "rf\"{re.escape(key)}(?!\\w)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T5 a longer key read as the key",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "rf\"(?<![\\w.]){re.escape(key)}(?!\\w)\"",
+      "new": "rf\"(?<![\\w.]){re.escape(key)}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T6 an absent default read as declared null",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "cur.get(part, _ABSENT) if isinstance(cur, dict) else _ABSENT",
+      "new": "cur.get(part) if isinstance(cur, dict) else _ABSENT",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T7 scripts/lib not scanned",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "*(scripts / \"lib\").glob(\"*.py\")",
+      "new": "*(scripts / \"lib\").glob(\"*.pyx\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T8 the last reader's line kept",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "found.setdefault(key, where % node.lineno)",
+      "new": "found[key] = where % node.lineno",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T9 two-argument reads lost",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "node.func.value.id == \"config\" and len(node.args) >= 2:",
+      "new": "node.func.value.id == \"config\" and len(node.args) > 2:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T10 get block reads lost",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "and node.func.value.id in blocks and node.args:",
+      "new": "and node.func.value.id in () and node.args:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T11 the last block reader's line kept",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py",
+      "old": "found.setdefault(f\"{block}.{sub}\", where % node.lineno)",
+      "new": "found[f\"{block}.{sub}\"] = where % node.lineno",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

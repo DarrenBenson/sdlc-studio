@@ -1,0 +1,6 @@
+UNIT: BG1504
+BRIEF: 6b2c89c4c63e-51c7d016
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory TRUE: the template and the installed card (byte-identical) carry the rule in `## How you work`, "Remove only the paths you created and recorded, each by its own name\; never delete by a glob over a shared directory such as `TMPDIR` or a scratchpad", as the changelog says\; the new comment's "matched over whitespace-joined text" holds, since `section()` joins the wrapped lines (test_agent_definitions.py:71). verify_ac run --id BG1504 --dry-run: ac=2 pass=2. test_agent_definitions.py: 9 passed. Reviewer mutants: the template's rule narrowed to forbid only `rm -rf` over `tmp.*` is killed\; the test's glob pattern loosened to any mention of "glob" survives, a change to the oracle itself rather than to a card, and every card shape the criteria name is refused, so not counted as a finding. The `--dry-run` line beside the rule is BG1412's and is judged there.

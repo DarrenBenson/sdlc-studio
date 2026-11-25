@@ -1,0 +1,6 @@
+UNIT: BG1412
+BRIEF: 28ce97f37d97-dfd7ff34
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claim inventory TRUE by execution: both cards (template and installed copy, byte-identical) now name `verify_ac.py run --id <unit> --dry-run` and no other verify_ac run\; a dry run in a clean worktree leaves git status empty, so the card's and changelog's "keeps the run from writing its results into the unit's own artefact" holds\; the new test's docstring claim that the lane brief carries `--dry-run` since BG1336 holds (35b9a7886, sprint.py:3621). verify_ac run --id BG1412 --dry-run: ac=1 pass=1. test_builder_dry_run.py and test_lane_builder_brief.py: 19 passed. Reviewer mutant killed: `--dry-run` moved outside the installed card's code span. The test_lane_builder_brief.py changes since the base are BG0960's units' (c1aa3b055, 0bcd03956), not this unit's. The clean-up bullet beside the run line is BG1504's and is judged there.

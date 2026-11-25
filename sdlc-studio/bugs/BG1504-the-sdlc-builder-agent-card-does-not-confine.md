@@ -1,6 +1,6 @@
 # BG1504: The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md, .claude/agents/sdlc-builder.md, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, changelog.d/BG1504.md
@@ -28,8 +28,10 @@ Add a rule to the builder card: remove only paths you created and recorded, neve
 
 - [ ] **AC1** Given the shipped builder card templates/agents/sdlc-builder.md, when it is read, then it tells a builder to remove only the paths it created and recorded, and never to delete by a glob over a shared directory such as TMPDIR. Fails on: a card that says nothing about clean-up, or that forbids only the one command the run met.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_builder_card_confines_clean_up_to_paths_the_builder_created
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given this repository's installed copy .claude/agents/sdlc-builder.md, when it is compared with the template, then the two carry the same clean-up rule. Fails on: the rule landing in the template while the card this repository's builders load stays silent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_this_repository_s_copies_match_the_templates
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

@@ -1,0 +1,52 @@
+{
+  "unit": "BG1504",
+  "digest": "97ec738f3654ef81 at 714c9d9577e6",
+  "report": "sdlc-studio/.local/lane/landed/agent-a622928000f1c140c/BG1504-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "J1 template drops 'and recorded'",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "Remove only the paths you created and recorded, each",
+      "new": "Remove only the paths you created, each",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_builder_card_confines_clean_up_to_paths_the_builder_created",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "J2 template forbids only the one command",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "never delete by a glob\n  over a shared directory such as `TMPDIR` or a scratchpad",
+      "new": "never run `rm -rf` over `TMPDIR/tmp.*` or a scratchpad",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_builder_card_confines_clean_up_to_paths_the_builder_created",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "J3 installed copy silent on clean-up",
+      "file": ".claude/agents/sdlc-builder.md",
+      "old": "Remove only the paths you created and recorded",
+      "new": "Clean up as you see fit",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_this_repository_s_copies_match_the_templates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "J4 the rule read outside How you work",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py",
+      "old": "body = section(text, \"How you work\") or \"\"",
+      "new": "body = text",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_builder_card_confines_clean_up_to_paths_the_builder_created",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "J5 the glob clause dropped from the template",
+      "file": ".claude/skills/sdlc-studio/templates/agents/sdlc-builder.md",
+      "old": "; never delete by a glob\n  over a shared directory such as `TMPDIR` or a scratchpad, where other agents' files sit beside\n  yours.",
+      "new": ".",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_builder_card_confines_clean_up_to_paths_the_builder_created",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

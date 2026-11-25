@@ -1,0 +1,88 @@
+{
+  "unit": "BG1282",
+  "digest": "229c928edbed7e10 at 714c9d9577e6",
+  "report": "sdlc-studio/.local/lane/landed/agent-a622928000f1c140c/BG1282-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 COPILOT_HOME left out of CONFIG_SIGNALS",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "CONFIG_SIGNALS = frozenset({\"COPILOT_HOME\", \"OPENCODE_DB\"})",
+      "new": "CONFIG_SIGNALS = frozenset({\"OPENCODE_DB\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 OPENCODE_DB left out of CONFIG_SIGNALS",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "CONFIG_SIGNALS = frozenset({\"COPILOT_HOME\", \"OPENCODE_DB\"})",
+      "new": "CONFIG_SIGNALS = frozenset({\"COPILOT_HOME\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 config variables kept beside a running signal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "    if running:\n        signalled =",
+      "new": "    if False:\n        signalled =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 config variables dropped outright",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "    if running:\n        signalled =",
+      "new": "    if True:\n        signalled =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_alone_still_selects_its_harness",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 a config variable beside its own running signal sets its harness aside",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "if any(v not in CONFIG_SIGNALS for v in hits):",
+      "new": "if all(v not in CONFIG_SIGNALS for v in hits):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_two_unselected_harnesses_name_the_candidates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 the running harnesses dropped instead",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "if h in running}",
+      "new": "if h not in running}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 a hard-coded running list, so a reader's own signal reads as configuration",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "if any(v not in CONFIG_SIGNALS for v in hits):",
+      "new": "if any(v in (\"CLAUDECODE\", \"CURSOR_AGENT\", CURSOR_RUN_ID, \"OPENCODE\", \"CODEX_THREAD_ID\") for v in hits):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 no harness ever counted as running",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "                running.add(h)",
+      "new": "                pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 COPILOT_HOME no longer a Copilot signal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/token_meters.py",
+      "old": "COPILOT: (\"COPILOT_HOME\",)",
+      "new": "COPILOT: ()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::HarnessEnvironmentTests::test_copilot_beside_claude_is_cleared",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

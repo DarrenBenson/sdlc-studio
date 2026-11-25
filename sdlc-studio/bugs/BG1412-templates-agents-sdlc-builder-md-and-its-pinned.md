@@ -1,6 +1,6 @@
 # BG1412: templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md, .claude/agents/sdlc-builder.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py, changelog.d/BG1412.md
@@ -26,6 +26,7 @@ Add --dry-run.
 
 - [ ] **AC1** Given the builder agent files, when read, then `verify_ac` is run with --dry-run. Fails on: a bare `verify_ac` run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_builder_dry_run.py::BuilderDryRunTests
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 
