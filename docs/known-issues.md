@@ -94,8 +94,18 @@ buy honestly.
 
 ## Not carried
 
-5 findings at a barred severity were ruled `Won't Fix` on their own merits: `BG0124`,
-`BG0139`, `BG0583`, `BG0713`, `BG0951`.
+40 findings at a barred severity were ruled `Won't Fix` on their own merits: `BG0124`,
+`BG0139`, `BG0421`, `BG0537`, `BG0547`, `BG0583`, `BG0634`, `BG0691`, `BG0696`, `BG0699`,
+`BG0700`, `BG0701`, `BG0703`, `BG0705`, `BG0706`, `BG0707`, `BG0708`, `BG0712`, `BG0713`,
+`BG0714`, `BG0721`, `BG0723`, `BG0728`, `BG0729`, `BG0734`, `BG0739`, `BG0741`, `BG0752`,
+`BG0754`, `BG0828`, `BG0830`, `BG0836`, `BG0838`, `BG0840`, `BG0857`, `BG0863`, `BG0864`,
+`BG0951`, `BG1281`, `BG1509`.
+
+32 findings at a barred severity were superseded by later work: `BG0271`, `BG0534`,
+`BG0620`, `BG0632`, `BG0638`, `BG0639`, `BG0679`, `BG0680`, `BG0683`, `BG0684`, `BG0685`,
+`BG0686`, `BG0688`, `BG0689`, `BG0690`, `BG0693`, `BG0694`, `BG0697`, `BG0698`, `BG0702`,
+`BG0704`, `BG0710`, `BG0720`, `BG0724`, `BG0727`, `BG0732`, `BG0735`, `BG0738`, `BG0740`,
+`BG0841`, `BG1052`, `BG1087`.
 
 They are not in the list above because they are not open, and a disclosure that pads
 its count is as misleading as one that trims it.

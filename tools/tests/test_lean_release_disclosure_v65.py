@@ -4,12 +4,14 @@ Both criteria judge the release, never the live corpus alone, because `gate.py -
 every story's Verify at each later cut and a finding filed after 6.5.0 must not turn them red.
 The release is the v6.5.0 tag once it exists. Before it, the release is the working tree while
 its `docs/known-issues.md` differs from HEAD's (the cut being committed now), else the commit that
-last wrote that page. AC1 reads the page and the notes there; AC2 counts the open findings in
-that commit's corpus against the operator's bar for 6.5 (fewer than 50 open, none at Medium or
-above), which is stricter than `known_issues.py bar`, whose barred severities are High and
-Critical alone; AC2 runs that command too, at the tag, or on the working tree before the tag
-exists. Each check returns its problems and is run on a mutated copy, which it must
-refuse. The git helpers and the page's heading and count patterns are the 6.4 cut's own,
+last wrote that page. AC1 reads the page and the notes there, and holds the page's Not carried
+section to every finding at Medium or above that left without a fix, since the v6.5 bar bars
+Medium. AC2 counts the open findings in that commit's corpus against the operator's bar for 6.5
+(fewer than 50 open, none at Medium or above). `known_issues.py bar` holds a tree to the
+severities of the bar its page names, Medium among them for 6.5, but not to the count of fewer
+than 50, which is this test's alone; AC2 runs that command too, at the tag, or on the working
+tree before the tag exists. Each check returns its problems and is run on a mutated copy, which
+it must refuse. The git helpers and the page's heading and count patterns are the 6.4 cut's own,
 imported from its test module.
 
 Run from the repo root:
@@ -42,6 +44,8 @@ BAR_V65 = "Fewer than 50 open bugs at the tag, and none at Medium or above."
 #: The v6.0 bar, which the 6.5 page keeps as history below the bar in force.
 BAR_V60 = ("Zero open Critical or High finding at the tag, and every open Medium ruled by one "
            "triage decision.")
+#: The statuses a finding leaves by without a fix, which the page's Not carried section names.
+NOT_FIXED = ("won't fix", "superseded")
 #: D0560's ceiling: 6.5 ships with fewer than this many open findings.
 CEILING = 50
 #: The severities D0560 allows none of at the tag: Medium and above.
@@ -106,6 +110,26 @@ def disclosure_problems(page: str, notes: str) -> list[str]:
     return problems
 
 
+def not_carried_problems(page: str, root: Path) -> list[str]:
+    """Why the page's Not carried section does not name exactly the findings in `root`'s corpus
+    at Medium or above that were ruled `Won't Fix` or superseded. Empty when it does."""
+    wanted = set()
+    for path in (root / known_issues.BUGS_REL).glob("BG*.md"):
+        row = known_issues._read(path)
+        if (row is not None and row[1].strip().casefold() in NOT_FIXED
+                and row[2].strip().casefold() in BARRED):
+            wanted.add(row[0])
+    # Only the page's closing section, which names no finding, follows Not carried.
+    named = set(re.findall(r"`(BG-?\d+)`", section(page, "Not carried") or ""))
+    problems = []
+    if wanted - named:
+        problems.append(f"the Not carried section leaves out {', '.join(sorted(wanted - named))}")
+    if named - wanted:
+        problems.append(f"the Not carried section names {', '.join(sorted(named - wanted))}, "
+                        "which did not leave at Medium or above without a fix")
+    return problems
+
+
 def open_findings(root: Path) -> tuple[dict[str, str], list[str]]:
     """`({bug id: severity}, [unparseable file])` for every open finding in `root`'s corpus, at
     any severity, read as `known_issues.py` reads a finding."""
@@ -156,16 +180,31 @@ class DisclosureTests(unittest.TestCase):
         bar v6.5 is held to" with v6.0's sentence; the v6.0 row dropped, so no history keeps it;
         a notes count line whose figures disagree with the page's, doubled, or left unfilled. The
         controls run first, on a page `known_issues.render` cuts for 6.5.0 from a fixture corpus,
-        so they run where no commit can be named as the release too."""
+        so they run where no commit can be named as the release too. Mutants of the Not carried
+        section: read under Critical and High, as the v6.0 bar reads it, so the Medium findings
+        ruled `Won't Fix` or superseded are left out."""
         with tempfile.TemporaryDirectory(prefix="us1331_fixture_") as tmp:
             bugs = Path(tmp) / known_issues.BUGS_REL
             bugs.mkdir(parents=True)
-            for bid, severity in (("BG9001", "Medium"), ("BG9002", "Low"), ("BG9003", "Low")):
-                (bugs / f"{bid}-x.md").write_text(f"# {bid}: a finding\n\n> **Status:** Open\n"
+            for bid, status, severity in (
+                    ("BG9001", "Open", "Medium"), ("BG9002", "Open", "Low"),
+                    ("BG9003", "Open", "Low"), ("BG9004", "Won't Fix", "Medium"),
+                    ("BG9005", "Superseded", "High"), ("BG9006", "Superseded", "medium"),
+                    ("BG9007", "Won't Fix", "Low"), ("BG9008", "Fixed", "Medium")):
+                (bugs / f"{bid}-x.md").write_text(f"# {bid}: a finding\n\n> **Status:** {status}\n"
                                                   f"> **Severity:** {severity}\n", encoding="utf-8")
+            page = known_issues.render(Path(tmp), "6.5.0")
             self._refuses_what_the_650_cut_does_not_write(
-                known_issues.render(Path(tmp), "6.5.0"),
-                "# v6.5.0\n\n**v6.5.0 discloses 3 open defects: 1 Medium, 2 Low.**\n")
+                page, "# v6.5.0\n\n**v6.5.0 discloses 3 open defects: 1 Medium, 2 Low.**\n")
+            self.assertEqual([], not_carried_problems(page, Path(tmp)))
+            trimmed = (page.split("\n## Not carried")[0] + "\n## Not carried"
+                       + known_issues.render(Path(tmp), "6.0.0").split("\n## Not carried")[1])
+            self.assertEqual(["the Not carried section leaves out BG9004, BG9006"],
+                             not_carried_problems(trimmed, Path(tmp)))
+            padded = page.replace("`BG9005`", "`BG9005`, `BG9007`")
+            self.assertEqual([("the Not carried section names BG9007, which did not leave at "
+                               "Medium or above without a fix")],
+                             not_carried_problems(padded, Path(tmp)))
         with tempfile.TemporaryDirectory(prefix="us1331_cut_") as tmp:
             root, rev, how = self._release(tmp)
             at = () if rev is None else ("--at", rev)
@@ -173,6 +212,7 @@ class DisclosureTests(unittest.TestCase):
             self.assertEqual(0, check.returncode, f"`known_issues.py check` refuses the page at "
                              f"{how}:\n{check.stdout}{check.stderr}")
             page = (root / PAGE).read_text(encoding="utf-8")
+            self.assertEqual([], not_carried_problems(page, root), how)
         # `_export` copies the page and the corpus only, so the notes are read from the release
         # itself. `git show` prints nothing for notes the commit does not hold, and notes with no
         # count line are a problem the check names.
@@ -188,8 +228,8 @@ class DisclosureTests(unittest.TestCase):
         self.assertEqual([], disclosure_problems(page, notes))
         self.assertEqual(["the page states the bar for 6.4, not v6.5"], disclosure_problems(
             page.replace("## The bar v6.5 is held to", "## The bar v6.4 is held to"), notes))
-        v60 = next(prose for _s, name, prose in known_issues.BARS if name == "v6.0")
-        v65 = next(prose for _s, name, prose in known_issues.BARS if name == "v6.5")
+        v60 = next(prose for _s, name, _b, prose in known_issues.BARS if name == "v6.0")
+        v65 = next(prose for _s, name, _b, prose in known_issues.BARS if name == "v6.5")
         self.assertIn(v65, page)
         self.assertEqual(
             [f"the v6.5 bar reads {BAR_V60!r}, not D0560's {BAR_V65!r}"],

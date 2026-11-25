@@ -461,7 +461,7 @@ class DepthFieldCountsTests(unittest.TestCase):
 class UnclassifiableSeverityTests(unittest.TestCase):
     """BG0624: a severity in NEITHER recognised set is dropped by both readers, silently.
 
-    `corpus()` keeps only DISCLOSED severities and `barred_open()` only BARRED ones, and both
+    `corpus()` keeps only DISCLOSED severities and `barred_open()` only barred ones, and both
     `continue` past anything else. `unparseable()` cannot catch it, because the file parses -
     every field is present and one of them is just a word nobody recognises. So a finding absent
     from the release bar reads exactly like a corpus that is clean.
@@ -775,16 +775,20 @@ class PageProseTests(unittest.TestCase):
         """MUTANTS: (1) the sentence fixed at "Medium and Low", which a release shipping no
         Medium, as 6.5.0 does, contradicts; (2) the severities compared with `==` rather than
         as the classifiers compare them, so a finding written `low` names no severity. Closed
-        findings are controls: a Fixed Medium names no Medium."""
-        cases = (([("BG9001", "Open", "Medium"), ("BG9002", "Open", "Low")], "Medium and Low"),
-                 ([("BG9001", "Fixed", "Medium"), ("BG9002", "Open", "Low")], "Low"),
-                 ([("BG9001", "Open", "Medium"), ("BG9002", "Closed", "Low")], "Medium"),
-                 ([("BG9001", "Open", "low")], "Low"))
-        for bugs, named in cases:
+        findings are controls: a Fixed Medium names no Medium. A case with an open Medium is cut
+        for 6.0, whose bar lets a Medium ship; the v6.5 bar bars it, and `bar` refuses that cut
+        (BarInForceTests)."""
+        cases = (([("BG9001", "Open", "Medium"), ("BG9002", "Open", "Low")], "6.0.0",
+                  "Medium and Low"),
+                 ([("BG9001", "Fixed", "Medium"), ("BG9002", "Open", "Low")], "6.5.0", "Low"),
+                 ([("BG9001", "Open", "Medium"), ("BG9002", "Closed", "Low")], "6.0.0", "Medium"),
+                 ([("BG9001", "Open", "low")], "6.5.0", "Low"))
+        for bugs, release, named in cases:
             with self.subTest(bugs=bugs), tempfile.TemporaryDirectory() as d:
-                page = ki.render(self._corpus(Path(d), bugs), "6.5.0")
+                page = ki.render(self._corpus(Path(d), bugs), release)
+                target = "v6.1" if release == "6.0.0" else "v6.6"
                 self.assertIn(f"\n**{named} findings ship open, listed here by id, triaged to "
-                              "v6.6.** Each is a real\n", page)
+                              f"{target}.** Each is a real\n", page)
                 self.assertEqual(1, page.count("findings ship open"))
 
     def test_not_carried_is_derived_from_the_corpus(self) -> None:
@@ -820,6 +824,122 @@ class PageProseTests(unittest.TestCase):
         self.assertNotIn("## Not carried", none, "a corpus with none still claims some")
         self.assertNotIn("Won't Fix", none)
         self.assertIn("## How this list is kept", none)
+
+
+class BarInForceTests(unittest.TestCase):
+    """Each bar carries the severities it bars: v6.5 bars Medium as well as Critical and High,
+    every earlier bar Critical and High. `bar`, `check` and the Not carried section each read
+    the bar in force for the release they judge, so a 6.5 page never states a bar its own
+    checks do not hold it to, and an older tag is still judged by its own release's bar."""
+
+    def _tree(self, bugs: list, release: str | None = None) -> Path:
+        """A throwaway corpus of `(id, status, severity)`, with a page cut for `release`."""
+        tmp = tempfile.TemporaryDirectory(prefix="bar_in_force_")
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / ki.BUGS_REL).mkdir(parents=True)
+        for bid, status, sev in bugs:
+            (root / ki.BUGS_REL / f"{bid}-x.md").write_text(
+                f"# {bid}: finding {bid}\n\n> **Status:** {status}\n> **Severity:** {sev}\n",
+                encoding="utf-8")
+        if release:
+            (root / "docs").mkdir()
+            (root / ki.PAGE_REL).write_text(ki.render(root, release), encoding="utf-8")
+        return root
+
+    def _run(self, *argv: str) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = ki.main(list(argv))
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_each_bar_carries_the_severities_it_bars(self) -> None:
+        """MUTANTS: (1) Medium dropped from the v6.5 set; (2) the newest bar's set read for every
+        release. A later series holds the newest bar, and 6.4 and earlier hold Critical and
+        High."""
+        for release in ("6.5.0", "6.5.1", "7.2.0"):
+            self.assertEqual(("Critical", "High", "Medium"), ki.barred_for(release), release)
+        for release in ("6.4.0", "6.0.0", "5.1.1", "5.0.0"):
+            self.assertEqual(("Critical", "High"), ki.barred_for(release), release)
+
+    def test_an_open_medium_is_refused_at_65_and_passed_at_60(self) -> None:
+        """MUTANTS: (1) Medium dropped from the v6.5 set; (2) `bar` reads BARRED rather than the
+        bar its page names; (3) the newest bar read whatever the page names. The 6.0 page is the
+        positive control, a tree with no page is held to Critical and High, and a 6.5 page with
+        only a Low open meets its bar."""
+        bugs = [("BG9001", "Open", "Medium"), ("BG9002", "Open", "Low")]
+        self.assertEqual({"BG9001": "Medium"}, ki.barred_open(self._tree(bugs, "6.5.0")))
+        self.assertEqual({}, ki.barred_open(self._tree(bugs, "6.0.0")))
+        rc, said = self._run("bar", "--root", str(self._tree(bugs, "6.5.0")))
+        self.assertEqual(1, rc, said)
+        self.assertIn("1 open finding(s) at a barred severity - BG9001 (Medium)", said)
+        rc, said = self._run("bar", "--root", str(self._tree(bugs, "6.0.0")))
+        self.assertEqual(0, rc, said)
+        self.assertIn("release bar met: no open finding at Critical or High severity", said)
+        rc, said = self._run("bar", "--root", str(self._tree(bugs)))
+        self.assertEqual(0, rc, said)
+        rc, said = self._run("bar", "--root", str(self._tree([("BG9002", "Open", "Low")], "6.5.0")))
+        self.assertEqual(0, rc, said)
+        self.assertIn("release bar met: no open finding at Critical, High or Medium severity", said)
+
+    def test_bar_at_an_older_tag_judges_it_by_its_own_bar(self) -> None:
+        """MUTANT: the newest bar read for every tree, so `bar --at v6.0.0`, whose page names
+        v6.0 and whose corpus holds an open Medium, is refused by v6.5's bar. The 6.5 cut
+        committed after it, with the same Medium open, is the control: refused at HEAD and in
+        the working tree."""
+        root = self._tree([("BG9001", "Open", "Medium")], "6.0.0")
+        who = ("-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false")
+        for args in (("init", "-q"), ("add", "-A"), (*who, "commit", "-q", "-m", "6.0.0"),
+                     ("tag", "v6.0.0")):
+            self.assertEqual(0, ki._git(root, *args).returncode, args)
+        (root / ki.PAGE_REL).write_text(ki.render(root, "6.5.0"), encoding="utf-8")
+        for args in (("add", "-A"), (*who, "commit", "-q", "-m", "6.5.0")):
+            self.assertEqual(0, ki._git(root, *args).returncode, args)
+        rc, said = self._run("bar", "--root", str(root), "--at", "v6.0.0")
+        self.assertEqual(0, rc, said)
+        rc, said = self._run("bar", "--root", str(root), "--at", "HEAD")
+        self.assertEqual(1, rc, said)
+        rc, said = self._run("bar", "--root", str(root))
+        self.assertEqual(1, rc, said)
+
+    def test_not_carried_names_what_the_bar_in_force_bars(self) -> None:
+        """MUTANTS: (1) the Not carried section read under Critical and High for every release,
+        so a 6.5 page leaves out the Medium findings ruled `Won't Fix` or superseded; (2) Medium
+        dropped from the v6.5 set. The 6.0 cut is the control: its bar does not bar Medium, so
+        it names the High alone. A Low ruled `Won't Fix` and a Fixed Medium are named by
+        neither."""
+        root = self._tree([("BG0001", "Won't Fix", "High"), ("BG0002", "Won't Fix", "Medium"),
+                           ("BG0003", "Superseded", "medium"), ("BG0004", "Won't Fix", "Low"),
+                           ("BG0005", "Fixed", "Medium")])
+        later = " ".join(PageProseTests._section(ki.render(root, "6.5.0"), "Not carried").split())
+        self.assertIn("2 findings at a barred severity were ruled `Won't Fix` on their own "
+                      "merits: `BG0001`, `BG0002`.", later)
+        self.assertIn("1 finding at a barred severity was superseded by later work: `BG0003`.",
+                      later)
+        earlier = " ".join(PageProseTests._section(ki.render(root, "6.0.0"), "Not carried").split())
+        self.assertIn("1 finding at a barred severity was ruled `Won't Fix` on its own merits: "
+                      "`BG0001`.", earlier)
+        for page in (later, earlier):
+            self.assertNotIn("BG0004", page)
+            self.assertNotIn("BG0005", page)
+        self.assertNotIn("BG0002", earlier)
+        self.assertNotIn("superseded", earlier)
+
+    def test_check_reads_the_bar_the_page_names(self) -> None:
+        """MUTANT: `check` re-renders the Not carried section under Critical and High whatever
+        the page names, so a 6.5 page that leaves out its Medium `Won't Fix` finding agrees with
+        the corpus. The page as cut for 6.5.0 is the control."""
+        root = self._tree([("BG0001", "Won't Fix", "High"), ("BG0002", "Won't Fix", "Medium"),
+                           ("BG0003", "Open", "Low")], "6.5.0")
+        rc, said = self._run("check", "--root", str(root))
+        self.assertEqual(0, rc, said)
+        cut = (root / ki.PAGE_REL).read_text(encoding="utf-8")
+        trimmed = (cut.split("\n## Not carried")[0] + "\n## Not carried"
+                   + ki.render(root, "6.0.0").split("\n## Not carried")[1])
+        self.assertNotEqual(cut, trimmed)
+        (root / ki.PAGE_REL).write_text(trimmed, encoding="utf-8")
+        rc, said = self._run("check", "--root", str(root))
+        self.assertEqual(1, rc, said)
 
 
 if __name__ == "__main__":
