@@ -1,6 +1,6 @@
 {
   "unit": "BG1237",
-  "digest": "45832a7b85b87c14 at c1aa3b055e7e",
+  "digest": "fcb6a3d365ce0f33 at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1237-mutation-edits.json",
   "mutants": [
     {
@@ -18,6 +18,15 @@
       "old": "    return \"none\", m.group(1).lstrip(\" \\t\\r\\n.,;:-\").rstrip()",
       "new": "    return blocking, \"\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_blocking_none_before_a_further_section_records_no_blocking_item",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-prints-the-key",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "REFUSED {sdlc_md.display_id(root, args.id)}: no artefact file",
+      "new": "REFUSED {sdlc_md.norm_id(args.id)}: no artefact file",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_orchestration_frictions.py::OrchestrationFrictionsTests::test_batch_add_refuses_an_id_with_no_artefact_file",
       "result": "killed",
       "answer": ""
     }

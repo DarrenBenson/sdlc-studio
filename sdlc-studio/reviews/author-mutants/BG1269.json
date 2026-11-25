@@ -1,6 +1,6 @@
 {
   "unit": "BG1269",
-  "digest": "33fac40f7efb2239 at c1aa3b055e7e",
+  "digest": "74d7c8e5873d3117 at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1269-mutation-edits.json",
   "mutants": [
     {
@@ -45,6 +45,24 @@
       "old": "            if not _is_prose(f):\n                by_file.setdefault(f, []).append(uid)",
       "new": "            if _is_prose(f):\n                by_file.setdefault(f, []).append(uid)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_units_sharing_a_code_file_are_never_parallel",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "advisory-label-on-any-prose",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if all(_is_prose(f) for f in c[\"files\"])",
+      "new": "if any(_is_prose(f) for f in c[\"files\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_pair_sharing_a_code_file_is_named_on_its_own_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prose-suffix-case-sensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "str(path).lower().endswith(PROSE_SUFFIXES)",
+      "new": "str(path).endswith(PROSE_SUFFIXES)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory",
       "result": "killed",
       "answer": ""
     }

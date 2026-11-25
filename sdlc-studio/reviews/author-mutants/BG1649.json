@@ -1,8 +1,62 @@
 {
   "unit": "BG1649",
-  "digest": "63f9cfbcf8cb55f5 at 7c294458ab3c",
-  "report": "sdlc-studio/.local/lane/landed/agent-a9f5b500838c5c22a/BG1649-mutation-edits.json",
+  "digest": "69ed831e20c0d759 at e6bacb746461",
+  "report": "sdlc-studio/.local/lane/landed/agent-acc24450f6ee60e5b/BG1649-mutation-edits.json",
   "mutants": [
+    {
+      "mutant": "the hint spells the unit as the run state holds it",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    shown = sdlc_md.display_id(root, uid)\n",
+      "new": "    shown = uid\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hint spells the unit by its comparison key",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    shown = sdlc_md.display_id(root, uid)\n",
+      "new": "    shown = sdlc_md.norm_id(uid)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hint's subject keeps the run state's spelling",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return (f\"; {shown} is already terminal, so",
+      "new": "    return (f\"; {uid} is already terminal, so",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the hint's --units keeps the run state's spelling",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "so `sprint.py lane return --units {shown}` \"",
+      "new": "so `sprint.py lane return --units {uid}` \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the v3 fixture is not schema 3",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "            (root / \"sdlc-studio\" / \".config.yaml\").write_text(\"schema_version: 3\\n\",\n                                                               encoding=\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "survived",
+      "answer": "equivalent for this pin: `sdlc_md.display_id` reads the id from the artefact file's stem whatever the schema, so the hint spells US-01M6XQJF with or without the config; the line keeps the fixture the schema 3 project the hyphenated spelling arises in, as `_schema3_project` in the same module does"
+    },
+    {
+      "mutant": "the v3 run state's batch holds the hyphenated id",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "        lean._fixture(root, batch=[held])\n",
+      "new": "        lean._fixture(root, batch=[uid])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_schema3_terminal_unit_in_flight_is_named_as_its_file_spells_it",
+      "result": "survived",
+      "answer": "equivalent: `_batch_story_units` looks each batch id up with `find_by_id` and returns its `norm_id`, the key `_lanes_never_returned` holds, so either spelling selects the unit; `held` is the spelling `run_state.open_run` stores, and the premise assertion pins the in-flight row to it"
+    },
     {
       "mutant": "the refusal names no transition",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",

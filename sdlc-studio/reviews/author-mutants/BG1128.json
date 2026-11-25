@@ -1,6 +1,6 @@
 {
   "unit": "BG1128",
-  "digest": "6b2a10b4dd952811 at c1aa3b055e7e",
+  "digest": "31124d6a52fee740 at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1128-mutation-edits.json",
   "mutants": [
     {
@@ -18,6 +18,15 @@
       "old": "standing = [s for s, _rnd in seat_verdicts_on_wording(prior_rounds, amend_from)]",
       "new": "standing = [s for s in (prior.get(\"seats\") or []) if isinstance(s, dict)]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_the_next_amendment_carries_from_every_round_on_the_prior_wording",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "goal-cut-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if goal is not None:\n        on = on[:max((i + 1",
+      "new": "    if False:\n        on = on[:max((i + 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::ClosePanelRoundsTests::test_an_amendment_from_an_older_wording_carries_that_wordings_verdicts",
       "result": "killed",
       "answer": ""
     }

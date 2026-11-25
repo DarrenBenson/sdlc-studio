@@ -1,6 +1,6 @@
 {
   "unit": "BG1251",
-  "digest": "949c39b5a1184eca at c1aa3b055e7e",
+  "digest": "348c7dfbc7bea7a3 at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1251-mutation-edits.json",
   "mutants": [
     {
@@ -45,6 +45,87 @@
       "old": "f\"files, {', '.join(tests)}\" if tests else \"\"),",
       "new": "f\"files, {', '.join(tests)}\" if False else \"\"),",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_hand_in_line_names_the_accepted_rulings_and_test_files",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config-from-the-top-alone",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    folder = (top / rel).parent\n    while True:\n        if folder == top and len(inside)",
+      "new": "    folder = top\n    while True:\n        if folder == top and len(inside)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_page_is_linted_under_the_config_nearest_above_it_and_never_above_the_top",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ungoverned-page-linted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if folder == top or folder == folder.parent:\n            return None",
+      "new": "        if folder == top or folder == folder.parent:\n            return top / MARKDOWNLINT_CONFIGS[1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_page_is_linted_under_the_config_nearest_above_it_and_never_above_the_top",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "walk-passes-the-top",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if folder == top or folder == folder.parent:\n            return None",
+      "new": "        if folder == folder.parent:\n            return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_page_is_linted_under_the_config_nearest_above_it_and_never_above_the_top",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dot-directory-rule-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if folder == top and len(inside) == 1:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_dot_directory_page_is_linted_under_the_config_it_tracks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tracked-configs-never-read",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        tracked = _tracked_markdownlint_configs(lane.top)",
+      "new": "        tracked = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_a_dot_directory_page_is_linted_under_the_config_it_tracks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "worktree-node-modules-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    for base in (top, root_top):",
+      "new": "    for base in (root_top,):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "root-node-modules-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    for base in (top, root_top):",
+      "new": "    for base in (top,):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "root-before-the-worktree",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    for base in (top, root_top):",
+      "new": "    for base in (root_top, top):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "executable-bit-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if found.is_file() and os.access(found, os.X_OK):",
+      "new": "if found.is_file():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::MarkdownLintChoiceTests::test_the_worktrees_own_linter_is_found_before_the_roots_and_the_roots_before_the_path",
       "result": "killed",
       "answer": ""
     }

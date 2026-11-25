@@ -1,6 +1,6 @@
 # BG1745: BG1649 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1649.md
@@ -27,10 +27,13 @@ Fix each finding above, then deliver BG1649 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** BG1649 AC1 still passes: Given an APPROVE whose `transition.py set` refuses, when `lane accept` prints its refusal, then it names the finishing step (`transition.py set ...` then `sprint.py lane return --units <ID>`). Fails on: the `transition.py set` branch of `_accept` names no next step.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_refused_transition_names_the_lane_return_that_finishes_the_unit
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** BG1649 AC2 still passes: Given a unit finished by hand after that refusal and still in `lanes_in_flight`, when `sprint.py close` runs, then its in-flight note names `sprint.py lane return --units <ID>` as the command that clears a lane whose unit is already terminal. Fails on: the note says only that the span reads NOT MEASURED.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightCloseTests::test_a_terminal_unit_in_flight_names_the_lane_return_that_clears_it
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** BG1649 AC3 still passes: Given the same unit, when `sprint.py lane return --units <ID>` is run after the hand transition, then the unit leaves `lanes_in_flight` and its span closes (positive control for the named command). Fails on: a named command that does not clear the lane.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_lane_return_after_a_hand_transition_clears_the_lane
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

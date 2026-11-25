@@ -1,6 +1,6 @@
 # BG1594: sprint lane land records the builder's agent id as the self-check author instead of the building seat, so lane accept writes a verdict row the retro cannot score as a seat's
 
-> **Status:** Open
+> **Status:** Fixed
 > **Supersedes:** BG1462
 > **Severity:** Low
 > **Points:** 3
@@ -27,12 +27,16 @@ Record the lane brief's building seat as the self-check author at land, and have
 
 - [ ] **AC1** Given a unit landed with `sprint lane land` from a worktree whose directory is not a seat name and no `--author`, when the self-check is recorded, then its author is the building seat of the lane brief in `holder (role)` form, not the worktree directory name or agent id. Fails on: `lanes._steps` records `author or lane.name`, so the self-check author is the directory name.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_self_check_is_recorded_under_the_briefed_building_seat
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given that landing, when `sprint lane accept --unit <id> --verdict <file> --reviewer 'Sam Eriksson (qa)'` runs with no `--author`, then the verdict row names the building seat in `holder (role)` form and `critic.py record` prints no `lacks the <holder> (<role>) form` warning. Fails on: accept reads the self-check author back, so the row carries `agent-<id>` and the warning prints.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_accept_after_a_land_names_the_building_seat_and_prints_no_author_warning
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a land with an explicit `--author 'Dani Okafor (engineering)'`, when it is accepted, then that author is kept and the brief's seat does not override it (the control beside AC1). Fails on: a fix that ignores `--author`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_an_explicit_author_wins_over_the_briefed_seat
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** Given `lane land` then `lane accept` with no `--author`, when the verdict is recorded, then it is under the building seat in holder (role) form, the agent id kept as a separate field, and `critic.py record` prints no author-form warning (carried from BG1462). Fails on: the agent id is the only author on the row and no separate field keeps it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_the_agent_id_is_kept_in_its_own_field_beside_the_seat_author
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

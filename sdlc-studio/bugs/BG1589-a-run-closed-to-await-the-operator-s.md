@@ -1,6 +1,6 @@
 # BG1589: A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py, changelog.d/BG1589.md
@@ -26,10 +26,13 @@ Stamp an awaiting run as 'closed, awaiting signature' with the recorded goal ver
 
 - [ ] **AC1** Given a run closed under the deferred-signature default (outcome `running`, no signature, goal verdict partial), when `sprint close` stamps the anchor, then the block in `sdlc-studio/reviews/LATEST.md` reads `closed, awaiting signature` and carries the recorded goal verdict, and never the words `closed running`. Fails on: `anchor_status_block` prints the raw outcome, so the block reads `RUN-X closed running.` with no verdict.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_close_anchor_of_an_awaiting_run_says_awaiting_signature_and_the_verdict
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given the same run, when `sprint sign` seals it, then the block reads `closed <outcome>` with the sealed outcome (the signed case, the control beside AC1) and `closed, awaiting signature` is gone. Fails on: a fix that rewords the signed block too, or leaves the awaiting wording after the seal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_sealed_anchor_says_the_sealed_outcome_not_awaiting
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a `design` rung run (no Done sign-off owed), when the anchor is stamped, then it still carries no owed-signature wording and no `closed running`. Fails on: a fix that applies the awaiting wording to a rung that owes no signature.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py::AwaitingSignatureStatusTests::test_a_design_rung_anchor_owes_no_signature_and_never_reads_running
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

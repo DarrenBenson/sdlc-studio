@@ -1,0 +1,6 @@
+UNIT: BG1661
+BRIEF: 3612c5276e8b-76a5530d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round two's "the repair's at-cap wording reads the cap through": CLOSED. I re-applied the mutant `cap = 2` in place of `critic.review_ceiling(root)` (lanes.py, the one occurrence), and the new test_a_held_round_below_a_raised_cap_still_opens_the_repair fails on it. Under a committed `review.max_rounds: 3`, the held round-2 APPROVE says "its REJECT shares round 2 and opens the repair" and names no review cap. Round two's "the new test's docstring says the second seat's REJECT": CLOSED. The at-cap test's docstring now says no run is open, so nothing carries the unit, and that the REJECT is recorded as round 2, the cap. That matches what it asserts (rounds [1, 2, 2]) and round two's probe that this fixture opens no run. Round three changes only tests, so the code, the changelog and the three pages are as round two left them. `verify_ac.py run --id BG1661 --dry-run` ac=4 pass=4 in my detached worktree at ca1de9161, where test_lane_accept_second_seat_brief.py, test_lean_review_cap.py, test_lane_accept.py, test_sprint_drive_step.py and test_lane_accept_reject_stale.py pass (69, 27 subtests). Claim inventory: the commit body's BG1661 paragraph and both test docstrings are TRUE against the mutant and tests above.

@@ -1,0 +1,6 @@
+UNIT: BG1449
+BRIEF: 8688dc6e8220-28701dfe
+VERDICT: APPROVE
+ISSUES: [pre-existing] the report-mode warning for an APPROVE or an unreadable verdict keeps its space before "(review.author_self_check: report" with no test pinning it (lanes.py:1410): a mutant dropping that space passes test_lane_accept_reject_stale.py and test_lane_accept.py (28 passed), and the base ref printed the same text with no pin either (lanes.py:1248-1249 at 74903e754), so this round only moved the space into that clause. No open bug covers it
+BLOCKING: none
+RULINGS: Round-two finding "a REJECT the record refuses is first announced as recorded" CLOSED: probed on the stale fixture, the malformed REJECT now prints "is the brief of" followed directly by a semicolon and "a REJECT moves nothing, so it goes to `critic.py record` (review.author_self_check: block refuses an APPROVE)", then the record's own BLOCKING refusal, with no claim of a record and no space before the semicolon. Mutants restoring "so it is recorded", restoring the space, and dropping the report-REJECT clause's space are each killed, the last by the new report-mode assertion. The `_brief_of` docstring ("goes to the record with a warning") and the new code comment are TRUE, and the changelog, unchanged this round, stays TRUE. AC1's Verify passes (verify_ac dry-run, 1 of 1).

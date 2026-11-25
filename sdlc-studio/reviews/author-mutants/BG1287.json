@@ -1,13 +1,13 @@
 {
   "unit": "BG1287",
-  "digest": "47c4d10406584d97 at c1aa3b055e7e",
+  "digest": "dc400b46764bfb54 at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1287-mutation-edits.json",
   "mutants": [
     {
       "mutant": "old-landing-obligation",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    \"The lane is landed by `sprint lane land` onto the root's branch: open no PR and push no \"\n    \"branch, unless `release_strategy` is `pr-required`.\",",
-      "new": "    \"Land the unit on `main`: open no PR and push no branch, fast-forwarding a local \"\n    \"worktree onto `main` within the lane, unless `release_strategy` is `pr-required`.\",",
+      "old": "LANE_LANDING = (\"The lane is landed by `sprint lane land` onto the root's branch: open no PR and \"\n                \"push no branch, unless `release_strategy` is `pr-required`.\")",
+      "new": "LANE_LANDING = (\"Land the unit on `main`: open no PR and push no branch, fast-forwarding a \"\n                \"local worktree onto `main` within the lane, unless `release_strategy` is `pr-required`.\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_names_lane_land_and_no_branch",
       "result": "killed",
       "answer": ""
@@ -15,8 +15,8 @@
     {
       "mutant": "exception-dropped",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    \"branch, unless `release_strategy` is `pr-required`.\",\n)",
-      "new": "    \"branch.\",\n)",
+      "old": "                \"push no branch, unless `release_strategy` is `pr-required`.\")",
+      "new": "                \"push no branch.\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_keeps_the_pr_required_exception",
       "result": "killed",
       "answer": ""
@@ -24,9 +24,63 @@
     {
       "mutant": "lands-onto-main",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "onto the root's branch: open no PR and push no ",
-      "new": "onto `main`: open no PR and push no ",
+      "old": "`sprint lane land` onto the root's branch: open no PR and \"",
+      "new": "`sprint lane land` onto `main`: open no PR and \"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_trunk_integration.py::TrunkIntegrationTests::test_the_lane_brief_forbids_a_pr_or_pushed_branch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "template-drifts-from-the-dispatch",
+      "file": ".claude/skills/sdlc-studio/reference-agent-prompt-template.md",
+      "old": "The lane is landed by `sprint lane land` onto the root's\n   branch:",
+      "new": "The lane is landed by `sprint lane land` onto `main`:",
+      "test": "tools/tests/test_doc_claims.py::LaneObligationDocsTests::test_the_obligations_are_documented",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "home-lane-told-lane-land",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return [LANE_HOME_LANDING if home_isolated and ob == LANE_LANDING else ob\n",
+      "new": "    return [ob\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_main_checkout_lane_is_told_the_orchestrator_commits_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every-lane-told-the-root-checkout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "LANE_HOME_LANDING if home_isolated and ob == LANE_LANDING else ob",
+      "new": "LANE_HOME_LANDING if ob == LANE_LANDING else ob",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_names_lane_land_and_no_branch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "home-exception-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"root's branch: open no PR and push no branch, unless `release_strategy` \"\n                     \"is `pr-required`.\")",
+      "new": "\"root's branch: open no PR and push no branch.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_main_checkout_lane_is_told_the_orchestrator_commits_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "home-lane-from-the-dispatch-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"obligations\": lane_obligations(home),",
+      "new": "\"obligations\": list(LANE_OBLIGATIONS),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_main_checkout_lane_is_told_the_orchestrator_commits_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "template-drops-the-home-landing",
+      "file": ".claude/skills/sdlc-studio/reference-agent-prompt-template.md",
+      "old": "   The lane is built in the root checkout, not a worktree, and `sprint lane land` lands only a\n   worktree, so the orchestrator commits it onto the root's branch: open no PR and push no\n   branch, unless `release_strategy` is `pr-required`.",
+      "new": "   The lane is built in a worktree and landed by `sprint lane land`.",
+      "test": "tools/tests/test_doc_claims.py::LaneObligationDocsTests::test_the_obligations_are_documented",
       "result": "killed",
       "answer": ""
     }

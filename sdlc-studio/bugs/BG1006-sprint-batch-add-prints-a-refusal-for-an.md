@@ -1,6 +1,6 @@
 # BG1006: sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1006.md
@@ -25,8 +25,10 @@ Run the Affects check before the mutation and exit non-zero without writing; or,
 
 - [ ] **AC1** In `warn` mode, `sprint batch add` labels an Affects finding as a warning on a line that says the unit was added anyway, so no line of its output reads as a refusal. Fails on: in `warn` mode the Affects finding prints after the add with no warning label and no added-anyway wording, so it reads as a refusal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_warned_add_says_it_added_the_unit
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** An Affects entry that is not a path at all (words and spaces, no file shape) is named as not a path, and never told that "a file the unit CREATES is fine". Fails on: a non-path entry such as `HA scripts foo / bar` is printed with `(a file the unit CREATES is fine)` and is not named as not a path.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_non_path_affects_is_named_as_not_a_path
+  - **Verified:** yes (2026-11-25)
 
 ## Triage
 

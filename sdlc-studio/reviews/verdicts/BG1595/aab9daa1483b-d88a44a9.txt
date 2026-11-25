@@ -1,0 +1,6 @@
+UNIT: BG1595
+BRIEF: aab9daa1483b-d88a44a9
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the changelog fragment says" is CLOSED. The fragment now reads that a space-separated list works as before, and that a mix of spaces and commas, which kept each comma-joined piece as one id and refused it, now splits the same way. Both halves are TRUE by execution: in round one `test_mixed_space_and_comma_units_split_in_order` failed against the parent commit's `_lane_unit_ids`, which kept `US0101,US0102,` as one id, while the AC3 space-only control passed there. At 487cf083c all four AC tests pass (verify_ac dry-run 4 of 4). The repair changes only this unit's fragment. Its sprint.py change is the `_render_clusters` docstring, which belongs to another unit, so this unit's code and tests are as judged in round one, where all but one equivalent mutant were killed.

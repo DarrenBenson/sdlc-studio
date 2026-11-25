@@ -1,12 +1,12 @@
 {
   "unit": "BG1304",
-  "digest": "8fa08e2c743a1ba2 at 3c54cf3a2e36",
+  "digest": "e6b94d0ab9d8fa83 at 5264ed050599",
   "report": "sdlc-studio/.local/lane/landed/agent-ad70497188ed772ce/BG1304-mutation-edits.json",
   "mutants": [
     {
       "mutant": "path shape disabled",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "    r\"(?:[\\w.\\-]+/)+[\\w.\\-]+\"\n",
+      "old": "    r\"(?:(?:~|\\$[A-Za-z_]\\w*)?/(?:[\\w.\\-]+/)*[\\w.\\-]+|(?:[\\w.\\-]+/)+[\\w.\\-]+)\"\n",
       "new": "    r\"(?!)\"\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
       "result": "killed",
@@ -15,17 +15,44 @@
     {
       "mutant": "path shape disabled in a request",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "    r\"(?:[\\w.\\-]+/)+[\\w.\\-]+\"\n",
+      "old": "    r\"(?:(?:~|\\$[A-Za-z_]\\w*)?/(?:[\\w.\\-]+/)*[\\w.\\-]+|(?:[\\w.\\-]+/)+[\\w.\\-]+)\"\n",
       "new": "    r\"(?!)\"\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::SuppliedContentLandsTests::test_a_path_with_a_directory_is_never_split_by_a_code_span",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "root not part of the path",
+      "mutant": "a rooted path needs two segments",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "(?:~|\\$[A-Za-z_]\\w*)?/?\"",
-      "new": "\"",
+      "old": "(?:[\\w.\\-]+/)*[\\w.\\-]+|",
+      "new": "(?:[\\w.\\-]+/)+[\\w.\\-]+|",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_rooted_path_of_one_segment_is_one_span_through_the_filer",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rooted one-segment path split (unit)",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:[\\w.\\-]+/)*[\\w.\\-]+|",
+      "new": "(?:[\\w.\\-]+/)+[\\w.\\-]+|",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tilde and variable roots dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:~|\\$[A-Za-z_]\\w*)?/(?:[\\w.\\-]+/)*[\\w.\\-]+|",
+      "new": "/(?:[\\w.\\-]+/)*[\\w.\\-]+|",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a root no longer required for the first shape",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "(?:(?:~|\\$[A-Za-z_]\\w*)?/(?:",
+      "new": "(?:(?:~|\\$[A-Za-z_]\\w*)?/?(?:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
       "result": "killed",
       "answer": ""
@@ -44,25 +71,142 @@
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
       "old": "(?=[\\w.\\-~$/]*?[A-Za-z0-9.\\-]_)",
       "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_rooted_path_of_one_segment_is_one_span_through_the_filer",
       "result": "killed",
       "answer": ""
     },
     {
       "mutant": "a start after a path character",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "((?<![\\w`\\\\/~$.\\-])(?=",
-      "new": "((?<![\\w`\\\\])(?=",
+      "old": "((?<![\\w`\\\\/~$.\\-)\\]])(?=",
+      "new": "((?<![\\w`\\\\)\\]])(?=",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_the_escaper_is_linear_in_a_paths_segment_count",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rooted path may start after a call",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?<![\\w`\\\\/~$.\\-)\\]])(?=",
+      "new": "((?<![\\w`\\\\/~$.\\-\\]])(?=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_slash_after_a_call_or_an_index_starts_no_rooted_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rooted path may start after an index",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?<![\\w`\\\\/~$.\\-)\\]])(?=",
+      "new": "((?<![\\w`\\\\/~$.\\-)])(?=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_slash_after_a_call_or_an_index_starts_no_rooted_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rooted path may start after a call (unit)",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "((?<![\\w`\\\\/~$.\\-)\\]])(?=",
+      "new": "((?<![\\w`\\\\/~$.\\-])(?=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "touching spans left touching",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return _MD_TOKEN_RE.sub(wrap, piece).replace(\"``\", \"\")",
+      "new": "return _MD_TOKEN_RE.sub(wrap, piece)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_path_argument_in_a_call_or_an_index_touches_no_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "touching spans left touching (property)",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "return _MD_TOKEN_RE.sub(wrap, piece).replace(\"``\", \"\")",
+      "new": "return _MD_TOKEN_RE.sub(wrap, piece)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_no_generated_prose_comes_back_with_two_touching_spans",
       "result": "killed",
       "answer": ""
     },
     {
       "mutant": "identifier pass switched off",
       "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
-      "old": "        pieces[0::2] = [_MD_TOKEN_RE.sub(_wrap_token, p) for p in pieces[0::2]]",
-      "new": "        pieces[0::2] = [p for p in pieces[0::2]]",
+      "old": "    return _MD_TOKEN_RE.sub(wrap, piece).replace(\"``\", \"\")",
+      "new": "    return piece",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if (at_start and m.start() == 0) or (",
+      "new": "        if (False and m.start() == 0) or (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_path_written_against_an_authors_span_touches_it_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start guard removed (property)",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "        if (at_start and m.start() == 0) or (",
+      "new": "        if (False and m.start() == 0) or (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_no_generated_prose_comes_back_with_two_touching_spans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "end guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "                at_end and m.end() == len(piece) and wrapped.endswith(\"`\")):",
+      "new": "                False and m.end() == len(piece) and wrapped.endswith(\"`\")):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py::TitleMarkdownTests::test_a_path_written_against_an_authors_span_touches_it_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "end guard blind to trailing punctuation",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": " and m.end() == len(piece) and wrapped.endswith(\"`\")):",
+      "new": " and m.end() == len(piece)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_token_stops_short_of_an_authors_span_edge",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start guard on every piece",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "at_start=i > 0 and k == 0,",
+      "new": "at_start=i > 0,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_token_stops_short_of_an_authors_span_edge",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "end guard on every piece",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "at_end=i < len(parts) - 1 and 2 * k == last)",
+      "new": "at_end=i < len(parts) - 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_token_stops_short_of_an_authors_span_edge",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "start guard never set",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "at_start=i > 0 and k == 0,",
+      "new": "at_start=False,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_token_stops_short_of_an_authors_span_edge",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "end guard never set",
+      "file": ".claude/skills/sdlc-studio/scripts/file_finding.py",
+      "old": "at_end=i < len(parts) - 1 and 2 * k == last)",
+      "new": "at_end=False)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_token_stops_short_of_an_authors_span_edge",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 {
   "unit": "BG1454",
-  "digest": "fd95f45a10418f52 at de4e256f0922",
+  "digest": "2ea46617397374be at 487cf083c1f0",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1454-mutation-edits.json",
   "mutants": [
     {
@@ -18,6 +18,15 @@
       "old": "if agent is not None and agent.startswith(\"agent-\"):",
       "new": "if agent is not None and \"agent-\" in agent:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py::LaneReturnAgentPrefixTests::test_a_bare_id_holding_agent_but_not_as_its_prefix_is_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the prefix test without its dash",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "agent.startswith(\"agent-\")",
+      "new": "agent.startswith(\"agent\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py::LaneReturnAgentPrefixTests::test_a_bare_id_opening_with_agent_and_no_dash_is_kept",
       "result": "killed",
       "answer": ""
     }

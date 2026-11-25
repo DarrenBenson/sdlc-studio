@@ -1,0 +1,6 @@
+UNIT: BG1424
+BRIEF: c51be3d9cecd-ea90d3e9
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the early scaffold's place below the identity and batch-repair refusals is pinned by no test" CLOSED: test_a_close_refused_for_its_identity_or_a_batch_repair_scaffolds_nothing kills the round-one survivor (the scaffold above `_identity_refusal`, failing on the minted retro, seen red) and a second placement mutant (the scaffold between the two refusals). The test stubs the two refusal functions rather than staging a real identity drift or batch repair, which reaches the same `cmd_close` branches, and my round-one isolation showed a real uncommitted batch repair behaving the same. Its docstring is TRUE. AC1's Verify passes.

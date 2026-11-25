@@ -1,0 +1,6 @@
+UNIT: BG1454
+BRIEF: 8221968b1afc-57cbde94
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's "the prefix test's dash is pinned by no test": CLOSED. I re-applied the mutant `agent.startswith("agent")` (sprint.py:9860), and test_a_bare_id_opening_with_agent_and_no_dash_is_kept fails on it, since `agentx9` is then read as `9`. `verify_ac.py run --id BG1454 --dry-run` ac=1 pass=1 in my detached worktree at 0bcd03956, where the declared test files (test_close_scaffold_first.py, test_lane_return_agent_prefix.py, test_lane_brief_budget.py, test_sprint_handoff.py, test_lane_accept.py, test_lane_land.py and the PlanJsonTests and WaveClusterWarningTests classes of test_sprint.py) pass, 132 tests and 78 subtests. Claim inventory: the fragment's widened sentence (`xagent-7` and `agentx9` kept as given, an id with no transcript still warned), the `_lane_agent_totals` comment and the commit bodies' BG1454 paragraphs are TRUE against LaneReturnAgentPrefixTests.

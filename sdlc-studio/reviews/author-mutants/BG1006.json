@@ -1,6 +1,6 @@
 {
   "unit": "BG1006",
-  "digest": "a137f4fea64e242b at c1aa3b055e7e",
+  "digest": "c2991de75a71767a at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1006-mutation-edits.json",
   "mutants": [
     {
@@ -18,6 +18,24 @@
       "old": "    return bool(re.search(r\"\\s\", text)) and not re.search(r\"\\.[A-Za-z0-9]+$\", text)",
       "new": "    return False",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_non_path_affects_is_named_as_not_a_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "block-refusal-names-the-phrase-bare",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "declared but not on disk - \"\n                  f\"{_not_on_disk(it['unresolvable'], creates=False)}\", file=sys.stderr)",
+      "new": "declared but not on disk - \"\n                  f\"{', '.join(it['unresolvable'])}\", file=sys.stderr)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_a_non_path_affects_is_named_as_not_a_path",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whitespace-half-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return bool(re.search(r\"\\s\", text)) and not re.search(r\"\\.[A-Za-z0-9]+$\", text)",
+      "new": "return not re.search(r\"\\.[A-Za-z0-9]+$\", text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_batch_add_affects_wording.py::BatchAddWordingTests::test_an_extension_less_path_is_still_a_path",
       "result": "killed",
       "answer": ""
     }

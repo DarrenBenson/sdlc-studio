@@ -1,6 +1,6 @@
 # BG1454: sprint lane return --agent agent-<id> leaves the unit unpriced, while lane land prints the builder as agent-<id>
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1454.md
@@ -26,6 +26,7 @@ Accept the id with or without its agent- prefix.
 
 - [ ] **AC1** Given a builder transcript agent-<id>.jsonl, when `lane return --agent agent-<id>` runs, then the unit is priced. Fails on: unpriced.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_return_agent_prefix.py::LaneReturnAgentPrefixTests
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 {
   "unit": "BG1594",
-  "digest": "b69f4060ed5bec74 at de4e256f0922",
+  "digest": "c5d2cf45c9cd2efb at 487cf083c1f0",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1594-mutation-edits.json",
   "mutants": [
     {
@@ -36,6 +36,15 @@
       "old": "return critic.seat_signature(root_top, role) if role else None",
       "new": "return None",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_accept_after_a_land_names_the_building_seat_and_prints_no_author_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sign as the default build seat whatever the brief recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "return critic.seat_signature(root_top, role) if role else None",
+      "new": "return critic.seat_signature(root_top, critic.BUILD_SEAT) if role else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_lane_briefed_to_the_qa_seat_records_its_author_as_qa",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 {
   "unit": "BG1661",
-  "digest": "01743e8b41583163 at de4e256f0922",
+  "digest": "633f39bcc90dbd64 at ca1de9161fbe",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1661-mutation-edits.json",
   "mutants": [
     {
@@ -117,6 +117,42 @@
       "old": "    rounds = critic.rounds_spent(critic.delivery_rounds(root, unit))",
       "new": "    rounds = len(critic.delivery_rounds(root, unit))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_reject_sharing_a_held_round_is_not_at_the_cap",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "say the REJECT opens the repair whatever the round",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if rnd.isdigit() and int(rnd) >= cap else",
+      "new": "if False else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_held_round_at_the_cap_says_the_second_seats_reject_is_at_the_cap",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "judge past_cap on the rows recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "and next_round(repo_root, unit, reviewer) > review_ceiling(repo_root))",
+      "new": "and len(delivery_rounds(repo_root, unit)) >= review_ceiling(repo_root))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_ruling_on_a_held_round_at_the_cap_is_not_needed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "write the ruling's round as the count of rows",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "uid, _row_keys(rows)[-1], rounds_spent(delivery_rounds(root, uid)),",
+      "new": "uid, _row_keys(rows)[-1], len(delivery_rounds(root, uid)),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py::PerDeliveryRoundTests::test_a_ruled_round_after_a_shared_round_records_its_own_round",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "take the cap as the shipped default of 2",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "cap = critic.review_ceiling(root)\n        rejected = (",
+      "new": "cap = 2\n        rejected = (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_held_round_below_a_raised_cap_still_opens_the_repair",
       "result": "killed",
       "answer": ""
     }

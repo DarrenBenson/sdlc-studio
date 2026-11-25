@@ -1,0 +1,6 @@
+UNIT: BG1495
+BRIEF: 0533e300007c-215cbff3
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the changelog and the new docstring say the warning fires only for a pair" CLOSED: changelog.d/BG1495.md and the `_render_clusters` docstring now name Verify-named files, test_a_pair_whose_verify_lines_name_one_test_file_is_warned pins it, and a mutant keeping only declared files in `unit_files` is killed. Round-one finding "reference-sprint.md:305-307 still says a wave holding more than one member" CLOSED: the paragraph now states the per-pair rule and the page is in the unit's Affects. Each of its sentences was run through `sprint.py plan` in a fixture: a Verify-named file joins a cluster, the pair sharing a code file gets a line of its own, wave 1 is warned once for that pair (one unit declaring tests/test_shared.py and the other naming it in its Verify line), and two units sharing only docs/page.md are listed as advisory and not warned. AC1 and AC2 Verify pass.

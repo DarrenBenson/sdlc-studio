@@ -1,6 +1,6 @@
 # BG1619: sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close.py, changelog.d/BG1619.md
@@ -26,10 +26,13 @@ Refuse a --retro id with no file and report a failed write; make the close tail 
 
 - [ ] **AC1** Given a run whose retro is RETRO0002, when `sprint.py sign --retro RETRO9999` runs (no such file), then it exits non-zero naming RETRO9999 as missing and writes no seal. Fails on: sign completes silently with the accuracy write refused inside `_cascade_after_signature`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_a_mistyped_retro_id_is_refused_before_the_seal
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a retro that exists but whose `retro.py accuracy --write` exits non-zero, when `sprint sign` runs, then stderr says `velocity row NOT recorded` with the exit and its output. Fails on: only `rc == 0` is handled, so a non-zero return prints nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_a_failed_accuracy_write_is_said_on_stderr
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given a run state with `scaffolded_retro` RETRO0001 and `sign --retro RETRO0002`, when the close tail (`_apply_signoff_tail`) runs, then it writes RETRO0002, the same retro `_sign_retro` picks. Fails on: the tail prefers the scaffolded retro, so it writes RETRO0001.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_the_close_tail_writes_the_retro_sign_chooses
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

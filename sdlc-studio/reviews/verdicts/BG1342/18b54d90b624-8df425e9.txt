@@ -1,0 +1,6 @@
+UNIT: BG1342
+BRIEF: 18b54d90b624-8df425e9
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the "not exported" line's move to stderr is pinned by no test" CLOSED: test_plan_write_json_names_an_unplaceable_unit_on_stderr reaches it through `plan --write --format json --export-lanes` with an Affects-less unit under `sprint.breakdown: judgement`, the round-one survivor (the line back on stdout) is now killed, and its converse (the line always on stderr) is killed by the test's text control. The corrected docstring of test_plan_write_json_stdout_is_one_document is TRUE, matching my round-one pass in which every other single-line reroute was killed there. AC1's Verify passes (verify_ac dry-run, 1 of 1).

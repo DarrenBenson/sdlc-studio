@@ -1,6 +1,6 @@
 # BG0969: sprint close --file-and-close silently drops a supplied --goal-verdict, then refuses because the goal is unjudged - a hard blocker it cannot file
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_file_and_close_goal_verdict.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0969.md
@@ -26,6 +26,7 @@ Either record the supplied verdict on the file-and-close path too (it is an answ
 
 - [ ] **AC1** --file-and-close with --goal-verdict and --note either records the verdict or refuses up front naming the flag it ignored. Fails on: `cmd_close` sets the supplied verdict to None under `--file-and-close`, so the flag is dropped silently and the close is refused as goal unjudged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_file_and_close_goal_verdict.py -k supplied_verdict_not_silently_dropped
+  - **Verified:** yes (2026-11-25)
 
 ## Triage
 

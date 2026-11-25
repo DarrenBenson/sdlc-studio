@@ -1,6 +1,6 @@
 # BG1449: lane accept refuses to record a REJECT when the unit's self-check is stale, though a REJECT moves nothing
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, changelog.d/BG1449.md

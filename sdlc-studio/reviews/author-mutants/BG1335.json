@@ -1,6 +1,6 @@
 {
   "unit": "BG1335",
-  "digest": "174abb0c9a1f4414 at c1aa3b055e7e",
+  "digest": "da94bc260269976b at 0bcd03956d20",
   "report": "sdlc-studio/.local/lane/landed/agent-aaf9856271dfe7344/BG1335-mutation-edits.json",
   "mutants": [
     {
@@ -15,8 +15,8 @@
     {
       "mutant": "block-not-held",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if args.block and args.unit not in held:\n            held.append(args.unit)",
-      "new": "        if False:\n            held.append(args.unit)",
+      "old": "        if args.block and sdlc_md.norm_id(args.unit) not in {sdlc_md.norm_id(u) for u in held}:\n            held.append(shown)",
+      "new": "        if False:\n            held.append(shown)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
       "result": "killed",
       "answer": ""
@@ -31,11 +31,92 @@
       "answer": ""
     },
     {
+      "mutant": "status-prints-no-held-unit",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": "    for line in blocked_lines(root, run):\n        print(line)",
+      "new": "    for line in []:\n        print(line)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_status.py::BlockedUnitLineTests::test_a_bug_held_blocked_is_named_under_the_run_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status-reads-every-deferral",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": ".get(\"blocked_units\") or []\n    except run_state.RunStateError:",
+      "new": ".get(\"deferred_units\") or []\n    except run_state.RunStateError:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
       "mutant": "resolve-keeps-the-block",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "**({\"blocked_units\": still_held} if \"blocked_units\" in state else {}))",
       "new": "**{})",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_deferred_bug_is_shown_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "close-passes-no-root",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        _render_pending_decisions(pending_dec, root)",
+      "new": "        _render_pending_decisions(pending_dec)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::DeferredOperatorDecisions::test_the_close_shows_a_held_unit_with_its_status_as_blocked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resolve-clears-every-block",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    still_held = [u for u in (state.get(\"blocked_units\") or [])\n                  if sdlc_md.norm_id(u) != sdlc_md.norm_id(entry.get(\"unit\") or \"\")]",
+      "new": "    still_held = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_resolving_one_decision_keeps_every_other_units_block",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held-as-typed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            held.append(shown)",
+      "new": "            held.append(args.unit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "deduped-by-raw-text",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if args.block and sdlc_md.norm_id(args.unit) not in {sdlc_md.norm_id(u) for u in held}:",
+      "new": "if args.block and shown not in held:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "defer-says-the-key",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "blocked = (f\"; {shown} held Blocked on the run state \"",
+      "new": "blocked = (f\"; {sdlc_md.norm_id(args.unit)} held Blocked on the run state \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status-prints-the-key",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": "Blocked:      {sdlc_md.display_id(root, str(uid))} ({shown})",
+      "new": "Blocked:      {norm} ({shown})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "status-repeats-a-unit",
+      "file": ".claude/skills/sdlc-studio/scripts/status.py",
+      "old": "        if norm in seen:\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_decision.py::DeferBlockTests::test_a_block_is_held_once_per_unit_in_its_files_spelling",
       "result": "killed",
       "answer": ""
     }

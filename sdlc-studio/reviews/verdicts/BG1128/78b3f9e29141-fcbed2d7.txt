@@ -1,0 +1,6 @@
+UNIT: BG1128
+BRIEF: 78b3f9e29141-fcbed2d7
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's "the `goal` cut in `seat_verdicts_on_wording`" is CLOSED. test_goal_review_one_round.py `test_an_amendment_from_an_older_wording_carries_that_wordings_verdicts` records G with engineering `no`, amends to G2 and records engineering `yes` there, then amends G to G3 and asserts that engineering's carried verdict is G's `no` and that every carried seat names G. That is the case round one probed. Reviewer mutants against ClosePanelRoundsTests: the cut dropped (`if False:`), the cut taken at the first round on the wording (`min` for `max`), and the cut one round short were all KILLED. The test's docstring holds: the carry reads the rounds on `--amend-from`, and on the real code engineering's `no` carries. AC1 and AC2 still pass (verify_ac run --dry-run, 2 of 2), and the three recorded author mutants replay killed. The round-two diff touches no other line of this unit's code.

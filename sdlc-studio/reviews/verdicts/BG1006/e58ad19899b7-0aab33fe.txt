@@ -1,0 +1,6 @@
+UNIT: BG1006
+BRIEF: e58ad19899b7-0aab33fe
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged across both rounds (c1aa3b055 and 0bcd03956) in a detached worktree at 0bcd03956. Claim inventory: changelog "under `sprint.affects_check: warn` says it added the unit" TRUE (each warn finding is labelled `warning:` and ends "added anyway under `sprint.affects_check: warn`")\; "named as not a path ... by `batch add` and by `sprint plan`, its refusal under `block` included" TRUE: all three surfaces (sprint.py:4926, 5085 and 9634) print through `_not_on_disk`, and `CREATES is fine` appears nowhere else in the scripts\; "An entry with no space, such as `Makefile`, is still a path" TRUE (probe: `Makefile` and `bin/tool` read as paths, `docs/My Notes.md` as a path, `HA scripts foo / bar` as not a path). verify_ac BG1006 passes 2/2. Remark, not a finding: the heuristic reads an extensionless file under a spaced folder, such as `my dir/tool`, as not a path. That is the docstring's stated rule, and the AC's own example is the phrase case. My mutants: the plan's block refusal put back to a bare join (killed), and the extension clause dropped from `_not_a_path` (killed). The author's four mutants replay killed.

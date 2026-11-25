@@ -1,0 +1,6 @@
+UNIT: BG1237
+BRIEF: c69c84c8d0b3-4da08e0b
+VERDICT: APPROVE
+ISSUES: [pre-existing] `sprint batch swap --in` still adds an id no artefact file carries (sprint.py `_cmd_batch_swap`, untouched by this unit). AC1 names only `batch add`, and no open bug covers swap
+BLOCKING: none
+RULINGS: CLOSED "the new refusal prints the id through `sdlc_md.norm_id`": the refusal now prints through `display_id` (sprint.py:9620). Probed by the new case, where `us-01abcdef` is refused as typed and no `US01ABCDEF` appears. My mutants putting back `norm_id` and printing the id upper-cased were both killed by the AC1 test, and the author's refusal-prints-the-key replayed killed. verify_ac --dry-run gives 2 of 2 passing. AC2 is unchanged and still pinned. The changelog's "naming it as typed" is TRUE. The tree was clean after my pass.

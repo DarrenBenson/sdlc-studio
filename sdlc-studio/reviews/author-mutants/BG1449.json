@@ -1,6 +1,6 @@
 {
   "unit": "BG1449",
-  "digest": "40959edc5b603332 at de4e256f0922",
+  "digest": "fdf603e3bb14eb1b at ca1de9161fbe",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1449-mutation-edits.json",
   "mutants": [
     {
@@ -33,9 +33,54 @@
     {
       "mutant": "the recorded REJECT's warning not said",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "                \"refuses an APPROVE)\" if mode == \"block\" else",
-      "new": "                \"refuses an APPROVE)\" if False else",
+      "old": "\"(review.author_self_check: block refuses an APPROVE)\" if mode == \"block\" else",
+      "new": "\"(review.author_self_check: block refuses an APPROVE)\" if False else",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_on_a_stale_self_check_is_recorded_and_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "read the verdict through the strict parser",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "said_verdict = critic.parse_verdict_block(said, strict=False)[0]",
+      "new": "said_verdict = critic.parse_verdict_block(said)[0]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_whose_blocking_quotes_no_finding_reaches_the_records_own_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report mode keeps the block-refuses wording for a REJECT",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"an APPROVE)\" if rejecting else",
+      "new": "f\"an APPROVE)\" if False else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_report_mode_does_not_say_block_refuses_a_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "say a REJECT going to the record is recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "+ (\"; a REJECT moves nothing, so it goes to `critic.py record` \"",
+      "new": "+ (\"; a REJECT moves nothing, so it is recorded \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_whose_blocking_quotes_no_finding_reaches_the_records_own_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the space back before the block clause's semicolon",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "so no self-check covers the diff {rel} is the brief of\"\n",
+      "new": "so no self-check covers the diff {rel} is the brief of \"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_a_reject_on_a_stale_self_check_is_recorded_and_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the report clause loses its space after the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\" (review.author_self_check: {mode}; `block` records a REJECT too and refuses \"",
+      "new": "f\"(review.author_self_check: {mode}; `block` records a REJECT too and refuses \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_reject_stale.py::LaneAcceptRejectStaleTests::test_report_mode_does_not_say_block_refuses_a_reject",
       "result": "killed",
       "answer": ""
     }

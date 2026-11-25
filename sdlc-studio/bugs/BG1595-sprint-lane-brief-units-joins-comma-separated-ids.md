@@ -1,6 +1,6 @@
 # BG1595: sprint lane brief --units joins comma-separated ids into one id and refuses it, instead of splitting on commas or saying the ids are space-separated
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1595.md
@@ -26,12 +26,16 @@ Split --units values on commas as well as spaces, or refuse a comma list by nami
 
 - [ ] **AC1** Given `sprint.py lane brief --units US1315,US1319,US1320` over three real units, when it runs, then it briefs the three ids and exits 0. Fails on: `_lane_unit_ids` keeps the comma list as one id and refuses `US1315,US1319,US1320`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_comma_separated_units_list_briefs_each_unit
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given `--units US1315 US1319,US1320` (a mix of space and comma), when it runs, then three ids are briefed in order, and a stray trailing comma or empty piece is dropped. Fails on: only whitespace splitting.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_mixed_space_and_comma_units_split_in_order
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** Given the space-separated form that works today, when `--units US1315 US1319` runs, then it behaves as before (the control beside AC1). Fails on: a split that breaks the existing form.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_a_space_separated_units_list_still_briefs_each_unit
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** Given `sprint.py lane land --worktree <w> --units US1315,US1319` naming two units of a landable lane, when it runs, then it lands both units as the space-separated form does. Fails on: the comma list is kept as one id, so the land refuses it as a unit it does not know.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_comma_separated_units_list_lands_each_unit
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

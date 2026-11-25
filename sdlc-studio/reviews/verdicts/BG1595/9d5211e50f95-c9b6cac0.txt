@@ -1,0 +1,6 @@
+UNIT: BG1595
+BRIEF: 9d5211e50f95-c9b6cac0
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round one's "the changelog fragment says "A space-separated list, and a mix of the two, work as before"": CLOSED. The fragment now says a mix of spaces and commas kept each comma-joined piece as one id and refused it, and now splits the same way. That matches the base `_lane_unit_ids`, which stripped each argument without splitting it, and the round-one probe at the parent. `verify_ac.py run --id BG1595 --dry-run` ac=4 pass=4 in my detached worktree at 0bcd03956, where the declared test files (test_close_scaffold_first.py, test_lane_return_agent_prefix.py, test_lane_brief_budget.py, test_sprint_handoff.py, test_lane_accept.py, test_lane_land.py and the PlanJsonTests and WaveClusterWarningTests classes of test_sprint.py) pass, 132 tests and 78 subtests. Claim inventory: the fragment, the `_lane_unit_ids` docstring, the `lane land` comment and the commit bodies' BG1595 paragraphs are TRUE against test_lane_brief_budget.py and the comma-list landing test. The split lives in the shared `_lane_unit_ids`, so every lane verb that reads `--units` now splits on commas too, which is wider than the fragment names but contradicts nothing it says.

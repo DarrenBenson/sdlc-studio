@@ -1,0 +1,6 @@
+UNIT: BG1594
+BRIEF: 1f39160d443b-bf81a23d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the AC1 test pins the briefed seat only where it is the engineering seat" is CLOSED. The repair (487cf083c) adds `test_a_lane_briefed_to_the_qa_seat_records_its_author_as_qa` (test_lane_land.py:406), which briefs the qa seat, lands through `sprint.py lane land` with no `--author`, and asserts 'Sam (qa)' on the self-check and in the land record's `authors`, beside the worktree name in `owners`. I re-applied the round-one survivor (`critic.seat_signature(root_top, critic.BUILD_SEAT) if role else None`) and the new test now fails while the engineering-seat AC1 test still passes, so the suite catches the revert. The pin is a sibling test, not the AC1 Verify test, so `verify_ac` does not run it but the suite and the push gate do. The builder's "the AC1 test now briefs a qa-seat lane too" is loose wording for that. The repair touches nothing else in this unit's code. verify_ac dry-run gives 4 of 4 pass at 487cf083c.

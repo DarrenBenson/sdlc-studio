@@ -1,6 +1,6 @@
 # BG1495: sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1495.md
@@ -26,8 +26,10 @@ Judge a wave from the pairwise intersection of its own units' Affects, not from 
 
 - [ ] **AC1** Given a wave whose units share no file pairwise, joined in one cluster only through a unit in a later wave, when `sprint plan` prints the waves, then it prints no NOT-safely-parallel warning for that wave. Fails on: the warning printed for EP0314's wave 2 shape.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_wave_joined_only_through_a_later_unit_is_not_warned
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC2** Given a wave in which two units declare the same file, then the warning names those two units and that file. Fails on: a real same-wave collision left unwarned.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_same_wave_shared_file_is_warned_by_pair
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

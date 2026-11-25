@@ -1,0 +1,6 @@
+UNIT: BG1269
+BRIEF: e312ce019538-27c84abf
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: CLOSED the finding opening the "prose only, advisory" label's every-file condition is unpinned: the AC1 test now asserts that the mixed cluster (BG0001, BG0002, BG0003 over docs/reference.md and src/code.py) carries no "prose only", and my `all` to `any` mutant was killed. CLOSED the finding opening the case-insensitive prose suffix is unpinned: the AC3 test runs a `docs/Guide.MD` subtest, and my mutant dropping `.lower()` was killed. The repair is test-only, and the code is as approved on its other branches in round one. verify_ac --dry-run gives 3 of 3 passing, and SharedFileClusterTests, WaveClusterWarningTests and LanePartitionTests are green. The tree was clean after my pass.

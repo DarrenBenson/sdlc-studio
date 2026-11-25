@@ -1,6 +1,6 @@
 {
   "unit": "BG1424",
-  "digest": "3d66c034e7bd71c2 at de4e256f0922",
+  "digest": "0d9295f75e0b15b4 at 487cf083c1f0",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1424-mutation-edits.json",
   "mutants": [
     {
@@ -27,6 +27,24 @@
       "old": "    if prior and _retro_path(root, prior) is not None:\n        return prior, \"already scaffolded\"",
       "new": "    if False:\n        return prior, \"already scaffolded\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_scaffold_first.py::ScaffoldFirstTests::test_a_killed_bare_close_leaves_its_scaffold_and_the_rerun_reuses_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scaffold above the identity refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if refusal := _identity_refusal(root, \"close\"):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    _scaffold_bare_close_retro(root, state) if state.get(\"sprint_goal\") and not (args.retro or \"\").strip() and not filing else None\n    if refusal := _identity_refusal(root, \"close\"):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_scaffold_first.py::ScaffoldFirstTests::test_a_close_refused_for_its_identity_or_a_batch_repair_scaffolds_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scaffold above the batch-repair refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if refusal := _refuse_batch_repair(root, state, \"close\"):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    _scaffold_bare_close_retro(root, state) if state.get(\"sprint_goal\") and not (args.retro or \"\").strip() and not filing else None\n    if refusal := _refuse_batch_repair(root, state, \"close\"):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_scaffold_first.py::ScaffoldFirstTests::test_a_close_refused_for_its_identity_or_a_batch_repair_scaffolds_nothing",
       "result": "killed",
       "answer": ""
     }

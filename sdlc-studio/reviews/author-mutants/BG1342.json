@@ -1,6 +1,6 @@
 {
   "unit": "BG1342",
-  "digest": "d693c380e274281a at de4e256f0922",
+  "digest": "aa797301bb7162b7 at 487cf083c1f0",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1342-mutation-edits.json",
   "mutants": [
     {
@@ -36,6 +36,15 @@
       "old": "        print(f\"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}\", file=human)",
       "new": "        print(f\"{run_opened_line(state, appetite)} -> {run_state.path(args.root)}\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::FreshSessionTests::test_warn_names_the_projected_re_read_above_80k_and_nothing_at_or_under_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the not-exported line back on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "+ \", \".join(lp[\"unplaceable\"]), file=human)",
+      "new": "+ \", \".join(lp[\"unplaceable\"]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::PlanJsonTests::test_plan_write_json_names_an_unplaceable_unit_on_stderr",
       "result": "killed",
       "answer": ""
     }

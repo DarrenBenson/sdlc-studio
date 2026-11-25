@@ -1,0 +1,6 @@
+UNIT: BG1454
+BRIEF: f72f54e6b1da-5eb23226
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-one finding "the prefix test's dash is pinned by no test" CLOSED: test_a_bare_id_opening_with_agent_and_no_dash_is_kept prices `agentx9` from `agent-agentx9.jsonl`, and the round-one survivor (`startswith("agent")` with the six-character slice) is now killed. The changelog's added `agentx9` clause is TRUE. AC1's Verify passes.

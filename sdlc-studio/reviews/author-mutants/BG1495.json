@@ -1,6 +1,6 @@
 {
   "unit": "BG1495",
-  "digest": "141f13e8c7482c48 at de4e256f0922",
+  "digest": "0d0df5a79004df97 at 487cf083c1f0",
   "report": "sdlc-studio/.local/lane/landed/agent-a2b83f7b3984828af/BG1495-mutation-edits.json",
   "mutants": [
     {
@@ -15,8 +15,8 @@
     {
       "mutant": "a pair warned with no file in common",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "common = [f for f in held[a] if f in held[b]]",
-      "new": "common = list(held[a])",
+      "old": "common = [f for f in held[a] if f in held[b] and not _is_prose(f)]",
+      "new": "common = [f for f in held[a] if not _is_prose(f)]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_wave_joined_only_through_a_later_unit_is_not_warned",
       "result": "killed",
       "answer": ""
@@ -27,6 +27,15 @@
       "old": "for b in members[n + 1:]:",
       "new": "for b in members[n + 1:n + 2]:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_every_colliding_pair_of_a_wave_is_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warn a pair over declared files only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "common = [f for f in held[a] if f in held[b] and not _is_prose(f)]",
+      "new": "common = [f for f in held[a] if f in held[b] and not _is_prose(f) and (c.get(\"sources\") or {}).get(f, \"declared\") == \"declared\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::WaveClusterWarningTests::test_a_pair_whose_verify_lines_name_one_test_file_is_warned",
       "result": "killed",
       "answer": ""
     }

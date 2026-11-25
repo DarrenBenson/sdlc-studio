@@ -1,6 +1,6 @@
 # BG1103: The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign
 
-> **Status:** Open
+> **Status:** Fixed
 > **Ruling:** D0536 (operator, 2026-11-19): re-scoped to the binding US1290 shipped - the close names exactly what the signature still checks (the close commit once main moves past it), nothing more. Re-groom the criteria to that before planning.
 > **Severity:** Low
 > **Points:** 1
@@ -27,6 +27,7 @@ When the recorded tree holds untracked files, the close names each one and says 
 
 - [ ] **AC1** A close over a tree holding an untracked file names that file as bound into the signature, and a close over a tree with none names no file. Fails on: the close records its tree with `git add -A` and names no untracked file it binds, so tidying one later refuses the sign without warning.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py::CloseNamesBoundUntrackedTests::test_a_close_names_each_untracked_file_it_binds
+  - **Verified:** yes (2026-11-25)
 
 ## Impact
 

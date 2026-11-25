@@ -1,6 +1,6 @@
 # BG1013: The waiver remedy the close and the checklist print omits --authorised-by, so the command as printed is refused
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_waiver_remedy_runs.py, changelog.d/BG1013.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,6 +26,7 @@ Print `--authorised-by "<the operator>"` in all three remedies, from one shared 
 
 - [ ] **AC1** Every waiver remedy the close or the checklist prints, run as printed with its placeholders filled, records the waiver. Fails on: the three remedies print `decisions.py waive` without `--authorised-by`, so the command as printed is refused.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_waiver_remedy_runs.py::WaiverRemedyTests::test_each_printed_remedy_records_as_printed
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

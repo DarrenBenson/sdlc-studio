@@ -1,6 +1,6 @@
 # BG1661: A high-risk unit moves to Done on the first seat's APPROVE, so the second seat's REJECT lands past the round cap and carries the unit instead of repairing it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_review_cap.py, .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-review.md, changelog.d/BG1661.md
