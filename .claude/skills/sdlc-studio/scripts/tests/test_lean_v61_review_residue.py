@@ -62,8 +62,9 @@ def _local_rows(text: str) -> list[tuple[str, str]]:
 
 #: A `.local` row's first cell naming one bare file, which `_local_rows` reads.
 _BARE_CELL_RE = re.compile(r"\s*`([\w.-]+\.\w+)`\s*")
-#: US1138: a backticked path in a row's first cell, `lane/` or `briefs/<unit>-qa.txt`.
-_PATH_SPAN_RE = re.compile(r"`([^`\s]*/[^`\s]*)`")
+#: US1138: a backticked path in a row's first cell, `lane/` or `briefs/<unit>-qa.txt`, or a
+#: file name holding a `<placeholder>`, `mutation-edits-<unit>.json`.
+_PATH_SPAN_RE = re.compile(r"`([^`\s]*(?:/|<[^<>`\s]+>)[^`\s]*)`")
 #: A table's separator line.
 _SEPARATOR_RE = re.compile(r"\|(?:\s*:?-+:?\s*\|)+\s*")
 
@@ -516,40 +517,76 @@ def _pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[
 # directory written inside. A cited script writes the path when one of its writing calls
 # (`_written`) is given an expression whose segments (`_segments`) match the span and no deeper
 # span of the table (`_claims`), at module level or in a def shipped code refers to; it is read
-# in its own code, a caller beside it not followed. A cell saying the script `directs` the agent
+# in its own code, a caller beside it not followed. A call the reader cannot spell stands for one
+# segment where it is a side of a `/` join (`DRIVE / norm_id(unit) / f"{step}.log"`), and a call
+# of a def of the same module with one `return` spells what that def returns (`_record_file`). A
+# conditional spells the branch that puts a path under `LOCAL_DIR`, its first branch otherwise. A cell saying the script `directs` the agent
 # that writes the path holds the script to a string it builds that tells the reader to.
 #: A writer cell saying the script it cites only directs the agent that writes the path.
 _DIRECTS_RE = re.compile(r"\bdirects?\b")
 #: A path segment the code does not spell.
 _WILD = "*"
 _PATH_CTORS = ("Path", "PurePath", "PurePosixPath")
+#: `{def name: (def, its scope's nodes, the module's names)}`: the module-level defs of the
+#: module being read, whose one `return` a call of them spells.
+Helpers = dict[str, tuple[ast.AST, list[ast.AST], dict[str, list[str]]]]
 
 
-def _segments(e: ast.AST, env: dict[str, list[str]]) -> list[str] | None:
+def _helper_segments(e: ast.Call, helpers: Helpers, seen: frozenset) -> list[str] | None:
+    """What a call of a def of `helpers` returns, read with the module's names and the def's own
+    assignments before its `return`; None for a def with any other number of valued returns, or
+    one `seen` is already reading."""
+    name = e.func.id if isinstance(e.func, ast.Name) else None
+    if name not in helpers or name in seen:
+        return None
+    fn, nodes, menv = helpers[name]
+    returns = [r for r in ast.walk(fn) if isinstance(r, ast.Return) and r.value is not None]
+    if len(returns) != 1:
+        return None
+    ret = returns[0]
+    env = _env(nodes, menv, (ret.lineno, ret.col_offset), helpers, seen | {name})
+    return _segments(ret.value, env, helpers, seen | {name})
+
+
+def _segments(e: ast.AST, env: dict[str, list[str]], helpers: Helpers | None = None,
+              seen: frozenset = frozenset()) -> list[str] | None:
     """The path segments `e` spells, each a glob: a literal as itself, `*` for each value an
     f-string or a `.format` call fills in, `*` for a name `env` does not bind and for an attribute
-    (`wt.name`); None for an expression that is no string or path."""
+    (`wt.name`), what a def of `helpers` returns for a call of it, `*` for any other call that
+    is a side of a `/` join (`norm_id(unit)`), and a conditional's branch under `LOCAL_DIR`,
+    or its first that spells a path; None for an expression that is no string or
+    path."""
+    helpers = helpers or {}
     if isinstance(e, ast.Constant):
         return [s for s in e.value.split("/") if s] if isinstance(e.value, str) else None
     if isinstance(e, ast.JoinedStr):
-        return [s for s in _rendered(e, env).split("/") if s]
+        return [s for s in _rendered(e, env, helpers, seen).split("/") if s]
     if isinstance(e, ast.Name):
         return env.get(e.id, [_WILD])
     if isinstance(e, ast.Attribute):
         return [_WILD]
     if isinstance(e, ast.BinOp) and isinstance(e.op, ast.Div):
-        left, right = _segments(e.left, env), _segments(e.right, env)
+        left, right = (_segments(s, env, helpers, seen) for s in (e.left, e.right))
+        left, right = ([_WILD] if segs is None and isinstance(s, ast.Call) else segs
+                       for s, segs in ((e.left, left), (e.right, right)))
         return None if left is None or right is None else left + right
     if isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in _PATH_CTORS:
-        args = [_segments(a, env) for a in e.args]
+        args = [_segments(a, env, helpers, seen) for a in e.args]
         return None if any(a is None for a in args) else [s for a in args for s in a]
     if isinstance(e, ast.Call) and isinstance(e.func, ast.Attribute) and e.func.attr == "format":
-        base = _segments(e.func.value, env)
+        base = _segments(e.func.value, env, helpers, seen)
         return None if base is None else [re.sub(r"\{[^{}]*\}", _WILD, s) for s in base]
+    if isinstance(e, ast.Call):
+        return _helper_segments(e, helpers, seen)
+    if isinstance(e, ast.IfExp):
+        branches = [s for s in (_segments(b, env, helpers, seen) for b in (e.body, e.orelse))
+                    if s is not None]
+        return next((s for s in branches if LOCAL_DIR in s), branches[0] if branches else None)
     return None
 
 
-def _rendered(e: ast.JoinedStr, env: dict[str, list[str]]) -> str:
+def _rendered(e: ast.JoinedStr, env: dict[str, list[str]], helpers: Helpers | None = None,
+              seen: frozenset = frozenset()) -> str:
     """An f-string's text, each value it formats filled in as the literal path `env` binds it to,
     or `*`."""
     out = []
@@ -557,13 +594,14 @@ def _rendered(e: ast.JoinedStr, env: dict[str, list[str]]) -> str:
         if isinstance(v, ast.Constant):
             out.append(v.value)
             continue
-        segs = _segments(v.value, env)
+        segs = _segments(v.value, env, helpers, seen)
         out.append("/".join(segs) if segs and _WILD not in "".join(segs) else _WILD)
     return "".join(out)
 
 
 def _env(nodes: list[ast.AST], env: dict[str, list[str]],
-         before: tuple[int, int] | None = None) -> dict[str, list[str]]:
+         before: tuple[int, int] | None = None, helpers: Helpers | None = None,
+         seen: frozenset = frozenset()) -> dict[str, list[str]]:
     """`env` with each name an assignment among `nodes` ending before `before` binds, in source
     order: to the segments its value spells, or unbound when it spells none."""
     env = dict(env)
@@ -576,7 +614,7 @@ def _env(nodes: list[ast.AST], env: dict[str, list[str]],
                   and len(t.elts) == len(v.elts) for p in zip(t.elts, v.elts)]
         for t, v in pairs:
             if isinstance(t, ast.Name):
-                segs = _segments(v, env)
+                segs = _segments(v, env, helpers, seen)
                 if segs is None:
                     env.pop(t.id, None)
                 else:
@@ -649,10 +687,14 @@ def _path_writes(sources: dict[str, str], module: str, span: str,
         return []
     scopes = _index(sources[module])[0]
     menv, refs, out = _env(scopes[0][1], {}), _Writes(sources, span), []
+    top = scopes[0][0].body
+    helpers = {node.name: (node, nodes, menv) for node, nodes, _used, _strings in scopes
+               if isinstance(node, _DEFS) and node in top}
     for node, nodes, _used, _strings in scopes:
         base = {} if isinstance(node, ast.Module) else menv
         calls = [c for c in nodes if isinstance(c, ast.Call) and any(
-            (segs := _segments(p, _env(nodes, base, (c.lineno, c.col_offset)))) is not None
+            (segs := _segments(p, _env(nodes, base, (c.lineno, c.col_offset), helpers),
+                               helpers)) is not None
             and _claims(span, segs, spans) for p in _written(c))]
         if calls and (isinstance(node, ast.Module) or refs._referred_to(module, node)):
             out += calls
@@ -1041,9 +1083,15 @@ class LocalPathRowPinTests(unittest.TestCase):
         self.assertTrue(_unread_rows("## `.local` files\n\n| File | Writer | Purpose |\n"
                                      "| --- | --- | --- |\n| lane runs | `lanes.py` | x |\n"),
                         "a row naming no file in backticks is read by neither reader")
+        # a file name holding a placeholder is a path row, read by the path pin
+        named = ("## `.local` files\n\n| File | Writer | Purpose |\n| --- | --- | --- |\n"
+                 "| `probe-<unit>.json` | `w.py` | x |\n| `probe.json` | `w.py` | x |\n")
+        self.assertEqual([("probe-<unit>.json", " `w.py` ")], _local_path_rows(named))
+        self.assertEqual([], _unread_rows(named))
         for span, writer in rows:
-            mutant = writer.replace("`sprint.py`", "`critic.py`").replace("`lib/lanes.py`",
-                                                                          "`critic.py`")
+            mutant = writer.replace("`sprint.py`", "`critic.py`").replace(
+                "`lib/lanes.py`", "`critic.py`").replace("`lib/drive.py`", "`critic.py`").replace(
+                "`mutation.py`", "`critic.py`")
             with self.subTest(span=span, writer="critic.py"):
                 self.assertNotEqual(writer, mutant, "premise: the row cites another script")
                 failures = _path_pin_failures([(span, mutant)], sources)
@@ -1097,7 +1145,65 @@ class LocalPathRowPinTests(unittest.TestCase):
                  "probe-runs/<session>.json", False),
                 ("outside .local", "def save(root, unit, s):\n"
                  "    (root / 'probe-runs' / f'{s}.json').write_text('x')\n",
-                 "probe-runs/<session>.json", False)):
+                 "probe-runs/<session>.json", False),
+                # a call in a `/` join stands for one segment, as `lib/drive.py` names a unit
+                ("a call in a join", "def save(root, unit, s):\n"
+                 "    p = RUNS / sdlc_md.norm_id(unit) / f'{s}.log'\n"
+                 "    sdlc_md.atomic_write(root / p, 'x')\n", "probe-runs/<unit>/<step>.log", True),
+                ("a call in a join, another suffix", "def save(root, unit, s):\n"
+                 "    p = RUNS / sdlc_md.norm_id(unit) / f'{s}.txt'\n"
+                 "    sdlc_md.atomic_write(root / p, 'x')\n", "probe-runs/<unit>/<step>.log", False),
+                ("a call where a literal stands", "def save(root, unit, s):\n"
+                 "    sdlc_md.atomic_write(root / RUNS / sdlc_md.norm_id(unit) / 'x.log', 'x')\n",
+                 "probe-runs/landed/<step>.log", False),
+                ("a subscript in a join", "def save(root, unit, s):\n"
+                 "    sdlc_md.atomic_write(root / RUNS / s[0] / 'x.log', 'x')\n",
+                 "probe-runs/<unit>/<step>.log", False),
+                ("a name bound to a helper's path", "def _where(root, s):\n"
+                 "    return root / RUNS / f'{s}.land.json'\n"
+                 "def save(root, unit, s):\n    p = _where(root, s)\n    sdlc_md.atomic_write(p, 'x')\n",
+                 "probe-runs/<worktree>.land.json", True),
+                # a call of a def of the module spells what it returns, as `lib/lanes.py` names
+                # its land record
+                ("a helper's returned path", "LAND = '{name}.land.json'\n"
+                 "def _where(root, s):\n    return root / RUNS / LAND.format(name=s)\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", True),
+                ("a helper's own name", "def _where(root, s):\n"
+                 "    name = f'{s}.land.json'\n    return root / RUNS / name\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", True),
+                ("a helper through a helper", "def _base(root):\n    return root / RUNS\n"
+                 "def _where(root, s):\n    return _base(root) / f'{s}.land.json'\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", True),
+                ("a helper returning another path", "def _where(root, s):\n"
+                 "    return root / RUNS / f'{s}.json'\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", False),
+                ("a helper with two returns", "def _where(root, s):\n"
+                 "    if not s:\n        return root / 'elsewhere' / 'x.land.json'\n"
+                 "    return root / RUNS / f'{s}.land.json'\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", False),
+                ("a helper calling itself", "def _where(root, s):\n"
+                 "    return _where(root, s) / f'{s}.land.json'\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", False),
+                ("a method of the same name", "class K:\n    def _where(self, root, s):\n"
+                 "        return root / RUNS / f'{s}.land.json'\n"
+                 "def save(root, unit, s):\n    sdlc_md.atomic_write(_where(root, s), 'x')\n",
+                 "probe-runs/<worktree>.land.json", False),
+                # a conditional spells its branch under `.local`, as `mutation.py` its report
+                ("a conditional's second branch", "def save(root, unit, s):\n"
+                 "    p = Path(s) if s else root / '.local' / f'probe-runs-{unit}.json'\n"
+                 "    sdlc_md.atomic_write(p, 'x')\n", "probe-runs-<unit>.json", True),
+                ("a conditional's first branch", "def save(root, unit, s):\n"
+                 "    p = root / '.local' / f'probe-runs-{unit}.json' if s else Path(s)\n"
+                 "    sdlc_md.atomic_write(p, 'x')\n", "probe-runs-<unit>.json", True),
+                ("a conditional spelling it on neither branch", "def save(root, unit, s):\n"
+                 "    p = Path(s) if s else root / '.local' / f'probe-runs-{unit}.txt'\n"
+                 "    sdlc_md.atomic_write(p, 'x')\n", "probe-runs-<unit>.json", False)):
             for called in (True, False):
                 files = {"w.py": _RUNS + body, "c.py": "import w\n" + live * called}
                 with self.subTest(case=case, called=called):

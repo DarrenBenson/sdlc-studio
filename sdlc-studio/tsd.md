@@ -303,6 +303,19 @@ execution per mutant - minutes, not seconds - so it cannot sit on the fast path.
 is a deliberate trade: nothing reads an absent run as a pass, because nothing reads a
 run as a gate verdict at all.
 
+**The author's chosen mutants.** `mutation.py run --edits <list.json> --scope <id>` runs the
+mutants an author chose rather than enumerating its own. Each entry of the list is one
+`{file, old, new, test}` edit, its test a pytest selector: the tree is copied once into a scratch
+directory, and each edit is applied, and its test run, in that scratch copy of the tree, never the
+working tree. Each edit gets one verdict, killed, survived, not-applied or error; only killed and
+survived measured a mutant. An edit outside the unit's Affects, or whose old text is not in the
+file exactly once, is reported not-applied and never counted killed. The report goes to
+`.local/mutation-edits-<unit>.json` unless `--report` names another path, and
+`critic.py self-check record --mutants-from` records it. `critic.py brief` then replays the
+recorded list over the tree as it stands, in a section labelled the author's recorded mutants,
+with each recorded and replayed verdict and a disagreement marked; the replay never counts as the
+reviewer's own mutation pass.
+
 ### Integration Testing (scripts against fixture workspaces)
 
 The script tests are not pure unit tests in isolation; many build a temporary
@@ -741,6 +754,18 @@ nothing speaks for (no ticked criterion and no `Verify:` line), and for one whos
 recorded `verify_ac` run is red, so the move stands on criteria the verifier ran. This
 is the general rule this document keeps naming: a rule nothing executes is a rule that
 holds only when someone remembers it.
+
+### A red CI run
+
+A red CI run on `main` is answered by `gate.py --red-run <run> --failed <tests> --token
+can-rerun|cannot-rerun`, never by hand. It answers `rerun` only while every failing test is
+named by an open bug whose title says flaky and the run's reds, counted across the open bugs'
+`## CI Red Runs` sections, are fewer than `ci.rerun_limit`; it records the red on that bug and
+tells the agent to rerun the failed jobs once. It answers `stop` past the limit, or with a token that cannot
+rerun, and the operator is asked. Otherwise it answers `regression` and files a bug through
+`file_finding`, naming the run and each failing test no flake names, and nothing is pushed until
+`main` is green; a regression none of whose failing tests names a file in the tree is refused,
+with the instruction to file it by hand. No answer skips or deselects a test, and the command exits 0 only on `rerun`.
 
 ---
 

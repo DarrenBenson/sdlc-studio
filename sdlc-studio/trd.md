@@ -592,8 +592,8 @@ a half-written decomposition never certifies clean.
 
 `tools/tests/test_lean_trd_refresh.py` reads each path below from its writer's code, and checks
 every tracked file under `sdlc-studio/retros/evidence/`, `sdlc-studio/reports/`,
-`sdlc-studio/reviews/verdicts/`, `sdlc-studio/personas/memory/` and `sdlc-studio/decisions/`,
-and the decision log `sdlc-studio/decisions.md`, against it. A `<placeholder>` in a path stands
+`sdlc-studio/reviews/verdicts/`, `sdlc-studio/personas/memory/`, `sdlc-studio/decisions/` and
+`sdlc-studio/reviews/author-mutants/`, and the decision log `sdlc-studio/decisions.md`, against it. A `<placeholder>` in a path stands
 for any name.
 
 | Record | Path | Writer | Purpose |
@@ -614,7 +614,13 @@ for any name.
 | Run records | `sdlc-studio/reports/runs/*.json` | `run_state.py`, through `sprint.py close` and `sprint.py sign` | The tracked run state below. |
 | Verdict files | `sdlc-studio/reviews/verdicts/<unit>/<fp>-<token>.txt` | issued by `critic.py brief`, bound by `critic.py record` | The reviewer's verdict for one brief, in the fresh file the brief names under the unit's folder. `critic.py record --from-verdict` refuses a file whose bytes an earlier row already carries, or whose header names another unit or brief, and writes the file's digest and name into the ledger row's Source cell. |
 | Persona memory | `sdlc-studio/personas/memory/<persona>.md` | `persona_memory.py`, and through it `sprint.py close` and `sprint.py sign` | Each persona's evidenced learnings, one file per seat role or user persona card: `persona_memory.py` records a learning as proposed and another seat's approval or rejection of it, the close stamps each approved learning it lists, and `sprint.py sign --strike` strikes one. A brief carries a learning only once a signed close has listed it. |
+| Persona reviews | `sdlc-studio/reviews/persona-reviews.md` | `persona_review.py record` | The append-only ledger of persona and seat card reviews against the persona standard, one row per review: the card, its body hash, the outcome, the reviewer and seat, who ran it, the date and the rules a FAIL names. A PASS is refused while a blocking rule fails, and a card's latest review is read from it. This repository has recorded no review yet. |
 | Release evidence pack | `sdlc-studio/reports/evidence-pack-<version>.md` | `release_cut.py evidence-pack`, through `evidence_pack.py` | A release's evidence, built from the signed reports it names as committed: each delivered unit's criteria with their Verify lines, each independent seat's latest verdict, the known issues that name it and its report's signing principal. An unsigned or unknown report refuses the build, and nothing is written. |
+
+A flaky bug's `## CI Red Runs` section is written by `gate.py --red-run`, which appends one line
+per red of a run to each open flaky bug naming one of its failing tests, the red's number in the
+run and the answer given, creating the section at the end of the bug when it has none. The run's
+reds are counted back from these sections against `ci.rerun_limit`.
 
 A report's page and its tracked run record are contracted in `reference-evidence-schema.md`, at
 annex version 1.0, the contract a consumer parses a report against. The annex is versioned apart
@@ -665,14 +671,16 @@ closing a record still running `blocked`; `sprint.py boundary --strict` adds ori
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
 | `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; no gate lane reads it. [HIGH] |
 | `mutation-series.jsonl` | `mutation.py` | One row appended per run: what it cost and what it found, read back by `mutation.py yield --run <id>`. No per-target ledger is kept. [HIGH] |
+| `mutation-edits-<unit>.json` | `mutation.py`, run as `mutation.py run --edits` | The author's chosen-mutant report, unless `--report` names another path: each listed edit with its verdict, killed, survived, not-applied or error, the last line its test printed and its answer, which `critic.py self-check record --mutants-from` reads. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 | `meter-reads.json` | `lib/run_state.py` | The meter's memo: what each transcript of the last reading held, so the next reading parses only the bytes appended since. Deleting it costs one whole re-read. [HIGH] |
 | `cursor-usage.jsonl` | `cursor_usage_hook.py` | The Cursor CLI hook's ledger: one line per response with its four token counts, which the Cursor meter reads a CLI run's tokens from. [HIGH] |
 | `lane-runs/<unit>/<session>.json` | `lib/lanes.py`, called by `sprint.py lane run` | One record per headless lane session: the session id, model, normalised usage, first-call context and the files staged, with the CLI's output beside it; `lane return` prices the lane from them. [HIGH] |
 | `lane/` | the builder, in its worktree, as the brief `sprint.py` prints for `lane brief` directs | The lane hand-in: the commit message and the self-check's claims and mutants files that `sprint.py lane land` commits and records from. [HIGH] |
-| `lane/landed/<worktree>/` | `lib/lanes.py`, called by `sprint.py lane land` | The hand-in files copied out of a worktree before it is removed. [HIGH] |
+| `lane/landed/<worktree>/`, `lane/landed/<worktree>.land.json` | `lib/lanes.py`, called by `sprint.py lane land` | The hand-in files copied out of a worktree before it is removed, and beside them the land record, named for the first worktree landed: the worktrees, their units and authors, the steps the landing completed and the one it stopped at, the units it briefed and, once the root's branch moved, the commit. `sprint.py lane land --resume` runs only the steps it does not name as completed. [HIGH] |
 | `briefs/<unit>-qa.txt`, `briefs/<unit>-qa.none` | `lib/lanes.py`, called by `sprint.py lane land` | Each landed unit's QA brief, which `sprint.py lane accept` records the verdict against. A unit the landing left with no brief has the `.none` note instead, naming that landing and why, and `lane accept` refuses it with that reason. [HIGH] |
 | `resume-brief.md` | `sprint.py`, run as `sprint.py handoff` | The open run's resume brief: the next action and what a fresh session needs to take the run up, within 8,000 estimated tokens, which `sprint.py resume` reads in the next session. With no open run or a brief over that budget it writes nothing. [HIGH] |
+| `drive/<unit>/<step>.log` | `lib/drive.py`, called by `sprint.py drive` | The whole output of one driven step of a unit: the command, its exit status, its stdout and its stderr. A stop's decision record names the log. [HIGH] |
 
 Each writer a row names writes its file under `.local/`, which `test_lean_v61_review_residue.py`
 checks for every row by reading each script's code, where a write counts only at module level or

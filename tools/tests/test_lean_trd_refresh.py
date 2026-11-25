@@ -54,6 +54,7 @@ import ledger  # noqa: E402
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
 import persona_memory  # noqa: E402
+import persona_review  # noqa: E402
 from test_lean_prd_refresh import release_baseline  # noqa: E402 - the release the specs name
 import reconcile  # noqa: E402
 import sprint  # noqa: E402
@@ -389,10 +390,11 @@ def decision_stores() -> list[str]:
 def committed_trees() -> list[str]:
     """The directories whose every tracked file a committed record's row must match, each read
     from its writer's code: the evidence shards, the reports, the verdict files a brief issues,
-    the persona memory files and the per-tranche decision ledgers."""
+    the persona memory files, the per-tranche decision ledgers and the author mutant lists."""
     return [telemetry.EVIDENCE.as_posix(), sprint_report.report_dir("").as_posix(),
             critic.VERDICTS_DIR_REL.as_posix(), persona_memory.MEMORY_REL,
-            ledger.ledger_path("", "x").parent.as_posix()]
+            ledger.ledger_path("", "x").parent.as_posix(),
+            critic.author_mutants_path("", "x").parent.as_posix()]
 
 
 def committed_files() -> list[str]:
@@ -404,6 +406,14 @@ def committed_files() -> list[str]:
 #: The committed file `critic.py self-check record --mutants-from` keeps a unit's mutants in.
 AUTHOR_MUTANTS = (Path("sdlc-studio") / "reviews" / critic.AUTHOR_MUTANTS_DIR
                   / "<id>.json").as_posix()
+
+
+def pending_records() -> set[str]:
+    """The records the code writes that this repository need not track yet, each held to its
+    row and not to a tracked file: a persona's learnings, a release's evidence pack and the
+    persona review ledger, each read from its writer's code."""
+    return {persona_memory.memory_path("", "<persona>").as_posix(),
+            evidence_pack.pack_rel("<version>"), persona_review.LEDGER_REL.as_posix()}
 
 
 def unlisted(files: list[str], listed: set[str]) -> list[str]:
@@ -545,13 +555,14 @@ class TrdStorageTests(unittest.TestCase):
 
     def test_every_committed_record_is_listed(self) -> None:
         """Mutants: a record the code writes and git tracks dropped from the table, or listed at
-        another path; a tracked file under the evidence, report, verdict-file or persona memory
-        directories that no listed path matches; a listed path that tracks no file, other than a
-        record the code writes and this repository holds none of yet. The set is read from the
-        writers' code: the actuals and forecast shards, the lessons store, the verdict log of each
-        `critic.PHASES` phase, the verdict files a brief issues, the self-check log, the reports,
-        the run records, and the persona memory files and a release's evidence pack. A listed
-        path's `<placeholder>` matches any name."""
+        another path; a tracked file under the evidence, report, verdict-file, persona memory or
+        author mutant list directories that no listed path matches; a listed path that tracks no
+        file, other than a record the code writes and this repository holds none of yet. The set
+        is read from the writers' code: the actuals and forecast shards, the lessons store, the
+        verdict log of each `critic.PHASES` phase, the verdict files a brief issues, the
+        self-check log, the author mutant lists, the reports, the run records, and the persona
+        memory files, a release's evidence pack and the persona review ledger. A listed path's
+        `<placeholder>` matches any name."""
         section = _section(_trd_body(), "Committed evidence and records")
         table = _one_table(section, "Record")
         col = table[0].index("Path")
@@ -563,11 +574,10 @@ class TrdStorageTests(unittest.TestCase):
             *(critic.verdicts_path("", phase) for phase in critic.PHASES),
             critic.VERDICTS_DIR_REL / "<unit>" / "<fp>-<token>.txt",
             report_dir / f"{sdlc_md.META_TYPES['report'][1]}*.json",
-            run_state.tracked_path("", "*"))}
-        # Records the code writes that need not be tracked yet: no learning has been recorded and
-        # no release's pack written here, so each is held to its row and not to a tracked file.
-        pending = {persona_memory.memory_path("", "<persona>").as_posix(),
-                   evidence_pack.pack_rel("<version>"), AUTHOR_MUTANTS}
+            run_state.tracked_path("", "*"))} | {AUTHOR_MUTANTS}
+        # Records the code writes that need not be tracked yet: no learning, release pack or
+        # persona review has been recorded here, so each is held to its row, not a tracked file.
+        pending = pending_records()
         self.assertIn("sdlc-studio/lessons.jsonl", expected)
         self.assertEqual(sdlc_md.META_TYPES["report"][0], report_dir.as_posix())
         tracked = _tracked("sdlc-studio")
