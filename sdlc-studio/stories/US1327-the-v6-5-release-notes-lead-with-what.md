@@ -1,6 +1,6 @@
 # US1327: The v6.5 release notes lead with what changed for the person answering for the release
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.5
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
@@ -42,6 +42,7 @@ them, and every number I repeat to the board is one a record of the project carr
   at HEAD, which holds no docs/release-notes-v6.5.0.md; the 6.4.0 notes with the version changed; a
   theme with no unit named.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
+  - **Verified:** yes (2026-11-25)
 - **AC2:** Given the quality theme, then it states D0560's bar (fewer than 50 open defects and none
   at Medium or above), the count the drive started from (473 open, 99 of them Medium, after run
   twenty), the re-check of every open bug at HEAD by two independent seats (D0563), and the
@@ -52,6 +53,7 @@ them, and every number I repeat to the board is one a record of the project carr
   a count with no decision named, a count the named decision does not carry, or an open-defect
   count stated anywhere but the disclosure line.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions
+  - **Verified:** yes (2026-11-25)
 - **AC3:** Given the notes' section on changed behaviour, then it names each change a 6.4 user
   meets as a new refusal or a changed default, each beside what to do instead: PyYAML is required,
   the installers refuse a machine whose Python cannot import it, a command reading a present
@@ -79,6 +81,7 @@ them, and every number I repeat to the board is one a record of the project carr
   a copied 6.4 product card naming "the Primary persona, Sam" is refused (BG1655 made a lone first
   name after a comma no claim, and a fixture holding the 6.4.0 cards verbatim reports blocks=0).
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do
+  - **Verified:** yes (2026-11-25)
 - **AC4:** Given the notes' 'Upgrading from 6.4' section, then it says to install PyYAML
   (`python3 -m pip install pyyaml`) before reinstalling, gives `migrate` before `migrate --apply` as
   commands, and states what each does for a 6.4 project, each statement checked by running it on a
@@ -93,17 +96,20 @@ them, and every number I repeat to the board is one a record of the project carr
   refuses, `--apply` given before the dry run, a default `reference-config.md` contradicts,
   `review.rendered_paths` left out, or a claim that `ci.wait_timeout_minutes` bounds a wait.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given
+  - **Verified:** yes (2026-11-25)
 - **AC5:** Given every cost figure the notes state (priced tokens, dollars, dollars per point or
   points), then each names the signed report it is read from, one of RPT0035 to RPT0045 (runs
   sixteen to twenty-six), and the test reads that figure back from the report's committed JSON under
   `sdlc-studio/reports/`. Fails on: a figure with no report named, one the named report does not
   carry, a sum across reports no single report carries, or a report outside RPT0035 to RPT0045.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report
+  - **Verified:** yes (2026-11-25)
 - **AC6:** Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes
   carry exactly one `**v6.5.0 discloses N open defects: N Medium, N Low.**` line for
   `known_issues.py write --release 6.5.0` to fill. Fails on: the tree at HEAD, which holds no notes
   file; a broken CHANGELOG anchor, an em dash, or a missing count line.
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.5\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.5.0.md)" = 1
+  - **Verified:** yes (2026-11-25)
 
 ## Notes
 

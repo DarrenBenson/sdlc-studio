@@ -1,6 +1,6 @@
 # BG1759: US1327 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** docs/release-notes-v6.5.0.md, tools/tests/test_lean_release_notes_v65.py, changelog.d/US1327.md
@@ -27,16 +27,22 @@ Fix each finding above, then deliver US1327 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC2** US1327 AC1 still passes: Given docs/release-notes-v6.5.0.md, then it opens with a one-sentence headline naming
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC3** US1327 AC2 still passes: Given the quality theme, then it states D0560's bar (fewer than 50 open defects and none
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_quality_figures_name_their_decisions
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC4** US1327 AC3 still passes: Given the notes' section on changed behaviour, then it names each change a 6.4 user
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC5** US1327 AC4 still passes: Given the notes' 'Upgrading from 6.4' section, then it says to install PyYAML
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_64_upgrade_path_is_given
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC6** US1327 AC5 still passes: Given every cost figure the notes state (priced tokens, dollars, dollars per point or
   - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report
+  - **Verified:** yes (2026-11-25)
 - [ ] **AC7** US1327 AC6 still passes: Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.5\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.5.0.md)" = 1
+  - **Verified:** yes (2026-11-25)
 
 ## Revision History
 

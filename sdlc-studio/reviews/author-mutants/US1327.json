@@ -1,6 +1,6 @@
 {
   "unit": "US1327",
-  "digest": "94f41751d92ee640 at 774cdfa481b9",
+  "digest": "9d0ce891a0396e5c at b19b5464505c",
   "report": "sdlc-studio/.local/lane/landed/agent-ae34736f28d3387cb/US1327-mutation-edits.json",
   "mutants": [
     {
@@ -324,6 +324,42 @@
       "old": "            elif value not in carried:\n",
       "new": "            elif False:\n",
       "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_every_cost_figure_names_its_signed_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ruled_at returns HEAD",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    return commits[0]\n",
+      "new": "    return \"HEAD\"\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::RulingCommitTests::test_the_ruling_commit_is_the_one_that_added_the_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ruled_at returns the newest commit changing the row",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    return commits[0]\n",
+      "new": "    return commits[-1]\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::RulingCommitTests::test_the_ruling_commit_is_the_one_that_added_the_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ruling log read newest first",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "\"log\", \"--reverse\", \"--format=%H\"",
+      "new": "\"log\", \"--format=%H\"",
+      "test": "tools/tests/test_lean_release_notes_v65.py::RulingCommitTests::test_the_ruling_commit_is_the_one_that_added_the_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision with no row not refused",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if proc.returncode != 0 or not commits:\n",
+      "new": "    if proc.returncode != 0:\n",
+      "test": "tools/tests/test_lean_release_notes_v65.py::RulingCommitTests::test_the_ruling_commit_is_the_one_that_added_the_row",
       "result": "killed",
       "answer": ""
     },

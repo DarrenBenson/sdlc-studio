@@ -46,7 +46,7 @@ publish and the site stay with the operator (D0545's exclusions).
 
 ## Story Breakdown
 
-- [ ] [US1327: The v6.5 release notes lead with what changed for the person answering for the release](../stories/US1327-the-v6-5-release-notes-lead-with-what.md)
+- [x] [US1327: The v6.5 release notes lead with what changed for the person answering for the release](../stories/US1327-the-v6-5-release-notes-lead-with-what.md)
 - [x] [US1328: The help, upgrade and public pages describe what 6.5 ships](../stories/US1328-the-help-upgrade-and-public-pages-describe-what.md)
 - [x] [US1329: The PRD, TRD and TSD describe what 6.5 ships](../stories/US1329-the-prd-trd-and-tsd-describe-what-6.md)
 - [ ] [US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline](../stories/US1330-v6-5-0-is-cut-version-changelog-known.md)
