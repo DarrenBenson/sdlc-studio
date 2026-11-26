@@ -1563,9 +1563,9 @@ def effort_setting(root: Path) -> dict:
     raw = raw or {}
     for key in raw:
         if key not in (*EFFORT_ROLES, "reviewer_below_builder", *EFFORT_KINDS):
-            raise EffortError(f"routing.effort.{key} is not a kind of unit: routing.effort takes "
-                              f"builder, reviewer and reviewer_below_builder, and an entry for "
-                              f"each kind: {', '.join(EFFORT_KINDS)}")
+            raise EffortError(f"routing.effort.{key} is not a key routing.effort takes: it "
+                              f"takes builder, reviewer, reviewer_below_builder and an entry "
+                              f"for each kind of unit: {', '.join(EFFORT_KINDS)}")
     out: dict = _effort_pair(raw, "routing.effort", dict.fromkeys(EFFORT_ROLES, EFFORT_INHERIT))
     below = [("", out["builder"], out["reviewer"])] if _effort_below(out) else []
     kinds, by_kind = {}, False

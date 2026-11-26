@@ -39,6 +39,8 @@ EFFORTS = ("inherit", "low", "medium", "high", "xhigh", "max")
 AC1 = ("routing:\n  effort:\n    builder: medium\n    reviewer: high\n"
        "    docs: {builder: low}\n    bug: {builder: high}\n")
 ROLES_ONLY = "routing:\n  effort:\n    builder: medium\n    reviewer: high\n"
+#: Every key `routing.effort` takes, which a refusal of any other key names.
+KEYS = ("builder", "reviewer", "reviewer_below_builder", "docs", "bug", "code")
 
 
 def _live(name: str):
@@ -158,11 +160,15 @@ class EffortByKindTests(unittest.TestCase):
                 root, stories / f"{DOCS}-docs.md", "> **Affects:** tools/x.sh\n"))
 
     def test_an_unknown_kind_role_or_value_is_refused_by_name(self) -> None:
-        """AC2. MUTANTS: an unknown kind ignored; an unknown role ignored; an unknown value
-        passed through; a kind entry that is not a mapping accepted; each refusal silent on the
-        key or on what it takes; a refused plan writing its plan file."""
+        """AC2. Any key `routing.effort` does not take is refused, a misspelt role default as
+        well as a near-miss kind, scalar or mapping. MUTANTS: an unknown kind ignored; an
+        unknown key refused only when its value is a mapping; an unknown role ignored; an
+        unknown value passed through; a kind entry that is not a mapping accepted; each refusal
+        silent on the key or on what it takes; a refused plan writing its plan file."""
         cases = (
             ("doc: {builder: low}", r"routing\.effort\.doc\b", ("docs", "bug", "code")),
+            ("builder: medium\n    reviwer: high", r"routing\.effort\.reviwer\b", KEYS),
+            ("tests: {builder: low}", r"routing\.effort\.tests\b", KEYS),
             ("docs: {author: low}", r"routing\.effort\.docs\.author\b", ("builder", "reviewer")),
             ("docs: {builder: fast}", r"routing\.effort\.docs\.builder\b", EFFORTS),
             ("docs: low", r"routing\.effort\.docs\b(?!\.)", ("builder", "reviewer")),
@@ -178,11 +184,14 @@ class EffortByKindTests(unittest.TestCase):
                 self.assertEqual(out.strip(), "", "a refused plan printed a batch")
                 self.assertFalse((root / sprint.PLAN_REL).exists(),
                                  "a refused plan wrote its plan file")
-        with tempfile.TemporaryDirectory() as d:  # the positive control: a known kind plans
-            root = _project(d, "routing:\n  effort:\n    docs: {builder: low}\n")
-            rc, out, err = _plan(root, "--write")
-            self.assertEqual(rc, 0, err)
-            self.assertTrue((root / sprint.PLAN_REL).exists(), "premise: the plan file moved")
+        # The positive controls: a known kind plans, and so do the keys 6.4 documented.
+        for config in ("docs: {builder: low}",
+                       "builder: medium\n    reviewer: high\n    reviewer_below_builder: ''"):
+            with self.subTest(config=config), tempfile.TemporaryDirectory() as d:
+                root = _project(d, f"routing:\n  effort:\n    {config}\n")
+                rc, out, err = _plan(root, "--write")
+                self.assertEqual(rc, 0, err)
+                self.assertTrue((root / sprint.PLAN_REL).exists(), "premise: the plan file moved")
 
     def test_a_reviewer_below_its_builder_within_a_kind_needs_a_decision(self) -> None:
         """AC3. MUTANTS: a kind's pair never ranked; the refusal silent on the kind or on an
