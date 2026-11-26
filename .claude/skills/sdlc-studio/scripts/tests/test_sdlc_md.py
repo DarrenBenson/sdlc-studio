@@ -1769,6 +1769,42 @@ class CrockfordLinkIdTests(unittest.TestCase):
         # digits is read whole, not cut to a v2 id
         self.assertEqual(self._dec("US0200M8BJ"), ["US0200M8BJ"])
 
+    def test_epic_story_census_counts_a_dashless_epic(self) -> None:
+        # a story naming its epic without the dash is counted with one naming it with the dash;
+        # the second epic, named only with the dash, is the control
+        with tempfile.TemporaryDirectory() as d:
+            stories = Path(d) / "sdlc-studio" / "stories"
+            stories.mkdir(parents=True)
+            for sid, epic in (("US-01M8BRH2", "EP01M8BRDV"), ("US-01M8BRDN", "EP-01M8BRDV"),
+                              ("US-01M8BRE0", "EP-01M8BRF1")):
+                (stories / f"{sid}-a-story.md").write_text(
+                    f"# {sid}: A story\n\n> **Status:** Draft\n> **Epic:** {epic}\n",
+                    encoding="utf-8")
+            self.assertEqual(sdlc_md.epic_story_census(d), {"EP01M8BRDV": 2, "EP01M8BRF1": 1})
+            self.assertEqual(sdlc_md.epic_story_count(d, "EP-01M8BRDV"), 2)
+
+    @staticmethod
+    def _par(value: str) -> list[str]:
+        return sdlc_md.parent_refs(f"# US\n\n> **Status:** Draft\n> **Parent:** {value}\n")
+
+    def test_link_readers_read_an_extended_dashless_id_whole(self) -> None:
+        # the allocator extends a v3 suffix past 8 characters on a clash; a cut at 8 would read
+        # a different id, and the append path would write that one back
+        for read in (self._dec, self._par):
+            self.assertEqual(read("US01M8BJ3BX"), ["US01M8BJ3BX"])
+            self.assertEqual(read("US01M8BJ3BXYZ"), ["US01M8BJ3BXYZ"])
+
+    def test_a_v2_id_glued_to_a_short_or_lowercase_run_still_reads_as_v2(self) -> None:
+        # the dashless suffix needs 8 characters, uppercase, so a v2 id glued to a shorter run
+        # or to a lowercase one is still read as the v2 id; the positive controls beside each
+        # are the same ids glued to a run that does make a dashless v3 suffix
+        for read in (self._dec, self._par):
+            self.assertEqual(read("US0001AB"), ["US0001"])
+            self.assertEqual(read("US0001ABC"), ["US0001"])
+            self.assertEqual(read("US0001ABCD"), ["US0001ABCD"])
+            self.assertEqual(read("US0120abcdefgh"), ["US0120"])
+            self.assertEqual(read("US0120ABCDEFGH"), ["US0120ABCDEFGH"])
+
     def test_link_readers_read_normalised_crockford_ids(self) -> None:
         text = ("# US\n\n> **Status:** Draft\n> **Parent:** CR01M8A98E\n> **Parent:** CR0007\n"
                 "> **Epic:** EP01M8BJ86\n> **Change Request:** CR01M8A9DZ\n"

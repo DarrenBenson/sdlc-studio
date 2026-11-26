@@ -1511,6 +1511,26 @@ class CrockfordSpawnTests(unittest.TestCase):
             self.assertEqual([x.strip() for x in line.group(1).split(",")],
                              [sdlc_md.norm_id(s) for s in stories])
 
+    def test_a_spawn_keeps_an_extended_dashless_child_whole(self) -> None:
+        # a suffix the allocator extended past 8 characters on a clash: the append reads it back
+        # and writes it again, so a read cut at 8 would rewrite the child as a different id
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            cr = self._new(root, "--type", "cr", "--title", "A request")
+            cr_path = sdlc_md.find_by_id(root, cr)[0]
+            sdlc_md.insert_after_status(cr_path, "> **Decomposed-into:** US01M8BJ3BX")
+            epic = self._new(root, "--type", "epic", "--title", "An epic")
+            story = self._new(root, "--type", "story", "--title", "Story", "--epic", epic,
+                              "--parent", cr, "--affects", "a.py")
+            line = re.search(r"(?m)^> \*\*Decomposed-into:\*\* (.*)$",
+                             cr_path.read_text(encoding="utf-8"))
+            self.assertIsNotNone(line)
+            self.assertEqual([x.strip() for x in line.group(1).split(",")],
+                             ["US01M8BJ3BX", sdlc_md.norm_id(story)])
+
 
 if __name__ == "__main__":
     unittest.main()

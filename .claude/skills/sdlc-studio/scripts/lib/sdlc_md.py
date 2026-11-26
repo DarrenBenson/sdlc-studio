@@ -748,7 +748,7 @@ def epic_story_census(repo_root) -> dict[str, int]:
         # count was 18. Every other reader of this field in the family already used this idiom
         # (transition, verify_ac, sprint, ac_scope, mutation); the census was the one that did not.
         field = extract_field(read_text_safe(path), "Epic") or ""
-        m = ID_SEARCH_RE.search(field)
+        m = LINK_ID_SEARCH_RE.search(field)
         if m:
             counts[norm_id(m.group(0))] = counts.get(norm_id(m.group(0)), 0) + 1
     # Bounded: a long-lived process reconciling many trees must not accumulate a census per edit.
