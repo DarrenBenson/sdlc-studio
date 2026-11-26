@@ -27,8 +27,8 @@ PVD_HELP = SKILL / "help" / "pvd.md"
 REVIEW_PAGE = SKILL / "reference-review.md"
 PERSONAS_PAGE = SKILL / "reference-workflow-personas.md"
 
-#: A seat, named by role or generically, as the subject or agent of ownership.
-_SEAT = r"(?:Product (?:Owner|Manager)|seat|persona)"
+#: A seat, named by role, by its abbreviation or generically, as the subject or agent of ownership.
+_SEAT = r"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)"
 #: A seat or a persona named as a document's owner.
 OWNER_PATTERNS = {
     "a seat owns": re.compile(rf"\b{_SEAT}(?: (?:seat|persona))?\s+owns\b", re.I),
@@ -40,15 +40,18 @@ DOC_OWNER_PATTERNS = {
     "PO/PM owners": re.compile(r"\bPO/PM owners?\b"),
 }
 ALL_PATTERNS = {**OWNER_PATTERNS, **DOC_OWNER_PATTERNS}
+#: A table column headed by ownership, in any wording ("Owns", "Owns (the document)", "Owner").
+OWNS_HEADER = re.compile(r"\bown(?:s|ed|ers?)?\b", re.I)
 
 #: The old wording, in the shapes HEAD carried it: split across a line and bold, and plain.
 PLANTED = (
     "> The PRD is owned by\n> the **Product Owner** seat. The **Product Manager** seat owns\n"
     "> this, the product manager owns it, each seat owns one, a page owned by a Persona, a\n"
-    "> Document-owner seat, a document owner, and PO/PM owners review it."
+    "> Document-owner seat, a document owner, the PM owns it, a page owned by the PO, and PO/PM\n"
+    "> owners review it."
 )
 #: Every match the planted paragraph holds, pattern by pattern.
-PLANTED_HITS = 8
+PLANTED_HITS = 10
 #: A leg that names its seat signing and, in another sentence, delegation.
 NEAR_MISS_LEG = "The Product Owner seat signs it. The person delegates the review."
 COMPLIANT = "The person owns the PRD; the Product Owner seat signs its review leg"
@@ -135,6 +138,13 @@ class OwnershipWordingTests(unittest.TestCase):
             ("#### PVD Review", "Product Manager"),
             ("#### PRD Review", "Product Owner"),
         )
+        # The PRD leg keeps its completion condition, the one the PRD page states.
+        prd_leg = section(text, "#### PRD Review", ("\n#### ", "\n### "))
+        for name, body in (("the PRD leg", prd_leg), (PRD_PAGE.name, PRD_PAGE.read_text("utf-8"))):
+            done = [s for s in sentences(body) if "not complete until" in s]
+            self.assertTrue(done, f"{name} states no completion condition")
+            self.assertRegex(done[0], r"\bconfirmed met\b", name)
+            self.assertRegex(done[0], r"\bgaps are named and tracked\b", name)
         for heading, seat in legs:
             leg = section(text, heading, ("\n#### ", "\n### "))
             self.assertEqual(hits(leg, OWNER_PATTERNS), [], f"{heading} says a seat owns it")
@@ -148,7 +158,7 @@ class OwnershipWordingTests(unittest.TestCase):
         self.assertNotRegex(heading, re.compile(r"owner|owns", re.I))
         header = next(line for line in body.splitlines() if line.startswith("|"))
         cells = [c.strip() for c in header.strip("|").split("|")]
-        self.assertNotIn("Owns", cells)
+        self.assertEqual([c for c in cells if OWNS_HEADER.search(c)], [], "a column is headed Owns")
         said = sentences(body)
         owner = [s for s in said if re.search(r"\bperson owns every document\b", s)]
         self.assertTrue(owner, "no sentence says the person owns every document")
@@ -181,8 +191,13 @@ class OwnershipWordingTests(unittest.TestCase):
             self.assertNotRegex(normalise(COMPLIANT), rx, f"{name} matches the compliant one")
         # The split sentence is caught only once the page is normalised.
         raw = [m.group(0) for m in OWNER_PATTERNS["owned by a seat"].finditer(PLANTED)]
-        self.assertEqual(raw, ["owned by a Persona"])
+        self.assertEqual(raw, ["owned by a Persona", "owned by the PO"])
         self.assertEqual(len(hits(PLANTED, ALL_PATTERNS)), PLANTED_HITS)
+        # A column headed by ownership is caught in any wording; the section's own are not.
+        for heading in ("Owns", "Owns (the document)", "Owner", "owned by"):
+            self.assertRegex(heading, OWNS_HEADER)
+        for heading in ("Seat", "Checks the work against", "Accountable for", "Applies"):
+            self.assertNotRegex(heading, OWNS_HEADER)
         # A seat signing in one sentence and delegation in another is not the rule.
         self.assertEqual(signed(NEAR_MISS_LEG, "Product Owner"), [])
         self.assertTrue(signed(NEAR_MISS_LEG.replace(". The person", ", as the person"),

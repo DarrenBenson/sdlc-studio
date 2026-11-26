@@ -135,7 +135,7 @@ Skip this leg entirely for a single-repo project (no PVD). When a PVD exists:
 
 > **Product Manager sign-off (the gate):** the PVD leg ends with an explicit verdict - **"PVD
 > requirements satisfied: yes / no (gaps: …)"**. The Product Manager seat signs it, under authority
-> the person delegates: the answer to "are the product-level requirements met across the repos?"
+> the person delegates; it is the review's answer to "are the product-level requirements actually met across the repos?"
 
 See `reference-pvd.md` for the PVD layer.
 
@@ -149,9 +149,9 @@ See `reference-pvd.md` for the PVD layer.
 5. Identify gaps and stale content
 ```
 
-> **Product Owner sign-off (the gate):** the PRD leg ends with an explicit verdict - **"PRD
-> requirements satisfied: yes / no (gaps: …)"**. The Product Owner seat signs it, under authority
-> the person delegates; a review is not complete until the requirements are met or the gaps named.
+> **Product Owner sign-off (the gate):** the PRD leg ends with an explicit verdict - **"PRD requirements
+> satisfied: yes / no (gaps: …)"**. The Product Owner seat signs it, under authority the person delegates;
+> a review is not complete until the PRD requirements are confirmed met (or the gaps are named and tracked).
 
 See `reference-prd.md#prd-review-workflow` for details.
 
