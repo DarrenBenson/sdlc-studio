@@ -6,7 +6,7 @@
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py, changelog.d/US1334.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py, changelog.d/US1334.md, sdlc-studio/trd.md, sdlc-studio/prd.md
 > **Epic:** EP0381
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -74,3 +74,4 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Groomed for run twenty-eight from the D0635 breakdown |
+| 2026-11-26 | orchestrator | Affects names sdlc-studio/trd.md and sdlc-studio/prd.md: AC4's annex bump to 1.1 makes both pages' 'annex version 1.0' untrue, and `test_lean_specs_v64` reads the TRD's |
