@@ -711,7 +711,7 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
 - **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an explicit
   operator action - a fresh `sprint plan --write` opens a new run with a new appetite and clock.
 - **Spend stops a run only when declared:** `--appetite-spend N`, then `appetite.spend`, then `capacity.spend` (both ship at 0,
-  unbounded) is a ceiling in priced input-equivalent tokens, read from the session meter as a first close reads it, nothing written.
+  unbounded) is a ceiling in priced input-equivalent tokens, read from the session meter as a first close reads it, with no stamp written to the run state.
   It warns at 75 and 95 per cent and exits 4 at 100. The reading is a LOWER BOUND, since delegated and sidechain spend is supplied
   rather than observed, so it fires late, never early; a meter that cannot read leaves spend unjudged at that boundary and says why, while minutes and units still judge. The token FORECAST stays a warning and never stops a run.
 - **One forecast: points times the calibrated rate.** `forecast = sum(Points) x

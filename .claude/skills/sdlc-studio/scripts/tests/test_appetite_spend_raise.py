@@ -128,7 +128,52 @@ class AppetiteSpendTests(unittest.TestCase):
                                          self._appetite(bare)["over_spend"]))
         self.assertIn("spend unbounded (config capacity.spend)", out)
 
+    def test_the_plan_honours_an_explicit_zero_spend_over_the_capacity(self) -> None:
+        """MUTANT: the flag read as `cli_spend or None`, so `--appetite-spend 0` falls through
+        to `capacity.spend`."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(root, "--appetite-spend", "0")
+        self.assertEqual(0, rc, out)
+        ap = self._appetite(root)
+        self.assertEqual((0, 1000, True), (ap["spend"], ap["standing_spend"], ap["over_spend"]))
+        self.assertIn("spend unbounded (--appetite-spend)", out)
+
+    def test_a_spend_key_int_cannot_read_is_unset_at_the_plan(self) -> None:
+        """MUTANTS: `DEFAULT_CAPACITY["spend"]` other than 0, which `capacity()` falls back to
+        for a malformed `capacity.spend`; a malformed `appetite.spend` read with a bare `int`,
+        which stops the plan, or taken over the capacity."""
+        root = self._project("a", "capacity:\n  spend: 5e6\n")
+        rc, out = self._plan(root)
+        self.assertEqual(0, rc, out)
+        ap = self._appetite(root)
+        self.assertEqual((0, 0, False), (ap["spend"], ap["standing_spend"], ap["over_spend"]))
+        self.assertIn("spend unbounded (config capacity.spend)", out)
+        fresh = self._project("b", "appetite:\n  spend: 5e6\ncapacity:\n  spend: 1000\n")
+        rc, out = self._plan(fresh)
+        self.assertEqual(0, rc, out)
+        self.assertEqual(1000, self._appetite(fresh)["spend"])
+        self.assertIn(f"spend 1,000 {LABEL} (config capacity.spend)", out)
+
     # -- AC2 -----------------------------------------------------------------------------
+
+    def test_a_resize_keeps_an_unbounded_standing_spend(self) -> None:
+        """MUTANT: the standing spend taken as `standing_spend or spend`, so a recorded 0
+        (unbounded) becomes the accepted spend and a later raise reads as over appetite."""
+        root = self._project("a", "{}\n")
+        (root / "sdlc-studio" / "decisions.md").write_text(DECISIONS, encoding="utf-8")
+        rc, out = self._plan(root, "--appetite-spend", "1000")
+        self.assertEqual(0, rc, out)
+        ap = self._appetite(root)
+        self.assertEqual((1000, 0, False), (ap["spend"], ap["standing_spend"], ap["over_spend"]))
+        rc, out = self._resize(root, "--units", "3", "--reason", "r")
+        self.assertEqual(0, rc, out)
+        self.assertEqual((1000, 0), (self._appetite(root)["spend"],
+                                     self._appetite(root)["standing_spend"]))
+        rc, out = self._resize(root, "--spend", "1500", "--decision", "D0001", "--reason", "r")
+        self.assertEqual(0, rc, out)
+        ap = self._appetite(root)
+        self.assertEqual((1500, 0, False), (ap["spend"], ap["standing_spend"], ap["over_spend"]))
+        self.assertNotIn("OVER APPETITE", out)
 
     def test_a_spend_raise_needs_a_recorded_decision(self) -> None:
         """AC2. MUTANTS: a raise accepted with no decision, or with one decisions.md only

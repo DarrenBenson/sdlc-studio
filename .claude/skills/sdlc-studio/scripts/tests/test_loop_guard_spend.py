@@ -46,11 +46,18 @@ class LoopGuardSpendTests(unittest.TestCase):
 
     # -- fixture -------------------------------------------------------------------------
 
-    def _use(self, tokens: int) -> None:
-        """Append one message of `tokens` input tokens, which price at `tokens` (weight 1)."""
+    def _use(self, tokens: int, output: int = 0, cache_read: int = 0) -> None:
+        """Append one message of `tokens` input tokens, which price at `tokens` (weight 1), and
+        `output` and `cache_read` tokens, which price at 5 and 0.1 (`TOKEN_WEIGHTS`)."""
+        usage = {"input_tokens": tokens, "output_tokens": output,
+                 "cache_read_input_tokens": cache_read}
         with (self.tx / "s1.jsonl").open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps({"message": {"model": "m9",
-                                             "usage": {"input_tokens": tokens}}}) + "\n")
+            fh.write(json.dumps({"message": {"model": "m9", "usage": usage}}) + "\n")
+
+    def _files(self) -> dict:
+        """Every file under the fixture root but the meter's parse memo, with its bytes."""
+        memo = self.root / run_state.METER_MEMO_REL
+        return {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file() and p != memo}
 
     def _open(self, appetite: dict, opening: int | None = 1000) -> None:
         """Open the run, its open stamp read from the transcript when `opening` is a count."""
@@ -76,18 +83,23 @@ class LoopGuardSpendTests(unittest.TestCase):
 
     def test_spend_at_the_appetite_stops_the_run_and_marks_nothing(self) -> None:
         """AC1. MUTANTS: `>=` made `>` on the spend axis (exact spend continues); the spend
-        axis dropped from `reason`; the reading written to the run state; the stop's text
-        naming no spend."""
-        n = 4000
+        axis dropped from `reason`; the reading written to the run state, or any file but the
+        meter's parse memo; the stop's text naming no spend; spend read as raw tokens (2,000
+        here), not priced input-equivalent ones (D0637)."""
+        n = 7000
         self._open({"minutes": 0, "units": 0, "spend": n})
-        self._use(n - 1)
+        # 1,000 input + 1,000 output x 5 + 9,990 cache reads x 0.1 = 6,999 priced, 2,000 raw.
+        self._use(1000, output=1000, cache_read=9990)
         state_before = run_state.path(self.root).read_bytes()
         rc, v = self._verdict()
         self.assertEqual(0, rc, v)
         self.assertFalse(v["exhausted"])
         self.assertEqual("", v["reason"])
         self.assertEqual(n - 1, v["spend"])
-        self._use(1)
+        self.assertTrue((self.root / run_state.METER_MEMO_REL).is_file(),
+                        "the read keeps the meter's parse memo, as the pages say")
+        files_before = self._files()
+        self._use(0, cache_read=10)
         rc, v = self._verdict()
         self.assertEqual(loop_guard.BUDGET_EXIT, rc, v)
         self.assertEqual(4, rc)
@@ -103,9 +115,53 @@ class LoopGuardSpendTests(unittest.TestCase):
         self.assertIn("units already dispatched finish and no further unit starts", text)
         self.assertFalse([ln for ln in text.splitlines() if ln.startswith("WARNING")],
                          "a stop is not also a warning")
-        # Marks nothing: no unit's Status moves and the reading is held, never written.
+        # Marks nothing: no unit's Status moves, no stamp is written to the run state, and no
+        # file but the meter's parse memo changes.
         self.assertEqual(STORY, self.story.read_text(encoding="utf-8"))
         self.assertEqual(state_before, run_state.path(self.root).read_bytes())
+        self.assertEqual(files_before, self._files())
+
+    def test_a_spend_key_that_is_not_a_whole_number_is_unjudged_not_a_crash(self) -> None:
+        """MUTANTS: a bare `int()` of the key, so `5e6` stops the breaker with a traceback; the
+        reason dropped or naming no key; a negative read as a ceiling; `.inf` or a list let
+        through; a malformed key read with minutes and units no longer judged."""
+        self._open({"minutes": 1, "units": 0}, opening=None)
+        run_state.update(str(self.root), started_at="2026-01-01T00:00:00Z")
+        for text, spend, why in (
+                ("capacity:\n  spend: 5e6\n", 0, "config capacity.spend is '5e6'"),
+                ("capacity:\n  spend: .inf\n", 0, "config capacity.spend is inf"),
+                ("capacity:\n  spend: [1]\n", 0, "config capacity.spend is [1]"),
+                ("appetite:\n  spend: 5e6\ncapacity:\n  spend: 1000\n", 0,
+                 "config appetite.spend is '5e6'"),
+                ("capacity:\n  spend: -5\n", 0, None),
+                ("capacity:\n  spend: '7000'\n", 7000, None)):
+            with self.subTest(config=text):
+                self._config(text)
+                rc, v = self._verdict()
+                self.assertEqual((4, "minutes"), (rc, v["reason"]), v)
+                self.assertEqual(spend, v["appetite_spend"])
+                if why is None:
+                    self.assertNotIn("not a whole number", v["spend_unread"] or "")
+                    continue
+                self.assertIn(why, v["spend_unread"])
+                self.assertIn(f"not a whole number of {run_state.PRICED_LABEL}",
+                              v["spend_unread"])
+                rc, out = self._budget(fmt="text")
+                self.assertEqual(4, rc, out)
+                self.assertIn(f"spend: NOT JUDGED at this boundary - {v['spend_unread']}", out)
+        run_state.update(str(self.root), appetite={"minutes": 1, "units": 0, "spend": "x"})
+        rc, v = self._verdict()
+        self.assertEqual(4, rc, v)
+        self.assertIn("the run's appetite.spend is 'x'", v["spend_unread"])
+
+    def test_an_unreadable_key_on_an_otherwise_unbounded_run_is_still_named(self) -> None:
+        """MUTANT: the 'no appetite declared' line printed over the unread note."""
+        self._open({"minutes": 0, "units": 0}, opening=None)
+        self._config("capacity:\n  spend: 5e6\n")
+        rc, out = self._budget(fmt="text")
+        self.assertEqual(0, rc, out)
+        self.assertNotIn("no appetite declared", out)
+        self.assertIn("spend: NOT JUDGED at this boundary - config capacity.spend is '5e6'", out)
 
     def test_a_minutes_and_spend_stop_names_both_axes(self) -> None:
         """MUTANT: the spend axis judged only when minutes and units are not spent."""

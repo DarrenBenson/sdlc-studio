@@ -562,6 +562,9 @@ def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
         if flag is not None:
             return flag, f"--appetite-{axis}"
         legacy = config.get(repo_root, f"appetite.{axis}", 0) or 0
+        if axis == "spend":
+            # Read as `capacity()` reads `capacity.spend`: a value int cannot read is unset.
+            legacy = run_state.spend_value(legacy)
         if legacy:
             return legacy, f"config appetite.{axis}"
         return cap[axis], f"config capacity.{axis}"

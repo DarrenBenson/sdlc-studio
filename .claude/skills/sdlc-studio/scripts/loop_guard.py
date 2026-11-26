@@ -177,19 +177,35 @@ def _resolve_appetite(root: Path, args: argparse.Namespace) -> tuple[float, int]
     return float(minutes or 0), int(units or 0)
 
 
-def _resolve_spend_appetite(root: Path, args: argparse.Namespace) -> int:
+def _resolve_spend_appetite(root: Path, args: argparse.Namespace) -> tuple[int, str | None]:
     """The spend appetite in force, in priced input-equivalent tokens, most specific first:
     `--appetite-spend`, then the run's `appetite.spend`, then config `appetite.spend`, then
     config `capacity.spend`, then 0 (unbounded). The flag and the run's value are honoured
-    even at 0; a config key at 0 falls through to the next."""
+    even at 0; a config key at 0 falls through to the next.
+
+    Returns `(appetite, None)`, or `(0, why)` when the value that decides is one
+    `run_state.spend_value` cannot read: spend is then unjudged and says why, and minutes and
+    units still judge, rather than a malformed key stopping the breaker."""
     flag = getattr(args, "appetite_spend", None)
     if flag is not None:
-        return int(flag)
+        return int(flag), None
     declared = (run_state.read(root).get("appetite") or {}).get("spend")
     if declared is not None:
-        return int(declared)
-    return int(config.get(root, "appetite.spend", 0) or config.get(root, "capacity.spend", 0)
-               or 0)
+        return _spend_ceiling(declared, "the run's appetite.spend")
+    for key in ("appetite.spend", "capacity.spend"):
+        raw = config.get(root, key, 0)
+        if raw:
+            return _spend_ceiling(raw, f"config {key}")
+    return 0, None
+
+
+def _spend_ceiling(raw, where: str) -> tuple[int, str | None]:
+    """`raw` as a spend appetite, or 0 with the sentence naming `where` it could not be read."""
+    value = run_state.spend_value(raw)
+    if value is None:
+        return 0, (f"{where} is {raw!r}, not a whole number of {run_state.PRICED_LABEL} "
+                   f"(write a plain integer: YAML reads 5e6 as text)")
+    return value, None
 
 
 def _spend_text(v: dict) -> str:
@@ -273,9 +289,10 @@ def cmd_status(args: argparse.Namespace) -> int:
 def cmd_budget(args: argparse.Namespace) -> int:
     """Evaluate the run's appetite at a unit boundary; exit BUDGET_EXIT when it is spent.
 
-    Read-only: unlike `record`, a spent budget marks NOTHING - the units keep their true
-    status and the run stops cleanly. The loop calls this BETWEEN units, so the appetite is
-    honoured at a boundary and no unit is abandoned mid-implementation.
+    Marks nothing: unlike `record`, a spent budget writes no state - the units keep their true
+    status and the run stops cleanly; a spend read may refresh only the meter's parse memo
+    (`run_state.spend_now`). The loop calls this BETWEEN units, so the appetite is honoured at
+    a boundary and no unit is abandoned mid-implementation.
 
     Anchored on the same resolved root as the state file: read from the cwd, a run opened
     above this directory produced no run state at all, and an appetite the breaker never
@@ -287,12 +304,12 @@ def cmd_budget(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     minutes, units = _resolve_appetite(root, args)
-    spend_cap = _resolve_spend_appetite(root, args)
+    spend_cap, unreadable = _resolve_spend_appetite(root, args)
     elapsed = elapsed_minutes(state.get("started_at"))
     done = units_consumed(root, state.get("batch") or [])
     # The meter is read only for a declared spend appetite: a read costs a transcript parse.
     got = (run_state.spend_now(root, state) if spend_cap else
-           {"priced": None, "includes_subagents": None, "reason": None})
+           {"priced": None, "includes_subagents": None, "reason": unreadable})
     v = budget_verdict(minutes, units, elapsed, done, appetite_spend=spend_cap,
                        spend=got["priced"], spend_unread=got["reason"],
                        spend_includes_subagents=None if got["reason"] else
@@ -310,7 +327,7 @@ def cmd_budget(args: argparse.Namespace) -> int:
               f"left; units keep their true status")
         _spend_notes(v)
         return BUDGET_EXIT
-    if not minutes and not units and not spend_cap:
+    if not minutes and not units and not spend_cap and not unreadable:
         print(f"no appetite declared - run is unbounded ({v['elapsed_minutes']} min, "
               f"{done} unit(s) done)")
         return 0

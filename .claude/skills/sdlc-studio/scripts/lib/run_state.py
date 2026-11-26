@@ -1716,9 +1716,21 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     return stamp
 
 
+def spend_value(raw) -> int | None:
+    """A spend ceiling read as `capacity()` reads a capacity axis, `max(0, int(raw))`, or None
+    for a value `int` cannot read, such as `5e6`, which YAML reads as text."""
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def spend_now(repo_root: Path | str, state: dict,
               transcripts_dir: Path | str | None = None) -> dict:
-    """The run's priced spend so far, read as a first close reads it, and nothing written.
+    """The run's priced spend so far, read as a first close reads it, with no stamp written.
+
+    The run state is left as it was. Like any meter reading, the read may refresh the meter's
+    parse memo (`METER_MEMO_REL`); it writes nothing else.
 
     A reading of the session meter is taken now and held beside `state`'s stamps, with the
     re-derivations it owes (`_rederivations`), and `run_token_total` sums the per-session deltas,
@@ -2643,7 +2655,9 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
     lifted ceiling (0, unbounded) is a raise and a first ceiling on an unbounded run is not. A
     named decision is checked and recorded on any resize. A run that recorded no spend measures
     the raise against `spend_default`, the ceiling the breaker would read from config, and keeps
-    no spend unless one is set; one that did keeps it through a units or minutes resize.
+    no spend unless one is set; one that did keeps it through a units or minutes resize. A
+    recorded `standing_spend` is never moved, 0 (unbounded) included; a run that recorded none
+    takes the pre-resize spend as its standing one.
     """
     if units is None and minutes is None and spend is None:
         raise RunStateError("resize needs --units, --minutes or --spend - a resize that changes "
@@ -2678,7 +2692,10 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
                     f"a spend raise ({before['spend']:,} to {after:,}) needs --decision <id> "
                     f"naming a row sdlc-studio/decisions.md records")
             spent = {"accepted_spend": after,
-                     "standing_spend": int(ap.get("standing_spend") or before["spend"])}
+                     # 0 is a recorded standing (unbounded), so only a MISSING one is taken
+                     # from the pre-resize spend, unlike the units and minutes axes.
+                     "standing_spend": before["spend"] if ap.get("standing_spend") is None
+                     else int(ap["standing_spend"])}
         new = appetite_record(
             accepted_units=before["units"] if units is None else int(units),
             accepted_minutes=before["minutes"] if minutes is None else float(minutes),
