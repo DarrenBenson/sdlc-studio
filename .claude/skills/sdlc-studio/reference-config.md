@@ -24,8 +24,8 @@
 | Lessons Validity {#lessons-validity} | 256-274 |
 | Sprint Breakdown Gate {#breakdown} | 275-285 |
 | Two-Backlog Enforcement {#two-backlog} | 286-295 |
-| Sprint Capacity {#capacity} | 296-316 |
-| Run Appetite {#appetite} | 317-329 |
+| Sprint Capacity {#capacity} | 296-315 |
+| Run Appetite {#appetite} | 316-329 |
 | Cost Baseline {#cost-baseline} | 330-340 |
 | Sprint Report {#report} | 341-348 |
 | Model Prices {#pricing} | 349-378 |
@@ -302,15 +302,14 @@ How much ONE sprint may cost. The single source for both the plan-time "does thi
 | `capacity.tokens` | 500000 | Token-forecast ceiling for the batch; a warning only, never a gate |
 | `capacity.minutes` | 240 | Wall-clock ceiling for the run; feeds the appetite breaker |
 | `capacity.units` | 8 | Unit-count ceiling for the run; feeds the appetite breaker |
+| `capacity.spend` | 0 | Spend ceiling for the run, in priced input-equivalent tokens; feeds the appetite breaker |
 | `gate_budget.seconds`, `gate_budget.baseline_seconds`, `gate_budget.baseline_date` | unset | The gate's time cost as `sprint plan` prices it: `seconds` is the ceiling the plan states a breach of when the gate's cost is over it; `baseline_seconds` and `baseline_date` declare a measured run, used when no run is recorded. Unset, an unmeasured cost reads UNKNOWN, never zero |
 | `estimator.default`, `estimator.compulsory_after` | unset | Estimate attribution: `default` names the estimator a unit with no `Estimated-by` is credited to (unset: unattributed); `compulsory_after` maps an id prefix to the first id whose size the grooming gate demanded (unset: the era of an unstamped estimate is unknown) |
 | `estimate.tokens_per_point` | unset | Operator override for the measured tokens-per-point rate; the plan prices with it and the forecast basis names it an override beside the measured rate it replaced. Write a plain integer (`200000`, not `1e5`, which YAML reads as text). A value that is not a finite number rounding to 1 or more (text, a boolean, `.nan`, `.inf`, `0`, `0.4`) is ignored, and the basis names it |
 | `test_execution.per_commit`, `test_execution.at_close`, `test_execution.at_release` | `selected`, `full`, `full` | What the plan prices the gate as running at each moment: `full`, `selected` (only the suites whose surface changed) or `none`; any other value reads as the default. The plan reports a per-commit value the commit hook does not run |
 | `gate.budget_seconds` | `45` | The seconds the gate's own cost report judges a run's standard lanes against; a value that is not a positive number reads as `45` |
 
-`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: the token total IS transcript-measured, but only as a LOWER BOUND - delegated and sidechain spend is supplied rather than observed - and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock and unit axes are the real breaker. 0 on an axis = unbounded.
-
-**Provisional, and re-measured.** The tokens-per-point rate is derived from `sdlc-studio/retros/VELOCITY.md` - actual tokens over points delivered - and re-read every sprint, so it tracks the project rather than a constant. Until enough sprints have recorded points it falls back to a seed rate, and the plan says which it used. Nothing recalibrates the capacity ceilings automatically - a human reads the velocity trend and decides.
+`sprint plan` sizes the batch against these and flags an over-budget batch **at plan time** - while the operator can still cut it, instead of mid-run when the breaker halts the sprint. Over budget never refuses to plan: the token total IS transcript-measured, but only as a LOWER BOUND - delegated and sidechain spend is supplied rather than observed - and the forecast is `sum(Points) x a measured tokens-per-point rate`, so the plan quotes a plausible **range** rather than a bare number that reads as fact. The wall-clock, unit and spend axes are the breaker. 0 on an axis = unbounded. **Provisional, and re-measured.** The tokens-per-point rate is derived from `sdlc-studio/retros/VELOCITY.md` - actual tokens over points delivered - and re-read every sprint, so it tracks the project rather than a constant. Until enough sprints have recorded points it falls back to a seed rate, and the plan says which it used. Nothing recalibrates the capacity ceilings automatically - a human reads the velocity trend and decides.
 
 ---
 
@@ -322,8 +321,9 @@ The unattended-run circuit breaker: how much a run may spend before it stops cle
 | --- | --- | --- |
 | `appetite.minutes` | 0 | 0 = inherit `capacity.minutes` |
 | `appetite.units` | 0 | 0 = inherit `capacity.units` |
+| `appetite.spend` | 0 | 0 = inherit `capacity.spend` |
 
-The appetite is resolved **once**, at plan time, most specific first: `sprint plan --appetite-minutes N --appetite-units N`, then a non-zero key above, then the sprint capacity. `sprint plan --write` stamps the resolved pair on the run state, and that is what the breaker (`loop_guard budget`) reads back - so the ceiling the plan sized the batch against is the ceiling that stops the run. The breaker is evaluated at unit boundaries and stops the run cleanly when the appetite is spent - a distinct exit code from a per-unit quarantine, with units left in their true status. Both axes are deterministic (wall-clock from the run start, units from those now terminal); tokens are a forecast only, never a gate. The appetite is never auto-extended - a fresh run resets it. See `reference-sprint.md#appetite`.
+The appetite is resolved **once**, at plan time, most specific first: `sprint plan --appetite-minutes N --appetite-units N --appetite-spend N`, then a non-zero key above, then the sprint capacity. `sprint plan --write` stamps the resolved values on the run state, and that is what the breaker (`loop_guard budget`) reads back - so the ceiling the plan sized the batch against is the ceiling that stops the run; `loop_guard budget --appetite-spend N` overrides it for one evaluation. The breaker is evaluated at unit boundaries and stops the run cleanly when the appetite is spent - a distinct exit code from a per-unit quarantine, with units left in their true status. Minutes and units are deterministic (wall-clock from the run start, units from those now terminal). Spend is the run's priced input-equivalent tokens, read from the session meter at each boundary as a first close reads it, and nothing written; it warns at 75 and 95 per cent and stops at 100. The reading is a lower bound, so the breaker can fire late but never early. A meter that cannot read leaves spend unjudged at that boundary and says why, while minutes and units still judge. The appetite is never auto-extended - a fresh run resets it, and a mid-run spend raise (`sprint appetite resize --spend N`) needs `--decision` naming a row `decisions.md` records. See `reference-sprint.md#appetite`.
 
 ---
 

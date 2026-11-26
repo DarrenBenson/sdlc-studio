@@ -1716,6 +1716,37 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     return stamp
 
 
+def spend_now(repo_root: Path | str, state: dict,
+              transcripts_dir: Path | str | None = None) -> dict:
+    """The run's priced spend so far, read as a first close reads it, and nothing written.
+
+    A reading of the session meter is taken now and held beside `state`'s stamps, with the
+    re-derivations it owes (`_rederivations`), and `run_token_total` sums the per-session deltas,
+    so the figure is a LOWER BOUND, as every run total is. Returns `{"priced",
+    "includes_subagents", "reason"}`: `priced` in priced input-equivalent tokens, or None with
+    `reason` when the meter gives no reading (the meter's own reason, since `_stamp` drops it)
+    or the stamps and the reading form no priced total (the total's reason). Never raises."""
+    stamp = _stamp(repo_root, "budget", transcripts_dir)
+    if stamp is None:
+        try:
+            cap = session_tokens(repo_root, transcripts_dir)
+        except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
+            # By its type alone, as `token_meters` reports a reader's raise: the message may
+            # carry a request's credentials.
+            why = f"the meter raised {type(exc).__name__}, so no reading is taken"
+        else:
+            why = cap.get("reason") or "the meter returned no reading"
+        return {"priced": None, "includes_subagents": False, "reason": why}
+    probe = dict(state or {})
+    _append_stamp(probe, stamp, _rederivations(state, stamp))
+    total = run_token_total(probe)
+    if not isinstance(total.get("priced"), int):
+        return {"priced": None, "includes_subagents": False,
+                "reason": total.get("priced_reason") or total.get("reason")}
+    return {"priced": total["priced"], "includes_subagents": bool(total["includes_subagents"]),
+            "reason": None}
+
+
 def unmetered_warning(repo_root: Path | str, state: dict | None) -> str | None:
     """The plan's warning for a run that holds no session token stamp, or None when it holds one.
 
@@ -2550,21 +2581,37 @@ def add_to_batch(repo_root: Path | str, unit_id: str, reason: str = "") -> dict:
 
 
 def appetite_record(*, accepted_units: int, accepted_minutes: float,
-                    standing_units: int, standing_minutes: float) -> dict:
+                    standing_units: int, standing_minutes: float,
+                    accepted_spend: int | None = None, standing_spend: int | None = None) -> dict:
     """The run's appetite record: the ACCEPTED pair the breaker stops on, AND the STANDING one it
     was measured against (the sprint capacity), with the overage flagged when the accepted exceeds
     the standing on either axis. Pure - the plan folds this into its single atomic run-state write,
     and `record_appetite` writes it directly. Keeps `units`/`minutes` as the accepted pair the
-    existing appetite readers (loop_guard, handoff) already use, so this is additive."""
+    existing appetite readers (loop_guard, handoff) already use, so this is additive.
+
+    Given an `accepted_spend`, the record also holds the spend axis, in priced input-equivalent
+    tokens: `spend`, `standing_spend`, and `over_spend` (`_spend_over`), kept apart from
+    `over_appetite`, which the retro's overage note reads as units and minutes."""
     acc_u, acc_m = int(accepted_units or 0), float(accepted_minutes or 0)
     std_u, std_m = int(standing_units or 0), float(standing_minutes or 0)
-    return {
+    record = {
         "units": acc_u, "minutes": acc_m,
         "standing_units": std_u, "standing_minutes": std_m,
         # over on EITHER axis is an overage: a batch that fits the clock but not the unit
         # count was still accepted past its standing appetite, and the trace must say so.
         "over_appetite": acc_u > std_u or acc_m > std_m,
     }
+    if accepted_spend is not None:
+        acc_s, std_s = int(accepted_spend or 0), int(standing_spend or 0)
+        record.update({"spend": acc_s, "standing_spend": std_s,
+                       "over_spend": _spend_over(acc_s, std_s)})
+    return record
+
+
+def _spend_over(accepted: int, standing: int) -> bool:
+    """Is an accepted spend over its standing one, where 0 is unbounded on either side: nothing
+    is over an unbounded standing, and an unbounded accepted is over any bounded one."""
+    return bool(standing) and (not accepted or accepted > standing)
 
 
 def record_appetite(repo_root: Path | str, *, accepted_units: int, accepted_minutes: float,
@@ -2579,7 +2626,8 @@ def record_appetite(repo_root: Path | str, *, accepted_units: int, accepted_minu
 
 
 def resize_appetite(repo_root: Path | str, *, units: int | None = None,
-                    minutes: float | None = None, reason: str = "") -> dict:
+                    minutes: float | None = None, reason: str = "", spend: int | None = None,
+                    decision: str | None = None, recorded=None, spend_default: int = 0) -> dict:
     """Resize the ACCEPTED appetite on an open run, keeping the STANDING pair untouched.
 
     A run that turns out bigger than planned has two honest endings and one dishonest one. It can
@@ -2590,13 +2638,23 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
 
     A reason is compulsory. The number alone says a ceiling moved and not why, and the why is the
     whole content of the decision.
+
+    A spend raise also needs `decision`, an id `recorded` (a callable) finds in decisions.md; a
+    lifted ceiling (0, unbounded) is a raise and a first ceiling on an unbounded run is not. A
+    named decision is checked and recorded on any resize. A run that recorded no spend measures
+    the raise against `spend_default`, the ceiling the breaker would read from config, and keeps
+    no spend unless one is set; one that did keeps it through a units or minutes resize.
     """
-    if units is None and minutes is None:
-        raise RunStateError("resize needs --units or --minutes - a resize that changes neither "
-                            "number is not a decision")
+    if units is None and minutes is None and spend is None:
+        raise RunStateError("resize needs --units, --minutes or --spend - a resize that changes "
+                            "no number is not a decision")
     if not (reason or "").strip():
         raise RunStateError("resize needs --reason - a ceiling that moved with no stated why is "
                             "a number nobody can audit at the close")
+    decision = (decision or "").strip() or None
+    if decision and not (recorded and recorded(decision)):
+        raise RunStateError(f"--decision {decision} is not a decision decisions.md records - "
+                            f"name a row of sdlc-studio/decisions.md")
 
     def apply(state: dict) -> dict:
         if (state or {}).get("outcome") != RUNNING:
@@ -2610,15 +2668,27 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
         # than against zero, which would report every run as over.
         std_u = int(ap.get("standing_units") or before["units"])
         std_m = float(ap.get("standing_minutes") or before["minutes"])
+        held = ap.get("spend") is not None
+        spent = {}
+        if held or spend is not None:
+            before["spend"] = int(ap["spend"]) if held else int(spend_default or 0)
+            after = before["spend"] if spend is None else int(spend)
+            if spend is not None and _spend_over(after, before["spend"]) and not decision:
+                raise RunStateError(
+                    f"a spend raise ({before['spend']:,} to {after:,}) needs --decision <id> "
+                    f"naming a row sdlc-studio/decisions.md records")
+            spent = {"accepted_spend": after,
+                     "standing_spend": int(ap.get("standing_spend") or before["spend"])}
         new = appetite_record(
             accepted_units=before["units"] if units is None else int(units),
             accepted_minutes=before["minutes"] if minutes is None else float(minutes),
-            standing_units=std_u, standing_minutes=std_m)
+            standing_units=std_u, standing_minutes=std_m, **spent)
         state["appetite"] = new
-        state["appetite_changes"] = list(state.get("appetite_changes") or []) + [{
-            "action": "resize", "at": sdlc_md.now_iso8601(), "reason": reason.strip(),
-            "from": before, "to": {"units": new["units"], "minutes": new["minutes"]},
-        }]
+        entry = {"action": "resize", "at": sdlc_md.now_iso8601(), "reason": reason.strip(),
+                 "from": before, "to": {k: new[k] for k in before}}
+        if decision:
+            entry["decision"] = decision
+        state["appetite_changes"] = list(state.get("appetite_changes") or []) + [entry]
         return state
 
     return _mutate(repo_root, apply)
@@ -2638,6 +2708,15 @@ def appetite_overage(repo_root: Path | str) -> dict | None:
         "units": {"accepted": acc_u, "standing": std_u, "over": acc_u > std_u},
         "minutes": {"accepted": acc_m, "standing": std_m, "over": acc_m > std_m},
     }
+
+
+def spend_overage(repo_root: Path | str) -> dict | None:
+    """The recorded spend overage as `{accepted, standing}`, in priced input-equivalent tokens
+    (0 unbounded), or None when the run's appetite records no `over_spend`."""
+    ap = read(repo_root).get("appetite") or {}
+    if not ap.get("over_spend"):
+        return None
+    return {"accepted": int(ap.get("spend") or 0), "standing": int(ap.get("standing_spend") or 0)}
 
 
 #: Units a lane was BRIEFED on and has not returned from. A lane that dies mid-flight leaves

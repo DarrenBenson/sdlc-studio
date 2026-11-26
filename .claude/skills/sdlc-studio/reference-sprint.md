@@ -698,9 +698,9 @@ A per-unit quarantine bounds one unit; it does not bound the RUN. An unattended 
 it finishes, or it fails - with no way to say "spend this much and no more", which is the precondition for trusting it
 to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appetite is fixed, scope flexes).
 
-- **Declared at plan time:** `sprint plan --write --appetite-minutes N --appetite-units N` records the appetite on the
-  run state (either axis, or both; omit for an unbounded run). The project default lives in `appetite.*`
-  (`.config.yaml`); the flags override it.
+- **Declared at plan time:** `sprint plan --write --appetite-minutes N --appetite-units N --appetite-spend N` records the
+  appetite on the run state (any axis; 0 on one is unbounded). The project default lives in `appetite.*`, then
+  `capacity.*` (`.config.yaml`); the flags override it.
 - **Evaluated at unit BOUNDARIES:** between units the loop runs `loop_guard.py budget --root .`. It reads elapsed
   wall-clock from the run's `started_at` and the units spent from those now terminal - both deterministic and
   harness-independent, neither self-reported. When the appetite is spent it exits **4** (a distinct code); the loop
@@ -710,10 +710,10 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   hands over what remains.
 - **Never auto-extended:** a spent appetite is not topped up mid-run. Extending it is an explicit
   operator action - a fresh `sprint plan --write` opens a new run with a new appetite and clock.
-- **Tokens are a FORECAST, never a gate:** the total is transcript-measured but a LOWER BOUND, because delegated and sidechain spend is supplied rather than observed, so a token
-  ceiling would depend on the actor self-reporting the budget meant to constrain it. The
-  plan reports a token forecast, labelled an estimate; the close repeats it. It never
-  stops a run.
+- **Spend stops a run only when declared:** `--appetite-spend N`, then `appetite.spend`, then `capacity.spend` (both ship at 0,
+  unbounded) is a ceiling in priced input-equivalent tokens, read from the session meter as a first close reads it, nothing written.
+  It warns at 75 and 95 per cent and exits 4 at 100. The reading is a LOWER BOUND, since delegated and sidechain spend is supplied
+  rather than observed, so it fires late, never early; a meter that cannot read leaves spend unjudged at that boundary and says why, while minutes and units still judge. The token FORECAST stays a warning and never stops a run.
 - **One forecast: points times the calibrated rate.** `forecast = sum(Points) x
   tokens-per-point`, recorded per unit in the plan snapshot and as the run's `token_forecast`, at
   the rate the [cost axis](#schedule-and-cost) re-measures every plan, a seed until enough units

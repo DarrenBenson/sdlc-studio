@@ -7,7 +7,7 @@ deterministic mechanisms:
 - iteration cap        - N failed green attempts on a unit before it quarantines,
 - repetition-breaker   - the same failure signature R times quarantines early,
 - completion oracle    - the batch is done only when every unit is terminal,
-- appetite breaker     - a declared wall-clock / unit-count ceiling on the whole run.
+- appetite breaker     - a declared wall-clock / unit-count / spend ceiling on the whole run.
 
 Quarantine = mark the unit Blocked and continue (D2): never thrash, never silently
 drop. The pure functions take a state dict so they are trivially testable; the CLI
@@ -15,14 +15,18 @@ persists state to `sdlc-studio/.local/loop-state.json` (run-local, like
 `project-state.json`) and exits 3 on quarantine so a harness cannot miss it.
 
 The appetite breaker is a RUN-level ceiling, not a per-unit one: a declared appetite
-(wall-clock minutes and/or a unit count) evaluated at unit BOUNDARIES, so a unit is
-never abandoned mid-implementation. It reads elapsed from the run's `started_at` and
-spends against units already terminal - both deterministic and harness-independent,
+(wall-clock minutes, a unit count and a spend, each optional) evaluated at unit BOUNDARIES,
+so a unit is never abandoned mid-implementation. It reads elapsed from the run's `started_at`
+and spends against units already terminal - both deterministic and harness-independent,
 neither self-reported. Budget-exhausted is DISTINCT from quarantine: its own exit code
-(4), and it touches nothing - the units are left in their true status, not Blocked. A
-token number is never a gate here: the total is transcript-measured but a LOWER BOUND,
-# because delegated and sidechain spend is supplied rather than observed, so it stays a
-forecast reported by `sprint plan`, never read by this breaker. Pure stdlib.
+(4), and it touches nothing - the units are left in their true status, not Blocked.
+
+Spend is the run's priced input-equivalent tokens, read from the session meter as a first
+close reads it (`run_state.spend_now`), and only when a spend appetite is declared. The
+total is transcript-measured but a LOWER BOUND, because delegated and sidechain spend is
+supplied rather than observed, so the spend axis can fire late but never early. It warns at
+`SPEND_WARNINGS` per cent; a meter that cannot read leaves the axis unjudged at that boundary
+and says why, while minutes and units still judge. Pure stdlib.
 """
 from __future__ import annotations
 
@@ -44,6 +48,7 @@ TERMINAL = {"Done", "Blocked"}
 QUARANTINE_EXIT = 3
 BUDGET_EXIT = 4  # budget-exhausted: a CLEAN run stop, distinct from quarantine (3) - the
                  # harness must tell "spend is gone, units left as-is" from "this unit blocked".
+SPEND_WARNINGS = (95, 75)  # the per-cent shares of the spend appetite that warn, highest first
 
 
 def record_attempt(state: dict, unit: str, signature: str) -> dict:
@@ -80,15 +85,21 @@ def is_complete(statuses: list[str]) -> bool:
 
 
 def budget_verdict(appetite_minutes: float, appetite_units: int,
-                   elapsed_minutes: float, units_done: int) -> dict:
+                   elapsed_minutes: float, units_done: int, *, appetite_spend: int = 0,
+                   spend: int | None = None, spend_unread: str | None = None,
+                   spend_includes_subagents: bool | None = None) -> dict:
     """Whether the run's declared appetite is spent, evaluated at a unit boundary.
 
     A ceiling of 0 (or falsey) on an axis is UNBOUNDED - that axis never fires, which is
     today's behaviour when no appetite is declared. Otherwise the axis fires the moment its
     spend reaches the ceiling (`>=`, so an exact-boundary spend stops the run - the whole
-    point is not to start the unit that would overspend). Either axis alone is sufficient.
+    point is not to start the unit that would overspend). Any axis alone is sufficient.
 
-    Pure: elapsed and units are measured by the caller and passed in, so the rule is
+    The spend axis judges only a `spend` that was read: None, with `spend_unread` saying why,
+    fires nothing and warns nothing. `spend_warning` is the highest of `SPEND_WARNINGS` the
+    spend has reached, compared exactly in integers, or None.
+
+    Pure: elapsed, units and spend are measured by the caller and passed in, so the rule is
     trivially testable and the mutation check (drop the `>=` and a test reddens) is direct.
     """
     reasons: list[str] = []
@@ -96,9 +107,16 @@ def budget_verdict(appetite_minutes: float, appetite_units: int,
         reasons.append("minutes")
     if appetite_units and units_done >= appetite_units:
         reasons.append("units")
+    read = bool(appetite_spend) and isinstance(spend, int)
+    if read and spend >= appetite_spend:
+        reasons.append("spend")
+    warning = next((band for band in SPEND_WARNINGS
+                    if read and spend * 100 >= band * appetite_spend), None)
     return {"exhausted": bool(reasons), "reason": "+".join(reasons),
             "elapsed_minutes": round(elapsed_minutes, 2), "units_done": units_done,
-            "appetite_minutes": appetite_minutes, "appetite_units": appetite_units}
+            "appetite_minutes": appetite_minutes, "appetite_units": appetite_units,
+            "appetite_spend": appetite_spend, "spend": spend, "spend_warning": warning,
+            "spend_unread": spend_unread, "spend_includes_subagents": spend_includes_subagents}
 
 
 def elapsed_minutes(started_at: str | None, now: datetime | None = None) -> float:
@@ -157,6 +175,43 @@ def _resolve_appetite(root: Path, args: argparse.Namespace) -> tuple[float, int]
     minutes = pick(args.appetite_minutes, "minutes", "appetite.minutes")
     units = pick(args.appetite_units, "units", "appetite.units")
     return float(minutes or 0), int(units or 0)
+
+
+def _resolve_spend_appetite(root: Path, args: argparse.Namespace) -> int:
+    """The spend appetite in force, in priced input-equivalent tokens, most specific first:
+    `--appetite-spend`, then the run's `appetite.spend`, then config `appetite.spend`, then
+    config `capacity.spend`, then 0 (unbounded). The flag and the run's value are honoured
+    even at 0; a config key at 0 falls through to the next."""
+    flag = getattr(args, "appetite_spend", None)
+    if flag is not None:
+        return int(flag)
+    declared = (run_state.read(root).get("appetite") or {}).get("spend")
+    if declared is not None:
+        return int(declared)
+    return int(config.get(root, "appetite.spend", 0) or config.get(root, "capacity.spend", 0)
+               or 0)
+
+
+def _spend_text(v: dict) -> str:
+    """The spend half of a budget line, or "" when the spend axis judged nothing."""
+    if v["spend"] is None:
+        return ""
+    return f", spend {v['spend']:,}/{v['appetite_spend']:,} {run_state.PRICED_LABEL}"
+
+
+def _spend_notes(v: dict) -> None:
+    """The spend axis's own lines under a budget line: why it was not judged, the warning band
+    it has passed, and a reading that holds the main thread alone."""
+    if v["spend_unread"]:
+        print(f"spend: NOT JUDGED at this boundary - {v['spend_unread']}; minutes and units "
+              f"still judge")
+    if v["spend_warning"] and not v["exhausted"]:
+        print(f"WARNING: spend has passed {v['spend_warning']}% of its appetite: "
+              f"{v['spend']:,} of {v['appetite_spend']:,} {run_state.PRICED_LABEL} "
+              f"({v['spend'] * 100 // v['appetite_spend']}%)")
+    if v["spend_includes_subagents"] is False:
+        print("spend: the reading holds the main thread only (no subagent transcript was "
+              "read), so any delegated spend is not in it")
 
 
 def _root(args: argparse.Namespace) -> Path:
@@ -232,9 +287,16 @@ def cmd_budget(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     minutes, units = _resolve_appetite(root, args)
+    spend_cap = _resolve_spend_appetite(root, args)
     elapsed = elapsed_minutes(state.get("started_at"))
     done = units_consumed(root, state.get("batch") or [])
-    v = budget_verdict(minutes, units, elapsed, done)
+    # The meter is read only for a declared spend appetite: a read costs a transcript parse.
+    got = (run_state.spend_now(root, state) if spend_cap else
+           {"priced": None, "includes_subagents": None, "reason": None})
+    v = budget_verdict(minutes, units, elapsed, done, appetite_spend=spend_cap,
+                       spend=got["priced"], spend_unread=got["reason"],
+                       spend_includes_subagents=None if got["reason"] else
+                       got["includes_subagents"])
     v["run_id"] = state.get("run_id")
     if getattr(args, "format", "text") == "json":
         print(json.dumps(v, indent=2))
@@ -242,17 +304,20 @@ def cmd_budget(args: argparse.Namespace) -> int:
     if v["exhausted"]:
         print(f"appetite SPENT (reason={v['reason']}): {v['elapsed_minutes']} min elapsed"
               f"{f'/{minutes} budget' if minutes else ''}, {done} unit(s) done"
-              f"{f'/{units} budget' if units else ''} -> stop cleanly: close the run and sign "
-              f"its report (sprint.py close, then sprint.py sign), which hands over what is left; "
-              f"units keep their true status")
+              f"{f'/{units} budget' if units else ''}{_spend_text(v)} -> stop cleanly: the "
+              f"units already dispatched finish and no further unit starts; close the run and "
+              f"sign its report (sprint.py close, then sprint.py sign), which hands over what is "
+              f"left; units keep their true status")
+        _spend_notes(v)
         return BUDGET_EXIT
-    if not minutes and not units:
+    if not minutes and not units and not spend_cap:
         print(f"no appetite declared - run is unbounded ({v['elapsed_minutes']} min, "
               f"{done} unit(s) done)")
         return 0
     print(f"appetite OK: {v['elapsed_minutes']} min"
           f"{f'/{minutes}' if minutes else ''}, {done} unit(s) done"
-          f"{f'/{units}' if units else ''} - continue")
+          f"{f'/{units}' if units else ''}{_spend_text(v)} - continue")
+    _spend_notes(v)
     return 0
 
 
@@ -279,6 +344,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="wall-clock ceiling (minutes); overrides the declared/config appetite")
     b.add_argument("--appetite-units", type=int, default=None, dest="appetite_units",
                    help="unit-count ceiling; overrides the declared/config appetite")
+    b.add_argument("--appetite-spend", type=int, default=None, dest="appetite_spend",
+                   help="spend ceiling in priced input-equivalent tokens; overrides the "
+                        "declared/config appetite (0 = unbounded)")
     b.add_argument("--root", default=".", help="Repo root (default: .)")
     sdlc_md.add_format_arg(b)
     b.set_defaults(func=cmd_budget)

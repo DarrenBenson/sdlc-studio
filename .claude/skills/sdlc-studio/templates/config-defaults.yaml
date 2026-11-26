@@ -314,9 +314,9 @@ digests:
 # Sprint capacity - how much ONE sprint may cost. The single source for both the plan-time
 # "does this batch fit?" check (`sprint plan` flags an over-budget batch while the operator can
 # still cut it) and the run-time circuit breaker's appetite, so the two cannot disagree. The
-# token axis is a FORECAST and is only ever a WARNING - a script cannot observe token spend, and
-# the forecast model is a hypothesis fitted to one sprint. The wall-clock and unit axes are the
-# real breaker. 0 on an axis = unbounded.
+# token axis is a FORECAST and is only ever a WARNING - the forecast model is a hypothesis fitted
+# to one sprint. The wall-clock, unit and spend axes are the breaker; spend is the run's priced
+# input-equivalent tokens, as the meter reads them. 0 on an axis = unbounded.
 #
 # PROVISIONAL: round numbers over one measured sprint (6 units, 384,278 tokens actual). The
 # velocity history (`sdlc-studio/retros/VELOCITY.md`) accumulates a row per sprint; once it has
@@ -326,6 +326,7 @@ capacity:
   tokens: 500000  # token forecast ceiling for the batch; warning only, never a gate
   minutes: 240    # wall-clock ceiling for the run; feeds the appetite breaker
   units: 8        # unit-count ceiling for the run; feeds the appetite breaker
+  spend: 0        # spend ceiling for the run, priced input-equivalent tokens; 0 = unbounded
 
 # Tokens-per-point override. Unset, the plan re-measures the rate from VELOCITY.md; set, it
 # prices the plan, and the forecast basis names it an operator override beside the measured rate.
@@ -335,18 +336,22 @@ estimate:
 # Run appetite - the unattended-run circuit breaker (Shape Up's fixed timebox). A run declares
 # how much it may spend; the breaker (`loop_guard budget`) is evaluated at unit BOUNDARIES and
 # stops the run cleanly when the appetite is spent, distinct from a per-unit quarantine (its own
-# exit code, and units keep their true status rather than being marked Blocked). Both axes are
-# deterministic and harness-independent: wall-clock from the run's start time, units from those
-# now terminal. The appetite is RESOLVED ONCE, at plan time, most specific first: an explicit
-# `--appetite-minutes`/`--appetite-units` on `sprint plan`, then a non-zero key below, then the
-# sprint capacity above. `sprint plan --write` stamps the resolved pair on the run state, which
+# exit code, and units keep their true status rather than being marked Blocked). Minutes and
+# units are deterministic and harness-independent: wall-clock from the run's start time, units
+# from those now terminal. Spend is the session meter's priced total, a LOWER BOUND, so it can
+# stop a run late but never early; it warns at 75 and 95 per cent, and a meter that cannot read
+# leaves it unjudged at that boundary while minutes and units still judge. The appetite is
+# RESOLVED ONCE, at plan time, most specific first: an explicit `--appetite-minutes`/
+# `--appetite-units`/`--appetite-spend` on `sprint plan`, then a non-zero key below, then the
+# sprint capacity above. `sprint plan --write` stamps the resolved values on the run state, which
 # is what the breaker reads back - so the ceiling the plan sized the batch against IS the one
 # that stops the run. Leave these at 0 to inherit the capacity; set one to pin an axis
-# independently of it. Tokens are never a gate - the plan reports a token FORECAST only. The
-# appetite is never auto-extended: extending it is an explicit operator action on a new run.
+# independently of it. The appetite is never auto-extended: raising it mid-run is an explicit
+# `sprint appetite resize`, and a spend raise names a recorded decision.
 appetite:
   minutes: 0  # 0 = inherit capacity.minutes
   units: 0    # 0 = inherit capacity.units
+  spend: 0    # 0 = inherit capacity.spend
 
 # Sprint breakdown gate - a plan is REFUSED over an ungroomed batch. A unit that declares no
 # `Affects` cannot be sized (the token forecast falls back to a flat floor), and the planner

@@ -459,14 +459,29 @@ falls back to `warn`.
 ### Appetite: the circuit breaker
 
 The appetite is resolved once at plan time and stamped on the run. It is set by
-`--appetite-minutes` and `--appetite-units` on `plan`, and zero on an axis means unbounded.
+`--appetite-minutes`, `--appetite-units` and `--appetite-spend` on `plan`, and zero on an axis
+means unbounded. Spend is counted in priced input-equivalent tokens; a later edit to
+`.config.yaml` does not move the ceiling `loop_guard budget` reads from the run.
 
 The record keeps two pairs, not one. `units` and `minutes` are the ACCEPTED pair the breaker
 stops on. `standing_units` and `standing_minutes` are the sprint capacity it was measured
 against, and `over_appetite` flags when the accepted exceeds the standing on either axis. Both
 pairs are kept so that `appetite resize` raises the ceiling **on the record**: the standing pair
 does not move, so the close still reports the overage instead of a run that appears to have
-fitted its budget all along.
+fitted its budget all along. The spend axis is kept the same way, as `spend` and
+`standing_spend`, with its own `over_spend` flag.
+
+A spend raise needs a decision on the record as well as a reason:
+
+```bash
+python3 <skill>/scripts/sprint.py appetite resize --spend 1500000 --decision D0001 --reason "the epic grew"
+```
+
+`--decision` must name a row of `sdlc-studio/decisions.md`, or the resize is refused (exit 2)
+and the run state is left as it was. Setting 0, which lifts the ceiling, is a raise. A
+lowering, or a first ceiling on an unbounded run, needs only `--reason`. The change entry
+records the spend before and after and the decision; a units or minutes resize keeps the
+recorded spend.
 
 ### Rolling runs
 

@@ -101,6 +101,7 @@ re-runnable, so a refusal at the transition never loses the recorded verdict.
 | `--autonomous` | Sprint: run unattended, with the deterministic guardrails on. Not a `sprint.py` parser flag - the goal ladder owns the stop condition (`--goal`), and this is the slash-command form the skill reads. See `reference-sprint.md` | off |
 | `--appetite-minutes` | Sprint plan: wall-clock ceiling stamped on the run as the ACCEPTED appetite; `0` is unbounded. The standing capacity it is measured against does not move, so an `appetite resize` is reported as an overage rather than a run that fitted | capacity |
 | `--appetite-units` | Sprint plan: unit-count ceiling stamped on the run as the ACCEPTED appetite; `0` is unbounded | capacity |
+| `--appetite-spend` | Sprint plan and `loop_guard.py budget`: spend ceiling in priced input-equivalent tokens; `0` is unbounded. The plan stamps it on the run beside `standing_spend`; the breaker warns at 75 and 95 per cent and stops at 100, and raising it mid-run (`appetite resize --spend N`) needs `--decision` | capacity |
 | `--cycles` | Sprint: run N sprints back to back, regenerating the plan at each `boundary` against the backlog as it stands then - not a queue of plans made up front | 1 |
 | `--stop-on` | Sprint `--cycles`: end the sequence early on a named condition (`empty-backlog`) | none |
 | `--only` | Gate: run only these checks (comma-separated) | all |

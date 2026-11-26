@@ -516,7 +516,7 @@ def sample_class(retro_id: str | None, constants: dict | None,
 # sprint; once it has CALIBRATION_MIN_SPRINTS rows a human re-reads the trend and decides
 # whether the numbers have earned a change. NOTHING here re-fits anything automatically - a fit
 # to one or two sprints would fit noise.
-DEFAULT_CAPACITY = {"tokens": 500_000, "minutes": 240, "units": 8}
+DEFAULT_CAPACITY = {"tokens": 500_000, "minutes": 240, "units": 8, "spend": 0}
 
 # The honest error band on the token forecast, and it is WIDE on purpose.
 #
@@ -533,7 +533,7 @@ CALIBRATION_MIN_SPRINTS = 5
 
 
 def capacity(repo_root: Path | str) -> dict:
-    """The configured per-sprint capacity: tokens, wall-clock minutes, unit count.
+    """The configured per-sprint capacity: tokens, wall-clock minutes, unit count, spend.
 
     0 on an axis means that axis is unbounded (the pre-capacity behaviour). A malformed value
     degrades to the shipped default rather than crashing the planner."""
@@ -547,13 +547,14 @@ def capacity(repo_root: Path | str) -> dict:
 
 
 def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
-                     cli_units: int | None = None) -> dict:
+                     cli_units: int | None = None, cli_spend: int | None = None) -> dict:
     """The run appetite in force, resolved ONCE - at plan time, from the capacity budget.
 
     Per axis, most specific first: the CLI flag, then an explicitly configured `appetite.*`
     (non-zero; the pre-capacity key, still honoured), then the sprint capacity. The resolved
-    pair is what the plan checks the batch against AND what `sprint plan --write` stamps on the
-    run state for `loop_guard budget` to break on. One number, two consumers.
+    values are what the plan checks the batch against AND what `sprint plan --write` stamps on
+    the run state for `loop_guard budget` to break on. One number, two consumers. Spend is in
+    priced input-equivalent tokens, 0 unbounded.
     """
     cap = capacity(repo_root)
 
@@ -567,8 +568,9 @@ def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
 
     minutes, m_src = pick(cli_minutes, "minutes")
     units, u_src = pick(cli_units, "units")
-    return {"minutes": float(minutes or 0), "units": int(units or 0),
-            "minutes_source": m_src, "units_source": u_src}
+    spend, s_src = pick(cli_spend, "spend")
+    return {"minutes": float(minutes or 0), "units": int(units or 0), "spend": int(spend or 0),
+            "minutes_source": m_src, "units_source": u_src, "spend_source": s_src}
 
 
 def calibration(repo_root: Path | str) -> dict:
@@ -641,12 +643,10 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
                     appetite: dict) -> dict:
     """Does this batch fit the sprint's capacity? Answered AT PLAN TIME, as a WARNING.
 
-    Never a gate. The session total IS transcript-measured, but it is a LOWER BOUND -
-    delegated spend is supplied, not observed - so a token ceiling
-    would depend on the actor self-reporting the budget meant to constrain it; and the forecast
-    itself is mis-calibrated out-of-sample by ~30%. Refusing to plan on a number that soft would
-    be false authority. The real breaker is wall-clock/unit-count, and it fires on the SAME
-    appetite reported here.
+    Never a gate. The token half is a FORECAST, mis-calibrated out-of-sample by ~30%, and
+    refusing to plan on a number that soft would be false authority. The breaker is
+    wall-clock, unit-count and spend (the session meter's priced total, a LOWER BOUND since
+    delegated spend is supplied, not observed), and it fires on the SAME appetite reported here.
     """
     root = Path(repo_root)
     cap = capacity(root)
@@ -686,10 +686,10 @@ def capacity_report(repo_root: Path | str, batch: list[dict], forecast: dict | N
         "calibration": cal,
         "unit_wall_minutes_floor": _unit_wall_minutes(_velocity_rows(root)),
         "advisory": True,
-        "basis": "a WARNING, never a gate - the total is transcript-measured but a LOWER "
-                 "BOUND, since delegated spend is supplied rather than observed, and the "
-                 "forecast is a hypothesis. The run breaker is wall-clock/unit-count, on the "
-                 "same appetite reported here",
+        "basis": "the token forecast is a WARNING, never a gate - the forecast is a "
+                 "hypothesis. The run breaker is wall-clock, unit-count and spend, on the same "
+                 "appetite reported here; spend is the session meter's priced total, a LOWER "
+                 "BOUND, since delegated spend is supplied rather than observed",
     }
 
 
@@ -4204,7 +4204,7 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
                epics: set[str] | None = None, queries: list[tuple[str, str]] | None = None,
                worklist: str | None = None, appetite_minutes: float | None = None,
                appetite_units: int | None = None, goal: str = "done",
-               test_reach: bool = False) -> dict:
+               test_reach: bool = False, appetite_spend: int | None = None) -> dict:
     """The triage plan: the ordered batch, a count, and (for ordered modes) the dependency
     WAVES - the parallelisable levels operators otherwise hand-derive. The batch source is
     a single kind+status, composed `queries`, or a `worklist` file (ids one per line).
@@ -4237,7 +4237,7 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         # edges is parallel because no one declared a `Depends on:`, not because none exist.
         deps_declared = any(deps[k] & set(deps) for k in deps)
     forecast = _token_forecast(root, batch, goal=goal) if batch else None
-    appetite = resolve_appetite(root, appetite_minutes, appetite_units)
+    appetite = resolve_appetite(root, appetite_minutes, appetite_units, appetite_spend)
     return {
         "generated_at": sdlc_md.now_iso8601(),
         "kind": "+".join(k for k, _ in queries),
@@ -5628,16 +5628,18 @@ def _render_capacity(data: dict) -> None:
     enough = ("enough history to recalibrate - a human should re-read the trend"
               if cal["enough_history"]
               else f"not enough history to recalibrate (need {cal['recalibrate_after']})")
-    print(f"  capacity: the token half is a FORECAST, not a measurement - a script cannot "
-          f"observe token spend, and the model is points x a measured tokens-per-point rate, "
+    print(f"  capacity: the token half is a FORECAST, not a measurement - the model is "
+          f"points x a measured tokens-per-point rate, "
           f"honest to about +/-50%. Calibration: {history}; {enough}. Nothing is re-fitted "
           f"automatically.")
     floor = cap.get("unit_wall_minutes_floor")
     wall = (f", ~{floor} min/unit of worker time measured (a FLOOR on a "
             f"{cap['units']}-unit run, not a forecast of it)" if floor else "")
-    print(f"  capacity: the run BREAKER is wall-clock/unit-count - appetite "
+    spend = (f"spend {app['spend']:,} {run_state.PRICED_LABEL}" if app.get("spend")
+             else "spend unbounded")
+    print(f"  capacity: the run BREAKER is wall-clock/unit-count/spend - appetite "
           f"{app['minutes']:g} min ({app['minutes_source']}) / {app['units']} unit(s) "
-          f"({app['units_source']}){wall}")
+          f"({app['units_source']}) / {spend} ({app.get('spend_source')}){wall}")
 
 
 def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
@@ -9389,16 +9391,22 @@ def _file_and_close(root, args, state: dict, pre: dict) -> int:
 def appetite_overage_line(root: Path | str) -> str | None:
     """One line stating an accepted over-appetite as the over-commitment it was - N units against a
     standing appetite of M, on each axis actually raised - or None for an ordinary run. Read by the
-    close and the retro, so the overage cannot be reported as the raised ceiling."""
+    close and the retro, so the overage cannot be reported as the raised ceiling. A spend overage
+    (`run_state.spend_overage`) is named beside them."""
     over = run_state.appetite_overage(root)
-    if not over:
+    spend = run_state.spend_overage(root)
+    if not over and not spend:
         return None
     parts: list[str] = []
-    u, m = over["units"], over["minutes"]
-    if u["over"]:
+    u, m = (over or {}).get("units") or {}, (over or {}).get("minutes") or {}
+    if u.get("over"):
         parts.append(f"{u['accepted']} units against a standing appetite of {u['standing']}")
-    if m["over"]:
+    if m.get("over"):
         parts.append(f"{m['accepted']:g}min against a standing {m['standing']:g}min")
+    if spend:
+        accepted = (f"allowed spend {spend['accepted']:,} {run_state.PRICED_LABEL}"
+                    if spend["accepted"] else "allowed an unbounded spend")
+        parts.append(f"{accepted} against a standing {spend['standing']:,}")
     return "OVER APPETITE - this batch was " + "; ".join(parts) + " (the ceiling was raised to "\
            "accept it, and the run is reported against the standing appetite, not that ceiling)"
 
@@ -9455,7 +9463,10 @@ def cmd_appetite(args: argparse.Namespace) -> int:
         return 2
     try:
         state = run_state.resize_appetite(
-            root, units=args.units, minutes=args.minutes, reason=args.reason or "")
+            root, units=args.units, minutes=args.minutes, reason=args.reason or "",
+            spend=getattr(args, "spend", None), decision=getattr(args, "decision", None),
+            recorded=lambda did: _decision_recorded(root, did),
+            spend_default=resolve_appetite(root)["spend"])
     except run_state.RunStateError as exc:
         print(f"sprint appetite resize REFUSED: {exc}", file=sys.stderr)
         return 2
@@ -9464,8 +9475,10 @@ def cmd_appetite(args: argparse.Namespace) -> int:
         print(json.dumps({"appetite": ap,
                           "changes": state.get("appetite_changes") or []}, indent=2))
         return 0
+    spend = ("" if ap.get("spend") is None else
+             f", spend {ap['spend']:,} (standing {ap.get('standing_spend') or 0:,}; 0 is unbounded)")
     print(f"appetite resized to {ap.get('minutes'):g}min/{ap.get('units')}units "
-          f"(standing: {ap.get('standing_minutes'):g}min/{ap.get('standing_units')}units).")
+          f"(standing: {ap.get('standing_minutes'):g}min/{ap.get('standing_units')}units){spend}.")
     over = appetite_overage_line(root)
     if over:
         # The raise is reported AS an over-commitment straight away, not discovered at the
@@ -13078,6 +13091,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
                           queries=queries or None, worklist=worklist,
                           appetite_minutes=getattr(args, "appetite_minutes", None),
                           appetite_units=getattr(args, "appetite_units", None),
+                          appetite_spend=getattr(args, "appetite_spend", None),
                           test_reach=True)
     except ValueError as exc:  # dependency cycle / bad status / unknown worklist id
         print(f"cannot order the batch: {exc}", file=sys.stderr)
@@ -13241,7 +13255,8 @@ def cmd_plan(args: argparse.Namespace) -> int:
         std = capacity(args.root)
         appetite = run_state.appetite_record(
             accepted_units=resolved["units"], accepted_minutes=resolved["minutes"],
-            standing_units=std["units"], standing_minutes=std["minutes"])
+            standing_units=std["units"], standing_minutes=std["minutes"],
+            accepted_spend=resolved["spend"], standing_spend=std["spend"])
         # AN EXPLICIT RESIZE OUTRANKS A RE-RESOLUTION. `appetite resize` exists so a ceiling can
         # be moved ON THE RECORD, with a compulsory reason, rather than overrun silently. A
         # re-plan over an ALREADY OPEN run re-resolved from the standing capacity and wrote the
@@ -15019,6 +15034,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "(config capacity.units). Evaluated at unit boundaries so no unit is "
                         "abandoned mid-implementation, and flagged at PLAN time when the batch "
                         "does not fit")
+    p.add_argument("--appetite-spend", type=int, default=None, dest="appetite_spend",
+                   help="spend ceiling for the run, in priced input-equivalent tokens; overrides "
+                        "config appetite.spend, then capacity.spend (0 = unbounded). The "
+                        "breaker reads the session meter at unit boundaries, warns at 75 and 95 "
+                        "per cent and stops the run at 100")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift or local is behind origin")
     p.add_argument("--no-fetch", action="store_true", dest="no_fetch",
@@ -15357,6 +15377,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap_.add_argument("--units", type=int, default=None, help="the new accepted unit ceiling")
     ap_.add_argument("--minutes", type=float, default=None,
                      help="the new accepted wall-clock ceiling, in minutes")
+    ap_.add_argument("--spend", type=int, default=None,
+                     help="the new accepted spend ceiling, in priced input-equivalent tokens "
+                          "(0 = unbounded); a raise needs --decision")
+    ap_.add_argument("--decision", default=None,
+                     help="the decision id (a row of sdlc-studio/decisions.md) behind the "
+                          "resize; required for a spend raise, recorded on the change")
     ap_.add_argument("--reason", default=None, help="why the ceiling is moving - required")
     ap_.add_argument("--format", choices=("text", "json"), default="text")
     ap_.add_argument("--root", default=".", help="Repo root (default: .)")
