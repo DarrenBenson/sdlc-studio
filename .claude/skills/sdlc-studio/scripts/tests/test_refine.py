@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))   # sibling helpers (lo
 
 import loader  # noqa: E402 - the canonical way to import a script under test
 import workspace  # noqa: E402 - the dev-repo-only skip authority
+import gitutil  # noqa: E402 - the shared fixture git environment
 from lib import sdlc_md  # noqa: E402
 
 try:
@@ -1475,6 +1476,40 @@ class MintedStoryFieldsTests(unittest.TestCase):
                             "- **Given** a thing\n- **Verify:** shell true\n",
                             encoding="utf-8")
             self.assertEqual(refine.grooming_owed(root, res["stories"]), 1)
+
+
+class CrockfordSpawnTests(unittest.TestCase):
+    """A schema-3 request keeps every child `artifact.py new --parent` appends to its
+    Decomposed-into: the append reads the field back first, and the field holds each id as
+    `norm_id` writes it (`US01M8BJ3B`, no dash)."""
+
+    def _new(self, root: Path, *args: str) -> str:
+        proc = subprocess.run(  # noqa: S603 - the shipped script on a generated fixture
+            [sys.executable, str(_SCRIPTS / "artifact.py"), "new", *args, "--root", str(root)],
+            capture_output=True, text=True, check=False, cwd=root,
+            env=gitutil.git_env(HOME=str(root)))
+        out = proc.stdout + proc.stderr
+        self.assertEqual(proc.returncode, 0, out)
+        m = re.search(r"^created (\S+) ->", out, re.M)
+        self.assertIsNotNone(m, out)
+        return m.group(1)
+
+    def test_two_spawns_under_one_parent_keep_both_with_crockford_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "schema_version: 3\n", encoding="utf-8")
+            cr = self._new(root, "--type", "cr", "--title", "A request")
+            epic = self._new(root, "--type", "epic", "--title", "An epic")
+            stories = [self._new(root, "--type", "story", "--title", f"Story {n}", "--epic", epic,
+                                 "--parent", cr, "--affects", "a.py") for n in ("one", "two")]
+            self.assertTrue(all(sdlc_md.is_v3_id(i) for i in (cr, *stories)), (cr, stories))
+            text = sdlc_md.find_by_id(root, cr)[0].read_text(encoding="utf-8")
+            line = re.search(r"(?m)^> \*\*Decomposed-into:\*\* (.*)$", text)
+            self.assertIsNotNone(line, text)
+            self.assertEqual([x.strip() for x in line.group(1).split(",")],
+                             [sdlc_md.norm_id(s) for s in stories])
 
 
 if __name__ == "__main__":

@@ -1732,5 +1732,54 @@ class CreatorResolverAgreementTests(unittest.TestCase):
             self.assertIsNone(hit, "a DIRECTORY was resolved as an artefact")
 
 
+class CrockfordLinkIdTests(unittest.TestCase):
+    """The link readers read an id in every shape `norm_id` writes. `artifact.py new --parent`
+    writes both ends of a schema-3 link without the dash (`US01M8BJ3B`), and a reader that knew
+    only `US-01M8BJ3B` saw no child, so each spawn overwrote the request's earlier children."""
+
+    @staticmethod
+    def _dec(value: str) -> list[str]:
+        return sdlc_md.decomposed_ids(
+            f"# CR\n\n> **Status:** Open\n> **Decomposed-into:** {value}\n")
+
+    def test_decomposed_ids_reads_crockford_ids(self) -> None:
+        self.assertEqual(self._dec("US01M8BJ3B"), ["US01M8BJ3B"])
+        self.assertEqual(self._dec("EP01M8BJ86, US01M8BJ3B"), ["EP01M8BJ86", "US01M8BJ3B"])
+        self.assertEqual(self._dec("US0120, EP01M8BJ86, US0121, US-01M8BJ3C"),
+                         ["US0120", "EP01M8BJ86", "US0121", "US-01M8BJ3C"])
+        # a parenthetical is still an annotation, whichever era its ids are from
+        self.assertEqual(self._dec("EP01M8BJ86 (US01M8BJ3B, US0120), US01M8BJ3C"),
+                         ["EP01M8BJ86", "US01M8BJ3C"])
+        # one id in two spellings is one child, kept as first written
+        self.assertEqual(self._dec("US-01M8BJ3B, US01M8BJ3B"), ["US-01M8BJ3B"])
+        # an all-digit ULID suffix and a five-digit v2 id are each read whole
+        self.assertEqual(self._dec("US01234567, US01010"), ["US01234567", "US01010"])
+
+    def test_decomposed_ids_reads_no_word_as_a_crockford_id(self) -> None:
+        # Without the dash, only the suffix's first character (a ULID's timestamp opens on 0-7)
+        # separates an id from an uppercase word; and a lesson id is no pipeline child.
+        self.assertEqual(self._dec("CRXYZ12345, EPIC1234567, LL01M8BJ3B"), [])
+
+    def test_decomposed_ids_keeps_reading_a_lowercase_prefix(self) -> None:
+        # the prefix stays case-insensitive, as `ID_SEARCH_RE` reads it, beside a v3 id
+        self.assertEqual(self._dec("us0120, us01M8BJ3B"), ["us0120", "us01M8BJ3B"])
+
+    def test_decomposed_ids_reads_a_dashless_id_whose_suffix_opens_on_digits(self) -> None:
+        # the dashless v3 form is tried before the v2 digit run, so a suffix opening on four
+        # digits is read whole, not cut to a v2 id
+        self.assertEqual(self._dec("US0200M8BJ"), ["US0200M8BJ"])
+
+    def test_link_readers_read_normalised_crockford_ids(self) -> None:
+        text = ("# US\n\n> **Status:** Draft\n> **Parent:** CR01M8A98E\n> **Parent:** CR0007\n"
+                "> **Epic:** EP01M8BJ86\n> **Change Request:** CR01M8A9DZ\n"
+                "> **RFC:** RFC01M8A9E0\n")
+        self.assertEqual(sdlc_md.parent_refs(text), ["CR01M8A98E", "CR0007"])
+        self.assertEqual(sdlc_md.parent_ref(text), "CR01M8A98E")
+        self.assertEqual(sdlc_md.change_request_ref(text), "CR01M8A9DZ")
+        self.assertEqual(sdlc_md.rfc_ref(text), "RFC01M8A9E0")
+        no_parent = text.replace("> **Parent:** CR01M8A98E\n> **Parent:** CR0007\n", "")
+        self.assertEqual(sdlc_md.child_parent(no_parent), "EP01M8BJ86")
+
+
 if __name__ == "__main__":
     unittest.main()

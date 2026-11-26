@@ -1422,6 +1422,16 @@ CITED_ID_RE = re.compile(
     ID_SEARCH_RE.flags)
 _CITED_PREFIX_ALT = re.search(r"\(\?:([A-Z|]+)\)", CITED_ID_RE.pattern)
 
+#: An id as a link field holds it: `ID_SEARCH_RE` with the normalised v3 form spliced in beside
+#: the dashed one, the pipeline prefixes only. `artifact.py new --parent` writes both ends of a
+#: link through `norm_id` (`> **Parent:** CR01M8A98E`, `> **Decomposed-into:** US01M8BJ3B`), so
+#: a reader that knew only `US-01M8BJ3B` saw no id there, and each spawn's append overwrote the
+#: request's earlier children. The upward and downward readers share it, so the two ends of one
+#: link are never read with two grammars.
+LINK_ID_SEARCH_RE = re.compile(
+    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + "|" + _V3_NORM_SUFFIX, 1),
+    ID_SEARCH_RE.flags)
+
 
 @functools.lru_cache(maxsize=None)
 def cited_id_re(prefixes: tuple[str, ...]) -> re.Pattern:
@@ -3100,7 +3110,7 @@ def _field_id(source, pattern) -> str | None:
     m = pattern.search(text)
     if not m:
         return None
-    mid = ID_SEARCH_RE.search(m.group(1))
+    mid = LINK_ID_SEARCH_RE.search(m.group(1))
     return mid.group(0) if mid else None
 
 
@@ -3135,7 +3145,7 @@ def parent_refs(source) -> list[str]:
         val = m.group(1).strip()
         if val in ("", "-", "--"):
             continue
-        mm = ID_SEARCH_RE.search(val)
+        mm = LINK_ID_SEARCH_RE.search(val)
         if mm and mm.group(0) not in out:
             out.append(mm.group(0))
     return out
@@ -3159,7 +3169,7 @@ def child_parent(source) -> str | None:
         return par
     epic = story_epic(text)
     if epic:
-        m = ID_SEARCH_RE.search(epic)
+        m = LINK_ID_SEARCH_RE.search(epic)
         return m.group(0) if m else None
     return change_request_ref(text) or rfc_ref(text)
 
@@ -3283,14 +3293,18 @@ def decomposed_ids(text: str) -> list[str]:
     request), never the request's. So parenthetical runs are stripped before ids are read; without
     that, the down-link back-check would demand a grandchild name the request as its Parent and
     falsely report `link-asymmetry` on a correctly-linked chain. The downward link reconcile
-    verifies against each direct child's upward `Parent:`."""
+    verifies against each direct child's upward `Parent:`.
+
+    An id is read in each of its spellings (`LINK_ID_SEARCH_RE`): v2 `US0120`, v3 `US-01M8BJ3B`,
+    and the dashless `US01M8BJ3B` that `norm_id` leaves and the append path writes. One id in two
+    spellings is one child, kept as first written."""
     raw = extract_field(text, DECOMPOSED_FIELD)
     if not raw:
         return []
     raw = _PAREN_RUN_RE.sub(" ", raw)
     out: list[str] = []
     seen: set[str] = set()
-    for m in ID_SEARCH_RE.finditer(raw):
+    for m in LINK_ID_SEARCH_RE.finditer(raw):
         key = norm_id(m.group(0))
         if key not in seen:
             seen.add(key)

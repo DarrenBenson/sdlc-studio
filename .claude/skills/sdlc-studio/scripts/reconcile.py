@@ -1326,7 +1326,7 @@ def _epic_story_point_totals(repo_root: Path | str) -> dict[str, int]:
         pts = sdlc_md.read_points(text)
         if pts is None:
             continue
-        m = sdlc_md.ID_SEARCH_RE.search(epic_ref)
+        m = sdlc_md.LINK_ID_SEARCH_RE.search(epic_ref)
         if not m:
             continue
         key = _norm_id(m.group(0))
@@ -2260,7 +2260,7 @@ def unit_corpus(repo_root: Path | str) -> list[dict]:
                                               for f in ("Delivers", "Epic", "Supersedes")) if v)
                 linked = {_norm_id(x) for x in
                           (*sdlc_md.parent_refs(text), *sdlc_md.decomposed_ids(text),
-                           *sdlc_md.ID_SEARCH_RE.findall(wiring))}
+                           *sdlc_md.LINK_ID_SEARCH_RE.findall(wiring))}
                 title = sdlc_md.extract_h1_title(text) or ""
                 units.append({
                     "id": rid, "type": type_, "status": status,

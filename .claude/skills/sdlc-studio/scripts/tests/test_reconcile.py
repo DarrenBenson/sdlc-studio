@@ -5866,5 +5866,60 @@ class ArchivedRowApplyTests(unittest.TestCase):
                              aligned.replace("| Fixed    |", "| Closed   |"))
 
 
+class DashlessSchema3LinkTests(unittest.TestCase):
+    """A schema-3 link as `artifact.py new --parent` writes it carries no dash (`> **Parent:**
+    CR01M8BRZ7`, `> **Decomposed-into:** US01M8BRH2`). Reconcile reads it as it reads a dashed
+    one: correct links report no drift, a lost child is `link-asymmetry`, and a dashless `Epic:`
+    still rolls points up and counts as wiring."""
+
+    CR = "CR-01M8BRZ7"
+    EPIC = "EP-01M8BRDV"
+    STORIES = ("US-01M8BRH2", "US-01M8BRDN")
+
+    def _project(self, root: Path, listed: list[str]) -> None:
+        ss = root / "sdlc-studio"
+        for sub in ("change-requests", "stories", "epics"):
+            (ss / sub).mkdir(parents=True)
+        (ss / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+        (ss / "change-requests" / f"{self.CR}-a-request.md").write_text(
+            f"# {self.CR}: A request\n\n> **Status:** inbox\n"
+            f"> **Decomposed-into:** {', '.join(listed)}\n", encoding="utf-8")
+        (ss / "epics" / f"{self.EPIC}-an-epic.md").write_text(
+            f"# {self.EPIC}: An epic\n\n> **Status:** Draft\n", encoding="utf-8")
+        for n, sid in enumerate(self.STORIES):
+            (ss / "stories" / f"{sid}-story-{n}.md").write_text(
+                f"# {sid}: Story {n}\n\n> **Status:** Draft\n> **Parent:** {_norm(self.CR)}\n"
+                f"> **Epic:** {_norm(self.EPIC)}\n> **Points:** 3\n", encoding="utf-8")
+
+    def _links(self, listed: list[str]) -> list[str]:
+        with tempfile.TemporaryDirectory() as d:
+            self._project(Path(d), listed)
+            return [_norm(x["id"]) for x in reconcile.link_asymmetry_drift(d)
+                    if x["kind"] == "link-asymmetry"]
+
+    def test_dashless_schema3_links_report_no_link_drift(self) -> None:
+        self.assertEqual(self._links([_norm(s) for s in self.STORIES]), [])
+
+    def test_a_lost_dashless_child_reports_link_asymmetry(self) -> None:
+        # the first spawn's child lost from the request's list, as the old append left it
+        self.assertEqual(self._links([_norm(self.STORIES[1])]), [_norm(self.STORIES[0])])
+
+    def test_a_dashless_epic_rolls_story_points_up(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._project(Path(d), [_norm(s) for s in self.STORIES])
+            self.assertEqual(reconcile._epic_story_point_totals(d), {_norm(self.EPIC): 6})
+
+    def test_a_dashless_epic_counts_as_a_units_wiring(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            self._project(Path(d), [_norm(s) for s in self.STORIES])
+            linked = {u["id"]: u["linked"] for u in reconcile.unit_corpus(d)}
+            story = next(v for k, v in linked.items() if _norm(k) == _norm(self.STORIES[0]))
+            self.assertIn(_norm(self.EPIC), story)
+
+
+def _norm(rec_id: str) -> str:
+    return sdlc_md.norm_id(rec_id)
+
+
 if __name__ == "__main__":
     unittest.main()
