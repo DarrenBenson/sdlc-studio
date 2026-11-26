@@ -54,6 +54,9 @@ PRODUCER_FIELDS = ("command", "file_path", "notebook_path", "path", "pattern", "
                    "description")
 PRODUCER_WIDTH = 100
 _PLAIN = re.compile(r"[A-Za-z0-9_-]+")
+#: a trailing `(<role>)` or `(<role> seat)` group after a space: the group `critic.recorded_seat`
+#: reads, here only at the end
+_SEAT_SUFFIX = re.compile(r"\s+\(\s*([a-z][a-z0-9-]*)(?:\s+seat)?\s*\)\Z", re.I)
 _WRITES = ("cache_write_5m", "cache_write_1h")
 START_BUDGET_KEY = "cost.agent_start_budget"
 #: The orchestrator's average context a call above which the anatomy flags the run:
@@ -73,9 +76,18 @@ class AnatomyError(Exception):
 
 
 def agent_key(name) -> str | None:
-    """The agent id `name` carries, with or without its `agent-` prefix; None when it is not a
-    plain id (letters, digits, `_` and `-`), as `build lane` or a seat name is not."""
+    """The agent id `name` carries, with or without its `agent-` prefix and before a trailing
+    `(<seat>)` or `(<seat> seat)` group after a space naming a shipped seat, the form `sprint lane
+    accept` records a reviewer in (`agent-<id> (qa)`); None when what is left is not a plain id
+    (letters, digits, `_` and `-`), as `build lane` or `self-review (lock-in)` is not, or is a
+    shipped seat name alone (`qa`)."""
+    import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
     s = str(name or "").strip()
+    m = _SEAT_SUFFIX.search(s)
+    if m and m.group(1).lower() in persona_resolve.SEATS:
+        s = s[:m.start()]
+    if s.lower() in persona_resolve.SEATS:
+        return None
     s = s[len("agent-"):] if s.startswith("agent-") else s
     return s if _PLAIN.fullmatch(s) else None
 

@@ -264,6 +264,41 @@ class CostAnatomyTests(meter._Case):
         self.assertEqual(meter._priced(meter._sum(meter.AGENT_A, STRAY_Q0)),
                          got["other"]["priced"])
 
+    def test_agent_key_reads_the_id_before_a_seat_suffix(self) -> None:
+        """BG1764 AC1. MUTANTS: the seat suffix not stripped (every seat-suffixed form reads
+        None); a suffix stripped with no space before it, or one that is not trailing, or one
+        holding more than a role and `seat`, or one naming no shipped seat (`(lock-in)`); a seat
+        name alone read as an id, in any case, or judged only before the suffix is stripped. Each
+        moves a value asserted."""
+        key = meter._live("lib.cost_anatomy").agent_key
+        aid = "a99db4ff5609aac1b"
+        for name in (aid, f"agent-{aid}", f"agent-{aid} (qa)", f"{aid} (engineering)",
+                     f"agent-{aid} (product)", f"  agent-{aid}  (QA)  ", f"agent-{aid} (qa seat)",
+                     f"agent-{aid} ( qa )"):
+            self.assertEqual(aid, key(name), name)
+        for name in ("qa", "engineering", "product", "QA", " qa ", "(qa)", "qa (qa)",
+                     "build lane", "Sam Eriksson (qa)", f"agent-{aid}(qa)",
+                     f"agent-{aid} (qa) r2", f"agent-{aid} (qa seat, delivery)",
+                     f"agent-{aid} (qa) (qa)", "agent- (qa)", f"agent-{aid} (lock-in)",
+                     "self-review (lock-in)", "sdlc-studio (agent)", "", None):
+            self.assertIsNone(key(name), name)
+
+    def test_a_reviewer_recorded_with_its_seat_is_a_reviewer(self) -> None:
+        """BG1764 AC1. MUTANTS: the seat suffix not stripped, so q0, recorded as `agent-q0 (qa)`,
+        stays under other and the reviewer row counts two agents. Each moves the roles or the
+        rows asserted."""
+        ws = self._session()
+        critic = meter._live("critic")
+        critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (qa)",
+                              author="agent-zz")
+        anatomy = meter._live("lib.cost_anatomy")
+        roles = anatomy.agent_roles(ws.state(), critic.read_verdicts(ws.root))
+        self.assertEqual("reviewer", roles.get("q0"), roles)
+        got = {row["role"]: row for row in self._json(ws)["roles"]}
+        self.assertEqual(["agent-q0", "agent-q3", "agent-q4"], got["reviewer"]["agent_ids"])
+        self.assertEqual(3, got["reviewer"]["agents"])
+        self.assertEqual(["agent-a1"], got["other"]["agent_ids"])
+
     def test_no_per_call_context_is_not_available(self) -> None:
         """AC4. MUTANTS: a missing context printed as 0, in the text or the JSON; a reading with
         no per-call records given a call count; a role with no calls given a context of 0. Each
