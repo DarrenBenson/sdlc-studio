@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1765.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1765.md, sdlc-studio/.config.yaml, tools/tests/test_lean_carry_severity_bar.py
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -32,3 +32,4 @@ File the carry at the severity of the most severe blocking finding the carried v
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Filed |
+| 2026-11-26 | orchestrator | Affects adds sdlc-studio/.config.yaml and `tools/tests/test_lean_carry_severity_bar.py`: the repair sets `review.blocking_priority` to medium here and pins it in step with the release bar (D0642) |
