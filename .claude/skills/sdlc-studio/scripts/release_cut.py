@@ -9,7 +9,9 @@ Its verbs:
   header, leaving `[Unreleased]` empty. This is the deterministic cut US0348 requires - the notes
   come from the per-unit fragments, never a hand-written section. A version that already has a
   section, or a changelog with no `[Unreleased]`, is refused before anything is composed, so a
-  refused cut leaves CHANGELOG.md and every fragment as they were. It then prints one `persona
+  refused cut leaves CHANGELOG.md and every fragment as they were. The cut also appends the
+  release's record to `sdlc-studio/reports/releases.jsonl` (see `RELEASES_REL`) and prints it; a
+  re-run for a version already recorded keeps that record as it is. It then prints one `persona
   review owed:` line per persona or seat card `persona_review.owed` names, on stdout and never
   in CHANGELOG.md: an owed review is reported, never a refusal.
 
@@ -49,6 +51,93 @@ def _green_path(root: Path) -> Path:
     return Path(root) / "sdlc-studio" / ".local" / GREEN_MARKER
 
 
+#: The committed record of every release the cut made, one JSON object per line, oldest first:
+#: `{"version", "date", "previous", "reports"}`, the version as given, the date of the cut, the
+#: release before it (a tag in its own spelling, or the newest earlier record's version, or null)
+#: and the ids of the signed reports it shipped. Kept beside the evidence packs and committed, so
+#: the releases a change failure rate divides by are read from the tree.
+RELEASES_REL = "sdlc-studio/reports/releases.jsonl"
+
+
+def _release_records(root: Path) -> tuple[str, list[dict]]:
+    """The record file's text and its records, oldest first ("" and [] when there is no file).
+    A blank line is skipped. Raises ValueError naming the first other line that is not a JSON
+    object with a string `version` and a `reports` list of strings, so the cut refuses before it
+    writes anything."""
+    path = root / RELEASES_REL
+    if not path.is_file():
+        return "", []
+    text = path.read_text(encoding="utf-8")
+    records = []
+    for n, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            rec = None
+        if not (isinstance(rec, dict) and isinstance(rec.get("version"), str)
+                and isinstance(rec.get("reports"), list)
+                and all(isinstance(rid, str) for rid in rec["reports"])):
+            raise ValueError(f"{RELEASES_REL} line {n} is not a release record: {line[:80]}")
+        records.append(rec)
+    return text, records
+
+
+def _previous_tag(root: Path) -> str | None:
+    """The nearest tag reachable from HEAD, as `git describe --tags` names it, or None when git
+    names none: git missing, no repository, no commit or no tag."""
+    try:
+        proc = subprocess.run(["git", "describe", "--tags", "--abbrev=0", "HEAD"],
+                              capture_output=True, text=True, cwd=str(root), timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+def _shipped_reports(root: Path, records: list[dict], tag: str | None) -> list[str]:
+    """The ids of the signed reports this release shipped, oldest signature first: those no
+    earlier record names. For the first record, those not already signed as committed at the
+    previous tag's commit, or every signed report when there is no tag. So once a record exists,
+    a report signed between a cut and its tag is named by the next release's record. A report
+    file that cannot be read, or a tag git cannot read, raises ValueError."""
+    import sprint_report  # noqa: PLC0415 - lazy: the reader the evidence page uses
+    try:
+        signed = [rep.get("report_id") for rep in sprint_report._signed_reports(root)]
+        if records:
+            named = {rid for rec in records for rid in rec["reports"]}
+        elif tag:
+            sha = _git_bytes(root, ["rev-parse", "--verify", "-q", f"refs/tags/{tag}^{{commit}}"],
+                             f"the tag {tag}").decode("utf-8", "replace").strip()
+            named = {rep.get("report_id") for rep in _signed_reports_at(root, sha)}
+        else:
+            named = set()
+    except (sprint_report.ReportError, UnreadableRecord) as exc:
+        raise ValueError(str(exc)) from exc
+    return [rid for rid in signed if rid not in named]
+
+
+def _release_record_text(root: Path, version: str, date: str) -> str | None:
+    """The record file with `version`'s record appended, every earlier line left as it is, or
+    None when a record already names `version`: a re-run after an interrupted cut keeps the
+    first record byte for byte."""
+    text, records = _release_records(root)
+    if any(rec["version"] == version for rec in records):
+        return None
+    tag = _previous_tag(root)
+    previous = tag or (records[-1]["version"] if records else None)
+    line = json.dumps({"version": version, "date": date, "previous": previous,
+                       "reports": _shipped_reports(root, records, tag)})
+    sep = "\n" if text and not text.endswith("\n") else ""
+    return f"{text}{sep}{line}\n"
+
+
+def release_record(root: Path | str, version: str) -> dict | None:
+    """The record of `version` in the record file, or None."""
+    return next((rec for rec in _release_records(Path(root))[1] if rec["version"] == version),
+                None)
+
+
 def cut_changelog(root: Path | str, version: str) -> str:
     """Compose the pending fragments into `[Unreleased]`, then move its body under a
     `## [version] - <date>` header, leaving `[Unreleased]` empty. Returns the new header line.
@@ -57,7 +146,9 @@ def cut_changelog(root: Path | str, version: str) -> str:
     cut of the same version would silently duplicate it) or when there is no `[Unreleased]`. Both
     are asked of CHANGELOG.md BEFORE the fragments are composed, because composing rewrites
     `[Unreleased]` and deletes every fragment: a refusal that says nothing was cut must leave
-    nothing changed."""
+    nothing changed. The release record (`RELEASES_REL`) is planned after those checks and
+    before the compose, so a malformed record file refuses with nothing changed too, and it is
+    written before CHANGELOG.md: a cut stopped between the two re-runs to the same record."""
     root = Path(root)
     clog = root / "CHANGELOG.md"
     header = f"## [{version}]"
@@ -66,15 +157,18 @@ def cut_changelog(root: Path | str, version: str) -> str:
         raise ValueError(f"CHANGELOG.md already carries a {header} section - nothing cut")
     if "## [Unreleased]" not in before:
         raise ValueError("CHANGELOG.md has no '## [Unreleased]' section to cut from")
+    date = sdlc_md.now_date()
+    record = _release_record_text(root, version, date)
     changelog.compose(root, apply=True)          # the release-time fold + consume of the fragments
     text = clog.read_text(encoding="utf-8")
     head, rest = text.split("## [Unreleased]", 1)
     nxt = re.search(r"\n## \[", rest)
     body, tail = (rest[:nxt.start()], rest[nxt.start():]) if nxt else (rest, "")
-    date = sdlc_md.now_date()
     new_header = f"## [{version}] - {date}"
     # [Unreleased] is emptied (header only); the accumulated body becomes the versioned section
     out = f"{head}## [Unreleased]\n\n{new_header}{body}{tail}"
+    if record is not None:
+        sdlc_md.atomic_write(root / RELEASES_REL, record)
     sdlc_md.atomic_write(clog, out)
     return new_header
 
@@ -526,6 +620,7 @@ def _cmd_cut(args: argparse.Namespace) -> int:
         print(f"changelog-cut refused: {exc}", file=sys.stderr)
         return 2
     print(f"cut {header} from the fragments; [Unreleased] emptied")
+    print(f"recorded in {RELEASES_REL}: {json.dumps(release_record(args.root, args.version))}")
     import persona_review  # noqa: PLC0415 - sibling; the one reader of owed reviews
     for owed in persona_review.owed(args.root):
         print(owed["line"])
