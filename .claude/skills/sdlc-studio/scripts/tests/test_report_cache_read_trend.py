@@ -37,10 +37,11 @@ ROW_KEYS = ("trend_role", "trend_share", "trend_mean", "trend_change", "trend_ru
             "trend_pages")
 
 #: The earlier pages, in signing order: (id, signed at, run, builder, repair, shape). The 70.0%
-#: page is signed first, so the five newest builder figures leave it out; a page the Cost by
-#: role table did not measure, a page with no such table and the run's own earlier page sit
-#: among them and are passed over.
-PAGES = (("RPT0001", "2026-09-01T10:00:00Z", OTHER_RUN, "70.0%", None, "rows"),
+#: page is signed first, so the five newest builder figures leave it out, though it carries the
+#: highest report id: newest means newest signature, never highest id. A page the Cost by role
+#: table did not measure, a page with no such table and the run's own earlier page sit among
+#: them and are passed over.
+PAGES = (("RPT0012", "2026-09-01T10:00:00Z", OTHER_RUN, "70.0%", None, "rows"),
          ("RPT0002", "2026-09-02T10:00:00Z", OTHER_RUN, "63.2%", None, "rows"),
          ("RPT0003", "2026-09-03T10:00:00Z", OTHER_RUN, None, None, "not measured"),
          ("RPT0004", "2026-09-04T10:00:00Z", OTHER_RUN, "64.9%", "58.0%", "rows"),
@@ -120,9 +121,11 @@ class CacheReadTrendTests(unittest.TestCase):
         earlier_pages(self.root)
 
     def test_each_role_share_stands_beside_its_five_run_mean(self) -> None:
-        """AC1. MUTANTS: the oldest five figures for the newest; five pages taken before their
-        figures are filtered; the run's own earlier page averaged; the change from the raw
-        mean; the section placed anywhere but after Cost by role."""
+        """AC1. MUTANTS: the oldest five figures for the newest; the pages ordered by report
+        id rather than by signing time; five pages taken before their figures are filtered; the
+        run's own earlier page averaged; the change from the raw mean; the share sourced
+        anywhere but the Cost by role cell it is read from; the basis sentence dropped from
+        either twin; the section placed anywhere but after Cost by role."""
         page = sr.build_report(self.root, tsr.FIX_RETRO, as_of=AS_OF)
         keys = [s["key"] for s in page["sections"]]
         self.assertEqual(keys.index("cost_roles") + 1, keys.index("cache_read_trend"))
@@ -139,6 +142,12 @@ class CacheReadTrendTests(unittest.TestCase):
         self.assertEqual(", ".join(f"sdlc-studio/reports/RPT{n:04d}.json" for n in (2, 4, 5, 7, 9)),
                          row["trend_mean"]["source"])
         self.assertEqual(tsr.FIX_RUN, page["run_id"])
+        # The share's source is the Cost by role cell it is read from, this run's own record,
+        # never the earlier pages the mean is taken over.
+        roles = next(s for s in page["sections"] if s["key"] == "cost_roles")
+        cell = next(r for r in roles["rows"] if r["role_name"]["value"] == "builder")
+        self.assertIn(tsr.FIX_RUN, cell["role_cache_read"]["source"])
+        self.assertEqual(cell["role_cache_read"]["source"], row["trend_share"]["source"])
         # One helper computes the baseline the page states, for the close to read too.
         base = sr.cache_read_baseline(self.root, tsr.FIX_RUN, AS_OF)
         self.assertEqual({"mean": 64.1, "reports": ["RPT0002", "RPT0004", "RPT0005",
@@ -164,6 +173,9 @@ class CacheReadTrendTests(unittest.TestCase):
                       '<td class="num">64.1%</td><td class="num">-24.1 points</td>'
                       '<td class="num">5</td><td>RPT0002, RPT0004, RPT0005, RPT0007, '
                       'RPT0009</td>', html)
+        self.assertIn("beside its mean over the 5 most recent pages signed before this page was "
+                      "generated that state the role's share, the run's own pages left out.",
+                      " ".join(html.split()))
 
     def test_a_role_with_no_earlier_figure_reads_not_available(self) -> None:
         """AC2. MUTANTS: a `not available` cell read as 0; the mean over a role's pages
@@ -211,6 +223,10 @@ class CacheReadTrendTests(unittest.TestCase):
         st.write_text(json.dumps(state), encoding="utf-8")
         gone = sr.build_report(self.root, tsr.FIX_RETRO, as_of=AS_OF)
         sec = trend(gone)
+        # Sourced to the reading the Cost by role table consulted, never to the earlier pages.
+        consulted = next(s for s in gone["sections"] if s["key"] == "cost_roles")
+        self.assertIn(tsr.FIX_RUN, consulted["not_measured"]["source"])
+        self.assertEqual(consulted["not_measured"]["source"], sec["not_measured"]["source"])
         self.assertEqual([], sec["rows"])
         self.assertEqual(sr.NOT_MEASURED, sec["not_measured"]["value"])
         self.assertEqual("the Cost by role table is not measured: no closing reading in the "
