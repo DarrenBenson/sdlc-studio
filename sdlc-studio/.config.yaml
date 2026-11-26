@@ -100,9 +100,10 @@ review:
   # so no reviewer here is briefed on work its author has not checked first.
   author_self_check: block
   #
-  # `medium`, not the shipped `high` (D0560, D0642): the close's severity floor and the severity
-  # a unit carried at the cap is filed at both read this, and this repository's v6.5 bar (the
-  # BARS row tools/known_issues.py reads from the known-issues page) bars Medium. A carry is then
+  # `medium`, not the shipped `high` (D0560, D0642): the close's goal judgement rules an open
+  # defect at or above this BLOCKING, the severity a unit carried at the cap is filed at reads it
+  # too, and this repository's v6.5 bar (the BARS row tools/known_issues.py reads from the
+  # known-issues page) bars Medium. A carry is then
   # filed at Low, which that bar allows. tools/tests/test_lean_carry_severity_bar.py fails when
   # this setting and the bar the page names drift apart.
   blocking_priority: medium

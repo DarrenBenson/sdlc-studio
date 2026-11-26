@@ -196,6 +196,43 @@ class CloseGoalJudgementInReportTests(unittest.TestCase):
             self.assertIn(("open defects", "defects vs goal", detail), rows)
 
 
+class CloseSeverityFloorTests(unittest.TestCase):
+    """The close judges the open defects against the project's own severity floor,
+    `review.blocking_priority`, not the shipped `high`: called without the project root, the
+    judge read the shipped floor whatever the project set."""
+
+    @staticmethod
+    def _judged(setting: str | None) -> dict:
+        """The close's goal judgement record over one open Medium bug and a one-clause goal,
+        under `review.blocking_priority: setting` (None: no setting)."""
+        sprint = lean._live("sprint")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            bugs = root / "sdlc-studio" / "bugs"
+            bugs.mkdir(parents=True)
+            (bugs / "BG0931-a-medium-finding.md").write_text(
+                "# BG0931: a medium finding\n\n> **Status:** Open\n> **Severity:** Medium\n\n"
+                "## Summary\n\nThe parser drops a tab.\n", encoding="utf-8")
+            if setting:
+                (root / "sdlc-studio" / ".config.yaml").write_text(
+                    f"review:\n  blocking_priority: {setting}\n", encoding="utf-8")
+            record: dict = {}
+            sprint.close_goal_judgement(root, {"sprint_goal": GOAL, "batch": []}, record=record)
+            return record
+
+    def test_an_open_medium_blocks_the_close_where_the_project_bars_medium(self) -> None:
+        """With `medium` set, an open Medium is BLOCKING on its priority; with no setting it
+        stays leavable under the shipped `high` (the control). MUTANT: the close's judge called
+        without the project root."""
+        barred = self._judged("medium")
+        self.assertEqual("1 BLOCKING, 0 leavable", barred["defects"], barred)
+        self.assertEqual([("BG0931", "priority")],
+                         [(b["id"], b["basis"]) for b in barred["blocking"]], barred)
+        shipped = self._judged(None)
+        self.assertEqual("0 BLOCKING, 1 leavable", shipped["defects"], shipped)
+        self.assertEqual([], shipped["blocking"], shipped)
+
+
 class OpenDefectsFalsifiesTests(unittest.TestCase):
 
     @staticmethod

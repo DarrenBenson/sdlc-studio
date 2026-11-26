@@ -10415,7 +10415,7 @@ def close_goal_judgement(root, state: dict, seats: list | None = None,
         record["defects"] = (f"not judged - {len(defects)} open, and the sprint goal states no "
                              f"clause to judge them against")
     if defects and clauses:
-        ruling = critic.judge_defects_against_goal(defects, clauses)
+        ruling = critic.judge_defects_against_goal(defects, clauses, root)
         lines.append(f"defects vs goal: {len(ruling['blocking'])} BLOCKING, "
                      f"{len(ruling['leavable'])} leavable")
         record["defects"] = lines[-1].removeprefix("defects vs goal: ")

@@ -1,14 +1,17 @@
 """This repository's `review.blocking_priority` stays in step with the release bar it is cut to.
 
 The shipped skill reads a project's release bar from `review.blocking_priority`: the close's
-severity floor reads it, and so does the severity a unit carried at the review cap is filed at
-(`critic.carry_severity`). This repository's bar is the BARS row in `tools/known_issues.py` that
-the known-issues page names, which no shipped script can read. Left apart, the two drift: with
+goal judgement rules an open defect at or above it BLOCKING, and the severity a unit carried at
+the review cap is filed at (`critic.carry_severity`) reads it too. This repository's bar is the
+BARS row in `tools/known_issues.py` that the known-issues page names, which no shipped script can
+read. Left apart, the two drift: with
 the setting unset it reads `high`, so a carry here was filed at Medium while the v6.5 bar barred
 Medium, and a unit whose own criterion checks that bar could not close its own carry.
 
-The bar is read by its name, the heading of `docs/known-issues.md` (`known_issues.held_to`), never
-by its position in BARS, so a new bar recorded above it moves this pin with it.
+The bar is read by the name the heading of `docs/known-issues.md` gives it
+(`known_issues.held_to`), never by its position in BARS: a bar recorded above it in BARS moves
+this pin only once the page is re-cut to name that bar, and until then the pin stays on the bar
+the page names.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/critic.py
 from __future__ import annotations
@@ -19,6 +22,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -58,12 +62,32 @@ class CarrySeverityBarTests(unittest.TestCase):
     def test_the_setting_bars_what_the_named_bar_bars(self) -> None:
         """The setting bars exactly the severities the bar the page names bars. MUTANTS: the
         setting removed (reads `high`, barring no Medium); set to `high`; set to `low` (bars Low
-        too, so every open Low would block the close)."""
+        too, so the close's goal judgement would rule every open Low BLOCKING)."""
         named = ki._named_bar(REPO)
         self.assertIsNotNone(named, "premise: docs/known-issues.md names no bar")
         self.assertEqual(set(ki.held_to(REPO)), _barred_by_setting(REPO),
                          f"review.blocking_priority in {CONFIG_REL} is out of step with the "
                          f"{named[1]} bar the known-issues page names")
+
+    def test_a_new_bar_moves_the_pin_only_once_the_page_names_it(self) -> None:
+        """A bar recorded in BARS above the one the page names, barring only Critical and High,
+        leaves the pin on the named bar; a page re-cut to name the new bar moves the pin to it,
+        and this repository's setting is then out of step. A bar read by its position in BARS,
+        the first row, fails the first assertion."""
+        page = (REPO / ki.PAGE_REL).read_text(encoding="utf-8")
+        named = ki._BAR_HEADING.search(page)
+        self.assertIsNotNone(named, "premise: docs/known-issues.md names no bar")
+        major, minor = int(named[1]), int(named[2]) + 1
+        newer = ((major, minor), f"v{major}.{minor}", ki.BARRED, None, "a newer bar\n")
+        recut = self.tmp / "recut"
+        (recut / "docs").mkdir(parents=True)
+        (recut / ki.PAGE_REL).write_text(
+            ki._BAR_HEADING.sub(f"## The bar v{major}.{minor} is held to", page, count=1),
+            encoding="utf-8")
+        with unittest.mock.patch.object(ki, "BARS", (newer,) + ki.BARS):
+            self.assertEqual(set(ki.held_to(REPO)), _barred_by_setting(REPO))
+            self.assertEqual(ki.BARRED, ki.held_to(recut))
+            self.assertNotEqual(set(ki.held_to(recut)), _barred_by_setting(REPO))
 
     def _fixture(self, name: str, config: str) -> Path:
         """A project holding this repository's config and known-issues page, one unit in Review
