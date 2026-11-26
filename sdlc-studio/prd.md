@@ -872,6 +872,7 @@ none.
 | 2026-11-23 | 6.4.0 | Verify AC (BG1063): the retired `require_ac_verification` key leaves the gate-bearing keys and the configuration table, the verify gate criterion names `quality.done_requires_verified` and is ticked, and the feature and its row read Complete |
 | 2026-11-23 | 6.4.0 | Engagement floor (BG0959): the floor takes a ULID `adopt_after` cutoff on a schema-v3 project and refuses one set before schema v3, so the escapes criterion is ticked and the feature is Complete |
 | 2026-11-25 | 6.4.0 | The 6.5 work on `main` (US1329): the Feature Inventory gains a row each for the persona standard and persona review, testable persona goals and the per-seat goal review, the sprint drive and multi-worktree landing, the author's mutation runner and its replay, the red CI run policy, delegated and waiting signatures, the duplicate refusal and the plan's test advisories, and the harness and enterprise pages; the risk class row names reconcile's `risk-class` drift; the flags table gains `personas.standard`, `ci.wait_timeout_minutes`, `ci.rerun_limit` and `review.rendered_paths` at the defaults `reference-config.md` states |
+| 2026-11-26 | 6.4.0 | Evidence annex and committed run record (US1334): the annex is at version 1.1, since the report of record gains the cache-read trend section, each role's cache-read share against its mean over the last five signed runs. |
 
 ---
 
