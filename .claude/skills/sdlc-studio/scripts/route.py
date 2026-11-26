@@ -208,6 +208,18 @@ def _touches_code(root: Path, text: str) -> bool:
     return any(p.endswith(CODE_EXTS) for p in sdlc_md.affects_files(text))
 
 
+def work_kind(repo_root: Path | str, unit_path: Path | str, text: str | None = None) -> str:
+    """`bug`, `code` or `docs`, the kind `routing.effort` keys its per-kind entries on:
+    a bug by its id (`_kind_of`), else `code` when an Affects path ends in one of `CODE_EXTS`
+    (`_touches_code`), else `docs`. `text` is the unit's own, read from `unit_path` if not given."""
+    path = Path(unit_path)
+    if _kind_of(path) == "bug":
+        return "bug"
+    if text is None:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    return "code" if _touches_code(Path(repo_root), text) else "docs"
+
+
 def pick(repo_root: Path | str, unit_path: Path | str, role: str = "author",
          routing: dict | None = None) -> dict:
     """Tier + model recommendation for one unit and role, after policy adjustments:
