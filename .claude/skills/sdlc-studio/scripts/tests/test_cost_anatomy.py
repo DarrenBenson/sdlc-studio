@@ -299,6 +299,42 @@ class CostAnatomyTests(meter._Case):
         self.assertEqual(3, got["reviewer"]["agents"])
         self.assertEqual(["agent-a1"], got["other"]["agent_ids"])
 
+    def test_a_project_declared_seat_is_read_as_a_seat(self) -> None:
+        """BG1764 AC1, a seat the project declares with its own card. MUTANTS: the seats read as
+        the shipped three only, in `project_seats` or in `anatomy`; the declared roles of
+        `personas/amigos` left out; `agent_roles` reading the author or the reviewer cell
+        against the shipped seats. Each moves a key, a role or a row asserted."""
+        ws = self._session()
+        for sub, role in (("seats", "security"), ("amigos", "legal")):
+            card = ws.root / "sdlc-studio" / "personas" / sub / f"{role}.md"
+            card.parent.mkdir(parents=True, exist_ok=True)
+            card.write_text(f"# Pat Doe - {role}\n\n<!-- role: {role} -->\n", encoding="utf-8")
+        critic = meter._live("critic")
+        critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (security)",
+                              author="agent-zz")
+        got = {row["role"]: row for row in self._json(ws)["roles"]}
+        self.assertEqual(["agent-q0", "agent-q3", "agent-q4"], got["reviewer"]["agent_ids"])
+        self.assertEqual(["agent-a1"], got["other"]["agent_ids"])
+        anatomy = meter._live("lib.cost_anatomy")
+        seats = anatomy.project_seats(ws.root)
+        aid = "a99db4ff5609aac1b"
+        for name in (f"agent-{aid} (security)", f"agent-{aid} (Security seat)",
+                     f"agent-{aid} (legal)", f"agent-{aid} (qa)", f"{aid} (engineering)"):
+            self.assertEqual(aid, anatomy.agent_key(name, seats), name)
+        for name in ("security", "Security", "legal", "qa", "self-review (lock-in)",
+                     "build lane", "Pat Doe (security)"):
+            self.assertIsNone(anatomy.agent_key(name, seats), name)
+        self.assertIsNone(anatomy.agent_key(f"agent-{aid} (security)"))
+        state = {meter._live("lib.run_state").DELEGATED: [
+            {"unit": "US0101", "agent": "b7", "tokens": 10},
+            {"unit": "US0101", "agent": "r9", "tokens": 10}]}
+        verdicts = [{"unit": "US0101", "author": "agent-r9 (security)",
+                     "reviewer": "agent-q0 (security)"}]
+        self.assertEqual({"b7": "repair", "r9": "builder", "q0": "reviewer"},
+                         anatomy.agent_roles(state, verdicts, seats))
+        self.assertEqual({"b7": "builder", "r9": "repair"},
+                         anatomy.agent_roles(state, verdicts))
+
     def test_no_per_call_context_is_not_available(self) -> None:
         """AC4. MUTANTS: a missing context printed as 0, in the text or the JSON; a reading with
         no per-call records given a call count; a role with no calls given a context of 0. Each

@@ -75,25 +75,39 @@ class AnatomyError(Exception):
         self.store = store
 
 
-def agent_key(name) -> str | None:
-    """The agent id `name` carries, with or without its `agent-` prefix and before a trailing
-    `(<seat>)` or `(<seat> seat)` group after a space naming a shipped seat, the form `sprint lane
-    accept` records a reviewer in (`agent-<id> (qa)`); None when what is left is not a plain id
-    (letters, digits, `_` and `-`), as `build lane` or `self-review (lock-in)` is not, or is a
-    shipped seat name alone (`qa`)."""
+def project_seats(repo_root: Path | str) -> frozenset[str]:
+    """The seats `repo_root` resolves, as `sprint lane accept` knows them: the shipped ones and
+    every role a card under `sdlc-studio/personas/seats` or `sdlc-studio/personas/amigos`
+    declares (`<!-- role: security -->`)."""
+    import critic  # noqa: PLC0415 - sibling; its reader of the project's seat cards
     import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
+    declared = critic._declared_reviewers(repo_root)  # noqa: SLF001 - the project's seat cards
+    return frozenset((*persona_resolve.SEATS, *(role for role, _ in declared)))
+
+
+def agent_key(name, seats=None) -> str | None:
+    """The agent id `name` carries, with or without its `agent-` prefix and before a trailing
+    `(<seat>)` or `(<seat> seat)` group after a space naming a seat in `seats`, the form `sprint
+    lane accept` records a reviewer in (`agent-<id> (qa)`); None when what is left is not a plain
+    id (letters, digits, `_` and `-`), as `build lane` or `self-review (lock-in)` is not, or is a
+    seat name alone (`qa`). `seats` is the shipped seats when None; `project_seats` gives a
+    project's own."""
+    if seats is None:
+        import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
+        seats = persona_resolve.SEATS
     s = str(name or "").strip()
     m = _SEAT_SUFFIX.search(s)
-    if m and m.group(1).lower() in persona_resolve.SEATS:
+    if m and m.group(1).lower() in seats:
         s = s[:m.start()]
-    if s.lower() in persona_resolve.SEATS:
+    if s.lower() in seats:
         return None
     s = s[len("agent-"):] if s.startswith("agent-") else s
     return s if _PLAIN.fullmatch(s) else None
 
 
-def agent_roles(state: dict, verdicts: list[dict]) -> dict[str, str]:
-    """`{agent id: role}` from the run's delegated records and the recorded verdicts.
+def agent_roles(state: dict, verdicts: list[dict], seats=None) -> dict[str, str]:
+    """`{agent id: role}` from the run's delegated records and the recorded verdicts, whose
+    author and reviewer cells are read against `seats` (`agent_key`).
 
     Per unit, the agents `lane return --agent` recorded, in the order they landed: the one its
     first verdict names as the author is the builder, else the first; every other is a repair.
@@ -107,7 +121,7 @@ def agent_roles(state: dict, verdicts: list[dict]) -> dict[str, str]:
     first_author: dict[str, str | None] = {}
     for v in verdicts:
         first_author.setdefault(sdlc_md.norm_id(str(v.get("unit") or "")),
-                                agent_key(v.get("author")))
+                                agent_key(v.get("author"), seats))
     roles: dict[str, str] = {}
     for unit, agents in by_unit.items():
         named = first_author.get(unit)
@@ -115,7 +129,7 @@ def agent_roles(state: dict, verdicts: list[dict]) -> dict[str, str]:
         for a in agents:
             roles.setdefault(a, BUILDER if a == builder else REPAIR)
     for v in verdicts:
-        key = agent_key(v.get("reviewer"))
+        key = agent_key(v.get("reviewer"), seats)
         if key:
             roles[key] = REVIEWER
     return roles
@@ -501,7 +515,7 @@ def anatomy(repo_root: Path | str, transcripts_dir: Path | str | None = None,
     folder = main.parent / main.stem / run_state.SUBAGENTS_DIR
     files = sorted(folder.glob(run_state.SUBAGENT_GLOB)) if folder.is_dir() else []
     state = run_state.read(repo_root)
-    roles = agent_roles(state, critic.read_verdicts(repo_root))
+    roles = agent_roles(state, critic.read_verdicts(repo_root), project_seats(repo_root))
     return build(main, files, roles, window=run_window(state, session),
                  budget=start_budget(repo_root))
 
