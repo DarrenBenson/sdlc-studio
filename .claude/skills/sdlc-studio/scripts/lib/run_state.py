@@ -1725,6 +1725,12 @@ def spend_value(raw) -> int | None:
         return None
 
 
+def negative_spend_text(where: str, raw) -> str:
+    """The refusal of a negative spend ceiling, naming `where` it was given and its value."""
+    return (f"{where} is {raw}, a negative spend ceiling - write 0 for unbounded or a whole "
+            f"number of {PRICED_LABEL}")
+
+
 def spend_now(repo_root: Path | str, state: dict,
               transcripts_dir: Path | str | None = None) -> dict:
     """The run's priced spend so far, read as a first close reads it, with no stamp written.
@@ -2615,10 +2621,15 @@ def appetite_record(*, accepted_units: int, accepted_minutes: float,
         "over_appetite": acc_u > std_u or acc_m > std_m,
     }
     if accepted_spend is not None:
-        acc_s, std_s = int(accepted_spend or 0), int(standing_spend or 0)
-        record.update({"spend": acc_s, "standing_spend": std_s,
-                       "over_spend": _spend_over(acc_s, std_s)})
+        record.update(spend_record(accepted_spend, standing_spend))
     return record
+
+
+def spend_record(accepted_spend: int | None, standing_spend: int | None) -> dict:
+    """The appetite's spend axis: `spend`, `standing_spend` and `over_spend` (`_spend_over`),
+    in priced input-equivalent tokens, 0 unbounded."""
+    acc_s, std_s = int(accepted_spend or 0), int(standing_spend or 0)
+    return {"spend": acc_s, "standing_spend": std_s, "over_spend": _spend_over(acc_s, std_s)}
 
 
 def _spend_over(accepted: int, standing: int) -> bool:
@@ -2652,7 +2663,8 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
     A reason is compulsory. The number alone says a ceiling moved and not why, and the why is the
     whole content of the decision.
 
-    A spend raise also needs `decision`, an id `recorded` (a callable) finds in decisions.md; a
+    A negative `spend` is refused, since the breaker would read it as 0, unbounded. A spend
+    raise also needs `decision`, an id `recorded` (a callable) finds in decisions.md; a
     lifted ceiling (0, unbounded) is a raise and a first ceiling on an unbounded run is not. A
     named decision is checked and recorded on any resize. A run that recorded no spend measures
     the raise against `spend_default`, the ceiling the breaker would read from config, and keeps
@@ -2663,6 +2675,8 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
     if units is None and minutes is None and spend is None:
         raise RunStateError("resize needs --units, --minutes or --spend - a resize that changes "
                             "no number is not a decision")
+    if spend is not None and int(spend) < 0:
+        raise RunStateError(negative_spend_text("--spend", spend))
     if not (reason or "").strip():
         raise RunStateError("resize needs --reason - a ceiling that moved with no stated why is "
                             "a number nobody can audit at the close")
@@ -2710,6 +2724,23 @@ def resize_appetite(repo_root: Path | str, *, units: int | None = None,
         return state
 
     return _mutate(repo_root, apply)
+
+
+def replan_spend_raise(repo_root: Path | str, spend: int,
+                       spend_default: int = 0) -> tuple[int, int] | None:
+    """`(before, after)` when `sprint plan --write` over the open run would raise its spend
+    appetite to `spend`, else None. A re-plan re-resolves the appetite from the flags and config,
+    so a raise there moves the ceiling with no decision on the record. A first plan opens a
+    fresh run and sets its ceiling, and a re-plan that keeps a recorded resize re-resolves
+    nothing, so neither raises. A run that recorded no spend is measured against
+    `spend_default`, the ceiling the breaker reads from config, as `resize_appetite` measures it."""
+    state = read(repo_root)
+    # The plan keeps a run's appetite once `appetite resize` has recorded a change to it.
+    if _is_spent(state) or (state.get("appetite_changes") and state.get("appetite")):
+        return None
+    held = (state.get("appetite") or {}).get("spend")
+    before = int(spend_default or 0) if held is None else int(held)
+    return (before, int(spend)) if _spend_over(int(spend), before) else None
 
 
 def appetite_overage(repo_root: Path | str) -> dict | None:

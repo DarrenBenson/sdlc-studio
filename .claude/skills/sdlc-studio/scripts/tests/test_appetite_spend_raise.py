@@ -154,6 +154,170 @@ class AppetiteSpendTests(unittest.TestCase):
         self.assertEqual(1000, self._appetite(fresh)["spend"])
         self.assertIn(f"spend 1,000 {LABEL} (config capacity.spend)", out)
 
+    def test_a_negative_spend_is_refused_at_the_plan(self) -> None:
+        """MUTANTS: the flag or either config key let through when negative, so the plan
+        stamps a value the breaker reads as 0, unbounded; the check reading 0 as negative, or
+        stopping at an absent flag; a key `int` cannot read stopping the plan; the refusal
+        writing the run or the plan, or naming no value."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(root, "--appetite-spend", "-5")
+        self.assertEqual(2, rc, out)
+        self.assertIn("plan refused: --appetite-spend is -5, a negative spend ceiling", out)
+        self.assertFalse(run_state.path(root).exists(), "a refused plan opens no run")
+        self.assertFalse((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+        rc, out = self._sprint(root, "plan", "--stories", "Ready", "--skip-personas",
+                               "--no-fetch", "--appetite-spend", "-5")
+        self.assertEqual(2, rc, "a preview is refused too: " + out)
+        for key, config in (("capacity.spend", "capacity:\n  spend: -5\n"),
+                            ("appetite.spend", "capacity:\n  spend: 1000\nappetite:\n"
+                                               "  spend: -5\n")):
+            fresh = self._project(key, config)
+            rc, out = self._plan(fresh)
+            self.assertEqual(2, rc, out)
+            self.assertIn(f"plan refused: config {key} is -5, a negative spend ceiling", out)
+            self.assertFalse(run_state.path(fresh).exists())
+            rc, out = self._plan(fresh, "--appetite-spend", "400")
+            self.assertEqual(2, rc, "the flag does not excuse a negative key: " + out)
+        zero = self._project("zero", "capacity:\n  spend: 0\nappetite:\n  spend: .inf\n")
+        rc, out = self._plan(zero, "--appetite-spend", "0")
+        self.assertEqual(0, rc, "0 is not negative, and a key int cannot read is unset: " + out)
+        self.assertEqual(0, self._appetite(zero)["spend"])
+
+    def test_a_negative_spend_is_refused_at_the_resize(self) -> None:
+        """MUTANTS: a negative `--spend` read as a lowering, so it lifts the ceiling with no
+        decision; a decision excusing it; the refusal writing the run state; the check reading
+        0 as negative, so lifting the ceiling with a decision is refused."""
+        root = self._run_open({"units": 9, "minutes": 0.0, "spend": 1000,
+                               "standing_spend": 1000})
+        before = run_state.path(root).read_bytes()
+        for extra in ((), ("--decision", "D0001")):
+            rc, out = self._resize(root, "--spend", "-1", "--reason", "r", *extra)
+            self.assertEqual(2, rc, out)
+            self.assertIn("REFUSED: --spend is -1, a negative spend ceiling", out)
+            self.assertEqual(before, run_state.path(root).read_bytes())
+        rc, out = self._resize(root, "--spend", "0", "--reason", "r")
+        self.assertEqual(2, rc, out)
+        self.assertIn("needs --decision", out, "0 is a raise, not a negative")
+        self.assertEqual(before, run_state.path(root).read_bytes())
+        rc, out = self._resize(root, "--spend", "800", "--reason", "r")
+        self.assertEqual(0, rc, "a lowering needs no decision: " + out)
+        rc, out = self._resize(root, "--spend", "0", "--reason", "r", "--decision", "D0001")
+        self.assertEqual(0, rc, out)
+        self.assertEqual(0, self._appetite(root)["spend"])
+
+    def test_a_replan_that_raises_the_spend_needs_a_recorded_decision(self) -> None:
+        """MUTANTS: a re-plan over an open run writing a raised spend with no decision, from
+        the flag or from an edited config; the refusal writing the run state or the plan, or
+        naming no values; a first plan, or a lowering, refused as a raise; the standing spend
+        re-read from an edited config, which hides the overage."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(root, "--appetite-spend", "2000")
+        self.assertEqual(0, rc, "a first plan sets its ceiling, past the config's too: " + out)
+        self.assertEqual((2000, 1000, True), (self._appetite(root)["spend"],
+                                              self._appetite(root)["standing_spend"],
+                                              self._appetite(root)["over_spend"]))
+        plan = root / "sdlc-studio" / ".local" / "sprint-plan.json"
+        state, plan_bytes = run_state.path(root).read_bytes(), plan.read_bytes()
+        rc, out = self._plan(root, "--appetite-spend", "999999")
+        self.assertEqual(2, rc, out)
+        self.assertIn("plan refused: the re-plan raises the open run's spend (2,000 to 999,999) "
+                      "with no decision on the record. Raise it with `sprint appetite resize "
+                      "--spend 999999 --decision <id> --reason <why>`", out)
+        self.assertEqual((state, plan_bytes), (run_state.path(root).read_bytes(),
+                                               plan.read_bytes()))
+        self._config(root, "capacity:\n  spend: 50000\n")
+        rc, out = self._plan(root)
+        self.assertEqual(2, rc, "an edited config raises it too: " + out)
+        self.assertIn("(2,000 to 50,000)", out)
+        self.assertEqual(state, run_state.path(root).read_bytes())
+        rc, out = self._plan(root, "--appetite-spend", "1500")
+        self.assertEqual(0, rc, "a lowering needs no decision: " + out)
+        self.assertEqual((1500, 1000, True), (self._appetite(root)["spend"],
+                                              self._appetite(root)["standing_spend"],
+                                              self._appetite(root)["over_spend"]),
+                         "the standing spend is the run's, not the edited config's 50,000")
+
+    def test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run(self) -> None:
+        """MUTANTS: a recorded resize not kept, so the re-plan's flag replaces its spend; the
+        kept line naming no spend, or 0 as a number; a run that stamped no spend measured
+        against 0, so any re-plan ceiling passes as a first one."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        (root / "sdlc-studio" / "decisions.md").write_text(DECISIONS, encoding="utf-8")
+        rc, out = self._plan(root)
+        self.assertEqual(0, rc, out)
+        rc, out = self._resize(root, "--spend", "1500", "--decision", "D0001", "--reason", "r")
+        self.assertEqual(0, rc, out)
+        rc, out = self._plan(root, "--appetite-spend", "999999")
+        self.assertEqual(0, rc, "the recorded resize is kept, so nothing is raised: " + out)
+        self.assertEqual(1500, self._appetite(root)["spend"])
+        self.assertIn("keeping the appetite set by `appetite resize` (240min/8units/spend "
+                      "1,500)", out)
+        rc, out = self._resize(root, "--spend", "0", "--decision", "D0001", "--reason", "r")
+        self.assertEqual(0, rc, out)
+        rc, out = self._plan(root)
+        self.assertEqual(0, rc, out)
+        self.assertIn("(240min/8units/spend unbounded)", out)
+        bare = self._project("b", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(bare)
+        self.assertEqual(0, rc, out)
+        old = json.loads(run_state.path(bare).read_text(encoding="utf-8"))
+        for key in ("spend", "standing_spend", "over_spend"):
+            old["appetite"].pop(key)
+        run_state.path(bare).write_text(json.dumps(old), encoding="utf-8")
+        rc, out = self._plan(bare, "--appetite-spend", "999999")
+        self.assertEqual(2, rc, out)
+        self.assertIn("(1,000 to 999,999)", out)
+
+    def _boundary(self, root: Path) -> tuple[int, str]:
+        """`sprint boundary` with the close-down chain stubbed green: the cycle turns over."""
+        with mock.patch.object(sprint, "_boundary_close_down", lambda *a, **k: (0, "")):
+            return self._sprint(root, "boundary", "--retro", "RETRO0001", "--no-fetch")
+
+    def test_a_cycle_boundary_stamps_the_spend_it_resolved(self) -> None:
+        """MUTANTS: the next cycle opened with no spend, so the breaker reads the config as it
+        stands; the policy carrying no spend, or the regenerated plan not reading it, so the
+        plan's `--appetite-spend` is lost after cycle 1; the standing spend taken from the
+        accepted one."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(root, "--cycles", "2", "--sprint-goal", "g")
+        self.assertEqual(0, rc, out)
+        first = run_state.read(root)["run_id"]
+        rc, out = self._boundary(root)
+        self.assertEqual(0, rc, out)
+        state = run_state.read(root)
+        self.assertNotEqual(first, state["run_id"], "the boundary opened cycle 2: " + out)
+        self.assertEqual((1000, 1000, False), (state["appetite"]["spend"],
+                                               state["appetite"]["standing_spend"],
+                                               state["appetite"]["over_spend"]))
+        self._config(root, "capacity:\n  spend: 5\n")
+        with contextlib.redirect_stdout(io.StringIO()) as got:
+            loop_guard.main(["budget", "--root", str(root), "--format", "json"])
+        self.assertEqual(1000, json.loads(got.getvalue())["appetite_spend"],
+                         "the cycle's stamped spend survives a config edit")
+        flagged = self._project("b", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(flagged, "--cycles", "2", "--sprint-goal", "g",
+                             "--appetite-spend", "400")
+        self.assertEqual(0, rc, out)
+        rc, out = self._boundary(flagged)
+        self.assertEqual(0, rc, out)
+        self.assertEqual((400, 1000, False), (self._appetite(flagged)["spend"],
+                                              self._appetite(flagged)["standing_spend"],
+                                              self._appetite(flagged)["over_spend"]),
+                         "the control: cycle 2 stamps the plan's flag, not the config's 1,000")
+
+    def test_a_negative_spend_in_config_stops_the_boundary(self) -> None:
+        """MUTANT: the boundary resolving a negative config spend, which it would stamp as 0,
+        unbounded, on the next cycle."""
+        root = self._project("a", "capacity:\n  spend: 1000\n")
+        rc, out = self._plan(root, "--cycles", "2", "--sprint-goal", "g")
+        self.assertEqual(0, rc, out)
+        first = run_state.read(root)["run_id"]
+        self._config(root, "capacity:\n  spend: -5\n")
+        rc, out = self._boundary(root)
+        self.assertNotEqual(0, rc, out)
+        self.assertIn("config capacity.spend is -5, a negative spend ceiling", out)
+        self.assertEqual(first, run_state.read(root)["run_id"], "no cycle 2 was opened")
+
     # -- AC2 -----------------------------------------------------------------------------
 
     def test_a_resize_keeps_an_unbounded_standing_spend(self) -> None:

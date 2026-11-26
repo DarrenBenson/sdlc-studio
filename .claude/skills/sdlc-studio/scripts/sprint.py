@@ -576,6 +576,22 @@ def resolve_appetite(repo_root: Path | str, cli_minutes: float | None = None,
             "minutes_source": m_src, "units_source": u_src, "spend_source": s_src}
 
 
+def negative_spend(repo_root: Path | str, cli_spend: int | None = None) -> str | None:
+    """The sentence refusing the first negative spend ceiling among `--appetite-spend` and
+    config `appetite.spend` and `capacity.spend`, or None. Each is checked whichever decides,
+    since `capacity.spend` is the standing value too. A negative is refused rather than read as
+    0, which is unbounded; a value `int` cannot read stays unset, as `resolve_appetite` reads it."""
+    for where, raw in (("--appetite-spend", cli_spend),
+                       ("config appetite.spend", config.get(repo_root, "appetite.spend", 0)),
+                       ("config capacity.spend", config.get(repo_root, "capacity.spend", 0))):
+        try:
+            if int(raw) < 0:
+                return run_state.negative_spend_text(where, raw)
+        except (TypeError, ValueError, OverflowError):
+            continue
+    return None
+
+
 def calibration(repo_root: Path | str) -> dict:
     """What the velocity history says about the forecast the plan is about to quote -
     OUT-OF-SAMPLE, and nothing else.
@@ -13104,6 +13120,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
         print(f"effort: the reviewer's {reviewer} is below its builder's {builder}"
               f"{f' for the {kind} kind' if kind else ''}, accepted under "
               f"{effort['reviewer_below_builder']}", file=sys.stderr)
+    if refusal := negative_spend(args.root, getattr(args, "appetite_spend", None)):
+        print(f"plan refused: {refusal}", file=sys.stderr)
+        return 2
     # ONE RUN AT A TIME, ACROSS CHECKOUTS. Whether a run is open was a fact about the machine
     # that closed it; the tracked run records make it one every clone holds.
     if getattr(args, "write", False) and (held := _run_held_elsewhere(args.root)):
@@ -13249,6 +13268,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if refusal is not None:
             print(str(refusal), file=sys.stderr)
             return 2
+        # A SPEND RAISE NAMES A DECISION, on a re-plan as on a resize. Refused here, ahead of
+        # every write, so the run state and the plan are left as they were.
+        if raised := run_state.replan_spend_raise(args.root, data["capacity"]["appetite"]["spend"],
+                                                  resolve_appetite(args.root)["spend"]):
+            print(f"plan refused: the re-plan raises the open run's spend ({raised[0]:,} to "
+                  f"{raised[1]:,}) with no decision on the record. Raise it with `sprint "
+                  f"appetite resize --spend {raised[1]} --decision <id> --reason <why>`, which "
+                  f"the re-plan then keeps, or re-plan within the run's spend", file=sys.stderr)
+            return 2
     write = getattr(args, "write", False)
     out = Path(args.root) / "sdlc-studio" / ".local" / "sprint-plan.json"
     # The run-opening lines are for a person: under --format json they go to stderr, so
@@ -13318,10 +13346,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # capacity), so an over-appetite batch accepted with --appetite-units does not read as
         # though it fitted. The overage the close and retro report is derived from this.
         std = capacity(args.root)
+        prior = (run_state.read(args.root) or {})
+        # A re-plan keeps the open run's standing spend, as a resize does: re-read from an
+        # edited config, a raised one would hide the spend overage the close names.
+        held = (prior.get("appetite") or {}).get("standing_spend")
         appetite = run_state.appetite_record(
             accepted_units=resolved["units"], accepted_minutes=resolved["minutes"],
             standing_units=std["units"], standing_minutes=std["minutes"],
-            accepted_spend=resolved["spend"], standing_spend=std["spend"])
+            accepted_spend=resolved["spend"],
+            standing_spend=std["spend"] if held is None else int(held))
         # AN EXPLICIT RESIZE OUTRANKS A RE-RESOLUTION. `appetite resize` exists so a ceiling can
         # be moved ON THE RECORD, with a compulsory reason, rather than overrun silently. A
         # re-plan over an ALREADY OPEN run re-resolved from the standing capacity and wrote the
@@ -13331,12 +13364,14 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # did not. The resolution order already prefers the more specific statement at every
         # other level (flag > appetite.* > capacity.*), and a recorded resize is the most
         # specific statement there is.
-        prior = (run_state.read(args.root) or {})
         if prior.get("appetite_changes") and prior.get("appetite"):
             appetite = prior["appetite"]
+            kept_spend = ("" if appetite.get("spend") is None else f"/spend {appetite['spend']:,}"
+                          if appetite["spend"] else "/spend unbounded")
             print("sprint plan: keeping the appetite set by `appetite resize` "
-                  f"({appetite.get('minutes'):g}min/{appetite.get('units')}units) - a recorded "
-                  "resize outranks a re-resolution from the standing capacity", file=human)
+                  f"({appetite.get('minutes'):g}min/{appetite.get('units')}units{kept_spend}) - a "
+                  "recorded resize outranks a re-resolution from the standing capacity",
+                  file=human)
         # The digest of the plan this write left, on every write: a re-plan rewrites the file,
         # so a digest kept from the open would name a plan that no longer exists.
         extra: dict = {"appetite": appetite, run_state.PLAN_DIGEST: run_state.content_digest(out)}
@@ -13507,7 +13542,8 @@ def build_policy(args: argparse.Namespace, data: dict, queries: list,
         "sprint_goal": data.get("sprint_goal"),
         "goal": getattr(args, "goal", None),
         "order": args.order,
-        "capacity": {"minutes": resolved["minutes"], "units": resolved["units"]},
+        "capacity": {"minutes": resolved["minutes"], "units": resolved["units"],
+                     "spend": resolved["spend"]},
         "queries": [{"kind": k, "status": s} for k, s in (queries or [])],
         "epics": sorted(epics) if epics else None,
         "stop_conditions": stop_conditions,
@@ -13603,7 +13639,10 @@ def _regenerate_plan(root, policy: dict) -> dict:
                       skip_personas=policy.get("skip_personas", False), epics=epics,
                       queries=queries or None,
                       appetite_minutes=cap.get("minutes") or None,
-                      appetite_units=cap.get("units") or None)
+                      appetite_units=cap.get("units") or None,
+                      # 0 is an unbounded spend the plan resolved; a policy from before the
+                      # spend axis holds none, and its cycles read the config.
+                      appetite_spend=cap.get("spend"))
 
 
 def _render_preview(data: dict, index: int) -> None:
@@ -13648,7 +13687,10 @@ def _open_next_cycle(root, policy: dict, data: dict, prev: dict) -> dict:
         "cycle": {"index": index, "remaining": remaining,
                   # the run that recorded the policy - the thread joining every cycle
                   "policy_run_id": prev_cycle.get("policy_run_id") or prev.get("run_id")},
-        "appetite": {"minutes": cap["minutes"], "units": cap["units"]},
+        # The spend is stamped as the plan stamps it, so the breaker reads the cycle's own
+        # ceiling and a later config edit does not move it.
+        "appetite": {"minutes": cap["minutes"], "units": cap["units"],
+                     **run_state.spend_record(cap["spend"], capacity(root)["spend"])},
         "sprint_goal": policy.get("sprint_goal"),
     }
     run_state.update(root, **extra)
@@ -13755,6 +13797,9 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     # [3/4] REGENERATE. From the live backlog, under the standing policy.
     print(f"boundary [3/4] {BOUNDARY_STEPS[2]}: selecting cycle {index + 1} from the live "
           f"backlog")
+    if refusal := negative_spend(root):
+        return _boundary_stop(root, "refused-plan", refusal,
+                              "correct the config key the message names")
     try:
         data = _regenerate_plan(root, policy)
     except ValueError as exc:
@@ -15101,9 +15146,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "does not fit")
     p.add_argument("--appetite-spend", type=int, default=None, dest="appetite_spend",
                    help="spend ceiling for the run, in priced input-equivalent tokens; overrides "
-                        "config appetite.spend, then capacity.spend (0 = unbounded). The "
-                        "breaker reads the session meter at unit boundaries, warns at 75 and 95 "
-                        "per cent and stops the run at 100")
+                        "config appetite.spend, then capacity.spend (0 = unbounded; a negative "
+                        "is refused). The breaker reads the session meter at unit boundaries, "
+                        "warns at 75 and 95 per cent and stops the run at 100. A re-plan over an "
+                        "open run may not raise it: `appetite resize --spend` does, on a decision")
     p.add_argument("--strict", action="store_true",
                    help="refuse to plan when the index has drift or local is behind origin")
     p.add_argument("--no-fetch", action="store_true", dest="no_fetch",
@@ -15444,7 +15490,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="the new accepted wall-clock ceiling, in minutes")
     ap_.add_argument("--spend", type=int, default=None,
                      help="the new accepted spend ceiling, in priced input-equivalent tokens "
-                          "(0 = unbounded); a raise needs --decision")
+                          "(0 = unbounded); a raise needs --decision, and a negative is refused")
     ap_.add_argument("--decision", default=None,
                      help="the decision id (a row of sdlc-studio/decisions.md) behind the "
                           "resize; required for a spend raise, recorded on the change")

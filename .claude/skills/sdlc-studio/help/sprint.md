@@ -481,12 +481,19 @@ python3 <skill>/scripts/sprint.py appetite resize --spend 1500000 --decision D00
 and the run state is left as it was. Setting 0, which lifts the ceiling, is a raise. A
 lowering, or a first ceiling on an unbounded run, needs only `--reason`. The change entry
 records the spend before and after and the decision; a units or minutes resize keeps the
-recorded spend.
+recorded spend. A negative spend is refused (exit 2) and named, whether it is `--spend`, or
+`--appetite-spend`, `appetite.spend` or `capacity.spend` at `plan`. A re-plan over an open run
+that would raise its spend, from the flag or an edited config, is refused (exit 2) and leaves
+the run and the plan as they were: raise it with `appetite resize`, whose appetite a re-plan
+keeps. A re-plan keeps the run's `standing_spend` too, so an edited `capacity.spend` cannot
+hide an overage.
 
 ### Rolling runs
 
 `--cycles N` runs N sprints back to back, and `--stop-on empty-backlog` ends the sequence early
-when nothing is left to select. The `boundary` verb is where each cycle turns over.
+when nothing is left to select. The `boundary` verb is where each cycle turns over. Each cycle's
+run is stamped with the plan's spend appetite, as the plan stamps the first, so a later config
+edit does not move it; a negative spend in config stops the boundary.
 
 A rolling run **regenerates the plan at each boundary** against the backlog as it stands then -
 it does not queue plans up front. If you want a queue of runs planned in advance, that is the
