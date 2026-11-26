@@ -25,8 +25,8 @@ SDLC Studio is model-invoked - say it in plain language:
 
 ## What it is
 
-- One writable master at `sdlc-studio/product/pvd.md` (Product Manager owns it), child repos
-  get it read-only.
+- One writable master at `sdlc-studio/product/pvd.md` (the person owns it; the Product Manager
+  seat checks the work against it), child repos get it read-only.
 - `sdlc-studio/product/manifest.yaml` lists the child repos (id / path / url).
 - Coordinates and traces (feature -> owning repo -> its CR/RFC/PRD artefact), never re-specifies.
 - **Lean by default**; the topology tree, G1-G5 gates, and release coordination are opt-in

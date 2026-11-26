@@ -3,9 +3,10 @@ Template: Enriched seat card (the "amigo" schema) - the single seat schema
 Usage: Copy and customise for a review seat. This one schema covers both shapes of seat:
   - a BUILD-CAPABLE seat (a "Three Amigos" Engineering / QA / Product seat) that both DOES the
     work and REVIEWS it - fill every section, including the work-render ones; and
-  - a REVIEW-ONLY seat (a document-owner such as Product Owner / Product Manager / UX that only
-    critiques) - fill the review-render sections and mark the work-render sections (How They Work,
-    Craft Goals shape) "n/a" or leave them thin. The review render is what a consult runs against.
+  - a REVIEW-ONLY seat (one that checks work against a document, such as Product Owner / Product
+    Manager / UX, and only critiques) - fill the review-render sections and mark the work-render
+    sections (How They Work, Craft Goals shape) "n/a" or leave them thin. The review render is what
+    a consult runs against.
 It supersedes the older lean review-seat charter: this schema is its strict superset, fusing Cooper
 goal-directed depth (persona-template.md) with the seat charter discipline (mandate, lens,
 non-negotiables, shadow) and adding the dual render. A seat is "well-formed" when the sections its
@@ -24,7 +25,7 @@ Related: reference-workflow-personas.md, reference-consult.md, persona-template.
 > How They Work + Non-Negotiables) frames the seat when it builds/authors/tests; the **review
 > render** (Lens + Pushes Back When + Shadow) frames it when it critiques. The two are **always
 > separate instances** on one unit - a seat never reviews its own output (the independence gate). A
-> **review-only** seat (a document owner that does not build) carries the review render and may mark
+> **review-only** seat (one that checks work against a document and does not build) carries the review render and may mark
 > the work-render sections "n/a"; the review render is mandatory for any seat a consult runs.
 > sdlc-studio builds the charter, never an external identity.
 
@@ -59,7 +60,7 @@ Concrete and particular, never a role average. Give them a hard-won conviction.}
 
 {{The concrete way they build/author/test: what they read first, the order they work in, what they
 touch and leave alone, how they end a unit. This is the disposition the build prompt borrows. For a
-review-only seat (a document owner that does not build), mark this "n/a".}}
+review-only seat (one that checks work against a document and does not build), mark this "n/a".}}
 
 ## Lens *(review render)*
 
