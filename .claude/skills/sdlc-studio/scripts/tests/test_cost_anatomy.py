@@ -335,6 +335,32 @@ class CostAnatomyTests(meter._Case):
         self.assertEqual({"b7": "builder", "r9": "repair"},
                          anatomy.agent_roles(state, verdicts))
 
+    def test_a_seat_card_that_is_not_utf8_leaves_the_anatomy_readable(self) -> None:
+        """BG1764 AC1, a seat card that is not valid UTF-8 beside a valid one. MUTANTS: the
+        failed read left to raise, or caught as OSError only (the command exits 1 on the
+        UnicodeDecodeError); the seats then read as the shipped three only, losing the valid
+        `security` card beside the bad one. Each moves the exit or a row asserted."""
+        ws = self._session()
+        critic = meter._live("critic")
+        critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (security)",
+                              author="agent-zz")
+        critic.record_verdict(ws.root, "US0104", "APPROVE", reviewer="agent-a1 (qa)",
+                              author="agent-zz")
+        # the cards are written after the verdicts: critic's own recorder reads them too
+        seats_dir = ws.root / "sdlc-studio" / "personas" / "seats"
+        seats_dir.mkdir(parents=True, exist_ok=True)
+        (seats_dir / "ren.md").write_bytes(b"# Ren\xe9e Smith - Legal\n\nNo role field.\n")
+        (seats_dir / "security.md").write_text(
+            "# Pat Doe - security\n\n<!-- role: security -->\n", encoding="utf-8")
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+        self.assertNotIn("Traceback", text)
+        got = {row["role"]: row for row in self._json(ws)["roles"]}
+        self.assertEqual(["agent-a1", "agent-q0", "agent-q3", "agent-q4"],
+                         got["reviewer"]["agent_ids"])
+        seats = meter._live("lib.cost_anatomy").project_seats(ws.root)
+        self.assertEqual({"engineering", "qa", "product", "security"}, set(seats))
+
     def test_no_per_call_context_is_not_available(self) -> None:
         """AC4. MUTANTS: a missing context printed as 0, in the text or the JSON; a reading with
         no per-call records given a call count; a role with no calls given a context of 0. Each

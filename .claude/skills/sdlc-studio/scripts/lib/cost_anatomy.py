@@ -78,11 +78,16 @@ class AnatomyError(Exception):
 def project_seats(repo_root: Path | str) -> frozenset[str]:
     """The seats `repo_root` resolves, as `sprint lane accept` knows them: the shipped ones and
     every role a card under `sdlc-studio/personas/seats` or `sdlc-studio/personas/amigos`
-    declares (`<!-- role: security -->`)."""
+    declares (`<!-- role: security -->`). A card that is not valid UTF-8 stops the reader of
+    both folders, and the seats are then the shipped ones and the roles `persona_resolve`
+    reads from `personas/seats`, which reads past such a card, so the anatomy still prints."""
     import critic  # noqa: PLC0415 - sibling; its reader of the project's seat cards
     import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
-    declared = critic._declared_reviewers(repo_root)  # noqa: SLF001 - the project's seat cards
-    return frozenset((*persona_resolve.SEATS, *(role for role, _ in declared)))
+    try:
+        declared = [role for role, _ in critic._declared_reviewers(repo_root)]  # noqa: SLF001
+    except ValueError:  # UnicodeDecodeError: a card that is not valid UTF-8
+        declared = []
+    return frozenset((*persona_resolve.seat_roster(repo_root), *declared))
 
 
 def agent_key(name, seats=None) -> str | None:
