@@ -33,6 +33,14 @@ window is not one of its agents. It is the whole session under `--session`, when
 and when a usage record carries no timestamp, since such a record cannot be placed against the
 start and a window that dropped it would understate the run. The header names which, and why.
 The start context alone is read over the whole session: it is what the session paid first.
+
+Each role's cache writes are split into growth and re-writes after the cache lifetime
+(`_cache_writes`): a call's 5-minute writes are re-written when its gap, from the first usage
+record of the call before it in its transcript, is longer than 5 minutes, and its 1-hour writes
+when it is longer than 60. A re-write counts the call's whole write, since the transcript cannot
+tell its new turn from the prefix written again. Gaps are measured over the whole transcript and
+only the calls the window keeps are summed. A role's split is None, printed `not available`, when
+any agent in it has a model call's usage record with no readable timestamp or no message id.
 """
 from __future__ import annotations
 
@@ -58,6 +66,11 @@ _PLAIN = re.compile(r"[A-Za-z0-9_-]+")
 #: reads, here only at the end
 _SEAT_SUFFIX = re.compile(r"\s+\(\s*([a-z][a-z0-9-]*)(?:\s+seat)?\s*\)\Z", re.I)
 _WRITES = ("cache_write_5m", "cache_write_1h")
+GROWTH = "growth"
+#: Each cache write kind's lifetime in seconds, and the key its writes after a longer gap are
+#: counted under; a write within it is growth.
+CACHE_LIFETIMES = {"cache_write_5m": (300, "rewrite_5m"), "cache_write_1h": (3_600, "rewrite_1h")}
+CACHE_WRITE_KEYS = (GROWTH, *(key for _life, key in CACHE_LIFETIMES.values()))
 START_BUDGET_KEY = "cost.agent_start_budget"
 #: The orchestrator's average context a call above which the anatomy flags the run:
 #: run six's orchestrator averaged 407k, and a run handed off at each wave boundary
@@ -204,16 +217,18 @@ def _largest(readings: list[list]) -> dict:
 
 
 def _usage_of(path: Path, records: list, seen: set,
-              largest: dict) -> tuple[dict, list[int] | None]:
-    """`(components, contexts)` of one transcript's `records`: its components once per message
-    at the message's largest usage over every transcript (`largest`, then `_aggregate`), and each
-    call's context in the order the calls first appear, None when a usage record carries no
-    message id. A message id already read on an earlier transcript stays booked there, at that
-    largest usage, as the meter books it to the side it was first read on."""
+              largest: dict) -> tuple[dict, list[int] | None, dict]:
+    """`(components, contexts, booked)` of one transcript's `records`: its components once per
+    message at the message's largest usage over every transcript (`largest`, then `_aggregate`),
+    each call's context in the order the calls first appear, None when a usage record carries no
+    message id, and `{message id: components}` of the calls booked here. A message id already
+    read on an earlier transcript stays booked there, at that largest usage, as the meter books
+    it to the side it was first read on."""
     kept = [(side, msg_id, at, parts if msg_id is None else largest[msg_id], model)
             for side, msg_id, at, parts, model in records
             if msg_id is None or msg_id not in seen]
     seen.update(rec[1] for rec in kept if rec[1] is not None)
+    booked = {rec[1]: rec[3] for rec in kept if rec[1] is not None}
     calls: dict = {}
     for _side, msg_id, _at, parts, model in kept:
         if msg_id is not None:
@@ -228,7 +243,36 @@ def _usage_of(path: Path, records: list, seen: set,
         comps = None  # no usage, or none that counts: the transcript adds nothing
     comps = dict(comps) if comps else run_state._zero()
     per_call = all(rec[1] is not None for rec in kept)
-    return comps, [_context(p) for p in calls.values()] if per_call else None
+    return comps, ([_context(p) for p in calls.values()] if per_call else None), booked
+
+
+def _cache_writes(every: list, booked: dict) -> dict | None:
+    """`{"growth", "rewrite_5m", "rewrite_1h"}` of the calls `booked` (`_usage_of`), each kind's
+    write a re-write when the call's gap is longer than that kind's lifetime (`CACHE_LIFETIMES`),
+    else growth. A call's gap runs from the first usage record of the call before it to its own
+    first, in file order over `every`, the transcript's whole records whatever the window; the
+    first call has none, and a gap below 0 is within either lifetime. Every call of the
+    transcript ends a gap, one booked to an earlier transcript too, and a call is timed on the
+    transcript it is booked to; a synthetic record (`SYNTHETIC_MODEL`) is no call and ends none.
+    None when a call's usage record in `every` carries no message id or no timestamp
+    `sdlc_md.parse_iso8601` reads, as then no gap can be measured."""
+    gaps: dict = {}
+    prev = None
+    for _side, msg_id, at, _parts, model in every:
+        if model == SYNTHETIC_MODEL:
+            continue
+        moment = sdlc_md.parse_iso8601(at)  # None for a stamp missing, empty or not ISO-8601
+        if msg_id is None or moment is None:
+            return None
+        if msg_id not in gaps:
+            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()
+            prev = moment
+    out = dict.fromkeys(CACHE_WRITE_KEYS, 0)
+    for msg_id, parts in booked.items():
+        gap = gaps.get(msg_id)  # a synthetic call has none, and writes nothing
+        for kind, (life, key) in CACHE_LIFETIMES.items():
+            out[key if gap is not None and gap > life else GROWTH] += parts[kind]
+    return out
 
 
 def _producer(block: dict) -> str:
@@ -298,7 +342,8 @@ def _outputs_of(path: Path, role: str, agent: str, since=None) -> list[dict]:
 
 def _row(role: str) -> dict:
     return {"role": role, "agents": 0, "agent_ids": [], "calls": 0,
-            "components": run_state._zero(), "contexts": [], "firsts": [], "per_call": True}
+            "components": run_state._zero(), "contexts": [], "firsts": [], "per_call": True,
+            "cache_writes": dict.fromkeys(CACHE_WRITE_KEYS, 0)}
 
 
 def _finish(rows: dict) -> list[dict]:
@@ -317,7 +362,7 @@ def _finish(rows: dict) -> list[dict]:
             "role": role, "agents": row["agents"], "agent_ids": row["agent_ids"],
             "calls": row["calls"] if row["per_call"] else None,
             "priced": priced[role], "share": priced[role] / whole if whole else None,
-            "components": comps,
+            "components": comps, "cache_writes": row["cache_writes"],
             "split": ({"cache_read": weighed["cache_read"] / spend,
                        "cache_write": sum(weighed[c] for c in _WRITES) / spend,
                        "output": weighed["output"] / spend} if spend else None),
@@ -397,8 +442,9 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
     (one with a call inside it) whose start, the context of its transcript's first call whatever
     the window, exceeds `budget` (`start_budget`) is named in `over_start_budget`, and each whose
     records give no per-call start in `start_not_available`; `over_start_budget` is None with no
-    budget, or when no subagent the window counts can be judged. RAISES `AnatomyError` on a
-    transcript the meter would refuse."""
+    budget, or when no subagent the window counts can be judged. Each role's `cache_writes` sums
+    its agents' splits (`_cache_writes`), None when any one of them is None. RAISES
+    `AnatomyError` on a transcript the meter would refuse."""
     rows = {r: _row(r) for r in ROLES}
     seen: set = set()
     over: list[dict] | None = [] if budget is not None else None
@@ -424,13 +470,14 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
         else:
             readings = cut
     largest = _largest(readings)
-    for (path, side), records, firsts in zip(sources, readings, starts):
+    for (path, side), records, firsts, every in zip(sources, readings, starts, whole):
         if since is not None and side == "subagents" and not records:
             continue  # no call in the run's window: not one of its agents
         key = agent_key(path.stem) if side == "subagents" else None
         role = ORCHESTRATOR if side == "main" else roles.get(key or "", OTHER)
         agent = path.stem if side == "subagents" else "session"
-        comps, contexts = _usage_of(path, records, seen, largest)
+        comps, contexts, booked = _usage_of(path, records, seen, largest)
+        writes = _cache_writes(every, booked)
         if side == "subagents" and over is not None:
             if not firsts:  # no message id, or no call: neither flagged nor cleared
                 unjudged.append({"agent": agent, "role": role, "reason": (
@@ -445,6 +492,11 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
         row["agent_ids"].append(agent)
         for c in run_state.TOKEN_COMPONENTS:
             row["components"][c] += comps[c]
+        if writes is None:
+            row["cache_writes"] = None
+        elif row["cache_writes"] is not None:
+            for k in CACHE_WRITE_KEYS:
+                row["cache_writes"][k] += writes[k]
         if contexts is None:
             row["per_call"] = False
         else:
@@ -477,14 +529,14 @@ def _total(finished: list[dict], comps: dict) -> dict:
 
 def from_reading(reading: dict) -> dict:
     """The anatomy a harness reading with no per-call records gives: its whole under `other`, no
-    role attributed and every count and context not available, never 0."""
+    role attributed and every count, context and cache-write split not available, never 0."""
     comps = {c: int((reading.get("components") or {}).get(c) or 0)
              for c in run_state.TOKEN_COMPONENTS}
     rows = {r: _row(r) for r in ROLES}
     rows[OTHER]["components"] = dict(comps)
     finished = _finish(rows)
     for row in finished:
-        row["calls"] = None
+        row["calls"] = row["cache_writes"] = None
         if row["role"] != OTHER:
             row.update(agents=None, priced=None, share=None, split=None)
         else:
@@ -559,6 +611,23 @@ def _orchestrator_line(got: dict) -> str:
             f"wave in a fresh session with `sprint.py resume`")
 
 
+def _cache_writes_lines(got: dict) -> list[str]:
+    """The block under the role table giving each role's cache-write split. Each role's line
+    opens with its role and a colon, so a reader taking a line whose first word is a role name
+    for a table row does not take one of these for the table's."""
+    lines = ["Cache writes by role, in tokens: growth is written within its kind's lifetime (5 "
+             "minutes, or 1 hour) of the call before it in its transcript; a re-write follows a "
+             "longer gap and counts the call's whole write, so it overstates by one turn; a role "
+             "is not available when any agent in it has a model call's usage record with no "
+             "readable timestamp or no message id:"]
+    for row in got["roles"]:
+        w = row["cache_writes"]
+        lines.append(f"  {row['role']}: " + (NOT_AVAILABLE if w is None else (
+            f"{_cell(w[GROWTH])} growth, {_cell(w['rewrite_5m'])} re-written after 5-minute "
+            f"expiry, {_cell(w['rewrite_1h'])} re-written after 1-hour expiry")))
+    return lines
+
+
 def render(got: dict) -> str:
     """The anatomy as `sprint cost --anatomy` prints it."""
     w = len(NOT_AVAILABLE)
@@ -591,6 +660,7 @@ def render(got: dict) -> str:
     lines.append(f"{'total':<12}" + "".join(f"  {c:>{w}}" for c in (
         _cell(t["agents"]), _cell(t["calls"]), _cell(t["priced"]))))
     lines.append(_orchestrator_line(got))
+    lines += ["", *_cache_writes_lines(got)]
     lines += ["", f"Subagent starts (each one's first call's context) against "
                   f"`{START_BUDGET_KEY}`:"]
     budget, over = got.get("start_budget"), got.get("over_start_budget")

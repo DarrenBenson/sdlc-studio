@@ -634,11 +634,10 @@ record; this page keeps what you set:
 
 ### Cost anatomy {#cost-anatomy}
 
-`sprint.py cost --anatomy` says where the open run's tokens went: the records after its `started_at` in the transcripts the
-meter reads, so each message counts once at its largest usage record and the whole equals the meter's delta over the run.
-`--session`, no open run, or a usage record with no timestamp reads the whole session, and the header says which. Per role:
-agents, calls, priced tokens and share, the cache-read, cache-write and output shares, the first call's context (over the
-role's agents) and the average per call; context is input + cache write + cache read.
+`sprint.py cost --anatomy` says where the open run's tokens went: the records after its `started_at` in the meter's transcripts,
+each message once at its largest usage record, so the whole is the meter's delta over the run. `--session`, no open run, or an
+untimed usage record reads the whole session, as the header says. Per role: agents, calls, priced tokens, share, cache-read,
+cache-write and output shares, the first call's (over its agents) and average context, each input + cache write + cache read.
 
 | Role | From |
 | --- | --- |
@@ -648,19 +647,20 @@ role's agents) and the average per call; context is input + cache write + cache 
 | reviewer | an agent a recorded verdict names as reviewer (`sprint lane accept --reviewer`), with or without its `agent-` prefix |
 | other | an agent no record names; its prompt text is never read for a role |
 
-It then names the ten costliest tool outputs, each its size in characters times the later calls of its own transcript, with
-what produced it. A context no per-call record gives (a session-total harness reading, usage records with no message id, a
-role with no calls) prints `not available`, never 0; with no Claude Code transcript the meter's reading is one total under
-other. `--transcripts DIR` names the transcript directory; `--format json` prints the same figures.
+It then names the ten costliest tool outputs (size in characters times the later calls of its own transcript) and what produced
+each. A context no per-call record gives (a session-total harness reading, usage records with no message id, a role with no
+calls) prints `not available`, never 0; with no Claude Code transcript the meter's reading is one total under other.
+`--transcripts DIR` names the directory; `--format json` prints the same figures. The report's cost appendix takes this table
+from the anatomy recorded on the close's meter reading (`run_state.stamp_cost_roles`), so it re-derives at sign; it is NOT
+MEASURED when no reading in the window recorded one, or the anatomy could not be had or read a session other than the meter's.
 
-The report's cost appendix takes this table from the same `cost_anatomy.anatomy` call, recorded on the close's meter reading
-(`run_state.stamp_cost_roles`) rather than the growing live transcript, so it re-derives at sign. It is NOT MEASURED when no
-reading in the window recorded one, or the anatomy could not be had or read a session other than the meter's.
-
-The header names the main thread's start context: its first call's, whatever the window. Below the table an orchestrator
-averaging over 150,000 tokens a call is flagged (`orchestrator_over_context_budget`). A Subagent starts section flags each
-subagent whose first call's context, whatever the window, exceeds `cost.agent_start_budget` (30000 by default; `off` flags none),
-with its start; one with no per-call start is named not available. The JSON carries `start_budget`, `over_start_budget`,
+Below the table an orchestrator averaging over 150,000 tokens a call is flagged (`orchestrator_over_context_budget`);
+`cache_writes` splits each role's writes into `growth` and re-writes after a gap over the kind's lifetime (`rewrite_5m` over 5
+minutes, `rewrite_1h` over 60), from the previous call's first usage record in the whole transcript, summing only the window's
+calls. A re-write counts the call's whole write, overstating by one turn; a role is `not available` when any agent in it has an
+untimed or id-less usage record of a call. The header names the main thread's start context; a Subagent starts section flags each
+subagent whose start (its first call's context whatever the window) exceeds `cost.agent_start_budget` (30000 by default; `off`
+flags none), and one with no per-call start as not available. The JSON carries `start_budget`, `over_start_budget`,
 `start_not_available` and `orchestrator_context_budget`. A project `.claude/settings.json` that disables the plugins and
 connectors a delivery session does not use is recommended, not enforced; a claude.ai connector may not be switchable per project.
 
