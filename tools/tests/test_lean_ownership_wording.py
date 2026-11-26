@@ -40,8 +40,9 @@ DOC_OWNER_PATTERNS = {
     "PO/PM owners": re.compile(r"\bPO/PM owners?\b"),
 }
 ALL_PATTERNS = {**OWNER_PATTERNS, **DOC_OWNER_PATTERNS}
-#: A table column headed by ownership, in any wording ("Owns", "Owns (the document)", "Owner").
-OWNS_HEADER = re.compile(r"\bown(?:s|ed|ers?)?\b", re.I)
+#: A table column heading holding a word that starts with "own", in any case ("Owns", "Owner",
+#: "Ownership", "Owning"); a word with "own" inside it ("Known") is not one.
+OWNS_HEADER = re.compile(r"\bown\w*", re.I)
 
 #: The old wording, in the shapes HEAD carried it: split across a line and bold, and plain.
 PLANTED = (
@@ -158,7 +159,8 @@ class OwnershipWordingTests(unittest.TestCase):
         self.assertNotRegex(heading, re.compile(r"owner|owns", re.I))
         header = next(line for line in body.splitlines() if line.startswith("|"))
         cells = [c.strip() for c in header.strip("|").split("|")]
-        self.assertEqual([c for c in cells if OWNS_HEADER.search(c)], [], "a column is headed Owns")
+        self.assertEqual([c for c in cells if OWNS_HEADER.search(c)], [],
+                         "a column heading holds a word starting with 'own'")
         said = sentences(body)
         owner = [s for s in said if re.search(r"\bperson owns every document\b", s)]
         self.assertTrue(owner, "no sentence says the person owns every document")
@@ -193,10 +195,12 @@ class OwnershipWordingTests(unittest.TestCase):
         raw = [m.group(0) for m in OWNER_PATTERNS["owned by a seat"].finditer(PLANTED)]
         self.assertEqual(raw, ["owned by a Persona", "owned by the PO"])
         self.assertEqual(len(hits(PLANTED, ALL_PATTERNS)), PLANTED_HITS)
-        # A column headed by ownership is caught in any wording; the section's own are not.
-        for heading in ("Owns", "Owns (the document)", "Owner", "owned by"):
+        # A heading word starting with "own" is caught; the section's own headings and a word
+        # with "own" inside it are not.
+        for heading in ("Owns", "Owns (the document)", "Owner", "owned by", "Ownership", "Owning"):
             self.assertRegex(heading, OWNS_HEADER)
-        for heading in ("Seat", "Checks the work against", "Accountable for", "Applies"):
+        for heading in ("Seat", "Checks the work against", "Accountable for", "Applies",
+                        "Known gaps", "Shown in"):
             self.assertNotRegex(heading, OWNS_HEADER)
         # A seat signing in one sentence and delegation in another is not the rule.
         self.assertEqual(signed(NEAR_MISS_LEG, "Product Owner"), [])
