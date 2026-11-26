@@ -2289,11 +2289,38 @@ def _rejoin_if_discharged(repo_root: Path | str, unit: str, verdict: str,
     return f"  {uid} {REJOINS}: this APPROVE discharges its carry at the review cap. {still}"
 
 
+#: The severity a carry at the cap is filed at while the project's release bar allows it.
+CARRY_SEVERITY = "Medium"
+
+
+def carry_severity(repo_root: Path | str) -> tuple[str, str]:
+    """The severity a carry at the cap is filed at, and the sentence its bug file states as the
+    rule that set it: `(severity, rule)`.
+
+    `CARRY_SEVERITY` while the release bar (`review.blocking_priority`, read by
+    `blocking_priorities`) allows it, so a project on the shipped bar files every carry at
+    Medium. A bar barring Medium files it at Low, the most severe level that bar allows, so a
+    unit whose own criterion checks the bar can close its own carry; a bar barring every
+    severity files it at Low too, the least severe level, and says so. A carry is never filed
+    above the default, however much the bar allows. An unrecognised bar reads as the shipped
+    one, as `blocking_priorities` reads it."""
+    barred = blocking_priorities(repo_root)
+    bar = "the release bar (`review.blocking_priority`)"
+    if CARRY_SEVERITY.lower() not in barred:
+        return CARRY_SEVERITY, (f"Filed at {CARRY_SEVERITY}, the carry's default, which {bar} "
+                                "allows.")
+    if "low" not in barred:
+        return "Low", (f"Filed at Low rather than the carry's default {CARRY_SEVERITY}: {bar} "
+                       f"bars {CARRY_SEVERITY}, and Low is the most severe level it allows.")
+    return "Low", f"Filed at Low, the least severe level, because {bar} bars every severity."
+
+
 def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     """File the findings of a REJECT recorded at the cap as a bug, and drop the unit from the
     open run's batch naming it. Returns the bug id, or None when no open run holds the unit:
     there is then no run to keep going, and the REJECT stands against the unit as it is. The
-    run keeps going: the unit becomes a known issue instead of a third round.
+    run keeps going: the unit becomes a known issue instead of a third round. The bug is filed at
+    the severity `carry_severity` reads from the release bar, its summary naming the rule.
 
     The drop records the commit the REJECT judged (`carried_review_base` reads it): the commit
     its brief was cut at, from the note of the brief its fingerprint names, not the unit's latest
@@ -2314,16 +2341,17 @@ def carry_at_cap(repo_root: Path | str, unit: str, row: dict) -> str | None:
     # naming it would name an id no file carries.
     disp = sdlc_md.display_id(repo_root, unit)
     acs, verify = carried_criteria(disp, text, row)
+    severity, rule = carry_severity(repo_root)
     res = file_finding.file_finding(repo_root, "bug", f"{disp} did not converge in review: "
                                     f"round {row.get('round')} REJECT findings", {
         "affects": sdlc_md.extract_field(text, "Affects") or "",
         "points": sdlc_md.extract_field(text, "Points") or "",
         "acs": acs,
         "verify": verify,
-        "severity": "Medium",
+        "severity": severity,
         "summary": (f"{disp} was rejected at round {row.get('round')}, the review cap, by "
                     f"{row.get('reviewer')}, so it was carried as a known issue rather than "
-                    f"reviewed again. The findings still open: {issues}"),
+                    f"reviewed again. {rule} The findings still open: {issues}"),
         "steps": f"1. Read the round {row.get('round')} REJECT of {disp} in the verdict ledger.",
         "fix": f"Fix each finding above, then deliver {disp} again in a later run.",
     }, counted=False)  # a review outcome, not a new finding: outside the triage session cap

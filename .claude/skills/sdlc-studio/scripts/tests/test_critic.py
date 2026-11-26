@@ -4744,5 +4744,100 @@ class NonPytestSelfCheckTests(unittest.TestCase):
         self.assertIn("A mutant the runner cannot run goes in US0103-mutants.json", section)
 
 
+class CarrySeverityTests(unittest.TestCase):
+    """A unit carried at the review cap is filed at a severity the project's release bar
+    (`review.blocking_priority`) allows, and its bug file names the rule that set it. Before,
+    every carry was filed at Medium whatever the bar, so in a project barring Medium a unit
+    whose own criterion checks the bar could not close its own carry."""
+
+    UNIT = "US0001"
+    #: The sentence each rule writes into the carried bug, word for word.
+    ALLOWED = ("Filed at Medium, the carry's default, which the release bar "
+               "(`review.blocking_priority`) allows.")
+    STEPPED = ("Filed at Low rather than the carry's default Medium: the release bar "
+               "(`review.blocking_priority`) bars Medium, and Low is the most severe level "
+               "it allows.")
+    ALL_BARRED = ("Filed at Low, the least severe level, because the release bar "
+                  "(`review.blocking_priority`) bars every severity.")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.mod = _load()
+        from lib import run_state, sdlc_md  # noqa: PLC0415 - the open run the carry drops from
+        cls.run_state, cls.sdlc_md = run_state, sdlc_md
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        transcripts = self.tmp / "transcripts"
+        transcripts.mkdir()
+        env = unittest.mock.patch.dict("os.environ",
+                                       {self.run_state.TRANSCRIPTS_ENV: str(transcripts)})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def _workspace(self, name: str, cut: str | None) -> Path:
+        """A project with one unit in Review, its bar set to `cut` (None: the shipped bar)."""
+        root = self.tmp / name
+        stories = root / "sdlc-studio" / "stories"
+        stories.mkdir(parents=True)
+        (stories / f"{self.UNIT}-a-unit.md").write_text(
+            f"# {self.UNIT}: a unit\n\n> **Status:** Review\n> **Epic:** EP0001\n"
+            "> **Points:** 2\n> **Affects:** src/unit.py\n\n## Acceptance Criteria\n\n"
+            "- [ ] **AC1** the parser keeps every row\n"
+            "  - **Verify:** pytest tests/test_unit.py::UnitTests::test_rows_kept\n",
+            encoding="utf-8")
+        (root / "src").mkdir()
+        (root / "src" / "unit.py").write_text("x = 1\n", encoding="utf-8")
+        bar = f"  blocking_priority: {cut}\n" if cut else ""
+        (root / "sdlc-studio" / ".config.yaml").write_text(
+            f"review:\n  require_brief_provenance: false\n{bar}", encoding="utf-8")
+        return root
+
+    def _carried(self, root: Path) -> str:
+        """Carry the unit at the cap through `critic.py record` in an open run: the bug's text."""
+        self.run_state.open_run(root, batch=[self.UNIT, "US0002"], goal="g")
+        out = ""
+        for issues in ("[new] the parser drops a row", "[new] the parser still drops the last row"):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                rc = self.mod.main(["record", "--unit", self.UNIT, "--verdict", "REJECT",
+                                    "--reviewer", "rev-a", "--author", "builder",
+                                    "--issues", issues, "--root", str(root)])
+            out = buf.getvalue()
+            self.assertEqual(0, rc, out)
+        bugs = list((root / "sdlc-studio" / "bugs").glob("BG*.md"))
+        self.assertEqual(1, len(bugs), f"premise: the carry filed no bug:\n{out}")
+        return bugs[0].read_text(encoding="utf-8")
+
+    def test_a_carry_takes_a_severity_the_release_bar_allows(self) -> None:
+        """AC1. A bar barring Medium files the carry at Low and says so; the shipped bar, which
+        allows Medium, keeps it at Medium (the positive control). MUTANTS: the fixed Medium; the
+        bar read as allowing Medium; the rule sentence left off the bug."""
+        barred = self._carried(self._workspace("bars-medium", "medium"))
+        self.assertEqual("Low", self.sdlc_md.extract_field(barred, "Severity"), barred)
+        self.assertIn(self.STEPPED, barred)
+        shipped = self._carried(self._workspace("shipped-bar", None))
+        self.assertEqual("Medium", self.sdlc_md.extract_field(shipped, "Severity"), shipped)
+        self.assertIn(self.ALLOWED, shipped)
+        self.assertNotIn(self.STEPPED, shipped)
+
+    def test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low(self) -> None:
+        """Every bar's rule. A bar that allows High still files at Medium, the default, never
+        above it; `p2` is Medium's tier in another vocabulary; a bar barring every severity
+        files at Low and names that rule; an unrecognised bar reads as the shipped one. MUTANTS:
+        the default raised to the most severe level allowed; the every-severity guard dropped or
+        inverted; the bar's vocabulary read raw."""
+        for cut, expected in (("critical", ("Medium", self.ALLOWED)),
+                              ("high", ("Medium", self.ALLOWED)),
+                              ("bogus", ("Medium", self.ALLOWED)),
+                              ("p2", ("Low", self.STEPPED)),
+                              ("low", ("Low", self.ALL_BARRED))):
+            with self.subTest(cut=cut):
+                root = self._workspace(f"cut-{cut}", cut)
+                self.assertEqual(expected, self.mod.carry_severity(root))
+
+
 if __name__ == "__main__":
     unittest.main()
