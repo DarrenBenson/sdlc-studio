@@ -4534,21 +4534,35 @@ class StagedVerdictTests(unittest.TestCase):
 
 
 class NonPytestSelfCheckTests(unittest.TestCase):
-    """BG1763: the author self-check's mutation pass asks for a pytest selector only when pytest
-    can run one of the unit's Affects test files. The mutation runner runs each mutant's test
-    with pytest, which runs a Python file named on its command line and nothing else, so a unit
-    whose test files are vitest's (`*.test.ts`, `*.spec.js`) is sent to the hand-run MUTANTS.json
-    route and asked for no pytest selector. A pytest unit keeps the runner route; a mixed unit
-    keeps it too and is told which of its test files pytest cannot run.
+    """BG1763: the author self-check's mutation pass asks for a pytest selector only when the
+    mutation runner can run one of the unit's Affects test files (`critic.runner_can_run`). The
+    runner runs each mutant's test with pytest, which by default imports a test file as a module
+    named by its stem, so it runs a `.py` file whose name holds no other dot. A unit none of
+    whose test files is one - vitest's `*.test.ts`, a Go `_test.go`, a Rust `test_*.rs`, a
+    dotted `*.spec.py` - is sent to the hand-run MUTANTS.json route, asked for no pytest
+    selector, and hands in no runner report. A pytest unit keeps the runner route; a mixed unit
+    keeps it too and is told which of its test files are run by hand.
 
-    The section is read from `sprint.py lane brief`, the brief a builder is handed, and from
-    `critic.author_self_check`, whose record line the lane brief replaces with its hand-in note.
+    The section and the hand-in list are read from `sprint.py lane brief`, the brief a builder
+    is handed, and the record line from `critic.author_self_check`, whose record line the lane
+    brief replaces with its hand-in note.
     """
 
-    #: A vitest unit, a pytest unit (one `test_*.py` and one `*_test.py`) and a mixed unit.
+    #: A vitest unit, a pytest unit (one `test_*.py`, one `*_test.py`), a mixed unit, a Go unit,
+    #: a dotted-stem Python unit, a Rust unit and a unit with no test file.
     AFFECTS = {"US0101": "src/widget.ts, tests/widget.test.ts, tests/form.spec.js",
                "US0102": "src/widget.py, tests/test_widget.py, tests/widget_test.py",
-               "US0103": "src/widget.py, tests/test_widget.py, tests/widget.test.ts"}
+               "US0103": "src/widget.py, tests/test_widget.py, tests/widget.test.ts, "
+                         "tests/widget.spec.py",
+               "US0104": "pkg/x.go, pkg/x_test.go",
+               "US0105": "src/widget.py, tests/widget.spec.py",
+               "US0106": "src/lib.rs, tests/test_widget.rs",
+               "US0107": "src/widget.py"}
+    #: The units with test files the runner can run none of, each with those test files.
+    BY_HAND = {"US0101": "tests/widget.test.ts, tests/form.spec.js",
+               "US0104": "pkg/x_test.go",
+               "US0105": "tests/widget.spec.py",
+               "US0106": "tests/test_widget.rs"}
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -4577,39 +4591,50 @@ class NonPytestSelfCheckTests(unittest.TestCase):
         self.addCleanup(env.stop)
         self.run_state.open_run(self.root, batch=list(self.AFFECTS), goal="g")
 
-    def _lane_section(self, uid: str) -> str:
-        """The AUTHOR SELF-CHECK section of the unit's lane brief, up to its hand-in list."""
+    def _brief(self, uid: str) -> str:
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = self.sprint.main(["lane", "brief", "--units", uid, "--root", str(self.root)])
         self.assertEqual(0, rc, err.getvalue())
-        text = out.getvalue()
+        return out.getvalue()
+
+    def _lane_section(self, uid: str) -> str:
+        """The AUTHOR SELF-CHECK section of the unit's lane brief, up to its hand-in list."""
+        text = self._brief(uid)
         start = text.index("AUTHOR SELF-CHECK")
         return text[start:text.index(f"Then, for {uid}", start)]
+
+    def _hand_in(self, uid: str) -> str:
+        """The unit's lane hand-in list, from its heading to its staging line."""
+        text = self._brief(uid)
+        start = text.index(f"Then, for {uid}")
+        return text[start:text.index("  Stage exactly", start)]
 
     def test_a_vitest_unit_is_not_asked_for_a_pytest_selector(self) -> None:
         """AC1. MUTANTS: the section as it stood before this fix, which sent every unit with a
         test file to the runner, `its test a pytest selector`, fails it; so does reading a
-        `.ts` or `.js` test file as one pytest can run, or recording the hand-run list through
-        `--mutants-from`. The unit is led to the hand-run route, the project's own runner and
-        its hand-in MUTANTS.json, and recorded through `--mutants`."""
+        `.ts` or `.js` test file as one the runner can run, or recording the hand-run list
+        through `--mutants-from`. The unit is led to the hand-run route, the project's own
+        runner and its hand-in MUTANTS.json, and recorded through `--mutants`."""
         section = self._lane_section("US0101")
         self.assertNotIn("pytest selector", section)
         self.assertNotIn("EDITS.json", section)
         self.assertNotIn("mutation.py run", section)
         self.assertNotIn("--mutants-from", section)
-        self.assertNotIn("pytest cannot run", section)
+        self.assertNotIn("The test files that are not", section)
         step = section[section.index("2. Mutation pass"):section.index("3. Hand both in")]
         self.assertIn("2. Mutation pass, over: tests/widget.test.ts, tests/form.spec.js.", step)
         self.assertEqual(
-            ["   The mutation runner runs each mutant's test with pytest, which runs none of "
-             "these test files, so run each mutant by hand with the project's own test runner: "
-             "apply it, run the test that should catch it and see that test fail, then restore "
-             "the file. List each in US0101-mutants.json as {mutant, test, result, answer}, its "
-             "test naming one of the test files above, and give each survivor an answer there. "
-             "Run them in the lane's own worktree or a detached worktree of the repository "
-             "(`git worktree add --detach`), never in a copy of the tests alone, which runs "
-             "without the project's own test configuration."],
+            ["   The mutation runner runs each mutant's test with pytest, and none of these "
+             "test files is a `.py` file whose name holds no other dot, the shape pytest "
+             "imports as a test module by default, so run each mutant by hand with the "
+             "project's own test runner: apply it, run the test that should catch it and see "
+             "that test fail, then restore the file. List each in US0101-mutants.json as "
+             "{mutant, test, result, answer}, its test naming one of the test files above, and "
+             "give each survivor an answer there. Run them in the lane's own worktree or a "
+             "detached worktree of the repository (`git worktree add --detach`), never in a "
+             "copy of the tests alone, which runs without the project's own test "
+             "configuration."],
             [ln for ln in step.splitlines() if "by hand" in ln])
         self.assertIn("   Write them to sdlc-studio/.local/lane/US0101-claims.json and "
                       "sdlc-studio/.local/lane/US0101-mutants.json; do not record them "
@@ -4621,32 +4646,89 @@ class NonPytestSelfCheckTests(unittest.TestCase):
         self.assertEqual(["   critic.py self-check record --unit US0101 --author <you> "
                           "--claims CLAIMS.json --mutants MUTANTS.json"], record)
 
+    def test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand(self) -> None:
+        """A unit of one test file the runner cannot run is sent by hand, whatever its family:
+        a Go `_test.go`, a dotted `widget.spec.py` (pytest reads its stem as a module in a
+        package `widget` and fails to import it) and a Rust `test_*.rs`. MUTANTS: a JS-only
+        allowlist, a `.test`/`.spec` name rule, any `.py` read as runnable, a `test_` name read
+        as runnable, or the hand route taken only for more than one file, each fails it."""
+        for uid in ("US0104", "US0105", "US0106"):
+            with self.subTest(uid=uid):
+                section = self._lane_section(uid)
+                self.assertNotIn("pytest selector", section)
+                self.assertNotIn("mutation.py run", section)
+                self.assertNotIn("EDITS.json", section)
+                self.assertIn(f"2. Mutation pass, over: {self.BY_HAND[uid]}.", section)
+                self.assertIn("so run each mutant by hand with the project's own test runner",
+                              section)
+                self.assertIn(f"List each in {uid}-mutants.json as", section)
+
+    def test_a_hand_run_unit_hands_in_no_runner_report(self) -> None:
+        """The lane hand-in list of a unit sent by hand names only its claims and mutants
+        files, the mutants file recorded through --mutants, and accepts a mutant's test by its
+        path, as the record does; a pytest unit, a mixed unit and a unit with no test file
+        still name the runner report and a `path::name` test. MUTANTS: the hand-in list left as
+        it was for every unit, the hand-run list given to a unit with no test file or to a
+        mixed unit, or its test rule swapped, each fails it."""
+        for uid, tests in self.BY_HAND.items():
+            with self.subTest(uid=uid):
+                hand_in = self._hand_in(uid)
+                self.assertNotIn("mutation-edits.json", hand_in)
+                self.assertNotIn("--mutants-from", hand_in)
+                self.assertNotIn("path::name` in", hand_in)
+                self.assertIn(f"    sdlc-studio/.local/lane/{uid}-mutants.json - the mutation "
+                              f"pass above, run by hand, each as {{mutant, test, result, "
+                              f"answer}}, which `sprint lane land` records through --mutants\n",
+                              hand_in)
+                self.assertIn(f"; each mutant's test: one of the unit's Affects test files, by "
+                              f"its path or as `path::name`, {tests}\n", hand_in)
+        for uid, tests in (("US0102", "tests/test_widget.py, tests/widget_test.py"),
+                           ("US0103", "tests/test_widget.py, tests/widget.test.ts, "
+                                      "tests/widget.spec.py"),
+                           ("US0107", None)):
+            with self.subTest(uid=uid):
+                hand_in = self._hand_in(uid)
+                self.assertIn(f"    sdlc-studio/.local/lane/{uid}-mutation-edits.json - the "
+                              f"mutation pass above, the report the runner command writes "
+                              f"there, which `sprint lane land` records through --mutants-from",
+                              hand_in)
+                self.assertIn(f"    sdlc-studio/.local/lane/{uid}-mutants.json - for a mutant "
+                              f"the runner cannot run, recorded beside the report through "
+                              f"--mutants,", hand_in)
+                self.assertNotIn("run by hand, each as", hand_in)
+                if tests:
+                    self.assertIn(f"; each mutant's test: a `path::name` in one of the unit's "
+                                  f"Affects test files, {tests}\n", hand_in)
+
     def test_a_pytest_unit_keeps_the_runner_and_its_selector(self) -> None:
-        """Positive control. MUTANTS: reading only a `test_*.py` name as one pytest can run (so
-        `widget_test.py` is named as a file it cannot), or no `.py` file at all, fails it. A
-        pytest unit is asked for the selector, given the runner command and recorded through
-        `--mutants-from`, and its section names no file pytest cannot run."""
+        """Positive control. MUTANTS: reading only a `test_*.py` name as one the runner can run
+        (so `widget_test.py` is named as a file it cannot), or no `.py` file at all, fails it.
+        A pytest unit is asked for the selector, given the runner command and recorded through
+        `--mutants-from`, and its section names no file run by hand."""
         section = self._lane_section("US0102")
         self.assertIn("its test a pytest selector", section)
         self.assertIn("   mutation.py run --edits EDITS.json --scope US0102 --report "
                       "sdlc-studio/.local/lane/US0102-mutation-edits.json", section)
-        self.assertNotIn("pytest cannot run", section)
+        self.assertNotIn("The test files that are not", section)
         self.assertNotIn("by hand with the project's own test runner", section)
         self.assertIn("--mutants-from REPORT.json", self.mod.author_self_check(self.root,
                                                                                "US0102"))
 
-    def test_a_mixed_unit_keeps_the_runner_and_names_the_file_pytest_cannot_run(self) -> None:
-        """A unit with one pytest and one vitest test file keeps the runner route for the
-        mutants its pytest file catches, and is told that a mutant only its vitest file can
-        catch goes in its MUTANTS.json, run by hand. MUTANTS: dropping that line, or naming the
-        pytest file in it, fails it."""
+    def test_a_mixed_unit_keeps_the_runner_and_names_the_files_run_by_hand(self) -> None:
+        """A unit with a pytest test file beside a vitest one and a dotted `.spec.py` keeps the
+        runner route for the mutants its pytest file catches, and is told that a mutant only
+        the other two can catch goes in its MUTANTS.json, run by hand. MUTANTS: dropping that
+        line, naming the pytest file in it, or naming only the first file run by hand, each
+        fails it."""
         section = self._lane_section("US0103")
         self.assertIn("its test a pytest selector", section)
         self.assertIn("mutation.py run --edits EDITS.json --scope US0103", section)
-        named = [ln for ln in section.splitlines() if "pytest cannot run" in ln]
-        self.assertEqual(["   pytest cannot run tests/widget.test.ts, so a mutant that only a "
-                          "test there can catch is one the runner cannot run: it goes in "
-                          "US0103-mutants.json, run by hand as step 3 says."], named)
+        named = [ln for ln in section.splitlines() if "The test files that are not" in ln]
+        self.assertEqual(["   The test files that are not a `.py` file whose name holds no "
+                          "other dot, the shape pytest imports as a test module by default: "
+                          "tests/widget.test.ts, tests/widget.spec.py. A mutant that only a "
+                          "test there can catch goes in US0103-mutants.json, run by hand as "
+                          "step 3 says."], named)
         self.assertIn("A mutant the runner cannot run goes in US0103-mutants.json", section)
 
 

@@ -3183,10 +3183,10 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     declares), then each changelog fragment the Affects declares - read from its Affects, never
     from its id, because a carried bug ships its story's fragment. The mutation targets are the
     test files its Affects declares. The runner route (EDITS.json, each mutant's test a pytest
-    selector, and `RUNNER_COMMAND`) is offered only when pytest can run one of them (a
-    `PYTEST_TEST_SUFFIX` file), and the section names any it cannot run; a unit none of whose
-    test files pytest can run is sent to the hand-run MUTANTS.json route alone and asked for
-    no pytest selector."""
+    selector, and `RUNNER_COMMAND`) is offered only when the runner can run one of them
+    (`runner_can_run`), and the section names the ones it cannot; a unit none of whose test
+    files the runner can run is sent to the hand-run MUTANTS.json route alone and asked for no
+    pytest selector."""
     affects, fragments, tests = _self_check_scope(repo_root, unit)
     claims = " ".join("\n".join(_CLAIM_INVENTORY_BLOCK.splitlines()[1:]).split())
     mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
@@ -3225,16 +3225,15 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
             f"--claims CLAIMS.json --mutants MUTANTS.json",
             "   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json is [], "
             "the unit declaring no test file."])
-    # The runner runs each mutant's test with pytest, which runs a Python file named on its
-    # command line and nothing else (a vitest `.test.ts`, a Go `_test.go`), so the runner route
-    # is offered only for a unit with such a file, and the rest are run by hand.
-    by_hand = [t for t in tests if not t.endswith(PYTEST_TEST_SUFFIX)]
+    # The runner route is offered only for a unit with a test file the runner can run
+    # (`runner_can_run`); a mutant only the others can catch is run by hand.
+    by_hand = [t for t in tests if not runner_can_run(t)]
     if len(by_hand) == len(tests):
         return "\n".join([
             *lines,
-            "   The mutation runner runs each mutant's test with pytest, which runs none of "
-            "these test files, so run each mutant by hand with the project's own test runner: "
-            "apply it, run the test that should catch it and see that test fail, then restore "
+            f"   The mutation runner runs each mutant's test with pytest, and none of these "
+            f"test files is {_RUNNABLE_SHAPE}, so run each mutant by hand with the project's own "
+            "test runner: apply it, run the test that should catch it and see that test fail, then restore "
             "the file. List each in MUTANTS.json as {mutant, test, result, answer}, its test "
             "naming one of the test files above, and give each survivor an answer there. Run "
             "them in the lane's own worktree or a detached worktree of the repository (`git "
@@ -3256,9 +3255,9 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
               f"{{mutant, file, old, new, test}}, its test a pytest selector, {named}. Give "
               f"each survivor an answer there, then run:",
               f"   {RUNNER_COMMAND.format(unit=uid)}",
-              *([f"   pytest cannot run {', '.join(by_hand)}, so a mutant that only a test "
-                 f"there can catch is one the runner cannot run: it goes in MUTANTS.json, run "
-                 f"by hand as step 3 says."] if by_hand else []),
+              *([f"   The test files that are not {_RUNNABLE_SHAPE}: {', '.join(by_hand)}. A "
+                 f"mutant that only a test there can catch goes in MUTANTS.json, run by hand as "
+                 f"step 3 says."] if by_hand else []),
               "",
               "3. Record both, bound to the content of the unit's Affects as it stands now:",
               f"   critic.py self-check record --unit {uid} --author <you> "
@@ -3906,9 +3905,21 @@ def _kept_report_path(repo_root: Path | str, report: str | Path) -> str:
 AUTHOR_MUTANTS_DIR = "author-mutants"
 #: The runner command the author section prints, with the unit's id, and the pages name.
 RUNNER_COMMAND = "mutation.py run --edits EDITS.json --scope {unit} --report REPORT.json"
-#: The suffix of a test file the runner can run: it runs each mutant's test with pytest, which
-#: runs a Python file named on its command line, whatever its name, and no other file.
+#: The suffix of a test file the runner can run (`runner_can_run`).
 PYTEST_TEST_SUFFIX = ".py"
+#: The shape `runner_can_run` accepts, as the author self-check names it.
+_RUNNABLE_SHAPE = ("a `.py` file whose name holds no other dot, the shape pytest imports as a "
+                   "test module by default")
+
+
+def runner_can_run(test_file: str) -> bool:
+    """Whether the mutation runner can run `test_file`: a `.py` file whose name holds no other
+    dot. The runner runs each mutant's test with pytest, which by default imports a test file as
+    a module named by its stem and collects tests from no other suffix: a dotted stem
+    (`widget.spec.py`, read as a module `spec` in a package `widget`) fails to import, and a
+    vitest `widget.test.ts` or a Go `widget_test.go` yields no test."""
+    name = PurePosixPath(test_file).name
+    return name.endswith(PYTEST_TEST_SUFFIX) and name.count(".") == 1
 _KEPT_MUTANT_KEYS = ("mutant", "file", "old", "new", "test", "result", "answer")
 
 

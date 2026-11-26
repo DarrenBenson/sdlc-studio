@@ -3610,27 +3610,36 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     subject. The values the hand-in may hold are listed word for word from what `critic.py
     self-check record` accepts (`critic.claim_surfaces`, `CLAIM_RULINGS`, `MUTANT_RESULTS`), so
     the list cannot drift from the record that judges it, with the unit's Affects test files a
-    mutant's test must name."""
+    mutant's test must name. A unit with test files the mutation runner can run none of
+    (`critic.runner_can_run`) is sent by its self-check to the hand-run route alone, so it
+    hands in no runner report, and may name a mutant's test by its path, as the record
+    accepts."""
     import critic  # noqa: PLC0415 - deferred sibling; the record's own vocabulary
     import file_finding  # noqa: PLC0415 - sibling; the test-path rule the record reads
     claims, mutants = _lane_hand_in_files(uid)
     required, optional = critic.claim_surfaces(affects)
     tests = [a for a in affects if file_finding.is_test_path(a)]
+    by_hand = bool(tests) and not any(critic.runner_can_run(t) for t in tests)
+    mutation = ([f"    {mutants} - the mutation pass above, run by hand, each as {{mutant, test, "
+                 f"result, answer}}, which `sprint lane land` records through --mutants"]
+                if by_hand else
+                [f"    {_lane_report_file(uid)} - the mutation pass above, the report the runner "
+                 f"command writes there, which `sprint lane land` records through --mutants-from",
+                 f"    {mutants} - for a mutant the runner cannot run, recorded beside the report "
+                 f"through --mutants, or for a unit with no test file, the mutation pass by hand, "
+                 f"each as {{mutant, test, result, answer}}"])
+    test_rule = ("one of the unit's Affects test files, by its path or as `path::name`"
+                 if by_hand else "a `path::name` in one of the unit's Affects test files")
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
              # dry: a builder's run writes nothing into the unit's own file, outside its Affects
              f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
              f"  Hand in, under {LANE_HAND_IN}/ at the project root:",
              f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
-             f"    {_lane_report_file(uid)} - the mutation pass above, the report the runner "
-             f"command writes there, which `sprint lane land` records through --mutants-from",
-             f"    {mutants} - for a mutant the runner cannot run, recorded beside the report "
-             f"through --mutants, or for a unit with no test file, the mutation pass by hand, "
-             f"each as {{mutant, test, result, answer}}",
+             *mutation,
              f"    The values the record accepts, word for word, and no others - surface: "
              f"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, "
              f"bare, the evidence in the claim; result: {', '.join(critic.MUTANT_RESULTS)}"
-             + (f"; each mutant's test: a `path::name` in one of the unit's Affects test "
-                f"files, {', '.join(tests)}" if tests else ""),
+             + (f"; each mutant's test: {test_rule}, {', '.join(tests)}" if tests else ""),
              f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
              f"subject, written last"]
     if not affects:
