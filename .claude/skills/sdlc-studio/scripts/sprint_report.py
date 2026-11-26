@@ -2904,7 +2904,7 @@ def _page_readings(page: dict | None) -> dict:
     """
     if page is None:
         return {"points": None, "findings": None, "waivers": None, "roles": None,
-                "price_table": None, "effort": None}
+                "cache_writes": None, "price_table": None, "effort": None}
     rows = {s.get("key"): s.get("rows") or [] for s in page.get("sections") or []}
 
     def val(row: dict, key: str):
@@ -2925,6 +2925,8 @@ def _page_readings(page: dict | None) -> dict:
             # move when the table is revised: both are the page's, replayed.
             "roles": next((s for s in page.get("sections") or []
                            if s.get("key") == "cost_roles"), None),
+            "cache_writes": next((s for s in page.get("sections") or []
+                                  if s.get("key") == "cost_cache_writes"), None),
             "price_table": page.get(PRICE_TABLE),
             # The plan the effort was read from is overwritten by the next run's plan.
             "effort": {key: f for s in page.get("sections") or [] if s.get("key") == "cost"
@@ -4719,6 +4721,14 @@ ROLE_COLUMNS = (("role_agents", "agents", "int"), ("role_calls", "calls", "int")
                 ("role_avg_context", "avg_context", "int"))
 
 
+def _closing_roles(state: dict) -> dict | None:
+    """The spend by role the newest reading in `state` recorded (`run_state.COST_ROLES`), or
+    None when no reading recorded one."""
+    return next((s.get(run_state.COST_ROLES) for s in reversed(
+        state.get(run_state.TOKEN_STAMPS) or [])
+        if isinstance(s, dict) and isinstance(s.get(run_state.COST_ROLES), dict)), None)
+
+
 def _cost_roles_section(state: dict, state_rel: str, replay: dict | None) -> dict:
     """The session's spend by role, each cell the one `sprint cost --anatomy` prints for it
     (its printer's own cell format), from the anatomy the run's closing reading recorded
@@ -4732,9 +4742,7 @@ def _cost_roles_section(state: dict, state_rel: str, replay: dict | None) -> dic
     if replay is not None:
         return replay
     from lib import cost_anatomy  # noqa: PLC0415 - only this section needs it
-    got = next((s.get(run_state.COST_ROLES) for s in reversed(
-        state.get(run_state.TOKEN_STAMPS) or [])
-        if isinstance(s, dict) and isinstance(s.get(run_state.COST_ROLES), dict)), None)
+    got = _closing_roles(state)
     if got is None or got.get("reason"):
         return _section("cost_roles", "Cost by role", {}, not_measured=unmeasured(
             "cost_roles", state_rel,
@@ -4838,6 +4846,57 @@ def _cache_read_trend_section(root: Path, run_id: str | None, before: str, roles
         "trend_basis", f"the {CACHE_TREND_RUNS} most recent pages signed before this page was "
                        f"generated that state the role's share, the run's own pages left out",
         REPORTS_REL)}, rows)
+
+
+_NO_CACHE = "not available - this role wrote no cache"
+_NO_SPLIT = "the run's closing reading recorded no cache-write split by role"
+#: The cache-write section's count columns: the figure key each carries and its split key.
+CACHE_WRITE_COLUMNS = (("writes_growth", "growth"), ("writes_rewrite_5m", "rewrite_5m"),
+                       ("writes_rewrite_1h", "rewrite_1h"))
+
+
+def _cost_cache_writes_section(state: dict, state_rel: str, roles: dict,
+                               replay: dict | None) -> dict:
+    """Each role's cache writes split into growth and re-writes after expiry, as `sprint cost
+    --anatomy` splits them, with the re-write share of the role's cache writes, from the same
+    closing reading the Cost by role section `roles` states (`_closing_roles`); a signed page's
+    is replayed (`_page_readings`). NOT MEASURED with that section's reason when it is, and
+    when the reading holds no roles or any role lacks the `cache_writes` key, as a reading
+    taken before the split does. A role whose split is None reads not available in every
+    cell, and the share of a role that wrote no cache reads not available, never 0."""
+    if replay is not None:
+        return replay
+    title = "Cache writes by role"
+    if roles.get("not_measured") is not None:
+        nm = roles["not_measured"]
+        return _section("cost_cache_writes", title, not_measured=unmeasured(
+            "cost_cache_writes", nm["source"],
+            f"the Cost by role table is not measured: {nm.get('reason')}"))
+    got = (_closing_roles(state) or {}).get("roles") or []
+    if not got or any("cache_writes" not in r for r in got):
+        return _section("cost_cache_writes", title, not_measured=unmeasured(
+            "cost_cache_writes", state_rel, _NO_SPLIT))
+    from lib import cost_anatomy  # noqa: PLC0415 - only the cost sections need it
+    cell = cost_anatomy._cell  # noqa: SLF001 - the command's own cell format, not a copy
+    rows = []
+    for r in got:
+        w = r["cache_writes"]
+        if w is None:
+            share = cell(None)
+        else:
+            whole = sum(w[k] for _f, k in CACHE_WRITE_COLUMNS)
+            share = cell((whole - w["growth"]) / whole, "pct") if whole else _NO_CACHE
+        rows.append({"writes_role": fig("writes_role", r.get("role"), state_rel),
+                     **{key: fig(key, cell(None if w is None else w[name]), state_rel)
+                        for key, name in CACHE_WRITE_COLUMNS},
+                     "writes_rewrite_share": fig("writes_rewrite_share", share, state_rel)})
+    lives = ", ".join(f"{life:,} seconds for {kind}"
+                      for kind, (life, _key) in cost_anatomy.CACHE_LIFETIMES.items())
+    return _section("cost_cache_writes", title, {"writes_basis": fig(
+        "writes_basis", f"growth is a call's cache write within its kind's lifetime of the call "
+                        f"before it in its transcript ({lives}), and a re-write follows a longer "
+                        f"gap and counts the call's whole write, so it overstates by one turn",
+        state_rel)}, rows)
 
 
 def _calibration_section(state: dict, state_rel: str) -> dict:
@@ -5028,7 +5087,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  prices_rule: bool = True, stamp_rule: bool = True,
                  evidence_schema: str | None = None,
                  cost_forecast_rule: bool = True, effort_rule: bool = True,
-                 filed_effort: dict | None = None, cache_trend_rule: bool = True) -> dict:
+                 filed_effort: dict | None = None, cache_trend_rule: bool = True,
+                 cache_writes_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -5065,6 +5125,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     page's figures, else `filed_effort`, an unsigned page's own handed in by `revalidate`.
     `cache_trend_rule` sets each role's cache-read share against earlier signed runs in its
     own section after Cost by role; a re-derivation passes whether the page carries it.
+    `cache_writes_rule` states each role's cache-write split in its own section after those
+    two. It is True for a first derivation, and a re-derivation passes whether the filed page
+    carries the section, so a page filed before it re-derives without it.
     """
     root = Path(root)
     state, read_rel = _run_state_for(root, run_id, record)
@@ -5189,6 +5252,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                   if usd_rule else None),
         _cache_read_trend_section(root, state.get("run_id"), generated_at, roles, state_rel)
         if roles is not None and cache_trend_rule else None,
+        _cost_cache_writes_section(metered, state_rel, roles, readings["cache_writes"])
+        if roles is not None and cache_writes_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
@@ -6457,6 +6522,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          == COST_FORECAST_STATED,
                          effort_rule=basis.get(EFFORT_RULE) == EFFORT_STATED,
                          cache_trend_rule=bool(_section_of(basis, "cache_read_trend")),
+                         cache_writes_rule=bool(_section_of(basis, "cost_cache_writes")),
                          # Unsigned, the page's own effort: a clone without its plan reads it.
                          filed_effort=_page_readings(stored)["effort"] if anchor is None
                          else None,

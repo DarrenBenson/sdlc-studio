@@ -206,7 +206,8 @@ def _run(root: Path, full: bool) -> None:
              "cost_roles": {"source": "s1", "subagent_files": 1, "roles": [
                  {"role": "main", "agents": 1, "calls": 12, "priced": 900_000, "share": 0.6,
                   "split": {"cache_read": 0.5, "cache_write": 0.3, "output": 0.2},
-                  "first_context": 20_000, "avg_context": 60_000}],
+                  "first_context": 20_000, "avg_context": 60_000,
+                  "cache_writes": {"growth": 1_000, "rewrite_5m": 200, "rewrite_1h": 300}}],
                  "total": {"agents": 1, "calls": 12, "priced": 900_000}}}],
         # The second agent is tagged to the unit with its minutes and priced split, so the unit
         # row's figures carry the `label` that names where their reading came from.

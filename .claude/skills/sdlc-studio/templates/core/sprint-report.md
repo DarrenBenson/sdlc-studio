@@ -218,6 +218,26 @@ page measures reads not available, never 0.
 **Cache-read trend: NOT MEASURED** - {{cache_read_trend_reason}}
 <!-- end -->
 <!-- end -->
+<!-- when: cost_cache_writes_present -->
+<!-- when: cost_cache_writes_measured -->
+
+**Cache writes by role.** Each role's cache writes at the run's closing reading, in tokens, split
+into growth and re-writes after expiry: {{writes_basis}}. The re-write share is the role's
+re-writes over its cache writes. A role reads not available when any agent in it has a model
+call's usage record with no readable timestamp or no message id, and the share of a role that
+wrote no cache reads not available, never 0.
+
+| Role | Growth | Re-written after five-minute expiry | Re-written after one-hour expiry | Re-write share |
+| --- | --- | --- | --- | --- |
+<!-- repeat: cost_cache_writes -->
+| {{writes_role}} | {{writes_growth}} | {{writes_rewrite_5m}} | {{writes_rewrite_1h}} | {{writes_rewrite_share}} |
+<!-- end -->
+<!-- end -->
+<!-- unless: cost_cache_writes_measured -->
+
+**Cache writes by role: NOT MEASURED** - {{cost_cache_writes_reason}}
+<!-- end -->
+<!-- end -->
 
 ### DORA
 

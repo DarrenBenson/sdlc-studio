@@ -1787,10 +1787,11 @@ def unmetered_warning(repo_root: Path | str, state: dict | None) -> str | None:
 #: The session's spend by role, as `sprint cost --anatomy` reads it at the close, recorded on the
 #: close's own reading (`stamp_cost_roles`). The report states it from here and never from the
 #: live transcript, which grows after the close, so a page filed at the close re-derives to the
-#: same table at sign.
+#: same table at sign. Each role keeps its cache-write split, which the report's cache-write
+#: section states.
 COST_ROLES = "cost_roles"
 _ROLE_KEYS = ("role", "agents", "calls", "priced", "share", "split", "first_context",
-              "avg_context")
+              "avg_context", "cache_writes")
 
 
 def _cost_roles(repo_root: Path | str, transcripts_dir, source) -> dict:

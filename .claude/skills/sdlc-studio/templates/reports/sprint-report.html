@@ -268,6 +268,22 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="unmeasured"><b>Cache-read trend: NOT MEASURED</b> - {{cache_read_trend_reason}}</p>
 <!-- end -->
 <!-- end -->
+<!-- when: cost_cache_writes_present -->
+<!-- when: cost_cache_writes_measured -->
+  <p class="lede"><strong>Cache writes by role.</strong> Each role's cache writes at the run's closing reading, in tokens, split into growth and re-writes after expiry: {{writes_basis}}. The re-write share is the role's re-writes over its cache writes. A role reads not available when any agent in it has a model call's usage record with no readable timestamp or no message id, and the share of a role that wrote no cache reads not available, never 0.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Role</th><th scope="col" class="num">Growth</th><th scope="col" class="num">Re-written after five-minute expiry</th><th scope="col" class="num">Re-written after one-hour expiry</th><th scope="col" class="num">Re-write share</th></tr></thead>
+    <tbody>
+<!-- repeat: cost_cache_writes -->
+      <tr><th scope="row">{{writes_role}}</th><td class="num">{{writes_growth}}</td><td class="num">{{writes_rewrite_5m}}</td><td class="num">{{writes_rewrite_1h}}</td><td class="num">{{writes_rewrite_share}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- unless: cost_cache_writes_measured -->
+  <p class="unmeasured"><b>Cache writes by role: NOT MEASURED</b> - {{cost_cache_writes_reason}}</p>
+<!-- end -->
+<!-- end -->
 
   <h3>DORA</h3>
 <!-- when: dora_measured -->
