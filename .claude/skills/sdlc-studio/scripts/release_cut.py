@@ -85,11 +85,16 @@ def _release_records(root: Path) -> tuple[str, list[dict]]:
 
 
 def _previous_tag(root: Path) -> str | None:
-    """The most recently created tag reachable from HEAD, by its ref name, or None when there is
-    none: git missing, no repository, no commit or no tag. The ref name, never the name a tag
-    object records inside it, which a renamed tag no longer matches and which `git describe`
-    reports instead. Creation order, not version order, which ranks `v1.1.0-rc.1` above `v1.1.0`. Raises
-    ValueError when git cannot list the tags of a repository that has a commit."""
+    """The tag on the nearest tagged commit in HEAD's history, by its ref name, or None when there
+    is none: git missing, no repository, no commit or no tag on a commit HEAD holds.
+
+    Nearest is the first tagged commit `git rev-list --topo-order HEAD` lists, so a tag on a
+    commit comes before a tag on any of its ancestors, however late either tag was made and
+    however the commits are dated. Between tags on one commit, the latest creator date wins (an
+    annotated tag's tagger date; a lightweight tag has none, so it takes its commit's date), then
+    the first name. The ref name, never the name a tag object records inside it, which a renamed
+    tag no longer matches and which `git describe` reports instead. Raises ValueError when git
+    cannot list the tags or the history of a repository that has a commit."""
     try:
         head = subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD"],
                               capture_output=True, text=True, cwd=str(root), timeout=60)
@@ -97,14 +102,24 @@ def _previous_tag(root: Path) -> str | None:
         return None
     if head.returncode != 0:
         return None
+    what = "the tags reachable from HEAD"
     try:
-        listing = _git_bytes(root, ["for-each-ref", "--merged=HEAD", "--sort=-creatordate",
-                                    "--format=%(refname:strip=2)", "refs/tags"],
-                             "the tags reachable from HEAD")
+        listing = _git_bytes(root, ["for-each-ref", "--sort=-creatordate", "--format="
+                                    "%(objecttype) %(objectname) %(refname:strip=2)",
+                                    "refs/tags"], what)
+        refs = [line.split(" ", 2) for line in listing.decode("utf-8", "replace").splitlines()]
+        # an annotated tag, or a tag of a tag, is peeled through every tag to its commit
+        peeled = iter(_git_bytes(root, ["rev-parse", *(f"refs/tags/{name}^{{}}" for kind, _, name
+                                                       in refs if kind == "tag")], what).split())
+        tagged: dict[str, str] = {}
+        for kind, obj, name in refs:
+            commit = next(peeled).decode("ascii") if kind == "tag" else obj
+            tagged.setdefault(commit, name)      # the first is the newest on its commit
+        history = _git_bytes(root, ["rev-list", "--topo-order", "HEAD"], what)
     except UnreadableRecord as exc:
         raise ValueError(str(exc)) from exc
-    names = listing.decode("utf-8", "replace").splitlines()
-    return names[0] if names else None
+    return next((tagged[sha] for sha in history.decode("ascii", "replace").split()
+                 if sha in tagged), None)
 
 
 def _shipped_reports(root: Path, records: list[dict], tag: str | None) -> list[str]:

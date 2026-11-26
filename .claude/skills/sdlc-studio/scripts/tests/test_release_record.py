@@ -45,6 +45,12 @@ def _commit(root: Path, message: str) -> None:
     _git(root, "commit", "-q", "--allow-empty", "-m", message)
 
 
+def _dated(root: Path, when: str, *argv: str) -> None:
+    """A git command whose commit or tag carries `when` as its date."""
+    gitutil.git(list(argv), root, env_extra={"GIT_COMMITTER_DATE": when,
+                                             "GIT_AUTHOR_DATE": when})
+
+
 def _cli(root: Path, *argv: str, env: dict | None = None) -> subprocess.CompletedProcess:
     """The shipped entry point as a subprocess, confined to the fixture."""
     return subprocess.run([sys.executable, "-B", str(SCRIPT), "--root", str(root), *argv],
@@ -329,30 +335,95 @@ class ReleaseRecordTests(unittest.TestCase):
         rec = _lines(root)[0]
         self.assertEqual((rec["previous"], rec["reports"]), ("v1.0.0", ["RPT0002"]))
 
-    def test_the_previous_tag_is_the_newest_created_one_reachable_from_head(self) -> None:
-        """Of the tags reachable from HEAD the newest created is the previous release, whatever
-        its name sorts as; a newer tag on a branch HEAD does not hold is not; a repository with
-        a commit and no tag has no previous release."""
+    def _previous(self, root: Path) -> str | None:
+        r = _cli(root, "changelog-cut", "--version", "5.0.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return _lines(root)[0]["previous"]
+
+    def test_the_previous_tag_is_on_the_nearest_tagged_commit_in_heads_history(self) -> None:
+        """The tag on the nearest tagged commit HEAD holds is the previous release, whatever its
+        name sorts as; a newer tag on a branch HEAD does not hold is never one, so a repository
+        whose only tag is on such a branch has no previous release."""
+        def side_tag(root: Path) -> None:
+            _git(root, "checkout", "-q", "-b", "side")
+            _commit(root, "side")
+            _dated(root, "2026-04-01T10:00:00Z", "tag", "-a", "v9.9.9", "-m", "v9.9.9")
+            _git(root, "checkout", "-q", "-")
+
         untagged = _project(self)
         _commit(untagged, "one")
-        r = _cli(untagged, "changelog-cut", "--version", "1.0.0")
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIsNone(_lines(untagged)[0]["previous"])
+        side_tag(untagged)
+        self.assertIsNone(self._previous(untagged))
         root = _project(self)
         for message, tag, when in (("c1", "v1.0.0", "2026-01-01T10:00:00Z"),
                                    ("c2", "v1.1.0-rc.1", "2026-02-01T10:00:00Z"),
                                    ("c3", "v1.1.0", "2026-03-01T10:00:00Z")):
             _commit(root, message)
-            gitutil.git(["tag", "-a", tag, "-m", tag], root,
-                        env_extra={"GIT_COMMITTER_DATE": when})
-        _git(root, "checkout", "-q", "-b", "side")
-        _commit(root, "side")
-        gitutil.git(["tag", "-a", "v9.9.9", "-m", "v9.9.9"], root,
-                    env_extra={"GIT_COMMITTER_DATE": "2026-04-01T10:00:00Z"})
-        _git(root, "checkout", "-q", "-")
-        r = _cli(root, "changelog-cut", "--version", "1.2.0")
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(_lines(root)[0]["previous"], "v1.1.0")
+            _dated(root, when, "tag", "-a", tag, "-m", tag)
+        side_tag(root)
+        self.assertEqual(self._previous(root), "v1.1.0")
+
+    def test_a_tag_made_late_on_an_older_commit_does_not_displace_the_nearer_one(self) -> None:
+        """v1.0.0 is made at its release on c2, where RPT0002 is signed; v0.9.0 is made later on
+        the older c1. The record names v1.0.0 and does not ship RPT0002 again, for annotated and
+        for lightweight tags."""
+        for annotated in (True, False):
+            with self.subTest(annotated=annotated):
+                root = _project(self)
+                _commit(root, "c1")
+                _sign(root, "RPT0002", "2026-01-02T10:00:00Z")
+                _commit(root, "c2")
+                tag = ["tag", "-a", "-m", "release"] if annotated else ["tag"]
+                _dated(root, "2026-02-01T10:00:00Z", *tag, "v1.0.0")
+                _dated(root, "2026-03-01T10:00:00Z", *tag, "v0.9.0", "HEAD~1")
+                _sign(root, "RPT0003", "2026-03-02T10:00:00Z")
+                _commit(root, "c3")
+                r = _cli(root, "changelog-cut", "--version", "1.1.0")
+                self.assertEqual(r.returncode, 0, r.stderr)
+                rec = _lines(root)[0]
+                self.assertEqual((rec["previous"], rec["reports"]), ("v1.0.0", ["RPT0003"]))
+
+    def test_tags_on_one_commit_fall_to_the_latest_creator_date_then_the_first_name(self) -> None:
+        """On one commit, an annotated tag dated by its tagger before the commit's own date loses
+        to a lightweight tag, which takes the commit's date; two lightweight tags there tie on
+        it and the first name wins."""
+        root = _project(self)
+        _dated(root, "2026-03-01T10:00:00Z", "add", "-A")
+        _dated(root, "2026-03-01T10:00:00Z", "commit", "-q", "-m", "c1")
+        _dated(root, "2026-02-01T10:00:00Z", "tag", "-a", "v1.1.0", "-m", "v1.1.0")
+        _git(root, "tag", "v1.1.1")
+        self.assertEqual(self._previous(root), "v1.1.1")
+        root = _project(self)
+        _commit(root, "c1")
+        _git(root, "tag", "v2.0.1")
+        _git(root, "tag", "v2.0.0")
+        self.assertEqual(self._previous(root), "v2.0.0")
+
+    def test_a_tag_of_a_tag_is_peeled_to_its_commit(self) -> None:
+        """A tag whose object is another tag still names its commit, so it is not passed over
+        for a tag on an older commit."""
+        root = _project(self)
+        _commit(root, "c1")
+        _git(root, "tag", "v0.9.0")
+        _commit(root, "c2")
+        _git(root, "tag", "-a", "inner", "-m", "inner")
+        _git(root, "tag", "-a", "v1.0.0", "-m", "outer", "inner")
+        _git(root, "tag", "-d", "inner")
+        _commit(root, "c3")
+        self.assertEqual(self._previous(root), "v1.0.0")
+
+    def test_the_history_order_holds_when_commit_dates_run_backwards(self) -> None:
+        """v1.0.0's commit is dated before its parent, v0.9.0's, and HEAD merges both: the tag
+        on the descendant still comes first, where a date-ordered walk would reach v0.9.0."""
+        root = _project(self)
+        _dated(root, "2026-03-01T10:00:00Z", "add", "-A")
+        _dated(root, "2026-03-01T10:00:00Z", "commit", "-q", "-m", "c1")
+        _git(root, "tag", "v0.9.0")
+        _dated(root, "2026-01-01T10:00:00Z", "commit", "-q", "--allow-empty", "-m", "c2")
+        _git(root, "tag", "v1.0.0")
+        _git(root, "checkout", "-q", "-b", "back", "v0.9.0")
+        _dated(root, "2026-03-02T10:00:00Z", "merge", "-q", "--no-ff", "-m", "merge", "v1.0.0")
+        self.assertEqual(self._previous(root), "v1.0.0")
 
     def test_tags_git_cannot_list_refuse_the_cut(self) -> None:
         """Where git cannot list the tags of a repository with a commit, the cut refuses by
