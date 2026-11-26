@@ -1,12 +1,12 @@
 # US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline
 
 > **Status:** Ready
-> **Depends on:** US1327, US1328, US1329, US1331
+> **Depends on:** US1327, US1328, US1329, US1331, US1233, US1341, US1342, US1343, BG1765
 > **Release:** 6.5
 > **Created:** 2026-11-25
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, sdlc-studio/.version, README.md, docs/INSTALL.md, docs/enterprise.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, changelog.d/US1330.md, docs/release-notes-v6.5.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v65.py
+> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, sdlc-studio/.version, README.md, docs/INSTALL.md, docs/enterprise.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, changelog.d/US1330.md, docs/release-notes-v6.5.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v65.py, sdlc-studio/reports/releases.jsonl
 > **Epic:** EP0379
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -112,3 +112,5 @@ describe are the same release
 | 2026-11-25 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-25 | orchestrator (delegate under D0545) | Groomed for EP0379 from the product seat's draft (run twenty-seven, the v6.5.0 release epic): user story, criteria with Verify lines, Release 6.5, Depends on for the wave order, and notes, modelled on EP0314 |
 | 2026-11-25 | orchestrator (delegate under D0631) | Split at 8 points, the ceiling US0854::AC1 refuses on any open unit: the known-issues page, the release bar and the evidence page (AC2, AC3, AC6) moved to US1331, which lands before this cut so its fragment is in the 6.5.0 section; AC4 and AC5 renumbered AC2 and AC3; Points 8 to 5; Depends on adds US1331 |
+| 2026-11-26 | orchestrator | Moved to run twenty-eight (D0635); depends also on US1233 (the cut writes 6.5's release record), US1341 to US1343 (the widened release paperwork) and BG1765, so it lands after every unit whose fragment `changelog-cut` folds (D0638) |
+| 2026-11-26 | orchestrator | Affects name `sdlc-studio/reports/releases.jsonl`, the release record US1233's cut writes |

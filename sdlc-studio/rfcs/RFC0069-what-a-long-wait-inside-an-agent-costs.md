@@ -1,6 +1,7 @@
 # RFC-0069: What a long wait inside an agent costs once its prompt cache expires, and whether builders and round-two reviewers should avoid one
 
-> **Status:** Draft
+> **Status:** In Review
+> **Decomposed-into:** EP0383
 > **Date:** 2026-11-25
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

@@ -1,7 +1,7 @@
 # EP0339: A head of engineering reads change failure rate per release beside escapes per 100 points
 
 > **Status:** Draft
-> **Derived Point Total:** 11
+> **Derived Point Total:** 13
 > **Parent:** CR0695
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

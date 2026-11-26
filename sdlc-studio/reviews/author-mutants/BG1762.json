@@ -1,0 +1,70 @@
+{
+  "unit": "BG1762",
+  "digest": "4d08ac54a331411d at fabb8fb739bc",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab1610e698be42f31/BG1762-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the regression filer patched on the copy this file imported at load, as at the base",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "with mock.patch(\"file_finding.file_finding\",\n",
+      "new": "with mock.patch.object(file_finding, \"file_finding\",\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal path's filer patched on the copy this file imported at load, as at the base",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "mock.patch(\"file_finding.file_finding\") as unfiled",
+      "new": "mock.patch.object(file_finding, \"file_finding\") as unfiled",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the new test never puts the fresh copy in sys.modules",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "        sys.modules[\"file_finding\"] = fresh\n",
+      "new": "        _ = fresh\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the new test leaves the fresh copy in sys.modules after it",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "            sys.modules[\"file_finding\"] = before\n",
+      "new": "            _ = before\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the red-run exit helper drops the run id it is given",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "red_run=run, failed=failed, token=token, format=\"json\")",
+      "new": "red_run=\"7\", failed=failed, token=token, format=\"json\")",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the red-run exit helper drops the token it is given",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "token=token, format=\"json\")",
+      "new": "token=\"can-rerun\", format=\"json\")",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_authors_mutants_and_the_red_run_policy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the red-run exit helper answers 0 without running the handler",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "        return gate.cmd_red_run(args)\n",
+      "new": "        return 0\n",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_red_run_policy_holds_when_file_finding_was_reimported",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 # CR-0752: The run breaker reads spend as well as minutes and units: it warns at 75 and 95 per cent, lets the unit in flight finish, and a raise is a recorded decision
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0380
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

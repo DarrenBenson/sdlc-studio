@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 46 |
+| Open | 48 |
 | In Progress | 0 |
-| Fixed | 1245 |
+| Fixed | 1248 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1761** |
+| **Total** | **1766** |
 
 ## All Bugs
 
@@ -837,6 +837,11 @@
 | [BG1759](BG1759-us1327-did-not-converge-in-review-round-2.md) | US1327 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-25 | 2026-11-25 |
 | [BG1760](BG1760-us1331-did-not-converge-in-review-round-2.md) | US1331 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-25 | 2026-11-25 |
 | [BG1761](BG1761-us1331-did-not-converge-in-review-round-3.md) | US1331 did not converge in review: round 3 REJECT findings | Fixed | Low | 2026-11-25 | 2026-11-25 |
+| [BG1762](BG1762-the-tsd-red-run-test-patches-the-file.md) | The TSD red-run test patches the `file_finding` module it imported, so under the full suite `gate.red_run` files through another copy and the test fails | Fixed | Low | 2026-11-25 | 2026-11-25 |
+| [BG1763](BG1763-a-lane-brief-tells-a-project-whose-tests.md) | A lane brief tells a project whose tests are not pytest to list mutants with pytest selectors, and the runner can run nothing else | Fixed | Medium | 2026-11-25 | 2026-11-25 |
+| [BG1764](BG1764-the-cost-anatomy-reads-no-reviewer-recorded-with.md) | The cost anatomy reads no reviewer recorded with its seat, so the report's reviewer row shows 0 agents and review spend lands under other | Open | Low | 2026-11-26 | 2026-11-26 |
+| [BG1765](BG1765-a-carry-is-always-filed-at-medium-so.md) | A carry is always filed at Medium, so a unit that checks a release bar barring Medium cannot close its own carry | Open | Low | 2026-11-26 | 2026-11-26 |
+| [BG1766](BG1766-bg1763-did-not-converge-in-review-round-2.md) | BG1763 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-26 | 2026-11-26 |
 
 ## Archived Releases
 

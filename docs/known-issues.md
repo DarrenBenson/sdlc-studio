@@ -89,8 +89,10 @@ buy honestly.
 | `BG1755` | Low | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch |
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
+| `BG1764` | Low | The cost anatomy reads no reviewer recorded with its seat, so the report's reviewer row shows 0 agents and review spend lands under other |
+| `BG1765` | Low | A carry is always filed at Medium, so a unit that checks a release bar barring Medium cannot close its own carry |
 
-46 findings: 0 Medium, 46 Low.
+48 findings: 0 Medium, 48 Low.
 
 ## Not carried
 

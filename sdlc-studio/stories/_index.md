@@ -1,14 +1,14 @@
 # Story Index
 
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 158 |
-| Ready | 1 |
+| Draft | 153 |
+| Ready | 18 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 94 |
 | Blocked | 0 |
-| **Total** | **1331** |
+| **Total** | **1343** |
 
 ## All Stories
 
@@ -270,9 +270,9 @@
 | [US1230](US1230-the-trd-template-gains-a-reliability-and-observability.md) | The TRD template gains a Reliability and Observability section for dependency failure and required signals | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
 | [US1231](US1231-the-engineering-brief-carries-the-trd-s-failure.md) | The engineering brief carries the TRD's failure and observability checks for touched components, under a cap | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
 | [US1232](US1232-the-engineering-seat-charter-asks-for-a-finding.md) | The engineering seat charter asks for a finding on an undeclared failure path and a note on a missing section | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
-| [US1233](US1233-the-release-cut-writes-a-committed-record-of.md) | The release cut writes a committed record of each release, with its date and the reports it shipped | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
-| [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
-| [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1233](US1233-the-release-cut-writes-a-committed-record-of.md) | The release cut writes a committed record of each release, with its date and the reports it shipped | Ready | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Ready | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Ready | EP0339 | 2026-11-17 | 2026-11-17 |
 | [US1236](US1236-the-trunk-guidance-tells-the-agent-to-wait.md) | The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first | Done | EP0340 | 2026-11-17 | 2026-11-17 |
 | [US1237](US1237-a-project-sets-the-ci-wait-timeout-and.md) | A project sets the CI wait timeout and the rerun limit in config, with the defaults documented | Done | EP0340 | 2026-11-17 | 2026-11-17 |
 | [US1238](US1238-a-red-ci-run-is-recorded-against-its.md) | A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes | Done | EP0340 | 2026-11-17 | 2026-11-17 |
@@ -331,8 +331,8 @@
 | [US1291](US1291-sprint-sign-under-delegation-requires-an-accepted-authorising.md) | Sprint sign under delegation requires an accepted authorising decision id and records it in the signature block | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Done | EP0366 | 2026-11-17 | 2026-11-17 |
-| [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
-| [US1295](US1295-rpt0030-to-rpt0034-and-the-6-4-0.md) | RPT0030 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
+| [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Ready | EP0367 | 2026-11-17 | 2026-11-17 |
+| [US1295](US1295-rpt0029-to-rpt0034-and-the-6-4-0.md) | RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Ready | EP0367 | 2026-11-17 | 2026-11-17 |
 | [US1296](US1296-both-installers-refuse-on-a-machine-that-cannot.md) | Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1297](US1297-the-config-reader-refuses-without-pyyaml-so-no.md) | The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1298](US1298-the-gate-prerequisite-check-and-every-gate-bearing.md) | The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent | Done | EP0368 | 2026-11-17 | 2026-11-17 |
@@ -369,6 +369,18 @@
 | [US1329](US1329-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.5 ships | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1330](US1330-v6-5-0-is-cut-version-changelog-known.md) | v6.5.0 is cut: version, changelog, install pins and the specs' baseline | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1331](US1331-v6-5-0-discloses-what-it-ships-with.md) | v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run | Done | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1332](US1332-loop-guard-budget-stops-a-run-on-spend.md) | `loop_guard` budget stops a run on spend as well as minutes and units, warning at 75 and 95 per cent | Ready | EP0380 | 2026-11-26 | 2026-11-26 |
+| [US1333](US1333-sprint-plan-stamps-the-spend-appetite-on-the.md) | sprint plan stamps the spend appetite on the run, and raising it mid-run names a recorded decision | Ready | EP0380 | 2026-11-26 | 2026-11-26 |
+| [US1334](US1334-the-report-sets-each-role-s-cache-read.md) | The report sets each role's cache-read share against its mean over the last five signed runs | Ready | EP0381 | 2026-11-26 | 2026-11-26 |
+| [US1335](US1335-the-close-names-a-role-whose-cache-read.md) | The close names a role whose cache-read share fell more than 10 points, and the retro must explain it | Ready | EP0381 | 2026-11-26 | 2026-11-26 |
+| [US1336](US1336-routing-effort-takes-per-kind-entries-and-the.md) | routing.effort takes per-kind entries, and the plan and the lane brief carry each unit's resolved effort | Ready | EP0382 | 2026-11-26 | 2026-11-26 |
+| [US1337](US1337-the-cost-anatomy-splits-each-role-s-cache.md) | The cost anatomy splits each role's cache writes into growth and re-writes after the cache lifetime | Ready | EP0383 | 2026-11-26 | 2026-11-26 |
+| [US1338](US1338-the-sprint-report-shows-each-role-s-cache.md) | The sprint report shows each role's cache-write growth and re-writes after expiry | Ready | EP0383 | 2026-11-26 | 2026-11-26 |
+| [US1339](US1339-the-skill-says-the-person-owns-the-prd.md) | The skill says the person owns the PRD and the PVD, and the seat checks the work under delegated authority | Ready | EP0384 | 2026-11-26 | 2026-11-26 |
+| [US1340](US1340-a-seat-corrects-a-fact-in-the-document.md) | A seat corrects a fact in the document it reviews against and proposes any change to what it requires | Ready | EP0384 | 2026-11-26 | 2026-11-26 |
+| [US1341](US1341-the-v6-5-release-notes-describe-the-whole.md) | The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
+| [US1342](US1342-the-help-and-public-pages-tell-a-6.md) | The help and public pages tell a 6.4 team how to cap a run's spend, answer a cache-read fall and read a release's change failure rate | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
+| [US1343](US1343-the-prd-trd-and-tsd-describe-the-widened.md) | The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
 
 ## Archived Releases
 

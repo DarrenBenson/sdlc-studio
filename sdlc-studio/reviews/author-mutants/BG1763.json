@@ -1,0 +1,178 @@
+{
+  "unit": "BG1763",
+  "digest": "b50e172d3e760608 at fc65e25659d0",
+  "report": "sdlc-studio/.local/lane/landed/agent-ade03c91c73161497/BG1763-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 any .py read as runnable (dotted stem)",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return name.endswith(PYTEST_TEST_SUFFIX)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 suffix check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return name.count(\".\") == 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 JS-only allowlist",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return not name.endswith((\".ts\", \".js\", \".tsx\", \".jsx\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 a .test/.spec name rule",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return not PurePosixPath(test_file).stem.endswith((\".test\", \".spec\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 a test_ name rule",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return name.startswith(\"test_\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 hand route only for more than one file",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if len(by_hand) == len(tests):",
+      "new": "if len(by_hand) > 1:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_every_unit_whose_tests_the_runner_cannot_run_is_sent_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 mixed line names the first file alone",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "{_RUNNABLE_SHAPE}: {', '.join(by_hand)}. A",
+      "new": "{_RUNNABLE_SHAPE}: {by_hand[0]}. A",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_mixed_unit_keeps_the_runner_and_names_the_files_run_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 mixed line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "step 3 says.\"] if by_hand else []),",
+      "new": "step 3 says.\"] if False else []),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_mixed_unit_keeps_the_runner_and_names_the_files_run_by_hand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 runnable shape reworded",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"test module by default\")",
+      "new": "\"test module\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_vitest_unit_is_not_asked_for_a_pytest_selector",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 hand route recorded through the report",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"--claims CLAIMS.json --mutants MUTANTS.json\",\n            \"   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json is the \"",
+      "new": "\"--claims CLAIMS.json --mutants-from REPORT.json\",\n            \"   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json is the \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_vitest_unit_is_not_asked_for_a_pytest_selector",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 hand-in list for a unit with no test file",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "by_hand = bool(tests) and not any(critic.runner_can_run(t) for t in tests)",
+      "new": "by_hand = not any(critic.runner_can_run(t) for t in tests)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 hand-in list for a mixed unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "by_hand = bool(tests) and not any(critic.runner_can_run(t) for t in tests)",
+      "new": "by_hand = bool(tests) and not all(critic.runner_can_run(t) for t in tests)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13 hand-in list never by hand",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "by_hand = bool(tests) and not any(critic.runner_can_run(t) for t in tests)",
+      "new": "by_hand = False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14 hand-run test rule swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "test_rule = (\"one of the unit's Affects test files, by its path or as `path::name`\"",
+      "new": "test_rule = (\"a `path::name` in one of the unit's Affects test files\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15 hand-run mutants line loses its record route",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "result, answer}}, which `sprint lane land` records through --mutants\"]",
+      "new": "result, answer}}\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16 runner units lose the mutants line",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "             *mutation,\n",
+      "new": "             *mutation[:1],\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17 whole path's dots counted (self-check step)",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return name.endswith(PYTEST_TEST_SUFFIX) and test_file.count(\".\") == 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_pytest_unit_keeps_the_runner_and_its_selector",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18 whole path's dots counted (hand-in list)",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return name.endswith(PYTEST_TEST_SUFFIX) and name.count(\".\") == 1",
+      "new": "return name.endswith(PYTEST_TEST_SUFFIX) and test_file.count(\".\") == 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_hand_run_unit_hands_in_no_runner_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19 the file name read as the whole path",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "name = PurePosixPath(test_file).name",
+      "new": "name = test_file",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::NonPytestSelfCheckTests::test_a_pytest_unit_keeps_the_runner_and_its_selector",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

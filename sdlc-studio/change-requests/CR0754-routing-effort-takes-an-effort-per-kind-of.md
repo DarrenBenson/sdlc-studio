@@ -1,6 +1,7 @@
 # CR-0754: routing.effort takes an effort per kind of unit, as routing.floor takes a tier, set from the bench's effort arm
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0382
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S
