@@ -85,14 +85,26 @@ def _release_records(root: Path) -> tuple[str, list[dict]]:
 
 
 def _previous_tag(root: Path) -> str | None:
-    """The nearest tag reachable from HEAD, as `git describe --tags` names it, or None when git
-    names none: git missing, no repository, no commit or no tag."""
+    """The most recently created tag reachable from HEAD, by its ref name, or None when there is
+    none: git missing, no repository, no commit or no tag. The ref name, never the name a tag
+    object records inside it, which a renamed tag no longer matches and which `git describe`
+    reports instead. Creation order, not version order, which ranks `v1.1.0-rc.1` above `v1.1.0`. Raises
+    ValueError when git cannot list the tags of a repository that has a commit."""
     try:
-        proc = subprocess.run(["git", "describe", "--tags", "--abbrev=0", "HEAD"],
+        head = subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD"],
                               capture_output=True, text=True, cwd=str(root), timeout=60)
     except (OSError, subprocess.SubprocessError):
         return None
-    return proc.stdout.strip() if proc.returncode == 0 else None
+    if head.returncode != 0:
+        return None
+    try:
+        listing = _git_bytes(root, ["for-each-ref", "--merged=HEAD", "--sort=-creatordate",
+                                    "--format=%(refname:strip=2)", "refs/tags"],
+                             "the tags reachable from HEAD")
+    except UnreadableRecord as exc:
+        raise ValueError(str(exc)) from exc
+    names = listing.decode("utf-8", "replace").splitlines()
+    return names[0] if names else None
 
 
 def _shipped_reports(root: Path, records: list[dict], tag: str | None) -> list[str]:

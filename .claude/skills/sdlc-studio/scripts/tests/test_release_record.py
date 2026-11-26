@@ -4,7 +4,9 @@ the version, the date of the cut, the release before it and the signed reports i
 # test-census-subject: .claude/skills/sdlc-studio/scripts/release_cut.py
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import re
@@ -309,6 +311,72 @@ class ReleaseRecordTests(unittest.TestCase):
         self.assertEqual((root / RECORD).read_bytes(), first)
         self.assertIn("A shipped thing (US0001)",
                       (root / "CHANGELOG.md").read_text(encoding="utf-8").split("## [1.1.0]")[1])
+
+    def test_a_renamed_tag_is_named_by_its_ref_and_its_reports_are_kept(self) -> None:
+        """A tag renamed the usual way (`git tag v1.0.0 1.0.0`, then `git tag -d 1.0.0`) keeps
+        its old name inside the tag object; the record names the ref, v1.0.0, and ships the
+        report signed after it, as an ordinary tag's record does (AC1 is that control)."""
+        root = _project(self)
+        _sign(root, "RPT0001", "2026-01-02T10:00:00Z")
+        _commit(root, "one")
+        _git(root, "tag", "-a", "1.0.0", "-m", "1.0.0")
+        _git(root, "tag", "v1.0.0", "1.0.0")
+        _git(root, "tag", "-d", "1.0.0")
+        _sign(root, "RPT0002", "2026-01-03T10:00:00Z")
+        _commit(root, "two")
+        r = _cli(root, "changelog-cut", "--version", "1.1.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rec = _lines(root)[0]
+        self.assertEqual((rec["previous"], rec["reports"]), ("v1.0.0", ["RPT0002"]))
+
+    def test_the_previous_tag_is_the_newest_created_one_reachable_from_head(self) -> None:
+        """Of the tags reachable from HEAD the newest created is the previous release, whatever
+        its name sorts as; a newer tag on a branch HEAD does not hold is not; a repository with
+        a commit and no tag has no previous release."""
+        untagged = _project(self)
+        _commit(untagged, "one")
+        r = _cli(untagged, "changelog-cut", "--version", "1.0.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIsNone(_lines(untagged)[0]["previous"])
+        root = _project(self)
+        for message, tag, when in (("c1", "v1.0.0", "2026-01-01T10:00:00Z"),
+                                   ("c2", "v1.1.0-rc.1", "2026-02-01T10:00:00Z"),
+                                   ("c3", "v1.1.0", "2026-03-01T10:00:00Z")):
+            _commit(root, message)
+            gitutil.git(["tag", "-a", tag, "-m", tag], root,
+                        env_extra={"GIT_COMMITTER_DATE": when})
+        _git(root, "checkout", "-q", "-b", "side")
+        _commit(root, "side")
+        gitutil.git(["tag", "-a", "v9.9.9", "-m", "v9.9.9"], root,
+                    env_extra={"GIT_COMMITTER_DATE": "2026-04-01T10:00:00Z"})
+        _git(root, "checkout", "-q", "-")
+        r = _cli(root, "changelog-cut", "--version", "1.2.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(_lines(root)[0]["previous"], "v1.1.0")
+
+    def test_tags_git_cannot_list_refuse_the_cut(self) -> None:
+        """Where git cannot list the tags of a repository with a commit, the cut refuses by
+        saying so, and writes nothing, rather than record a release with no previous one."""
+        mod = _load()
+        _confine(self)
+        root = _project(self)
+        _commit(root, "one")
+        real = mod._git_bytes
+
+        def broken_tag_listing(at, args, what):
+            return real(at, ["for-each-ref", "--no-such-option"] if args[0] == "for-each-ref"
+                        else args, what)
+
+        err = io.StringIO()
+        with mock.patch.object(mod, "_git_bytes", broken_tag_listing), \
+                contextlib.redirect_stderr(err):
+            rc = mod.main(["--root", str(root), "changelog-cut", "--version", "1.0.0"])
+        self.assertEqual(rc, 2, err.getvalue())
+        self.assertIn("changelog-cut refused: git could not read the tags reachable from HEAD",
+                      err.getvalue())
+        self.assertFalse((root / RECORD).exists())
+        self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), CHANGELOG)
+        self.assertTrue((root / "changelog.d" / "US0001.md").exists())
 
 
 if __name__ == "__main__":
