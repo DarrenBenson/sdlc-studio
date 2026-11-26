@@ -7,7 +7,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, docs/evidence.md, .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py, changelog.d/US1294.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, docs/evidence.md, .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py, changelog.d/US1294.md, sdlc-studio/reviews/command-audit.md
 > **Epic:** EP0367
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -144,3 +144,4 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Re-grounded against HEAD for run twenty-eight (D0638) |
+| 2026-11-26 | orchestrator | Affects names sdlc-studio/reviews/command-audit.md (and, for US1333, `test_artifact.py`), the registry the plan says a new flag implies |

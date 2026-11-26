@@ -7,7 +7,7 @@
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/arguments.md, .claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py, changelog.d/US1333.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/arguments.md, .claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py, changelog.d/US1333.md, sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Epic:** EP0380
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -65,3 +65,4 @@ The plan resolves the spend appetite once with the other two axes (`--appetite-s
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Groomed for run twenty-eight from the D0635 breakdown |
+| 2026-11-26 | orchestrator | Affects names sdlc-studio/reviews/command-audit.md (and, for US1333, `test_artifact.py`), the registry the plan says a new flag implies |

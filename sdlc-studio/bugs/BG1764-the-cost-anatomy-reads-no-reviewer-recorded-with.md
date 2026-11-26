@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py, changelog.d/BG1764.md
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -32,3 +32,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Filed |
+| 2026-11-26 | orchestrator | Affects names the unit's changelog fragment, for its lane in run twenty-eight |

@@ -7,7 +7,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/help/deploy.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py, changelog.d/US1234.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/help/deploy.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py, changelog.d/US1234.md, sdlc-studio/reviews/command-audit.md
 > **Epic:** EP0339
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -138,3 +138,4 @@ a third verb there: `escape.py failure-rate`.
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Re-grounded against HEAD for run twenty-eight (D0638) |
+| 2026-11-26 | orchestrator | Affects names sdlc-studio/reviews/command-audit.md (and, for US1333, `test_artifact.py`), the registry the plan says a new flag implies |
