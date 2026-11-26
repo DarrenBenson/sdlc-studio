@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import importlib.util
 import inspect
 import io
 import json
@@ -125,6 +126,13 @@ def _flake_project(root: Path) -> str:
         f"# BG0001: test_flaky is flaky\n\n> **Status:** Open\n\n## Summary\n\n`{test}` fails "
         f"one run in ten.\n", encoding="utf-8")
     return test
+
+
+def _red_run_exit(root: str, run: str, failed: list[str], token: str) -> int:
+    """`gate.py --red-run`'s exit status, through the command's own handler."""
+    args = argparse.Namespace(root=root, red_run=run, failed=failed, token=token, format="json")
+    with mock.patch("sys.stdout"), mock.patch("sys.stderr"):
+        return gate.cmd_red_run(args)
 
 
 def _page(name: str) -> Path:
@@ -366,14 +374,6 @@ class SpecsV65Tests(unittest.TestCase):
                      "No answer skips or deselects a test", "exits 0 only on `rerun`"):
             self.assertIn(mark, policy)
         self.assertEqual(("can-rerun", "cannot-rerun"), gate.RED_RUN_TOKENS)
-
-        def exit_code(root: str, run: str, failed: list[str], token: str) -> int:
-            """`gate.py --red-run`'s exit status, through the command's own handler."""
-            args = argparse.Namespace(root=root, red_run=run, failed=failed, token=token,
-                                      format="json")
-            with mock.patch("sys.stdout"), mock.patch("sys.stderr"):
-                return gate.cmd_red_run(args)
-
         with tempfile.TemporaryDirectory() as d:
             test = _flake_project(Path(d))
             self.assertEqual(1, gate._rerun_limit(d), "premise: the default limit moved")  # noqa: SLF001
@@ -382,28 +382,10 @@ class SpecsV65Tests(unittest.TestCase):
             self.assertEqual("stop", gate.red_run(d, "5", [test], can_rerun=True)["answer"],
                              "the second red of a run past a limit of one")
             self.assertEqual("stop", gate.red_run(d, "6", [test], can_rerun=False)["answer"])
-            self.assertEqual(0, exit_code(d, "7", [test], "can-rerun"))
-            self.assertNotEqual(0, exit_code(d, "7", [test], "can-rerun"))
-            self.assertNotEqual(0, exit_code(d, "8", [test], "cannot-rerun"))
-            other = "tests/test_other.py::OtherTests::test_broken"
-            with mock.patch.object(file_finding, "file_finding",
-                                   return_value={"id": "BG0002"}) as filed:
-                regressed = gate.red_run(d, "9", [test, other], can_rerun=True)
-                self.assertNotEqual(0, exit_code(d, "10", [other], "can-rerun"))
-            self.assertEqual("regression", regressed["answer"])
-            self.assertEqual("BG0002", regressed["bug"])
-            self.assertEqual([test, other], regressed["failed"], "no failing test is dropped")
-            self.assertEqual(2, filed.call_count)
-            # A regression whose failing tests name no file in the tree is refused, not filed.
-            with mock.patch.object(file_finding, "file_finding") as unfiled, \
-                    mock.patch("sys.stdout"), mock.patch("sys.stderr", new=io.StringIO()) as err:
-                code = gate.cmd_red_run(argparse.Namespace(
-                    root=d, red_run="44", failed=["nofile.py::X::t"], token="can-rerun",
-                    format="text"))
-            self.assertEqual(2, code)
-            self.assertFalse(unfiled.called)
-            self.assertIn("red-run refused - regression: run 44", err.getvalue())
-            self.assertIn("file it with file_finding.py", err.getvalue())
+            self.assertEqual(0, _red_run_exit(d, "7", [test], "can-rerun"))
+            self.assertNotEqual(0, _red_run_exit(d, "7", [test], "can-rerun"))
+            self.assertNotEqual(0, _red_run_exit(d, "8", [test], "cannot-rerun"))
+            self._regression_files_through_the_patch(d, test)
         self.assertIn("a regression none of whose failing tests names a file in the tree is "
                       "refused, with the instruction to file it by hand", policy)
         # The edit runner copies the tree once for the whole list, never once per edit.
@@ -428,6 +410,57 @@ class SpecsV65Tests(unittest.TestCase):
             self.assertEqual(1, copied.call_count, "the tree is copied once for two edits")
             report = json.loads((root / "report.json").read_text(encoding="utf-8"))
             self.assertEqual(2, len(report["mutants"]), "premise: both edits were read")
+
+    def _regression_files_through_the_patch(self, d: str, test: str) -> None:
+        """`gate.py --red-run`'s regression path on the fixture at `d`, whose open flaky bug names
+        `test`: a red on `test` and on a test no bug names files one bug through `file_finding`,
+        a later run's red files a second, and a red naming no file in the tree is refused with
+        nothing filed. `gate` imports `file_finding` from `sys.modules` when it files, so each
+        patch is set by name on the copy `sys.modules` holds, never on the copy this file
+        imported at load."""
+        other = "tests/test_other.py::OtherTests::test_broken"
+        with mock.patch("file_finding.file_finding",
+                        return_value={"id": "BG0002"}) as filed:
+            regressed = gate.red_run(d, "9", [test, other], can_rerun=True)
+            self.assertNotEqual(0, _red_run_exit(d, "10", [other], "can-rerun"))
+        self.assertEqual("regression", regressed["answer"])
+        self.assertEqual("BG0002", regressed["bug"])
+        self.assertEqual([test, other], regressed["failed"], "no failing test is dropped")
+        self.assertEqual(2, filed.call_count)
+        self.assertIn("CI run 10 is red on", filed.call_args.args[2],
+                      "each red files a bug under its own run")
+        # A regression whose failing tests name no file in the tree is refused, not filed.
+        with mock.patch("file_finding.file_finding") as unfiled, \
+                mock.patch("sys.stdout"), mock.patch("sys.stderr", new=io.StringIO()) as err:
+            self.assertIs(unfiled, sys.modules["file_finding"].file_finding,
+                          "premise: the patch is on the filer gate imports")
+            code = gate.cmd_red_run(argparse.Namespace(
+                root=d, red_run="44", failed=["nofile.py::X::t"], token="can-rerun",
+                format="text"))
+        self.assertEqual(2, code)
+        self.assertFalse(unfiled.called)
+        self.assertIn("red-run refused - regression: run 44", err.getvalue())
+        self.assertIn("file it with file_finding.py", err.getvalue())
+
+    def test_the_red_run_policy_holds_when_file_finding_was_reimported(self) -> None:
+        """Mutant: the red-run test as it stood, patching `file_finding` on the module object
+        this file imported at load. An earlier test in the same worker can put a fresh copy of
+        `file_finding` in `sys.modules`; gate then files through that copy, unpatched, and the
+        patched filer is called 0 times, not 2. Here a fresh copy stands in `sys.modules` while
+        the red-run regression path runs, and the copy that was there is put back after."""
+        before = sys.modules["file_finding"]
+        spec = importlib.util.spec_from_file_location("file_finding", SCRIPTS / "file_finding.py")
+        fresh = importlib.util.module_from_spec(spec)
+        sys.modules["file_finding"] = fresh
+        try:
+            spec.loader.exec_module(fresh)
+            self.assertIsNot(file_finding, sys.modules["file_finding"],
+                             "premise: gate's import is not the copy this file imported")
+            with tempfile.TemporaryDirectory() as d:
+                self._regression_files_through_the_patch(d, _flake_project(Path(d)))
+        finally:
+            sys.modules["file_finding"] = before
+        self.assertIs(before, sys.modules["file_finding"], "the fresh copy is taken out again")
 
 
 if __name__ == "__main__":
