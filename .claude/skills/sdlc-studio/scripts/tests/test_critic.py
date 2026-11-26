@@ -4549,9 +4549,13 @@ class NonPytestSelfCheckTests(unittest.TestCase):
     """
 
     #: A vitest unit, a pytest unit (one `test_*.py`, one `*_test.py`), a mixed unit, a Go unit,
-    #: a dotted-stem Python unit, a Rust unit and a unit with no test file.
+    #: a dotted-stem Python unit, a Rust unit, a unit with no test file, and two pytest units
+    #: under a dotted directory (a versioned folder and this repository's `.claude/` layout).
     AFFECTS = {"US0101": "src/widget.ts, tests/widget.test.ts, tests/form.spec.js",
                "US0102": "src/widget.py, tests/test_widget.py, tests/widget_test.py",
+               "US0108": "src/v1.2/widget.py, tests/v1.2/test_widget.py",
+               "US0109": ".claude/skills/x/scripts/widget.py, "
+                         ".claude/skills/x/scripts/tests/test_widget.py",
                "US0103": "src/widget.py, tests/test_widget.py, tests/widget.test.ts, "
                          "tests/widget.spec.py",
                "US0104": "pkg/x.go, pkg/x_test.go",
@@ -4666,10 +4670,12 @@ class NonPytestSelfCheckTests(unittest.TestCase):
     def test_a_hand_run_unit_hands_in_no_runner_report(self) -> None:
         """The lane hand-in list of a unit sent by hand names only its claims and mutants
         files, the mutants file recorded through --mutants, and accepts a mutant's test by its
-        path, as the record does; a pytest unit, a mixed unit and a unit with no test file
-        still name the runner report and a `path::name` test. MUTANTS: the hand-in list left as
-        it was for every unit, the hand-run list given to a unit with no test file or to a
-        mixed unit, or its test rule swapped, each fails it."""
+        path, as the record does; a pytest unit, one under a dotted directory, a mixed unit and
+        a unit with no test file still name the runner report and a `path::name` test.
+        MUTANTS: the hand-in list left as it was for every unit, the hand-run list given to a
+        unit with no test file, to a mixed unit or to a pytest unit under a dotted directory
+        (the runner rule counting the dots of the whole path), or its test rule swapped, each
+        fails it."""
         for uid, tests in self.BY_HAND.items():
             with self.subTest(uid=uid):
                 hand_in = self._hand_in(uid)
@@ -4683,6 +4689,8 @@ class NonPytestSelfCheckTests(unittest.TestCase):
                 self.assertIn(f"; each mutant's test: one of the unit's Affects test files, by "
                               f"its path or as `path::name`, {tests}\n", hand_in)
         for uid, tests in (("US0102", "tests/test_widget.py, tests/widget_test.py"),
+                           ("US0108", "tests/v1.2/test_widget.py"),
+                           ("US0109", ".claude/skills/x/scripts/tests/test_widget.py"),
                            ("US0103", "tests/test_widget.py, tests/widget.test.ts, "
                                       "tests/widget.spec.py"),
                            ("US0107", None)):
@@ -4702,17 +4710,21 @@ class NonPytestSelfCheckTests(unittest.TestCase):
 
     def test_a_pytest_unit_keeps_the_runner_and_its_selector(self) -> None:
         """Positive control. MUTANTS: reading only a `test_*.py` name as one the runner can run
-        (so `widget_test.py` is named as a file it cannot), or no `.py` file at all, fails it.
-        A pytest unit is asked for the selector, given the runner command and recorded through
+        (so `widget_test.py` is named as a file it cannot), no `.py` file at all, or counting
+        the dots of the whole path rather than the file's name (so a test under `tests/v1.2/`
+        or `.claude/` is sent by hand, though pytest runs it), each fails it. A pytest unit is
+        asked for the selector, given the runner command and recorded through
         `--mutants-from`, and its section names no file run by hand."""
-        section = self._lane_section("US0102")
-        self.assertIn("its test a pytest selector", section)
-        self.assertIn("   mutation.py run --edits EDITS.json --scope US0102 --report "
-                      "sdlc-studio/.local/lane/US0102-mutation-edits.json", section)
-        self.assertNotIn("The test files that are not", section)
-        self.assertNotIn("by hand with the project's own test runner", section)
-        self.assertIn("--mutants-from REPORT.json", self.mod.author_self_check(self.root,
-                                                                               "US0102"))
+        for uid in ("US0102", "US0108", "US0109"):
+            with self.subTest(uid=uid):
+                section = self._lane_section(uid)
+                self.assertIn("its test a pytest selector", section)
+                self.assertIn(f"   mutation.py run --edits EDITS.json --scope {uid} --report "
+                              f"sdlc-studio/.local/lane/{uid}-mutation-edits.json", section)
+                self.assertNotIn("The test files that are not", section)
+                self.assertNotIn("by hand with the project's own test runner", section)
+                self.assertIn("--mutants-from REPORT.json",
+                              self.mod.author_self_check(self.root, uid))
 
     def test_a_mixed_unit_keeps_the_runner_and_names_the_files_run_by_hand(self) -> None:
         """A unit with a pytest test file beside a vitest one and a dotted `.spec.py` keeps the
