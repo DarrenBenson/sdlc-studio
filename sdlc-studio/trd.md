@@ -623,7 +623,7 @@ run and the answer given, creating the section at the end of the bug when it has
 reds are counted back from these sections against `ci.rerun_limit`.
 
 A report's page and its tracked run record are contracted in `reference-evidence-schema.md`, at
-annex version 1.0, the contract a consumer parses a report against. The annex is versioned apart
+annex version 1.1, the contract a consumer parses a report against. The annex is versioned apart
 from the skill: `sprint.py close` stamps the page with the version it was written under as
 `evidence_schema`, and the run record copies it from the page it names.
 

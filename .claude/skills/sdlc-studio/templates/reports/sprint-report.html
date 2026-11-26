@@ -252,6 +252,22 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="unmeasured"><b>Cost by role: NOT MEASURED</b> - {{cost_roles_reason}}</p>
 <!-- end -->
 <!-- end -->
+<!-- when: cache_read_trend_present -->
+<!-- when: cache_read_trend_measured -->
+  <p class="lede"><strong>Cache-read trend.</strong> Each role's cache-read share in this run, as the Cost by role table states it, beside its mean over {{trend_basis}}. The change is in percentage points; a role no earlier page measures reads not available, never 0.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Role</th><th scope="col" class="num">This run</th><th scope="col" class="num">Earlier mean</th><th scope="col" class="num">Change</th><th scope="col" class="num">Runs averaged</th><th scope="col">Pages averaged</th></tr></thead>
+    <tbody>
+<!-- repeat: cache_read_trend -->
+      <tr><th scope="row">{{trend_role}}</th><td class="num">{{trend_share}}</td><td class="num">{{trend_mean}}</td><td class="num">{{trend_change}}</td><td class="num">{{trend_runs}}</td><td>{{trend_pages}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- unless: cache_read_trend_measured -->
+  <p class="unmeasured"><b>Cache-read trend: NOT MEASURED</b> - {{cache_read_trend_reason}}</p>
+<!-- end -->
+<!-- end -->
 
   <h3>DORA</h3>
 <!-- when: dora_measured -->

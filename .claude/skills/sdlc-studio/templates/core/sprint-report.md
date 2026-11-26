@@ -200,6 +200,24 @@ part's share of the role's priced cost; context is input + cache write + cache r
 **Cost by role: NOT MEASURED** - {{cost_roles_reason}}
 <!-- end -->
 <!-- end -->
+<!-- when: cache_read_trend_present -->
+<!-- when: cache_read_trend_measured -->
+
+**Cache-read trend.** Each role's cache-read share in this run, as the Cost by role table states
+it, beside its mean over {{trend_basis}}. The change is in percentage points; a role no earlier
+page measures reads not available, never 0.
+
+| Role | This run | Earlier mean | Change | Runs averaged | Pages averaged |
+| --- | --- | --- | --- | --- | --- |
+<!-- repeat: cache_read_trend -->
+| {{trend_role}} | {{trend_share}} | {{trend_mean}} | {{trend_change}} | {{trend_runs}} | {{trend_pages}} |
+<!-- end -->
+<!-- end -->
+<!-- unless: cache_read_trend_measured -->
+
+**Cache-read trend: NOT MEASURED** - {{cache_read_trend_reason}}
+<!-- end -->
+<!-- end -->
 
 ### DORA
 

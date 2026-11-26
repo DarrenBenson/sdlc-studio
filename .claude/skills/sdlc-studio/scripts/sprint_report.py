@@ -4758,6 +4758,88 @@ def _cost_roles_section(state: dict, state_rel: str, replay: dict | None) -> dic
     return _section("cost_roles", "Cost by role", figures, rows)
 
 
+#: How many earlier signed pages a role's cache-read mean is taken over.
+CACHE_TREND_RUNS = 5
+_NO_EARLIER = "not available - no earlier signed page states this role's cache-read share"
+_NO_SHARE = "not available - this run's closing reading states no cache-read share for this role"
+
+
+def _cell_pct(cell) -> float | None:
+    """The percentage a Cost by role cell states (`62.9%`), or None for a cell that states
+    none, such as `not available` or NOT MEASURED."""
+    text = str(cell or "").strip()
+    try:
+        return float(text[:-1]) if text.endswith("%") else None
+    except ValueError:
+        return None
+
+
+def cache_read_baseline(root, run_id: str | None, before: str) -> dict:
+    """Each role's mean cache-read share over the `CACHE_TREND_RUNS` most recent pages signed
+    before `before` whose Cost by role table states a figure for it, as `{role: {"mean",
+    "reports"}}`: the mean to one decimal place, as the page states it, and the report ids it
+    averaged, oldest signature first. A page of the run `run_id` is left out, and so is one
+    signed at or after `before`, so a page re-derived at its sign reads the baseline it was
+    filed with. A role no such page states a figure for is absent, never 0."""
+    bound = _at(before)
+    if bound is None:
+        raise ReportError(f"the cache-read baseline needs a moment to look back from, and "
+                          f"{before!r} is not one")
+    got: dict[str, list] = {}
+    for rep in reversed(_signed_reports(root)):
+        if rep.get("run_id") == run_id or _at(rep["signature"]["signed_at"]) >= bound:
+            continue
+        for row in _section_of(rep, "cost_roles").get("rows") or []:
+            role = (row.get("role_name") or {}).get("value")
+            share = _cell_pct((row.get("role_cache_read") or {}).get("value"))
+            if role and share is not None and len(got.setdefault(role, [])) < CACHE_TREND_RUNS:
+                got[role].append((str(rep.get("report_id")), share))
+    return {role: {"mean": round(sum(s for _r, s in seen) / len(seen), 1),
+                   "reports": [r for r, _s in reversed(seen)]} for role, seen in got.items()}
+
+
+def _cache_read_trend_section(root: Path, run_id: str | None, before: str, roles: dict,
+                              state_rel: str) -> dict:
+    """Each role's cache-read share in this run beside its mean over earlier signed runs
+    (`cache_read_baseline`, looking back from the page's generation time), the change in
+    points and the pages averaged. The share is the cell the Cost by role section `roles`
+    states, so a replayed table gives the replayed share; when that section is NOT MEASURED,
+    so is this, with its reason. A mean or change with nothing to read says why."""
+    title = "Cache-read trend"
+    if roles.get("not_measured") is not None:
+        nm = roles["not_measured"]
+        return _section("cache_read_trend", title, not_measured=unmeasured(
+            "cache_read_trend", nm["source"],
+            f"the Cost by role table is not measured: {nm.get('reason')}"))
+    base = cache_read_baseline(root, run_id, before)
+    rows = []
+    for r in roles["rows"]:
+        role, cell = r["role_name"]["value"], r["role_cache_read"]
+        share, got = _cell_pct(cell["value"]), base.get(role)
+        pages = ", ".join(f"{REPORTS_REL}/{rid}.json" for rid in got["reports"]) if got \
+            else REPORTS_REL
+        if share is None:
+            change = _NO_SHARE
+        elif got is None:
+            change = _NO_EARLIER
+        else:
+            d = round(share - got["mean"], 1)
+            change = f"{d:+.1f} points" if d else "0.0 points"
+        rows.append({
+            "trend_role": fig("trend_role", role, state_rel),
+            "trend_share": fig("trend_share", cell["value"], cell["source"]),
+            "trend_mean": fig("trend_mean", f"{got['mean']:.1f}%" if got else _NO_EARLIER,
+                              pages),
+            "trend_change": fig("trend_change", change, pages),
+            "trend_runs": fig("trend_runs", len(got["reports"]) if got else 0, pages),
+            "trend_pages": fig("trend_pages", ", ".join(got["reports"]) if got else "none",
+                               pages)})
+    return _section("cache_read_trend", title, {"trend_basis": fig(
+        "trend_basis", f"the {CACHE_TREND_RUNS} most recent pages signed before this page was "
+                       f"generated that state the role's share, the run's own pages left out",
+        REPORTS_REL)}, rows)
+
+
 def _calibration_section(state: dict, state_rel: str) -> dict:
     """The rates the plan was estimated from, and where each came from."""
     rates = (state.get("plan_snapshot") or {}).get("rates") or {}
@@ -4812,7 +4894,7 @@ PORTABLE_PATHS = "record_paths"
 #: The evidence annex version a page is filed under, as `reference-evidence-schema.md`'s masthead
 #: states it, stamped on the envelope as `run_state.EVIDENCE_SCHEMA`. A page filed before the
 #: stamp carries none and is re-derived without one. An envelope field, never a figure.
-EVIDENCE_SCHEMA_VERSION = "1.0"
+EVIDENCE_SCHEMA_VERSION = "1.1"
 
 #: The envelope mark of a page whose tokens ratio is withheld unless every delivered unit's
 #: delegated spend was supplied (`_tokens_ratio_withheld`). A page filed before the rule carries
@@ -4946,7 +5028,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  prices_rule: bool = True, stamp_rule: bool = True,
                  evidence_schema: str | None = None,
                  cost_forecast_rule: bool = True, effort_rule: bool = True,
-                 filed_effort: dict | None = None) -> dict:
+                 filed_effort: dict | None = None, cache_trend_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4981,6 +5063,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     replays the page's own and `EVIDENCE_SCHEMA_VERSION` otherwise. `effort_rule` states the
     effort each role was dispatched at in the cost section (`EFFORT_RULE`), replaying a signed
     page's figures, else `filed_effort`, an unsigned page's own handed in by `revalidate`.
+    `cache_trend_rule` sets each role's cache-read share against earlier signed runs in its
+    own section after Cost by role; a re-derivation passes whether the page carries it.
     """
     root = Path(root)
     state, read_rel = _run_state_for(root, run_id, record)
@@ -5101,7 +5185,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                                        if filed is not None else filed_effort)
                       if effort_rule else None),
         _prices_section(table_rec, usd, state_rel) if usd_rule and prices_rule else None,
-        _cost_roles_section(metered, state_rel, readings["roles"]) if usd_rule else None,
+        roles := (_cost_roles_section(metered, state_rel, readings["roles"])
+                  if usd_rule else None),
+        _cache_read_trend_section(root, state.get("run_id"), generated_at, roles, state_rel)
+        if roles is not None and cache_trend_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
@@ -6369,6 +6456,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          cost_forecast_rule=basis.get(COST_FORECAST_RULE)
                          == COST_FORECAST_STATED,
                          effort_rule=basis.get(EFFORT_RULE) == EFFORT_STATED,
+                         cache_trend_rule=bool(_section_of(basis, "cache_read_trend")),
                          # Unsigned, the page's own effort: a clone without its plan reads it.
                          filed_effort=_page_readings(stored)["effort"] if anchor is None
                          else None,
