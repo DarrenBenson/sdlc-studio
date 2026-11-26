@@ -120,8 +120,9 @@ class MutationAnchorError(RuntimeError):
 UNCOMMITTED_SURFACE = "uncommitted-surface"
 #: The one route to a measured verdict over a surface carrying uncommitted work, said wherever
 #: that refusal is reported.
-UNCOMMITTED_ROUTE = ("Mutate an ISOLATED CHECKOUT instead (`git worktree add`), or commit or "
-                     "stash the work first.")
+UNCOMMITTED_ROUTE = ("Stage the work (`git add`) and re-run with `--since REF` to mutate a private "
+                     "copy of the index, mutate an ISOLATED CHECKOUT instead (`git worktree add`), "
+                     "or commit or stash the work first.")
 
 
 def _multiline_string_spans(text: str) -> tuple[set, bool]:
@@ -232,7 +233,7 @@ def mutated_text(mutation: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def changed_lines(repo_root: Path | str, since: str) -> dict:
+def changed_lines(repo_root: Path | str, since: str, cached: bool = False) -> dict:
     """Map file path -> set of line numbers touched since `since`, from `git diff -U0`.
 
     Zero context lines, so the hunk headers name exactly the added/modified lines. An
@@ -242,13 +243,20 @@ def changed_lines(repo_root: Path | str, since: str) -> dict:
     The prefixes are passed explicitly because git config can change them:
     `diff.mnemonicPrefix` writes `+++ w/<path>` and `diff.noprefix` writes `+++ <path>`,
     so neither matched `+++ b/` and the map came back empty. The command-line prefixes
-    override both settings."""
+    override both settings.
+
+    With `cached`, the diff is the index's against `since` (`--cached`) and no untracked file is
+    added, since the index holds none: the map then describes a copy of the index exactly. An
+    inherited `GIT_DIR` or `GIT_INDEX_FILE` (a hook exports them) is dropped, so git answers for
+    `repo_root`."""
+    import os  # noqa: PLC0415
     root = Path(repo_root)
     out: dict = {}
+    env = {k: v for k, v in os.environ.items() if k not in _REPO_LOCATING_GIT_VARS}
     try:
-        diff = subprocess.run(["git", "diff", "-U0", "--src-prefix=a/", "--dst-prefix=b/",
-                               since], cwd=root,
-                              capture_output=True, text=True, check=True).stdout
+        diff = subprocess.run(["git", "diff", "-U0", *(["--cached"] if cached else []),
+                               "--src-prefix=a/", "--dst-prefix=b/", since], cwd=root,
+                              capture_output=True, text=True, check=True, env=env).stdout
     except (subprocess.CalledProcessError, OSError):
         return {}
     current = None
@@ -262,9 +270,12 @@ def changed_lines(repo_root: Path | str, since: str) -> dict:
             if m:
                 start, count = int(m.group(1)), int(m.group(2) or 1)
                 out[current].update(range(start, start + count))
+    if cached:
+        return out
     try:
         untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"],
-                                   cwd=root, capture_output=True, text=True, check=True).stdout
+                                   cwd=root, capture_output=True, text=True, check=True,
+                                   env=env).stdout
         for name in untracked.splitlines():
             p = root / name.strip()
             if p.suffix in PROFILES and p.exists():
@@ -861,6 +872,29 @@ def dirty_targets(repo_root: Path | str, files) -> list[str] | None:
     return sorted(found)
 
 
+def staged_only(repo_root: Path | str, files) -> bool:
+    """True when at least one target carries uncommitted work and every target's work is all
+    in the index: no target has an unstaged change or is untracked.
+
+    `git status --porcelain` gives each target a row whose second column is the work tree
+    against the index; a blank there means the file on disk is the staged one. An untracked
+    (`??`) or unstaged row is never blank, so either makes this False and the run refuses as
+    before. `--no-optional-locks` keeps status from rewriting the
+    index's cached stat data. False, never an exception, when git cannot be run.
+    """
+    import os  # noqa: PLC0415
+    env = {k: v for k, v in os.environ.items() if k not in _REPO_LOCATING_GIT_VARS}
+    try:
+        proc = subprocess.run(["git", "--no-optional-locks", "-C", str(repo_root), "status",
+                               "--porcelain", "--untracked-files=all", "--",
+                               *[str(Path(f)) for f in files]],
+                              capture_output=True, text=True, timeout=30, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    rows = [ln for ln in proc.stdout.splitlines() if ln.strip()]
+    return bool(rows) and all(ln[1] == " " for ln in rows)
+
+
 @contextlib.contextmanager
 def applied(mutation: dict, sidecar: Path | None = None):
     """Apply one mutation; ALWAYS restore the original bytes, even when the
@@ -1179,8 +1213,12 @@ def attribute_kill(row: dict, run_output: str) -> dict:
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
-             changed: dict | None = None) -> dict:
+             changed: dict | None = None, tree: dict | None = None) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
+
+    `tree` is the isolation already established for `repo_root` when it is a private copy
+    (see `run_in_index_copy`): the dirty check is skipped, since a copy holds nobody's work and
+    is no git tree to ask, and `tree` is reported as where the run was measured.
 
     Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
     cannot judge anything, so the gate REFUSES immediately - no mutant is applied, the report
@@ -1226,7 +1264,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                   f"{', '.join(blocking.get('paths') or []) or '(unstated paths)'} - refusing to "
                   f"be the second process rewriting this tree. Wait for it, or clear it: "
                   f"{blocking['clear_with']}")
-    elif (dirty := dirty_targets(root, files)):
+    elif tree is None and (dirty := dirty_targets(root, files)):
         baseline = "not-run"
         refusal_kind = UNCOMMITTED_SURFACE
         # The route to a measured verdict, in the message a person actually reads when the run
@@ -1282,7 +1320,7 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
             with contextlib.suppress(ValueError):
                 close_window(root, owner=WINDOW_OWNER_RUN)
     summary = {
-        "tree": tree_isolation(root),
+        "tree": tree_isolation(root) if tree is None else tree,
         "applied": len(records),
         "killed": sum(1 for r in records if r["verdict"] == "killed"),
         "survived": sum(1 for r in records if r["verdict"] == "survived"),
@@ -1328,13 +1366,73 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
     }
     report["elapsed_s"] = round(time.monotonic() - started, 3)
     if write_report:
-        # The per-run series, written whatever the outcome: a refused or all-errored run costs
-        # wall-clock too, and a series that recorded only the runs that worked would flatter the
-        # gate exactly where CR0379 wants it judged.
-        report["series"] = append_series(root, report, report["elapsed_s"])
-        out = root / "sdlc-studio" / ".local" / "mutation-report.json"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        _write_report(root, report)
+    return report
+
+
+def _write_report(root: Path, report: dict) -> None:
+    """Append the run to the series and write the report under `root`."""
+    # The per-run series, written whatever the outcome: a refused or all-errored run costs
+    # wall-clock too, and a series that recorded only the runs that worked would flatter the
+    # gate exactly where CR0379 wants it judged.
+    report["series"] = append_series(root, report, report["elapsed_s"])
+    out = root / "sdlc-studio" / ".local" / "mutation-report.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+
+#: Where a run over a private copy of the index says it was measured.
+INDEX_COPY_TREE = {"isolated": True,
+                   "why": "a private copy of the index (`git checkout-index`) in a scratch "
+                          "directory removed after the run, so neither the working tree nor the "
+                          "index was touched; every file is its staged version"}
+
+
+def _to_repo(obj, base: str, root: Path):
+    """`obj` with every path under the copy `base` named by the repository `root` instead,
+    wherever it sits in a string (a reason quotes the file it could not read)."""
+    if isinstance(obj, str):
+        return obj.replace(base, str(root))
+    if isinstance(obj, list):
+        return [_to_repo(v, base, root) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _to_repo(v, base, root) for k, v in obj.items()}
+    return obj
+
+
+def run_in_index_copy(repo_root: Path | str, files, test_cmd: str, since: str,
+                      max_mutations: int | None = None, write_report: bool = True) -> dict:
+    """The gate over a fully staged surface (`staged_only`), run in a private copy of the
+    index so the working tree and the index are never written.
+
+    `git checkout-index -a` exports every file's staged version into a scratch directory, so an
+    unstaged edit to a test or a helper is not what runs. The changed lines are the index's diff
+    against `since`, and the report names the repository's paths, never the copy's. The copy is
+    removed after the run, though a SIGTERM mid-run leaves it in TMPDIR.
+    """
+    import os  # noqa: PLC0415
+    import shutil  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+    root = Path(repo_root)
+    env = {k: v for k, v in os.environ.items() if k not in _REPO_LOCATING_GIT_VARS}
+    top = Path(subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel"],
+                              capture_output=True, text=True, check=True, env=env).stdout.strip())
+    scratch = Path(tempfile.mkdtemp(prefix="mutation_staged_"))
+    try:
+        subprocess.run(["git", "-C", str(top), "checkout-index", "-a", f"--prefix={scratch}/"],
+                       capture_output=True, check=True, env=env)
+        base = scratch / root.resolve().relative_to(top)
+        copied = [base / os.path.relpath(f, root) for f in files]
+        changed = {str(scratch / Path(k).relative_to(top)): v
+                   for k, v in changed_lines(top, since, cached=True).items()}
+        report = run_gate(base, copied, test_cmd, max_mutations=max_mutations,
+                          write_report=False, changed=changed, tree=dict(INDEX_COPY_TREE))
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    report = _to_repo(report, str(base), root)
+    report["git_rev"] = _git_rev(root)
+    if write_report:
+        _write_report(root, report)
     return report
 
 
@@ -1926,9 +2024,14 @@ def cmd_run(args: argparse.Namespace) -> int:
     # With a diff to aim at, spend the ceiling on the changed lines first - otherwise a
     # low ceiling on a large file samples peripheral helpers and reports a kill rate about
     # code nobody touched (L-0086).
-    changed = changed_lines(root, args.since) if args.since else None
-    report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed,
-                      write_report=not getattr(args, "dry_run", False))
+    if args.since and staged_only(root, files):
+        # Staged work is judged in a private copy of the index; anything else runs as before.
+        report = run_in_index_copy(root, files, args.test, args.since, ceiling,
+                                   write_report=not getattr(args, "dry_run", False))
+    else:
+        changed = changed_lines(root, args.since) if args.since else None
+        report = run_gate(root, files, args.test, max_mutations=ceiling, changed=changed,
+                          write_report=not getattr(args, "dry_run", False))
     s = report["summary"]
     ser = report.get("series") or {}
     if ser.get("reset") and args.format != "json":

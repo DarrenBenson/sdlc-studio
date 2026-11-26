@@ -536,13 +536,13 @@ the gate does and removes it (`git worktree remove --force <path>`) **before its
 shipped reviewer agent definition says. The author's tree is live: a mutant over uncommitted work is
 indistinguishable from it once restored, and one there **silently reverted** a shipped repair.
 
-The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted
-changes**, naming the file, before it applies a single mutant. Commit the work first, or point the
-run at an isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and is
-forbidden to a delegated REVIEWER - it is tree-wide, so in a shared tree it reverts another
-reviewer's mutant mid-run. That distinction is the whole reason the reviewer works in a checkout of
-its own. Reasoning about what edit would turn a test red costs nothing and needs no tree at all,
-which is the right move for a reviewer who has neither.
+The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted changes**
+that are unstaged or untracked, naming the file, before it applies a mutant. Under `--since` it judges a
+fully staged target in a private copy of the index instead, which holds the index version of every file,
+so an unstaged edit to a test or helper is not run. Otherwise commit the work first, or point the run at an
+isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and is forbidden to a delegated
+REVIEWER - it is tree-wide, so in a shared tree it reverts another reviewer's mutant mid-run, which is why
+the reviewer works in a checkout of its own. Reasoning about a red-turning edit needs no tree at all.
 
 **The rule is in the brief too.** The refusal above protects only the author: four reviewers once
 ran concurrently over one tree and left a live mutant in it. So `critic.py brief` states the rule at
