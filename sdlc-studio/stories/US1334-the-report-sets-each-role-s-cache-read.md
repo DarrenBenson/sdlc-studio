@@ -49,7 +49,7 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 
 - **Given** `reference-evidence-schema.md` and `sprint_report.EVIDENCE_SCHEMA_VERSION`
 - **When** the annex's Report sections, figure keys and row keys tables are read
-- **Then** `cache_read_trend` is listed as conditional (absent on a page filed before it), each of its figure and row keys is catalogued, and the annex version and the constant both read 1.1. Fails on: HEAD, whose annex names no such section and where both read 1.0
+- **Then** `cache_read_trend` is listed as always, with a note under the table that a page filed before it carries none (as `cost_roles` has), each of its figure and row keys is catalogued, and the annex version and the constant both read 1.1. Fails on: HEAD, whose annex names no such section and where both read 1.0
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1
 - **Caller:** `tests/test_evidence_annex_report.py`, which holds the annex to every section a filed page carries
 
@@ -75,3 +75,4 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Groomed for run twenty-eight from the D0635 breakdown |
 | 2026-11-26 | orchestrator | Affects names sdlc-studio/trd.md and sdlc-studio/prd.md: AC4's annex bump to 1.1 makes both pages' 'annex version 1.0' untrue, and `test_lean_specs_v64` reads the TRD's |
+| 2026-11-26 | orchestrator | AC4 re-ruled (D0644): `cache_read_trend` is catalogued as always with a filed-before note, as `cost_roles` is; the conditional form could not hold beside the annex catalogue test |
