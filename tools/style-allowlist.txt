@@ -26,3 +26,7 @@ Spec Kit
 # CR0135 names the American forms it detects.
 analyze/analyse
 -ize/-ization family
+# D0646 quotes the operator's direction verbatim ("cost optimization features and fixes").
+cost optimization features and fixes
+# A run-28 review verdict names that flagged word when reporting the lint result.
+(D0646, "optimization")
