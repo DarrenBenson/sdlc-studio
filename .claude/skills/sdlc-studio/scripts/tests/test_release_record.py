@@ -174,12 +174,14 @@ class ReleaseRecordTests(unittest.TestCase):
 
     def test_a_later_cut_appends_and_ships_only_the_reports_no_record_names(self) -> None:
         """Earlier records stay byte-identical (a missing final newline is supplied, not
-        rewritten); with no tag the previous release is the newest record; a report signed
-        after one cut and before its tag ships with the next release, not with none."""
+        rewritten), and an empty or whitespace-only line is skipped; with no tag the previous
+        release is the newest record; a report signed after one cut and before its tag ships
+        with the next release, not with none."""
         mod = _load()
         _confine(self)
         root = _project(self)
-        older = '{"version": "0.8.0", "reports": []}\n\n{"version": "0.9.0", "reports": ["RPT0001"]}'
+        older = ('{"version": "0.8.0", "reports": []}\n\n   \n'
+                 '{"version": "0.9.0", "reports": ["RPT0001"]}')
         (root / RECORD).parent.mkdir(parents=True)
         (root / RECORD).write_text(older, encoding="utf-8")
         _sign(root, "RPT0001", "2026-01-02T10:00:00Z")
@@ -254,6 +256,59 @@ class ReleaseRecordTests(unittest.TestCase):
         self.assertIn("RPT0009.json could not be read", r.stderr)
         self.assertFalse((root / RECORD).exists())
         self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), CHANGELOG)
+
+    def test_a_report_unreadable_at_the_previous_tag_refuses_the_cut(self) -> None:
+        """The first record reads the reports as committed at the previous tag: one broken
+        there, though repaired since, refuses the cut by name, writing nothing."""
+        root = _project(self)
+        reports = root / "sdlc-studio" / "reports"
+        reports.mkdir(parents=True)
+        (reports / "RPT0009.json").write_text("{", encoding="utf-8")
+        _commit(root, "broken")
+        _git(root, "tag", "v1.0.0")
+        _sign(root, "RPT0009", "2026-01-02T10:00:00Z")
+        _commit(root, "repaired")
+        r = _cli(root, "changelog-cut", "--version", "1.1.0")
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("changelog-cut refused: ", r.stderr)
+        self.assertIn("RPT0009.json could not be read", r.stderr)
+        self.assertFalse((root / RECORD).exists())
+        self.assertEqual((root / "CHANGELOG.md").read_text(encoding="utf-8"), CHANGELOG)
+
+    def test_the_shipped_reports_are_listed_oldest_signature_first(self) -> None:
+        """The record lists the reports in signing order, not id order."""
+        root = _project(self, git=False)
+        _sign(root, "RPT0004", "2026-01-09T10:00:00Z")
+        _sign(root, "RPT0005", "2026-01-02T10:00:00Z")
+        r = _cli(root, "changelog-cut", "--version", "1.0.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(_lines(root)[0]["reports"], ["RPT0005", "RPT0004"])
+
+    def test_a_cut_stopped_after_its_first_write_leaves_the_release_recorded(self) -> None:
+        """The record is written before CHANGELOG.md: a cut stopped after its first final
+        write has recorded the release, and the re-run cuts the section and keeps the record."""
+        mod = _load()
+        _confine(self)
+        root = _project(self)
+        real = mod.sdlc_md.atomic_write
+
+        def stop_after_first_final_write(path, text, *args, **kwargs):
+            real(path, text, *args, **kwargs)
+            if Path(path).name == "releases.jsonl" or "## [1.1.0] - " in text:
+                raise OSError("the cut was stopped")
+
+        argv = ["--root", str(root), "changelog-cut", "--version", "1.1.0"]
+        with mock.patch.object(mod.sdlc_md, "atomic_write", stop_after_first_final_write):
+            self.assertEqual(mod.main(argv), 2)
+        self.assertNotIn("## [1.1.0]", (root / "CHANGELOG.md").read_text(encoding="utf-8"))
+        self.assertTrue((root / RECORD).is_file(), "the stopped cut left the release unrecorded")
+        first = (root / RECORD).read_bytes()
+        self.assertEqual([rec["version"] for rec in _lines(root)], ["1.1.0"])
+        r = _cli(root, "changelog-cut", "--version", "1.1.0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual((root / RECORD).read_bytes(), first)
+        self.assertIn("A shipped thing (US0001)",
+                      (root / "CHANGELOG.md").read_text(encoding="utf-8").split("## [1.1.0]")[1])
 
 
 if __name__ == "__main__":
