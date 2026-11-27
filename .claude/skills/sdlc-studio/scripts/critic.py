@@ -6463,10 +6463,24 @@ def note_digest(path: Path | str) -> str:
 
 
 def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
-    """`(min_points, risk_classes)` in force. A value of the wrong shape raises ValueError
-    naming its key, never read as off, so a typo cannot switch the step off silently."""
+    """`(min_points, risk_classes)` in force. A value of the wrong shape, either key's or that of
+    the `review` or `review.solution_review` block above them, raises ValueError naming its key,
+    never read as off, so a mistyped value cannot switch the step off silently. An empty block
+    reads as the defaults."""
     import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
     from lib import risk_class  # noqa: PLC0415
+    try:
+        whole = config.load_config(repo_root)
+    except Exception:  # noqa: BLE001 - unloadable: `config.get` below warns and reads defaults
+        whole = {}
+    parent = whole.get("review", {})
+    if not isinstance(parent, dict):
+        raise ValueError(f"`review` is {parent!r}, which is not a mapping - refused rather "
+                         f"than read as off")
+    block = parent.get("solution_review", {})
+    if not isinstance(block, dict):
+        raise ValueError(f"`review.solution_review` is {block!r}, which is not a mapping - "
+                         f"refused rather than read as off")
     low = config.get(repo_root, "review.solution_review.min_points", 0)
     classes = config.get(repo_root, "review.solution_review.risk_classes", [])
     if isinstance(low, bool) or not isinstance(low, int) or low < 0:
@@ -6490,8 +6504,7 @@ def _solution_review_rule(repo_root: Path | str, unit: str) -> tuple[str | None,
     if not found:
         raise ValueError(f"no unit {unit} is found in this project")
     text = Path(found[0]).read_text(encoding="utf-8")
-    raw = (sdlc_md.extract_field(text, "Points") or "").strip()
-    points = int(raw) if raw.isdigit() else None
+    points = sdlc_md.read_points(text)
     rmap = risk_class.load_map(repo_root)
     cls = unit_risk_class(repo_root, text, rmap)
     taken, refused = [], []
@@ -6571,7 +6584,9 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
     the note's digest; `(path, row, reason)`. Refused with ValueError, nothing written: a GO
     with changes, a CHANGES without them, a note that names no file, a reviewer not independent
     of the author, a value no cell can hold, or a unit `review.solution_review` does not name.
-    The round is counted and the row appended under the ledger lock."""
+    The round is counted, the row appended and read back under the ledger lock, so the row
+    returned is this call's own. The Unit cell holds the id as `norm_id` spells it, the Note
+    cell the note's path relative to the project root."""
     verdict = verdict.lower()
     if verdict not in SOLUTION_VERDICTS:
         raise ValueError(f"`--verdict` is {verdict!r}, not one of {', '.join(SOLUTION_VERDICTS)}")
@@ -6597,11 +6612,10 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
     reason, why_not = _solution_review_rule(repo_root, unit)
     if reason is None:
         raise ValueError(f"{unit} takes no solution review: {why_not}")
-    root = Path(repo_root).resolve()
-    shown = Path(note).resolve()
-    shown = shown.relative_to(root).as_posix() if shown.is_relative_to(root) else str(note)
+    shown = Path(os.path.relpath(Path(note).resolve(), Path(repo_root).resolve())).as_posix()
     digest = note_digest(note)
-    cells = [_solution_cell(v) for v in (unit, shown, reviewer, author, changes or "-")]
+    cells = [_solution_cell(v) for v in (sdlc_md.norm_id(unit), shown, reviewer, author,
+                                         changes or "-")]
     path = solution_reviews_path(repo_root)
     with _ledger_lock(path):
         if not path.exists():
@@ -6610,7 +6624,8 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
         with path.open("a", encoding="utf-8") as fh:  # append-only
             fh.write(f"| {cells[0]} | {rnd} | {verdict.upper()} | {digest} | {cells[1]} | "
                      f"{cells[2]} | {cells[3]} | {sdlc_md.now_date()} | {cells[4]} |\n")
-    return path, read_solution_reviews(repo_root, unit)[-1], reason
+        row = read_solution_reviews(repo_root, unit)[-1]
+    return path, row, reason
 
 
 def cmd_approach_record(args: argparse.Namespace) -> int:

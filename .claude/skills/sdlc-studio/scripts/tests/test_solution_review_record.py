@@ -1,12 +1,17 @@
 """Which units take a solution review, and `critic.py approach record`'s verdict ledger.
 
-Every record goes through the shipped `critic.py` CLI against a throwaway project; the readers
-other scripts call (`solution_review_reason`, `approach_agreed`, `read_solution_reviews`) are
-called directly on the ledger the CLI wrote.
+Records go through the shipped `critic.py` CLI against a throwaway project, in a process of
+their own or, where a test patches the ledger lock, through `critic.main` in this one, and a
+few through `record_solution_review`, the library call the CLI makes; the
+readers for other scripts to call (`solution_review_reason`, `approach_agreed`,
+`read_solution_reviews`) are called directly on the ledger the CLI wrote.
 """
 from __future__ import annotations
 
+import contextlib
+import functools
 import hashlib
+import io
 import os
 import shutil
 import subprocess
@@ -15,6 +20,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import loader  # noqa: E402
@@ -33,9 +39,10 @@ NO_MAP = "review:\n  solution_review:\n    min_points: 3\n    risk_classes: [hig
 POINTS_REASON = "3 points, at or above `review.solution_review.min_points` 3"
 RISK_REASON = "risk class high, listed in `review.solution_review.risk_classes`"
 NO_MAP_WHY = "no `risk.components` map is declared, so every unit reads standard"
-STORIES = {  # id: (points or None, risk class)
+STORIES = {  # id: (Points as written, or None, risk class)
     "US0001": (3, "standard"), "US0002": (2, "high"), "US0003": (2, "standard"),
     "US0004": (3, "high"), "US0006": (None, "standard"), "US-0007": (3, "standard"),
+    "US0008": ("\u00b2", "standard"), "US0009": ("5 (relative)", "standard"),
 }
 
 
@@ -75,9 +82,16 @@ class SolutionReviewRecordTests(unittest.TestCase):
                 "--note", str(note or self.note), "--reviewer", reviewer, "--author", author]
         return argv + (["--changes", str(changes)] if changes else [])
 
-    def _record(self, unit: str, **kw) -> subprocess.CompletedProcess:
+    def _record(self, unit: str, cwd: Path | None = None, **kw) -> subprocess.CompletedProcess:
         return subprocess.run(self._argv(unit, **kw), capture_output=True, text=True,
-                              env=self.env, timeout=120)
+                              env=self.env, timeout=120, cwd=cwd)
+
+    def _main(self, unit: str, **kw) -> tuple[int, str, str]:
+        """`critic.py approach record` in this process, through `main`: (exit, out, err)."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = critic.main(self._argv(unit, **kw)[3:])
+        return code, out.getvalue(), err.getvalue()
 
     def _ledger(self) -> bytes | None:
         path = self.root / LEDGER
@@ -112,18 +126,25 @@ class SolutionReviewRecordTests(unittest.TestCase):
                          ["US0001", "US0002"])
 
     def test_a_verdict_is_bound_to_the_note_digest_round_by_round(self) -> None:
-        """AC2. MUTANT: the round held at 1, the digest taken of the path, the changes text
-        left out of its cell."""
+        """AC2. MUTANT: the round held at 1, counted over every unit's rows rather than this
+        unit's, the digest taken of the path, the changes text left out of its cell."""
         self._config(ON)
         first_text = self.note.read_bytes()
         run = self._record("US0001", verdict="changes", changes=self.changes)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertIn(f"recorded CHANGES for US0001 at round 1 against note digest "
                       f"{_digest(first_text)}", run.stdout)
+        other = self._record("US0004", verdict="go")
+        self.assertEqual(other.returncode, 0, other.stderr)
+        self.assertIn(f"recorded GO for US0004 at round 1 against note digest "
+                      f"{_digest(first_text)}", other.stdout)
         self.note.write_text("# approach, revised\n\n## Tests\n\nAC1: an exact test\n",
                              encoding="utf-8")
         run = self._record("US0001", verdict="go")
         self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertIn("recorded GO for US0001 at round 2 against note digest", run.stdout)
+        self.assertEqual([(r["unit"], r["round"]) for r in critic.read_solution_reviews(self.root)],
+                         [("US0001", 1), ("US0004", 1), ("US0001", 2)])
         rows = critic.read_solution_reviews(self.root, "US0001")
         today = sdlc_md.now_date()
         self.assertEqual(
@@ -210,11 +231,17 @@ class SolutionReviewRecordTests(unittest.TestCase):
         self.assertNotIn(NO_MAP_WHY, self._record("US0003").stderr)
 
     def test_a_unit_without_points_and_an_unknown_unit_are_refused(self) -> None:
+        """Points are read by `sdlc_md.read_points`: a superscript two is no size, refused in
+        the project's own words rather than int()'s, and a decorated `5 (relative)` is 5."""
         self._config(ON)
         self._refused(self._record("US0006"), "US0006 carries no Points, so "
                       "`review.solution_review.min_points` 3 does not take it")
         self._refused(self._record("US0099"), "no unit US0099 is found")
+        self._refused(self._record("US0008"), "US0008 carries no Points, so "
+                      "`review.solution_review.min_points` 3 does not take it")
         self.assertIsNone(self._ledger())
+        self.assertEqual(critic.solution_review_reason(self.root, "US0009"),
+                         "5 points, at or above `review.solution_review.min_points` 3")
 
     def test_a_malformed_setting_is_refused_by_name(self) -> None:
         bad = {"min_points: three": "min_points", "min_points: true": "min_points",
@@ -228,6 +255,18 @@ class SolutionReviewRecordTests(unittest.TestCase):
                 self._refused(self._record("US0001"), f"`review.solution_review.{key}` is",
                               "refused rather than read as off")
                 self.assertIsNone(self._ledger())
+        blocks = {"review:\n  solution_review: true\n": "`review.solution_review` is True",
+                  "review: [1, 2]\n": "`review` is [1, 2]"}
+        for text, why in blocks.items():
+            with self.subTest(text):
+                self._config(text)
+                self._refused(self._record("US0001"), why, "which is not a mapping",
+                              "refused rather than read as off", "Nothing was written")
+                self.assertIsNone(self._ledger())
+        for empty in ("review:\n  solution_review:\n", "review:\n", "review: [unclosed\n"):
+            with self.subTest(empty):
+                self._config(empty + "risk:\n  components:\n    src/: standard\n")
+                self.assertEqual(critic.solution_review_settings(self.root), (0, []))
         self._config("review:\n  solution_review:\n    min_points: 3\n"
                      "    risk_classes: [' High ']\nrisk:\n  components:\n    src/: standard\n")
         self.assertEqual(critic.solution_review_settings(self.root), (3, ["high"]))
@@ -265,15 +304,40 @@ class SolutionReviewRecordTests(unittest.TestCase):
         self.assertEqual(len(sdlc_md.table_cells(line)), 9)
         self.assertIn(r"a \| b", line)
 
+    def _until_both_wait_on_the_lock(self, procs: list[subprocess.Popen]) -> None:
+        """Return once each process holds the lock file open (it is waiting on the lock), the
+        ledger appears or a process ends, whichever is first, however loaded the host. Without
+        `/proc` to read, wait four seconds instead."""
+        if not Path("/proc/self/fd").is_dir():
+            time.sleep(4)
+            return
+        lock = os.path.realpath(self.root / "sdlc-studio" / ".local" / "allocation.lock")
+
+        def waiting(pid: int) -> bool:
+            try:
+                return any(os.path.realpath(fd) == lock
+                           for fd in Path(f"/proc/{pid}/fd").iterdir())
+            except OSError:
+                return False
+
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline and self._ledger() is None \
+                and all(proc.poll() is None for proc in procs) \
+                and not all(waiting(proc.pid) for proc in procs):
+            time.sleep(0.05)
+
     def test_two_records_at_once_take_two_rounds(self) -> None:
-        """Both processes start while the test holds the ledger lock: a round counted outside
-        the lock reads no rows in either, and both rows would say round 1."""
+        """Both processes start while the test holds the ledger lock: neither writes until it is
+        released, and a round counted outside the lock reads no rows in either, so both rows
+        would say round 1."""
         self._config(ON)
         with sdlc_md.allocation_lock(self.root):
             procs = [subprocess.Popen(self._argv("US0001"), stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE, text=True, env=self.env)
                      for _ in range(2)]
-            time.sleep(4)
+            self._until_both_wait_on_the_lock(procs)
+            self.assertIsNone(self._ledger())  # both still wait on the lock the test holds
+            self.assertEqual([proc.poll() for proc in procs], [None, None])
         for proc in procs:
             out, err = proc.communicate(timeout=120)
             self.assertEqual(proc.returncode, 0, err)
@@ -281,14 +345,24 @@ class SolutionReviewRecordTests(unittest.TestCase):
                          [1, 2])
 
     def test_the_note_is_named_relative_to_the_project_when_inside_it(self) -> None:
+        """The Note cell is relative to the project root wherever the note is and whatever the
+        caller's working directory; the Unit cell is the id normalised, as `us0001` is US0001."""
         self._config(ON)
         inside = self.root / "sdlc-studio" / ".local" / "lane" / "US0001-approach.md"
         inside.parent.mkdir(parents=True)
         inside.write_text("# approach\n", encoding="utf-8")
         self.assertEqual(self._record("US0001", note=inside).returncode, 0)
         self.assertEqual(self._record("US0001").returncode, 0)
-        self.assertEqual([r["note"] for r in critic.read_solution_reviews(self.root)],
-                         ["sdlc-studio/.local/lane/US0001-approach.md", str(self.note)])
+        cwd = self.tmp / "a" / "b"
+        cwd.mkdir(parents=True)
+        typed = self._record("us0001", cwd=cwd, note=Path("..") / ".." / self.note.name)
+        self.assertEqual(typed.returncode, 0, typed.stderr)
+        self.assertEqual([(r["unit"], r["note"]) for r in critic.read_solution_reviews(self.root)],
+                         [("US0001", "sdlc-studio/.local/lane/US0001-approach.md"),
+                          ("US0001", f"../{self.note.name}"), ("US0001", f"../{self.note.name}")])
+        self.assertEqual([line.split(" | ")[0] for line in
+                          (self.root / LEDGER).read_text(encoding="utf-8").splitlines()[-3:]],
+                         ["| US0001"] * 3)
 
     def test_a_library_caller_and_a_hand_written_row(self) -> None:
         self._config(ON)
@@ -301,6 +375,65 @@ class SolutionReviewRecordTests(unittest.TestCase):
                         encoding="utf-8")
         row = critic.read_solution_reviews(self.root, "US0001")[0]
         self.assertEqual((row["round"], row["verdict"], row["changes"]), (0, "GO", ""))
+
+    def test_the_row_printed_is_the_one_this_call_wrote(self) -> None:
+        """A peer records the moment this call releases the ledger lock: the row printed and
+        returned is this call's own (round 1, its note's digest, its reviewer), not the peer's
+        round 2. MUTANT: the row read back after the lock is released; the lock not taken at
+        all (the peer then never runs)."""
+        self._config(ON)
+        peer_note = self.tmp / "peer-approach.md"
+        peer_note.write_text("# another approach\n", encoding="utf-8")
+        real, fired, returned = critic._ledger_lock, [], []
+
+        @contextlib.contextmanager
+        def lock_then_peer(path):
+            with real(path):
+                yield
+            if not fired:
+                fired.append(True)
+                critic.record_solution_review(self.root, "US0001", "go", peer_note,
+                                              "Pat (qa)", "builder (engineering)")
+
+        own = _digest(self.note.read_bytes())
+        with mock.patch.object(critic, "_ledger_lock", lock_then_peer):
+            code, out, err = self._main("US0001")
+            returned.append(critic.record_solution_review(
+                self.root, "US0004", "go", self.note, "Dani (engineering)",
+                "builder (engineering)")[1])
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(fired, [True])
+        self.assertIn(f"recorded GO for US0001 at round 1 against note digest {own} -> ", out)
+        rows = critic.read_solution_reviews(self.root)
+        self.assertEqual([(r["unit"], r["round"], r["digest"], r["reviewer"]) for r in rows],
+                         [("US0001", 1, own, "Dani (engineering)"),
+                          ("US0001", 2, _digest(peer_note.read_bytes()), "Pat (qa)"),
+                          ("US0004", 1, own, "Dani (engineering)")])
+        self.assertEqual(returned, [rows[2]])
+
+    def test_an_unreadable_note_and_a_held_lock_are_refused(self) -> None:
+        """Both are an OSError, refused with exit 2 and nothing written rather than a
+        traceback. MUTANT: the catch narrowed to ValueError."""
+        self._config(ON)
+        with self.subTest("unreadable note"):
+            if os.geteuid() == 0:
+                self.skipTest("root reads a file of mode 000")
+            locked = self.tmp / "locked.md"
+            locked.write_text("# approach\n", encoding="utf-8")
+            locked.chmod(0)
+            self.addCleanup(locked.chmod, 0o600)
+            self._refused(self._record("US0001", note=locked), "Permission denied",
+                          "approach record refused", "Nothing was written")
+            self.assertIsNone(self._ledger())
+        quick = functools.partial(sdlc_md.allocation_lock, timeout=0.2)
+        with sdlc_md.allocation_lock(self.root), \
+                mock.patch.object(critic.sdlc_md, "allocation_lock", quick):
+            code, out, err = self._main("US0001")
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("approach record refused: could not take the allocation lock", err)
+        self.assertIn("Nothing was written", err)
+        self.assertIsNone(self._ledger())
+        self.assertEqual(self._main("US0001")[0], 0)  # the control, the lock free
 
     # -- approach_agreed, branch by branch -----------------------------------------------------
 
