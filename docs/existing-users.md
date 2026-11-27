@@ -71,8 +71,31 @@ what 6.5 changes in how you work.
    holds no card ([the persona standard](../.claude/skills/sdlc-studio/reference-persona.md#persona-rules)).
 5. **The new keys are optional.** Each takes its shipped default until you set it:
    `personas.standard` (`block`), `ci.wait_timeout_minutes` (30), which no shipped script reads
-   yet (BG1613, listed in [known issues](known-issues.md)), `ci.rerun_limit` (1) and
-   `review.rendered_paths` (`[]`).
+   yet (BG1613, listed in [known issues](known-issues.md)), `ci.rerun_limit` (1),
+   `review.rendered_paths` (`[]`); the spend ceiling `appetite.spend` (0) and `capacity.spend`
+   (0), in priced input-equivalent tokens, 0 for none; an effort per kind of unit,
+   `routing.effort.docs` (`{}`), `routing.effort.bug` (`{}`) and `routing.effort.code` (`{}`);
+   and the solution review's `review.solution_review.min_points` (0) and
+   `review.solution_review.risk_classes` (`[]`).
+6. **Name each cache-read fall in the retro.** When the close names a role whose cache-read share
+   fell, `retro validate` refuses the retro until its `## Cost` section has a bullet naming each
+   such role ([cost regression](../.claude/skills/sdlc-studio/reference-sprint.md#cost-regression)).
+7. **Turn on the solution review when you want it.** It is off at the shipped defaults. Once on,
+   a builder writes an approach note before any code and a seat reviews it. These lines in
+   `sdlc-studio/.config.yaml` turn it on; they are this repository's own values rather than a
+   recommended default:
+
+   ```yaml
+   review:
+     solution_review:
+       min_points: 3
+       risk_classes: [high]
+   ```
+
+   A unit's risk class is read through `risk.components`. `sprint lane land` refuses a unit the
+   settings name until a seat's GO stands on its approach note: `critic.py approach brief` briefs
+   the seat on the note and `critic.py approach record` records its verdict. The rest is under
+   [lanes](../.claude/skills/sdlc-studio/help/sprint.md#lanes-dispatching-work-and-accepting-it-back).
 
 ### From 6.3 to 6.4
 

@@ -21,8 +21,9 @@ needed ([model-tier routing](../.claude/skills/sdlc-studio/reference-config.md#r
 
 Which model does which work is yours to set. `routing.models` maps five difficulty tiers to
 your own model ids, `routing.critic_tier` sets the reviewer's tier against the builder's, and
-`routing.effort.builder` and `routing.effort.reviewer` set each one's reasoning effort. Routing
-is advisory and off by default: the plan recommends a model for each unit and your harness
+`routing.effort.builder` and `routing.effort.reviewer` set each one's reasoning effort,
+and `routing.effort.docs`, `routing.effort.bug` and `routing.effort.code` set it per kind of unit.
+Routing is advisory and off by default: the plan recommends a model for each unit and your harness
 starts it. A delegated build, `sprint lane run --harness <name> --model <id>`, passes the model
 to that harness's own CLI ([lanes.py](../.claude/skills/sdlc-studio/scripts/lib/lanes.py)).
 
@@ -122,9 +123,11 @@ in all, as its signed report RPT0035 records
 ([RPT0035](../sdlc-studio/reports/RPT0035-sprint-report-run-01m7nty5.md),
 [its JSON](../sdlc-studio/reports/RPT0035.json)).
 
-There is no dollar budget setting. A run is bounded by `capacity.minutes` and `capacity.units`,
-which its breaker enforces, while `capacity.tokens` is a plan-time warning only, and
-`sprint plan --appetite-minutes` and `--appetite-units` set one run's bounds
+There is no dollar budget setting. A run is bounded by `capacity.minutes`, `capacity.units` and
+`capacity.spend`, the last in priced input-equivalent tokens and 0, unbounded, by default, which
+its breaker enforces, while `capacity.tokens` is a plan-time warning only; `appetite.spend` sets
+one run's spend, and `sprint plan --appetite-minutes`, `--appetite-units` and `--appetite-spend`
+set one run's bounds
 ([sprint capacity](../.claude/skills/sdlc-studio/reference-config.md#capacity)). To hold a
 monthly budget, add up the Dollar cost rows of that month's signed reports.
 

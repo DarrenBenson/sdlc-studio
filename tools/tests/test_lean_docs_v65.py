@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -38,7 +39,22 @@ sys.path.insert(0, str(SCRIPTS / "lib"))
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SCRIPTS / "tests"))
 sys.path.insert(0, str(REPO / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
+import escape  # noqa: E402
+import loop_guard  # noqa: E402
+import release_cut  # noqa: E402
+import retro  # noqa: E402
+import yaml  # noqa: E402
+from lib import cost_anatomy, risk_class  # noqa: E402
+import test_cache_read_fall as crf  # noqa: E402
+import test_delegation_disclosure as dd  # noqa: E402
+import test_effort_by_kind as ebk  # noqa: E402
+import test_engineering_leaders_page as elp  # noqa: E402
+import test_enterprise_doc as ent  # noqa: E402
+import test_loop_guard_spend as lgs  # noqa: E402
+import test_readme_front_door as rfd  # noqa: E402
+import test_release_record as rr  # noqa: E402
 import evidence_pack  # noqa: E402
 import gate  # noqa: E402
 import persona_review  # noqa: E402
@@ -52,8 +68,18 @@ _read, _flat = v64._read, v64._flat
 _config_ref_default, _shipped_default = v64._config_ref_default, v64._shipped_default
 
 #: The configuration keys 6.5 adds, each with the dotted path its shipped default sits at.
+#: The two keys that turn the solution review on, in `NEW_KEYS` with the rest.
+SOLUTION_KEYS = ("review.solution_review.min_points", "review.solution_review.risk_classes")
 NEW_KEYS = ("personas.standard", "ci.wait_timeout_minutes", "ci.rerun_limit",
-            "review.rendered_paths")
+            "review.rendered_paths", *SOLUTION_KEYS)
+#: The spend and per-kind effort keys the widened 6.5 adds, each shown with its default.
+SPEND_EFFORT_KEYS = ("appetite.spend", "capacity.spend", "routing.effort.docs",
+                     "routing.effort.bug", "routing.effort.code")
+ENTERPRISE = REPO / "docs" / "enterprise.md"
+SEATS_REF = SKILL / "reference-workflow-personas.md"
+SEATS_ANCHOR = "seats-for-the-requirements-documents"
+LANES_LINK = "](../.claude/skills/sdlc-studio/help/sprint.md#lanes-dispatching-work-and-accepting-it-back)"
+NUMBER_WORDS = {5: "five", 10: "ten"}
 
 #: What a page says of PyYAML's system package: the distribution's own, named per distribution.
 DISTRO_PACKAGE = ("your distribution's PyYAML package", "`python3-yaml` on Debian and Ubuntu",
@@ -84,6 +110,44 @@ def _section(text: str, heading: str) -> str:
             break
         body.append(line)
     return "".join(body)
+
+
+def _stated_default(key: str) -> str:
+    """The default `reference-config.md` states for `key`, as `_config_ref_default` reads it,
+    else, for a per-kind entry such as `routing.effort.docs`, the last cell of the row whose
+    first cell names the parent key "per kind" and the kind: never a role row's `inherit`."""
+    if stated := _config_ref_default(key):
+        return stated
+    parent, _, kind = key.rpartition(".")
+    for line in _read(v64.CONFIG_REF).splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
+        if line.startswith("| `") and cells[0].startswith(f"`{parent}` per kind") \
+                and f"`{kind}`" in cells[0]:
+            return cells[-1].strip("`")
+    return ""
+
+
+def _verbs(parser: argparse.ArgumentParser, at: tuple = ()) -> set[tuple]:
+    """Every sub-verb path a parser takes, as its subparsers hold them: `("approach", "brief")`."""
+    out: set[tuple] = set()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for name, sub in action.choices.items():
+                out |= {at + (name,)} | _verbs(sub, at + (name,))
+    return out
+
+
+def _block(text: str, start: str) -> str:
+    """The paragraph or list item of `text` that starts with `start`, flattened; "" if none."""
+    return _flat(next((b for b in re.split(r"\n(?=- |\d+\. )|\n\s*\n", text)
+                       if b.lstrip().startswith(start)), ""))
+
+
+def _helper(case_class: type) -> unittest.TestCase:
+    """A feature story's own fixture case, set up for reuse; the caller cleans it up."""
+    case = case_class()
+    case.setUp()
+    return case
 
 
 def _links_resolve(case: unittest.TestCase, text: str, page: Path) -> None:
@@ -530,6 +594,277 @@ class DocsV65Tests(unittest.TestCase):
             self.assertFalse(any("personas.standard" in d for d in owed),
                              f"migrate set the standard for a project with no cards: {owed}")
             self.assertFalse(any("require_ac_verification" in d for d in owed), owed)
+
+    def test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind(self):
+        """Mutant: help/sprint.md whose Appetite section names no spend key, warning or stop,
+        and whose Reasoning effort paragraph stamps both roles on every unit. AC1."""
+        page = _read(HELP / "sprint.md")
+        appetite = _flat(_section(page, "### Appetite: the circuit breaker"))
+        for needle in ("`--appetite-spend`", "`appetite.spend`", "`capacity.spend`",
+                       "priced input-equivalent tokens", "both ship at 0, no spend ceiling",
+                       "75 and 95 per cent", f"exits {loop_guard.BUDGET_EXIT}",
+                       "units already dispatched finish and no further unit starts",
+                       "leaves spend unjudged at that boundary and says so",
+                       "`spend: NOT JUDGED at this boundary`",
+                       "minutes and units still stop the run", "appetite resize --spend",
+                       "`--decision` must name a row of `sdlc-studio/decisions.md`"):
+            self.assertIn(needle, appetite, f"the Appetite section does not say {needle!r}")
+        self.assertEqual(loop_guard.SPEND_WARNINGS, (95, 75))
+        effort = _block(page, "**Reasoning effort:**")
+        for needle in ("The `docs`, `bug` and `code` entries under `routing.effort`",
+                       "they ship empty", "a bug by its id, else code when an Affects path is "
+                       "a code file, else docs", "refuses an unknown kind, role or effort, "
+                       "naming the key", "within a kind", "`sprint lane brief` names the "
+                       "unit's own effort", "`routing.effort.reviewer_below_builder`"):
+            self.assertIn(needle, effort, f"the effort paragraph does not say {needle!r}")
+        self.assertNotIn("stamps both on every unit", effort)
+
+        # The stop and the unread meter, through `loop_guard.py budget` on its own fixture.
+        fx = _helper(lgs.LoopGuardSpendTests)
+        self.addCleanup(fx.doCleanups)
+        fx._open({"minutes": 0, "units": 0, "spend": 7000})
+        fx._use(1000, output=1000, cache_read=10000)  # 1,000 + 5,000 + 1,000 priced
+        rc, text = fx._budget(fmt="text")
+        self.assertEqual(rc, loop_guard.BUDGET_EXIT, text)
+        self.assertIn("units already dispatched finish and no further unit starts", text)
+        unread = _helper(lgs.LoopGuardSpendTests)
+        self.addCleanup(unread.doCleanups)
+        unread._open({"minutes": 60, "units": 0, "spend": 1000}, opening=None)
+        rc, text = unread._budget(fmt="text")
+        self.assertEqual((rc, True), (0, "spend: NOT JUDGED at this boundary" in text), text)
+        lgs.run_state.update(str(unread.root), started_at="2026-01-01T00:00:00Z")
+        rc, text = unread._budget(fmt="text")
+        self.assertEqual(rc, loop_guard.BUDGET_EXIT, text)
+        self.assertIn("reason=minutes", text)
+        self.assertIn("spend: NOT JUDGED at this boundary", text)
+
+        # The kinds and the refusals, through `sprint plan` and `sprint lane brief`.
+        for entry, key in (("doc: {builder: low}", r"routing\.effort\.doc\b(?!\.)"),
+                           ("docs: {author: low}", r"routing\.effort\.docs\.author\b"),
+                           ("docs: {builder: fast}", r"routing\.effort\.docs\.builder\b")):
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as d:
+                rc, out, err = ebk._plan(ebk._project(d, f"routing:\n  effort:\n    {entry}\n"))
+                self.assertEqual(rc, 2, f"{entry} planned:\n{out}{err}")
+                self.assertRegex(err, key)
+        with tempfile.TemporaryDirectory() as d:
+            root = ebk._project(d, ebk.AC1)
+            rc, out, err = ebk._plan(root, "--bugs", "Open")
+            self.assertEqual(rc, 0, err)
+            kinds = {uid: (e or {}).get("kind") for uid, e in ebk._efforts(out).items()}
+            self.assertEqual(kinds, {ebk.DOCS: "docs", ebk.CODE: "code", ebk.BUG: "bug"})
+            ebk.run_state.open_run(root, batch=[ebk.DOCS], goal="g")
+            line = ebk._brief_line(root, ebk.DOCS)
+            self.assertIn("the docs kind", line)
+            self.assertRegex(line, r"builder at low effort\b")
+        self.assertEqual(_shipped_default("routing.effort.docs"), "{}")
+
+    def test_the_help_names_the_cache_measures_and_the_retro_they_demand(self):
+        """Mutant: help/sprint.md naming no cache-write split, and help/retro.md's validate row
+        naming no `## Cost` demand. AC2."""
+        anatomy = _block(_read(HELP / "sprint.md"), "`cost --anatomy` reads")
+        for needle in ("splits each role's cache writes into growth and re-writes after "
+                       "5-minute and 1-hour expiry", "a write's lifetime from its kind",
+                       "a role with an untimed usage record reads not available for its split"):
+            self.assertIn(needle, anatomy, f"the anatomy paragraph does not say {needle!r}")
+        self.assertEqual(cost_anatomy.CACHE_LIFETIMES, {"cache_write_5m": (300, "rewrite_5m"),
+                                                        "cache_write_1h": (3_600, "rewrite_1h")})
+        self.assertEqual((cost_anatomy.GROWTH, cost_anatomy.NOT_AVAILABLE),
+                         ("growth", "not available"))
+        row = next((ln for ln in _read(HELP / "retro.md").splitlines()
+                    if ln.startswith("| `/sdlc-studio retro validate`")), "")
+        for needle in (f"`## {retro.COST_SECTION}`", f"`{retro.COST_ISSUE}` one",
+                       f"`{retro.CACHE_READ_ISSUE}` one", "names the cause",
+                       f"more than {NUMBER_WORDS[retro.CACHE_READ_FALL_POINTS]} points below",
+                       f"up to the last {NUMBER_WORDS[sprint_report.CACHE_TREND_RUNS]} signed "
+                       "runs", "names each such role", "A rolling boundary stops on a fall its "
+                       "retro does not name", "](../reference-sprint.md#cost-regression)"):
+            self.assertIn(needle, row, f"the validate row does not say {needle!r}")
+        _links_resolve(self, row, HELP / "retro.md")
+        # The refusal, through `retro.py validate` on the cache-read fall's own fixture.
+        fx = _helper(crf.CacheReadFallTests)
+        self.addCleanup(fx.doCleanups)
+        root = fx.issue_tree()
+        fx.write_retro(root, crf.THREE_LINE)
+        rc, out = fx.validate(root)
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("missing cache-read cause", out)
+        fx.write_retro(root, crf.THREE_LINE + "\n## Cost\n\n- the builder's prompt changed\n")
+        rc, out = fx.validate(root)
+        self.assertEqual(rc, 0, out)
+
+    def test_the_help_names_the_release_record_failure_rate_and_disclosure(self):
+        """Mutant: help/gate.md naming no release record, help/retro.md's scorecard naming no
+        `escape.py failure-rate` figure, and the `sign` paragraph silent on what a refused or
+        repeated disclosure writes. AC3."""
+        gate_page = _flat(_section(_read(HELP / "gate.md"),
+                                   "## `--release`: the one command before a tag"))
+        for needle in ("`release_cut.py changelog-cut --version X.Y.Z`",
+                       "one committed release record per version", f"`{release_cut.RELEASES_REL}`",
+                       "the date of the cut", "the signed reports since the previous release",
+                       "A second cut of the same version leaves the record unchanged"):
+            self.assertIn(needle, gate_page, f"help/gate.md does not say {needle!r}")
+        self.assertIn(("changelog-cut",), _verbs(release_cut.build_parser()))
+        root = rr._project(self)
+        rr._sign(root, "RPT0001", "2026-11-20T10:00:00Z")
+        changelog = _read(root / "CHANGELOG.md")
+        done = rr._cli(root, "changelog-cut", "--version", "1.0.0")
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        [record] = rr._lines(root)
+        self.assertEqual((record["version"], record["reports"]), ("1.0.0", ["RPT0001"]))
+        self.assertRegex(record["date"], r"^\d{4}-\d{2}-\d{2}$")
+        cut = (root / release_cut.RELEASES_REL).read_bytes()
+        again = rr._cli(root, "changelog-cut", "--version", "1.0.0")
+        self.assertNotEqual(again.returncode, 0, "a second cut of 1.0.0 was not refused")
+        self.assertEqual(cut, (root / release_cut.RELEASES_REL).read_bytes())
+        (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")  # an interrupted cut
+        rerun = rr._cli(root, "changelog-cut", "--version", "1.0.0")
+        self.assertEqual(rerun.returncode, 0, rerun.stdout + rerun.stderr)
+        self.assertEqual(cut, (root / release_cut.RELEASES_REL).read_bytes())
+
+        seats = _section(_read(HELP / "retro.md"), "## Each seat's own record")
+        for needle in ("the figure `escape.py failure-rate` prints for the same window",
+                       "A release inside the settling period is pending", "never 0%",
+                       "](deploy.md#commands)"):
+            self.assertIn(needle, _flat(seats), f"help/retro.md's scorecard does not say "
+                                                f"{needle!r}")
+        _links_resolve(self, seats, HELP / "retro.md")
+        self.assertIn(("failure-rate",), _verbs(escape.build_parser()))
+        with tempfile.TemporaryDirectory() as tmp:
+            rate = escape.failure_rate(tmp, "2026-01-01", "2026-03-31")
+        self.assertIsNone(rate.get("rate"), rate)
+        self.assertTrue(rate.get("not_measured"), rate)
+
+        sign = _block(_read(HELP / "sprint.md"), "**`sign --report RPTxxxx")
+        for needle in ("`sprint_report.py disclose --report RPTxxxx --decision Dnnnn`",
+                       "the fingerprint", "still reads VALID", "An unsigned report, a decision "
+                       "it does not hold as accepted", "are refused, writing nothing",
+                       "one line however often it runs"):
+            self.assertIn(needle, sign, f"the sign paragraph does not say {needle!r}")
+        self.assertIn(("disclose",), _verbs(sprint_report.build_parser()))
+        for label, opts, decision in (("unsigned", {"sign": False}, "D0001"),
+                                      ("a decision the log does not hold", {}, "D0002"),
+                                      ("the accepted decision", {}, "D0001")):
+            with self.subTest(label), tempfile.TemporaryDirectory() as tmp:
+                [rid] = dd._project(Path(tmp), (dd.RUN_A, opts), rulings=dd.ACCEPTED)
+                before = dd._bytes(Path(tmp), rid)
+                first = dd._disclose(Path(tmp), rid, decision)
+                if label != "the accepted decision":
+                    self.assertNotEqual(first.returncode, 0, first.stdout)
+                    self.assertEqual(before, dd._bytes(Path(tmp), rid), "a refusal wrote")
+                    continue
+                self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+                once = dd._bytes(Path(tmp), rid)
+                self.assertEqual(dd._disclose(Path(tmp), rid, decision).returncode, 0)
+                self.assertEqual(once, dd._bytes(Path(tmp), rid), "a repeat rewrote the report")
+                twin = dd._files(Path(tmp), rid)["twin"].read_text(encoding="utf-8")
+                self.assertEqual(twin.count("entered under delegation"), 1)
+                check = dd._cli(Path(tmp), "check", "--report", rid)
+                self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
+                self.assertIn("VALID", check.stdout)
+
+    def test_the_public_pages_name_what_the_widened_65_adds(self):
+        """Mutant: README's 6.5 line naming no spend, the upgrade page naming none of the five
+        keys, the leaders page capping a run by minutes and units alone with no owner and no
+        change failure rate, and the enterprise page bounding a run without spend. AC4."""
+        readme = _read(README)
+        line = _flat(next(b for b in re.split(r"\n(?=- )|\n\s*\n", readme)
+                          if b.startswith("- **New in 6.5")))
+        self.assertIn("A run can also stop on spend", line)
+        self.assertLessEqual(rfd.words(readme), rfd.CR0742_WORDS)
+
+        raw = _section(_read(UPGRADE), "### From 6.4 to 6.5")
+        for key in SPEND_EFFORT_KEYS:
+            stated = _stated_default(key)
+            self.assertEqual(stated, _shipped_default(key).strip("`"), key)
+            if key.startswith("routing.effort."):
+                self.assertEqual(stated, "{}", f"{key} read a row other than the per-kind one")
+            shown = re.escape(f"`{key}`") + r" \(" + re.escape(
+                stated if re.fullmatch(r"\d+", stated) else f"`{stated}`") + r"[,)]"
+            self.assertRegex(_flat(raw), shown, f"the 6.5 section does not give {key} {stated}")
+        fall = _block(raw, "6. **Name each cache-read fall in the retro.**")
+        for needle in ("`retro validate` refuses the retro", "`## Cost`", "each such role"):
+            self.assertIn(needle, fall, f"the cache-read item does not say {needle!r}")
+
+        page = _read(LEADERS)
+        cost = elp.section_body(page, "cost in dollars a point")
+        for body, needles in (
+                (cost, ("There is no dollar budget setting.", "`capacity.spend` or "
+                        "`appetite.spend`, in priced input-equivalent tokens, both 0 and "
+                        "unbounded by default", "a lower bound, so a stop can come late but "
+                        "never early", "](../.claude/skills/sdlc-studio/scripts/loop_guard.py)")),
+                (elp.section_body(page, "separation of duties"), (
+                    "The person owns the PRD and the PVD.", "under authority the person "
+                    "delegates: it corrects a fact itself, proposes any change to a requirement "
+                    "as a change request the person decides, and asks when unsure",
+                    f"reference-workflow-personas.md#{SEATS_ANCHOR})")),
+                (elp.section_body(page, "change approval"), (
+                    "`escape.py failure-rate` states the release change failure rate",
+                    "release records", "never 0%",
+                    "](../.claude/skills/sdlc-studio/scripts/escape.py)"))):
+            for needle in needles:
+                self.assertIn(needle, _flat(body), f"engineering-leaders.md does not say "
+                                                   f"{needle!r}")
+            self.assertEqual(elp.claim_problems(body), [])
+        self.assertNotIn("capped by wall-clock minutes and a number of units.", _flat(cost))
+        self.assertIn(SEATS_ANCHOR, elp.anchors(SEATS_REF))
+        self.assertIn("LOWER BOUND", loop_guard.__doc__)
+        self.assertIn("late but never early", loop_guard.__doc__)
+        self.assertLessEqual(elp.word_count(page), elp.WORD_LIMIT)
+        approved = elp.SIGNER_SENTENCES[elp.PAGE]
+        self.assertEqual(elp.signer_sentence_problems(page, approved), [])
+        self.assertTrue(elp.signer_sentence_problems(page + "\n\nAn agent signs for you.\n",
+                                                     approved), "the closed world is open")
+
+        text = _read(ENTERPRISE)
+        for body, needles in (
+                (_section(text, "## Cost"), ("`capacity.minutes`, `capacity.units` and "
+                                             "`capacity.spend`", "`appetite.spend`",
+                                             "`--appetite-units` and `--appetite-spend`")),
+                (_section(text, "## Harness and models"), (
+                    "`routing.effort.docs`, `routing.effort.bug` and `routing.effort.code` set "
+                    "it per kind of unit",))):
+            for needle in needles:
+                self.assertIn(needle, _flat(body), f"enterprise.md does not say {needle!r}")
+            self.assertEqual(ent.command_problems(body), [])
+
+    def test_the_upgrade_page_says_how_to_turn_on_the_solution_review(self):
+        """Mutant: the upgrade page naming no solution review and no `solution_review` key.
+        AC5."""
+        self.assertTrue(set(SOLUTION_KEYS) <= set(NEW_KEYS), "NEW_KEYS lacks the two keys")
+        raw = _section(_read(UPGRADE), "### From 6.4 to 6.5")
+        for key in SOLUTION_KEYS:
+            stated = _stated_default(key)
+            self.assertEqual(stated, _shipped_default(key).strip("`"), key)
+            shown = re.escape(f"`{key}`") + r" \(" + re.escape(
+                stated if re.fullmatch(r"\d+", stated) else f"`{stated}`") + r"[,)]"
+            self.assertRegex(_flat(raw), shown, f"the 6.5 section does not give {key} {stated}")
+        start = raw.find("7. **Turn on the solution review when you want it.**")
+        self.assertNotEqual(start, -1, "the 6.5 section has no solution review item")
+        item = _flat(re.split(r"\n(?=\d+\. )", raw[start:])[0])  # its fence and paragraphs
+        for needle in ("It is off at the shipped defaults", "this repository's own values rather "
+                       "than a recommended default", "`risk.components`", "`sprint lane land` refuses "
+                       "a unit the settings name until a seat's GO stands on its approach note",
+                       "`critic.py approach brief`", "`critic.py approach record`", LANES_LINK):
+            self.assertIn(needle, item, f"the solution review item does not say {needle!r}")
+        self.assertNotRegex(item, r"\b(?:US|BG|CR|RFC|EP|D)\d{4}\b", "the item names an id")
+        _links_resolve(self, item, UPGRADE)
+        self.assertEqual(risk_class.CONFIG_KEY, "risk.components")
+        verbs = _verbs(critic.build_parser())
+        self.assertTrue({("approach", "brief"), ("approach", "record")} <= verbs, verbs)
+        fence = re.search(r"```yaml\n(.*?)\n\s*```", raw, re.S)
+        self.assertTrue(fence, "the 6.5 section gives no YAML lines to turn the review on")
+        lines = textwrap.dedent(fence.group(1)) + "\n"
+        self.assertIn("solution_review", yaml.safe_load(lines).get("review", {}))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write(root, "sdlc-studio/stories/US0001-a-story.md",
+                   "# US0001: a story\n\n> **Status:** Ready\n> **Points:** 3\n")
+            self.assertIsNone(critic.solution_review_reason(root, "US0001"),
+                              "the shipped defaults name a 3-point story")
+            _write(root, "sdlc-studio/.config.yaml", lines)
+            reason = critic.solution_review_reason(root, "US0001")
+            self.assertTrue(reason, "the page's lines leave a 3-point story without the review")
+            self.assertIn("3 points", reason)
 
 
 if __name__ == "__main__":

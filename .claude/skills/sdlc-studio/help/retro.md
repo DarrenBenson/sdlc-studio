@@ -11,7 +11,7 @@ turning what you learned into a lesson the next sprint actually sees.
 | Command | Does |
 | --- | --- |
 | `/sdlc-studio retro create` | Write the retro for the batch just closed (`artifact new --type retro`); `sprint close` with no `--retro` scaffolds it for you |
-| `/sdlc-studio retro validate` | Content check: the three lines, the Try limit, no placeholder left, every class tag known, and the Batch field omits no unit of the batch of the run its `Run` field names (read from the live run state, else the run archive) |
+| `/sdlc-studio retro validate` | Content check: the three lines, the Try limit, no placeholder left, every class tag known, and the Batch field omits no unit of the batch of the run its `Run` field names (read from the live run state, else the run archive). It also owes a `## Cost` section when the close recorded a known issue: for a `cost` one, a bullet that names the cause; for a `cache-read` one (a role whose cache-read share fell more than ten points below its mean over up to the last five signed runs), a bullet that names each such role. A rolling boundary stops on a fall its retro does not name ([cost regression](../reference-sprint.md#cost-regression)) |
 | `/sdlc-studio retro extract` | Turn each Try item into a lesson (the close runs this) |
 | `/sdlc-studio retro dispose` | An older retro's findings: filed, fixed, declined, or still undecided |
 
@@ -68,13 +68,15 @@ only when it cites the unit, shares an `Affects` file with it and cites three id
 charge goes to every seat whose latest verdict on the unit approved, in any run, each miss with
 its basis. See [seat evidence](../reference-retro.md#seat-evidence-each-seat-on-its-own-record).
 
-It also states the release change failure rate, `escape.failure_rate`'s figure over the 90 days
+It also states the release change failure rate, the figure `escape.py failure-rate` prints for the
+same window ([help/deploy.md](deploy.md#commands)), `escape.failure_rate`'s figure over the 90 days
 ending on the retro's Date, or on today when the retro carries no Date it can read, which the line
 says, with the 14-day settling period: the rate, the releases pending, each release counted with
 the incident issues and escaped bugs that failed it, and the release record file it was read from.
 `--format json` carries the function's figure as `release_cfr`, with `source` naming the record
-file beside it. With no release recorded in the window, every one pending or no incident recorded
-it reads not measured with the command's reason, and a record file the function cannot read reads
+file beside it. A release inside the settling period is pending and counted neither way. With no
+release recorded in the window, every one pending or no incident recorded it reads not measured
+with the command's reason, never 0%, and a record file the function cannot read reads
 not measured naming the line, never a refusal.
 
 ## Persona learnings, listed at the close and struck at the signature

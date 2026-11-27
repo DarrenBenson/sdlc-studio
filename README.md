@@ -58,11 +58,12 @@ the author, and drops the ceremony around each unit that caught nothing.
   change is never its reviewer, and a story reaches Done only when its criteria pass.
 - **One signature.** `sprint close` files a one-page report that states every known issue, and
   `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
-- **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
-  carried into the next plan, build and review.
+- **It learns from its own runs.** What went wrong becomes a failure class whose rule is carried
+  into the next plan, build and review.
 - **New in 6.5: a release held to fewer than 50 open defects.** None is at Medium or above;
   each is listed in [known issues](docs/known-issues.md). Every persona and seat card is held to
-  a written standard, and a delegated signature names the decision authorising it.
+  a written standard, and a delegated signature names the decision authorising it. A run can
+  also stop on spend.
 - **New in 6.4: evidence a change board can read.** `release_cut.py evidence-pack` builds a
   release's evidence pack from committed records: what changed, what passed, who reviewed and
   who signed. `retro.py seats` keeps each review seat's record; `escape.py trace` ties an escaped

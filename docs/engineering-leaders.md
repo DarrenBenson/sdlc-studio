@@ -28,6 +28,11 @@ engineer can override that gate by hand with a flag, but the signature at the en
 each unit through the same gate and stops at the first one it refuses
 ([sprint.py](../.claude/skills/sdlc-studio/scripts/sprint.py)).
 
+`escape.py failure-rate` states the release change failure rate: the releases with a linked
+incident over the releases counted, read from the committed release records and incident
+issues. With no release record or no incident it reads not measured, never 0%
+([escape.py](../.claude/skills/sdlc-studio/scripts/escape.py)).
+
 ## Separation of duties: author, reviewer and signer
 
 Each unit of work has three duties, held by three different people or seats, and the record
@@ -57,6 +62,11 @@ ruled true, false or unverifiable, and its tests mutated to show they fail when 
 configurable. The shipped default reports a missing self-check and lets the review go ahead; a
 project that sets it to block refuses the review brief until the self-check is recorded
 ([the author's self-check](../.claude/skills/sdlc-studio/reference-review.md#author-self-check)).
+
+The person owns the PRD and the PVD. A seat checks the work against each under authority the
+person delegates: it corrects a fact itself, proposes any change to a requirement as a change
+request the person decides, and asks when unsure
+([seats for the requirements documents](../.claude/skills/sdlc-studio/reference-workflow-personas.md#seats-for-the-requirements-documents)).
 
 ## The signed report
 
@@ -107,7 +117,10 @@ $131.75, which is $2.27 a point
 The run after it forecast $3.38 a point and came in at $2.35 a point
 ([its report](../sdlc-studio/reports/RPT0032-sprint-report-run-01m7eyr3.md)).
 
-There is no dollar budget setting. A run is capped by wall-clock minutes and a number of units.
+There is no dollar budget setting. A run is capped by wall-clock minutes, a number of units and
+spend: `capacity.spend` or `appetite.spend`, in priced input-equivalent tokens, both 0 and
+unbounded by default. The spend reading is a lower bound, so a stop can come late but never early
+([loop_guard.py](../.claude/skills/sdlc-studio/scripts/loop_guard.py)).
 To hold a team to a monthly budget, add up the Dollar cost rows of that month's signed reports
 ([sprint capacity](../.claude/skills/sdlc-studio/reference-config.md#capacity)).
 

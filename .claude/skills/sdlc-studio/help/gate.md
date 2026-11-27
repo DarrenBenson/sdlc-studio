@@ -184,6 +184,14 @@ exclusion, so a green lane is not misread as certifying the code. It is release-
 reason as `verify`: a leg legitimately absent mid-build is not a standard-gate failure. Deselecting
 it under `--release` is refused.
 
+The cut before the tag, `release_cut.py changelog-cut --version X.Y.Z`, writes one committed
+release record per version to `sdlc-studio/reports/releases.jsonl`: the version, the date of the
+cut, the release before it, and the signed reports since the previous release, those no earlier
+record names. A second cut of the same version leaves the record unchanged: one refused because
+`CHANGELOG.md` already holds the version writes nothing, and a re-run after an interrupted cut
+keeps the first record byte for byte. `escape.py failure-rate` reads these records
+([help/deploy.md](deploy.md#commands)).
+
 ### Nothing to prove is not proof
 
 The lane fails, rather than passing quietly, when it has examined nothing:

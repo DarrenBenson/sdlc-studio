@@ -164,9 +164,10 @@ same on its Accountable line. A signature carries the two keys only when sealed 
 signed before `--delegated` existed. It writes the report and its twin only, so the fingerprint,
 the run record and the reports index are unchanged, and a report that read VALID before still
 reads VALID; it neither checks nor repairs the page, so one that read INVALID still does. The
-decision must be accepted. An unsigned report, and a signature already recording a delegation
-under another decision or none, are refused; a repeat under the same decision changes nothing
-and exits 0. The release evidence pack accepts that delegation when the decisions log committed
+decision must be one `sdlc-studio/decisions.md` holds as accepted. An unsigned report, a decision
+it does not hold as accepted, and a signature already recording a delegation under another
+decision or none, are refused, writing nothing; a repeat under the same decision changes nothing
+and exits 0, so the report carries one line however often it runs. The release evidence pack accepts that delegation when the decisions log committed
 at the revision built holds the decision as accepted. The evidence page names each run's signer
 in a Signed by column: a project that commits its own page regenerates it with
 `sprint_report.py evidence --out docs/evidence.md`, or `evidence --check` and `release_cut.py
@@ -336,9 +337,13 @@ smaller model and hard ones on your bigger one. Map tiers to your own models in
 
 **Reasoning effort:** `routing.effort.builder` and `routing.effort.reviewer` set the effort each
 unit's builder and its reviewer are spawned at: `inherit` (the session's own effort, the
-default), `low`, `medium`, `high`, `xhigh` or `max`. `sprint plan` stamps both on every unit,
-routing enabled or not, and `sprint lane brief` names them. The plan refuses any other value,
-naming the key, and refuses a reviewer below its builder unless
+default), `low`, `medium`, `high`, `xhigh` or `max`. The `docs`, `bug` and `code` entries under
+`routing.effort` set either role for one kind of unit, a role an entry leaves out taking the
+default; they ship empty. A unit's kind is read from the unit: a bug by its id, else code when an
+Affects path is a code file, else docs. `sprint plan` stamps each unit with its kind's pair,
+routing enabled or not, and `sprint lane brief` names the unit's own effort. The plan refuses an
+unknown kind, role or effort, naming the key, and refuses a reviewer below its builder, within a
+kind as for the defaults, unless
 `routing.effort.reviewer_below_builder` names a decision recorded in `sdlc-studio/decisions.md`
 ([routing](../reference-config.md#routing)).
 
@@ -474,6 +479,12 @@ The appetite is resolved once at plan time and stamped on the run. It is set by
 `--appetite-minutes`, `--appetite-units` and `--appetite-spend` on `plan`, and zero on an axis
 means unbounded. Spend is counted in priced input-equivalent tokens; a later edit to
 `.config.yaml` does not move the ceiling `loop_guard budget` reads from the run.
+
+Without the flag, `appetite.spend`, else `capacity.spend`, sets the spend ceiling; both ship at 0,
+no spend ceiling. `loop_guard.py budget` warns at 75 and 95 per cent of it, and at the appetite
+exits 4: units already dispatched finish and no further unit starts. A meter that cannot read
+leaves spend unjudged at that boundary and says so (`spend: NOT JUDGED at this boundary`), while
+minutes and units still stop the run.
 
 The record keeps two pairs, not one. `units` and `minutes` are the ACCEPTED pair the breaker
 stops on. `standing_units` and `standing_minutes` are the sprint capacity it was measured
@@ -814,7 +825,9 @@ python3 <skill>/scripts/sprint.py cost --anatomy
 `cost --anatomy` reads the transcripts the meter reads and prints, per role, the agents, calls, priced
 tokens and share, and the context per call. It reads the open run's window, the records after its
 `started_at`; `--session` reads the whole session, as it does with no run open. The header names
-the main thread's start context. A Subagent starts section flags each subagent whose first call
+the main thread's start context. It splits each role's cache writes into growth and re-writes
+after 5-minute and 1-hour expiry, reading a write's lifetime from its kind; a role with an untimed
+usage record reads not available for its split. A Subagent starts section flags each subagent whose first call
 carries more context than `cost.agent_start_budget` (30000 tokens by default; `off` flags none).
 Below the role table, an orchestrator averaging over 150,000 tokens of context a call is flagged
 with the remedy: hand off at each wave boundary with `sprint.py handoff` and `sprint.py resume`.
