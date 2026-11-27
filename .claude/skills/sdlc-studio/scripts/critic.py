@@ -6590,8 +6590,9 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
     with changes, a CHANGES without them, a note that names no file, a reviewer not independent
     of the author, a value no cell can hold, or a unit `review.solution_review` does not name.
     The round is counted, the row appended and read back under the ledger lock, so the row
-    returned is this call's own. The Unit cell holds the id as `norm_id` spells it, the Note
-    cell the note's path relative to the project root."""
+    returned is this call's own. The Unit cell holds the id as its artefact file spells it
+    (`display_id`, so a schema v3 id keeps its dash), the Note cell the note's path relative to
+    the project root."""
     verdict = verdict.lower()
     if verdict not in SOLUTION_VERDICTS:
         raise ValueError(f"`--verdict` is {verdict!r}, not one of {', '.join(SOLUTION_VERDICTS)}")
@@ -6619,8 +6620,8 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
         raise ValueError(f"{unit} takes no solution review: {why_not}")
     shown = Path(os.path.relpath(Path(note).resolve(), Path(repo_root).resolve())).as_posix()
     digest = note_digest(note)
-    cells = [_solution_cell(v) for v in (sdlc_md.norm_id(unit), shown, reviewer, author,
-                                         changes or "-")]
+    cells = [_solution_cell(v) for v in (sdlc_md.display_id(repo_root, unit), shown, reviewer,
+                                         author, changes or "-")]
     path = solution_reviews_path(repo_root)
     with _ledger_lock(path):
         if not path.exists():

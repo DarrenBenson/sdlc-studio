@@ -491,6 +491,25 @@ class SolutionReviewRecordTests(unittest.TestCase):
                          [1])
         self.assertEqual(critic.read_solution_reviews(self.root, "US0001"), [])
 
+    def test_the_ledger_spells_a_schema_v3_id_with_its_dash(self) -> None:
+        """The Unit cell is the id as the artefact file spells it. MUTANT: the cell written
+        through `norm_id`, which drops the dash of `US-01ABCDEF`."""
+        self._config(ON)
+        (self.root / "sdlc-studio" / ".config.yaml").write_text(
+            ON + "\nschema_version: 3\n", encoding="utf-8")
+        (self.root / "sdlc-studio" / "stories" / "US-01ABCDEF-a-story.md").write_text(
+            "# US-01ABCDEF: A story\n\n> **Status:** Ready\n> **Risk-class:** high\n"
+            "> **Points:** 3\n> **Affects:** src/a.py\n\n## Acceptance Criteria\n\n"
+            "### AC1: it works\n", encoding="utf-8")
+        run = self._record("US-01ABCDEF")
+        self.assertEqual(run.returncode, 0, run.stderr)
+        ledger = (self.root / LEDGER).read_text(encoding="utf-8")
+        self.assertIn("| US-01ABCDEF | 1 | GO |", ledger)
+        self.assertNotIn("US01ABCDEF", ledger)
+        self.assertEqual(self._agreed("US01ABCDEF")[0], True)
+        self.assertEqual([r["round"] for r in
+                          critic.read_solution_reviews(self.root, "us-01abcdef")], [1])
+
 
 if __name__ == "__main__":
     unittest.main()
