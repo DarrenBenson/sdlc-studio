@@ -1800,37 +1800,51 @@ _ROLE_KEYS = ("role", "agents", "calls", "priced", "share", "split", "first_cont
               "avg_context", "cache_writes")
 
 
-def _cost_roles(repo_root: Path | str, transcripts_dir, source) -> dict:
+def read_cost_roles(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
     """The current session's anatomy (`cost_anatomy.anatomy`), kept to the cells the report
-    states: `{"source", "subagent_files", "roles", "total"}`, or `{"reason"}` when it cannot be
-    had or reads a session other than `source`, the one the meter just read. Never raises: a
-    closing reading is not lost because the anatomy could not be taken."""
+    states: `{"source", "subagent_files", "roles", "total"}`, `source` the transcript's stem, or
+    `{"reason"}` when it cannot be had. Never raises: a closing reading is not lost because the
+    anatomy could not be taken. The close reads it once, before its chain, judges it and hands
+    the same reading to `stamp_cost_roles`."""
     try:
         from lib import cost_anatomy  # noqa: PLC0415 - it imports this module
         got = cost_anatomy.anatomy(repo_root, transcripts_dir)
     except Exception as exc:  # noqa: BLE001 - AnatomyError, or a reader that cannot load
         return {"reason": f"the spend by role could not be read: {exc}"}
-    name = Path(str(got.get("source"))).name
-    if not source or name != Path(str(source)).name:
-        return {"reason": f"the session the anatomy read, {name}, is not the one this reading's "
-                          f"meter read, so its spend by role is not this run's"}
     t = got.get("total") or {}
-    return {"source": Path(name).stem, "subagent_files": got.get("subagent_files"),
+    return {"source": Path(str(got.get("source"))).stem,
+            "subagent_files": got.get("subagent_files"),
             "roles": [{k: r.get(k) for k in _ROLE_KEYS} for r in got.get("roles") or []],
             "total": {k: t.get(k) for k in ("agents", "calls", "priced")}}
 
 
+def _cost_roles(reading: dict, source) -> dict:
+    """`reading` (`read_cost_roles`) itself when it read the session `source` names, the one
+    the meter read; else `{"reason"}`, as is a reading that already carries one."""
+    if reading.get("reason"):
+        return reading
+    name = reading.get("source")
+    if not source or name != Path(str(source)).stem:
+        return {"reason": f"the session the anatomy read, {name}, is not the one this reading's "
+                          f"meter read, so its spend by role is not this run's"}
+    return reading
+
+
 def stamp_cost_roles(repo_root: Path | str,
-                     transcripts_dir: Path | str | None = None) -> dict | None:
-    """Record the current session's spend by role (`_cost_roles`) on the open run's newest
-    reading, the one the close has just stamped, and return it; None when the run holds no
-    reading. A separate call from `stamp_tokens`, whose reading parses only what the last one
-    did not: the anatomy reads the whole session, so only the close pays for it, once."""
+                     transcripts_dir: Path | str | None = None,
+                     roles: dict | None = None) -> dict | None:
+    """Record the current session's spend by role on the open run's newest reading, the one the
+    close has just stamped, and return it; None when the run holds no reading. `roles` is a
+    reading `read_cost_roles` already took, recorded in place of a new one; either is checked
+    against the session that reading's meter read (`_cost_roles`). A separate call from
+    `stamp_tokens`, whose reading parses only what the last one did not: the anatomy reads the
+    whole session, so only the close pays for it, once."""
     stamps = (read(repo_root) or {}).get(TOKEN_STAMPS) or []
     if not stamps or not isinstance(stamps[-1], dict):
         return None
     at, source = stamps[-1].get("at"), stamps[-1].get("source")
-    got = _cost_roles(repo_root, transcripts_dir, source)
+    got = _cost_roles(read_cost_roles(repo_root, transcripts_dir) if roles is None else roles,
+                      source)
 
     def apply(state: dict) -> dict:
         for s in reversed((state or {}).get(TOKEN_STAMPS) or []):

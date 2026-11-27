@@ -9294,6 +9294,91 @@ def _cost_cause_named(root, gap) -> bool:
                                                       path.read_text(encoding="utf-8"))
 
 
+#: The anatomy reading a close took before its chain, by resolved root, for `_file_the_report`
+#: to record on its meter reading. `_file_the_report` keeps its two-argument shape, which
+#: callers wrap; `cmd_close` clears this first and `_file_the_report` consumes it.
+_HELD_ROLES: dict[str, dict] = {}
+
+
+def _close_cost_roles(root, state: dict) -> tuple[dict, bool]:
+    """`(reading, fresh)`: the spend by role this close judges. On a re-close with no reopen
+    since the window the first filed page ended at (`_close_priced_total`'s test), the roles
+    that close stamped in that window, `fresh` False. Otherwise the anatomy read now
+    (`run_state.read_cost_roles`), `fresh` True, judged only when it read the session the meter
+    reads now (a reading held and not written), since the page's table is NOT MEASURED
+    otherwise. Either is `{"reason"}` when there is nothing to judge."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    end = state.get(REPORT_WINDOW_END)
+    if end and not sprint_report.reopened_since(state, end):
+        got = sprint_report._closing_roles(  # noqa: SLF001 - the page's own reader
+            sprint_report._metered(state, sprint_report._at(end)))  # noqa: SLF001
+        return got or {"reason": "no closing reading in the run's window recorded the spend by "
+                                 "role"}, False
+    got = run_state.read_cost_roles(root)
+    probe = run_state._stamp(root, "report")  # noqa: SLF001 - held, not written
+    if not probe:
+        return {"reason": "the meter gives no reading, so no closing reading records the "
+                          "spend by role"}, True
+    return run_state._cost_roles(got, probe.get("source")), True  # noqa: SLF001
+
+
+def close_cache_read_fall(root, state: dict, retro_id: str, roles: dict) -> dict:
+    """The close's cache-read check: `{"line", "issues"}`, one line, and one issue per role
+    whose cache-read share in `roles` (a `read_cost_roles` reading) fell more than
+    `retro.CACHE_READ_FALL_POINTS` below its mean (`sprint_report.cache_read_baseline`, over up
+    to 5 pages signed before now that state the role's share, the run's own pages left out).
+    Shares are compared at one decimal place, as the pages print them. A role with no share in
+    `roles`, or no earlier page, is named as not judged with why. Never a refusal."""
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    from lib import cost_anatomy  # noqa: PLC0415 - only the share's cell format is needed
+    head = "close: cache-read share by role:"
+    if roles.get("reason"):
+        return {"issues": [], "line": f"{head} UNMEASURED - {roles['reason']}, so no fall is "
+                                      f"judged"}
+    rid, limit = sdlc_md.norm_id(retro_id).upper(), retro.CACHE_READ_FALL_POINTS
+    base = sprint_report.cache_read_baseline(root, state.get("run_id"), sdlc_md.now_iso8601())
+    judged, unjudged, issues = [], [], []
+    for row in roles.get("roles") or []:
+        role = str(row.get("role"))
+        share = sprint_report._cell_pct(cost_anatomy._cell(  # noqa: SLF001 - the page's cell
+            (row.get("split") or {}).get("cache_read"), "pct"))
+        got = base.get(role)
+        if share is None or got is None:
+            unjudged.append(f"{role} (this run's reading states no cache-read share)"
+                            if share is None else
+                            f"{role} (no earlier signed page states its cache-read share)")
+            continue
+        change = round(share - got["mean"], 1)
+        pages = f"{len(got['reports'])} signed page(s) ({', '.join(got['reports'])})"
+        said = f"{change:+.1f} points" if change else "0.0 points"
+        fell = change < -limit
+        judged.append(f"{role} {share:.1f}% against its mean {got['mean']:.1f}% over {pages}, "
+                      f"{said}: " + (f"FELL more than {limit} - a known issue, and the retro "
+                                     f"names {role} under `## {retro.COST_SECTION}`"
+                                     if fell else f"within {limit}"))
+        if fell:
+            issues.append({
+                "source": retro.CACHE_READ_ISSUE, "retro": rid, "role": role, "share": share,
+                "mean": got["mean"], "change": change, "reports": got["reports"],
+                "detail": f"{rid}: {role}'s cache-read share {share:.1f}% is {-change:.1f} "
+                          f"points below its mean {got['mean']:.1f}% over {pages}, more than "
+                          f"{limit}. The retro names {role} under `## {retro.COST_SECTION}`"})
+    parts = judged + ([f"not judged: {', '.join(unjudged)}"] if unjudged else [])
+    return {"issues": issues, "line": f"{head} {'; '.join(parts) or 'no role in the reading'}"}
+
+
+def _cache_fall_named(root, gap) -> bool:
+    """Is `gap` a cache-read known issue whose retro names its role under `## Cost`? Then it is
+    handed over on the report and does not stop a rolling boundary, as `_cost_cause_named`."""
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    if not (isinstance(gap, dict) and gap.get("source") == retro.CACHE_READ_ISSUE
+            and gap.get("retro")):
+        return False
+    path = retro.find_retro(root, gap["retro"])
+    return bool(path) and retro.names_role(path.read_text(encoding="utf-8"), str(gap.get("role")))
+
+
 def _print_close_strategy(root, state: dict) -> dict:
     """State the strategy the close is judging against, and its execution policy.
 
@@ -11563,6 +11648,7 @@ def _refuse_batch_repair(root, state: dict, verb: str) -> str:
 
 def cmd_close(args: argparse.Namespace) -> int:
     """The sprint close ceremony as one deterministic, resumable chain."""
+    _HELD_ROLES.clear()   # no earlier close's reading is this one's
     root = args.root
     try:
         state = run_state.read(root)
@@ -11734,12 +11820,31 @@ def cmd_close(args: argparse.Namespace) -> int:
         cost = {"issue": None, "line": f"close: cost per point: UNMEASURED - the check could not "
                                        f"run ({type(exc).__name__}: {exc})"}
     print(cost["line"])
+    # THE CACHE-READ CHECK, beside it and for the same reason. The anatomy is read ONCE, here,
+    # and a first close hands that reading to the page's stamp (`_HELD_ROLES`), so the Cost by
+    # role table the page states is the reading judged. A close that judges no reading keeps
+    # the earlier close's cache-read issues; one that judges a reading replaces them.
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    try:
+        roles, fresh = _close_cost_roles(root, state)
+        if fresh:
+            _HELD_ROLES[str(Path(root).resolve())] = roles
+        fall = close_cache_read_fall(root, state, args.retro, roles)
+        replace = not roles.get("reason")
+    except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own check
+        fall = {"issues": [], "line": f"close: cache-read share by role: UNMEASURED - the check "
+                                      f"could not run ({type(exc).__name__}: {exc})"}
+        replace = False
+    print(fall["line"])
     # ONE PASS. A step that fails is recorded as a known issue for the report and the chain runs
     # on; the report is the page that hands those issues over, so a gap no longer stops it.
-    known: list[dict] = [cost["issue"]] if cost["issue"] else []
+    kept = [g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+            if not replace and isinstance(g, dict) and g.get("source") == retro.CACHE_READ_ISSUE]
+    known: list[dict] = ([cost["issue"]] if cost["issue"] else []) + kept + fall["issues"]
     run_state.update(root, **{run_state.CLOSE_KNOWN_ISSUES: [
         g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
-        if not (isinstance(g, dict) and g.get("source") == "cost")] + known})
+        if not (isinstance(g, dict) and g.get("source") in ("cost", retro.CACHE_READ_ISSUE))]
+        + known})
     state = run_state.read(root) or state
     module = sys.modules[__name__]
     for i, name in enumerate(_CLOSE_CHAIN, start=1):
@@ -11996,6 +12101,8 @@ def _file_the_report(root, retro_id):
     failure this whole split exists to end (US0832 AC4).
     """
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    # The anatomy reading the close took before its chain, consumed whatever path this takes.
+    held = _HELD_ROLES.pop(str(Path(root).resolve()), None)
     # The forge and the verdict ledger are read HERE, fresh, and frozen on the run: the page and
     # every later re-derivation of it read the CI runs and the rows each unit's rounds count
     # from the record, never a per-clone cache or a later run's record. The lane yield, read
@@ -12029,7 +12136,8 @@ def _file_the_report(root, retro_id):
     try:
         if not first_end:
             if stamp := run_state.stamp_tokens(root, "report"):
-                run_state.stamp_cost_roles(root)   # the page's spend by role, frozen here
+                # the page's spend by role, frozen here: the reading the close judged
+                run_state.stamp_cost_roles(root, roles=held)
                 if reopened:
                     run_state.update(root, **{sprint_report.METER_REREAD: {
                         "reopened_at": reopened, "read_at": stamp.get("at")}})
@@ -13736,7 +13844,7 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     # An unpriced unit is a gap in what the page measured, not in what the cycle delivered: the
     # page names and counts it for the signer, so a rolling boundary does not halt on it.
     gaps = [g for g in (run_state.read(root) or {}).get(run_state.CLOSE_KNOWN_ISSUES) or []
-            if not _cost_cause_named(root, g)
+            if not _cost_cause_named(root, g) and not _cache_fall_named(root, g)
             and not (isinstance(g, dict) and g.get("source") == "unpriced")]
     if gaps:
         return _boundary_stop(

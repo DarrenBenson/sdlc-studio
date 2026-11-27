@@ -828,6 +828,7 @@ def validate(root, retro_id: str) -> dict:
         rows = dispositions_in(text)
         errors = (three_line_errors(text) + class_errors(root, lessons_in(text))
                   + _undecided_errors(rows) + cost_cause_errors(root, retro_id, text)
+                  + cache_read_errors(root, retro_id, text)
                   + run_batch_errors(root, text))
         return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
                 "demonstration": [], "lessons": lessons_in(text), "carried": [],
@@ -859,6 +860,8 @@ def validate(root, retro_id: str) -> dict:
     errors.extend(_undecided_errors(rows))
     # Demanded only of a run the close found over its cost baseline, read from the run's record.
     errors.extend(cost_cause_errors(root, retro_id, text))
+    # And of a run in which the close recorded a role's cache-read share as fallen.
+    errors.extend(cache_read_errors(root, retro_id, text))
     # A unit that joined the run after the retro was scaffolded, which the Batch field omits.
     errors.extend(run_batch_errors(root, text))
 
@@ -3458,6 +3461,10 @@ COST_BASELINE_KEY = "cost.baseline_per_point"
 #: The retro section a flagged run's cause is named in, and the close known issue's source.
 COST_SECTION = "Cost"
 COST_ISSUE = "cost"
+#: A role whose cache-read share fell more than this many points below its mean over earlier
+#: signed pages is a close known issue of this source, and the retro's `## Cost` names the role.
+CACHE_READ_FALL_POINTS = 10
+CACHE_READ_ISSUE = "cache-read"
 COST_BASELINE_HEADER = (
     "# Cost baseline\n\n"
     "<!-- Written by `retro.py cost-baseline add`: one row per past run, priced once from the\n"
@@ -3572,6 +3579,38 @@ def cost_cause_errors(root, retro_id: str, text: str) -> list[str]:
     return [f"missing cause - the close recorded this run's cost as a known issue "
             f"({issue.get('ratio')} x its baseline per point), so '## {COST_SECTION}' must name "
             f"the cause in at least one bullet that is not a {{{{placeholder}}}}"]
+
+
+def cache_read_issues(root, retro_id: str) -> list[dict]:
+    """Every `cache-read` known issue the run's close recorded for `retro_id`, one per fallen
+    role, read from the run state as `cost_issue` reads the cost issue."""
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError:
+        return []
+    rid = sdlc_md.norm_id(retro_id or "").upper()
+    return [g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+            if isinstance(g, dict) and g.get("source") == CACHE_READ_ISSUE
+            and sdlc_md.norm_id(str(g.get("retro") or "")).upper() == rid]
+
+
+def names_role(text: str, role: str) -> bool:
+    """Does a bullet of the retro's `## Cost` section that is not a {{placeholder}} mention
+    `role` by name? By word only: the role, or its plural, any case, not inside a longer word or
+    a hyphenated name."""
+    pattern = re.compile(rf"(?<![\w-]){re.escape(role)}s?(?![\w-])", re.IGNORECASE)
+    return any(pattern.search(b) for b in _real_bullets(sections(text).get(COST_SECTION, [])))
+
+
+def cache_read_errors(root, retro_id: str, text: str) -> list[str]:
+    """The cache-read demand: one error for each role the close recorded as fallen
+    (`cache_read_issues`) that no `## Cost` bullet names (`names_role`), nothing otherwise."""
+    return [f"missing cache-read cause - the close recorded {g.get('role')}'s cache-read share "
+            f"{g.get('share')}%, {g.get('change')} points against its mean {g.get('mean')}% "
+            f"over {len(g.get('reports') or [])} signed page(s), more than "
+            f"{CACHE_READ_FALL_POINTS} down: add a `## {COST_SECTION}` bullet naming "
+            f"{g.get('role')} that says why"
+            for g in cache_read_issues(root, retro_id) if not names_role(text, str(g.get("role")))]
 
 
 def _iso_z(at) -> str:

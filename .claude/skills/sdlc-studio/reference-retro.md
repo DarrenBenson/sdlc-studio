@@ -53,11 +53,15 @@ every Source it pooled, so a rate taken across two bases is never read as one fi
    sprint taught us nothing" is a legitimate answer, but it must be *stated*, because it is
    a claim and not a default.
 3. **Every finding dispositioned** - filed, or declined with a reason.
-4. **A flagged run names its cost's cause** - only when the run's close recorded a `cost` known
-   issue for this retro (the run is over 1.5 x its baseline per point,
-   [reference-sprint.md#cost-regression](reference-sprint.md#cost-regression)): a `## Cost`
-   section with at least one bullet that is not a `{{placeholder}}`. Read from the run's record,
-   so no other retro is asked for it.
+4. **A flagged run names its cost's cause** - only when the run's close recorded a `cost` or
+   `cache-read` known issue for this retro, read from the run's record, so no other retro is
+   asked for it. A `cost` issue (the run is over 1.5 x its baseline per point,
+   [reference-sprint.md#cost-regression](reference-sprint.md#cost-regression)) needs a `##
+   Cost` section with at least one bullet that is not a `{{placeholder}}`. Each `cache-read`
+   issue (a role's cache-read share more than 10 points below its mean over earlier signed
+   pages) needs a `## Cost` bullet that mentions the role by name, checked by word only (the
+   role or its plural, any case, so the word `other` names the `other` role); `validate`
+   names each role missed, with its share and mean.
 5. **The Batch field omits no unit of the run's batch** - when the `> **Run:**` field names a
    run, each unit of its batch is in the `> **Batch:**` field, so a unit that joined after the
    close scaffolded the retro (`sprint.py batch add`) is measured, reported and closed. The run

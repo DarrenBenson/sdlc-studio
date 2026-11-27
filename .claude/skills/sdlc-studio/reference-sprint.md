@@ -681,16 +681,16 @@ filed page, signed or not, re-derives at its own prices. Premium requests are th
 
 ## Cost regression at the close {#cost-regression}
 
-The close compares the run's priced cost per gate-cleared point with one baseline
-(`retro.cost_baseline`): the median of the latest 5 priced runs once 3 exist, a priced run being
-a `VELOCITY.md` row with a Priced/pt figure or a `COST-BASELINE.md` row, never the run's own
-retro. Below 3, `cost.baseline_per_point` stands in and is named
-([config](reference-config.md#cost-baseline)); set `off`, the comparison prints UNMEASURED. A run
-over 1.5 x the baseline is a `cost` known issue on the report, with each batch unit's priced span
-cost (NOT MEASURED where it has none) and the unattributed remainder, and the close completes.
-The retro then owes a `## Cost` section naming the cause (`retro.py validate` refuses it until
-then), and a cost issue whose cause is named does not halt `sprint.py boundary`. `sprint plan`
-prints the batch's budget, its points x 1.5 x the baseline, beside the token forecast.
+The close compares the run's priced cost per gate-cleared point with one baseline (`retro.cost_baseline`): the median of the
+latest 5 priced runs (`VELOCITY.md` Priced/pt figures or `COST-BASELINE.md` rows, not the run's own) once 3 exist, else the
+named `cost.baseline_per_point` ([config](reference-config.md#cost-baseline)); `off` prints UNMEASURED. Over 1.5 x it is a
+`cost` known issue, with each unit's priced span cost (or NOT MEASURED) and the unattributed remainder. `sprint plan` prints a
+budget of points x 1.5 x the baseline beside the token forecast. A first close also reads the anatomy once, before its chain,
+and on one line sets each role's cache-read share, to one decimal, against its mean over up to 5 earlier signed pages stating
+one: over 10 points below is a `cache-read` known issue; a role with no share or earlier page is named, unjudged, with why. The
+page's Cost by role table is that reading, or, for a session not the meter's, NOT MEASURED and unjudged; a re-close judges the
+stamped table. The retro's `## Cost` names the cause and each fallen role (`retro.py validate` refuses it until then), and a
+named issue does not halt `sprint.py boundary`. Reviewers leaving `other` can move it by re-attribution alone.
 
 ## Appetite (the run-level circuit breaker) {#appetite}
 
