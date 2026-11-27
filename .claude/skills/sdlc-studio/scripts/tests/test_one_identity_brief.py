@@ -121,6 +121,11 @@ GENERATORS: tuple[Generator, ...] = (
     *(Generator(f"approach brief --seat {s}", "critic",
                 ("approach", "brief", "--unit", "{unit}", "--seat", s, "--note", "{note}"),
                 _seat(s)) for s in SEATS),
+    Generator("approach brief --seat persona", "critic",
+              ("approach", "brief", "--unit", "{unit}", "--seat", "persona", "--note", "{note}"),
+              (("persona", "Abena Osei"),)),
+    Generator("approach panel", "critic",
+              ("approach", "panel", "--unit", "{unit}", "--note", "{note}"), ()),
     *(Generator(f"resolve --seat {s} --render {r}", "persona_resolve",
                 ("resolve", "--seat", s, "--render", r), _seat(s))
       for s in SEATS for r in ("build", "review")),

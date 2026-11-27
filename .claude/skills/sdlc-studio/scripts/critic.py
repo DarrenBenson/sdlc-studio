@@ -6573,16 +6573,19 @@ def _seat_cards(repo_root: Path | str) -> list[str]:
 
 def solution_review_panel(repo_root: Path | str) -> list[str]:
     """The entries of `review.solution_review.panel`, stripped, lower-cased and each once, in
-    the order written; empty when unset. Raises ValueError naming the key, never read as empty:
-    a value that is not a list, an entry that is not a seat the project has a card for or
-    `persona`, and `persona` while a project card declares the role `persona` too."""
+    the order written; empty, with no seat card read, when unset or empty. Raises ValueError
+    naming the key, never read as empty: a value that is not a list, an entry that is not a
+    seat the project has a card for or `persona`, and `persona` while a project card declares
+    the role `persona` too."""
     import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
     raw = config.get(repo_root, _PANEL_KEY, [])
     if not isinstance(raw, list):
         raise ValueError(f"`{_PANEL_KEY}` is {raw!r}, which is not a list of seats, each a seat "
                          f"the project has a card for, or `persona` - refused rather than read "
                          f"as empty")
-    roster = _seat_cards(repo_root)
+    if not raw:
+        return []
+    roster = _seat_cards(repo_root)  # read only when there is an entry to check against it
     seats: list[str] = []
     for entry in raw:
         name = entry.strip().lower() if isinstance(entry, str) else None
@@ -6916,17 +6919,34 @@ def binding_decisions(repo_root: Path | str, text: str) -> list[dict]:
              if d in log else {"id": d, "missing": True}) for d in ids]
 
 
-def approach_brief(repo_root: Path | str, unit: str, seat: str,
-                   note: Path | str) -> tuple[str, str | None]:
-    """A seat's review brief for the unit's approach note, and the line its verb prints on
-    stderr: None when `review.solution_review` names the unit, else that `approach record` will
-    refuse a verdict on it, and why. The brief is the seat's review render, the unit's Affects
-    and criteria, the decisions that bind it, the note verbatim, what to judge, the rules and
-    the two record commands. Refused with ValueError, before any brief: an unknown unit, a note
-    that names no file, and a note `approach_note_gaps` finds incomplete; an unknown seat raises
-    as `persona_resolve.review_card` raises. Writes nothing."""
-    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
-    root = Path(repo_root)
+#: What a seat judges an approach note by; a persona judges it by its own questions instead.
+_APPROACH_SEAT_QUESTIONS = """Judge the plan, not code: there is none yet. Ask:
+- Reading: does the note read each criterion's key terms the way the criterion, its Notes and the
+  binding decisions mean them? Name any term read too narrowly or too widely, such as a noun read
+  as the shipped case only, or a setting the project never sets.
+- Can it hold: will each criterion pass beside the tests and pages already there? Name any test or
+  page the plan would contradict, and any line budget it would cross.
+- Tests: does each criterion's planned test fail on a real mutant of the line that matters? Name
+  the branches, guards, fallbacks, orderings, malformed inputs and error paths it does not pin.
+- Sentences: is each sentence the plan will state true of what the code will do? Name any that
+  over-claim.
+- Scope: anything outside the unit's Affects the plan needs, or anything it does that the criteria
+  do not ask."""
+
+#: The remedy every refusal to frame the unit's persona names.
+_PERSONA_REMEDY = ("To brief the persona: register it in sdlc-studio/personas/index.md, correct "
+                   "the story's Persona field, or take `persona` off "
+                   "`review.solution_review.panel`.")
+#: Where a seat on a panel writes its reply, relative to the project root.
+_REPLY_DIR = "sdlc-studio/.local/solution-review"
+#: An item marker in a CHANGES cell: `1.` or `1)` opening the cell or after a space, then a space.
+_ITEM_MARK = re.compile(r"(?:(?<=\s)|^)(\d+)[.)](?=\s)")
+
+
+def _approach_unit(root: Path, unit: str, note: Path | str) -> tuple[Path, str, str, Path, str]:
+    """`(artefact, its text, its id as shown, note path, note text)` for an approach brief or
+    panel. Refused with ValueError, before any brief: an unknown unit, a note that names no
+    file, and a note `approach_note_gaps` finds incomplete."""
     found = sdlc_md.find_by_id(root, unit)
     if not found:
         raise ValueError(f"no artefact with id {unit!r} - an approach brief needs a real unit")
@@ -6940,13 +6960,117 @@ def approach_brief(repo_root: Path | str, unit: str, seat: str,
     gaps = approach_note_gaps(note_text, text)
     if gaps:
         raise ValueError(f"the approach note {note} is not complete: {'; '.join(gaps)}")
-    card = persona_resolve.review_card(root, seat)
+    return path, text, shown, note_path, note_text
+
+
+def _stakeholder(root: Path, text: str, shown: str) -> tuple[str, Path, str | None]:
+    """`(name, card, warn)` for the persona the unit's `Persona` field names: its registered
+    name, its card as the registry gives it, and `persona_review.report_line` for a card the
+    persona standard holds under `personas.standard: report`, else None. Refused with
+    ValueError, each ending in the remedy: no Persona, no readable registry, a name it does not
+    register, a card that names no file, and a held card under `block`."""
+    import persona_review  # noqa: PLC0415 - sibling; the persona standard's own judge
+    name = (sdlc_md.extract_field(text, "Persona") or "").strip()
+    if not _persona_key(name):
+        raise ValueError(f"{shown} names no Persona, so no stakeholder sits and `--seat persona` "
+                         f"has no one to brief. {_PERSONA_REMEDY}")
+    reg = "sdlc-studio/personas/index.md"
+    registry = sdlc_md.persona_registry(root)
+    if not registry.available:
+        raise ValueError(f"{shown}'s Persona {name!r} cannot be framed: {registry.reason}; "
+                         f"`persona` on `review.solution_review.panel` and `--seat persona` need "
+                         f"the registry at {reg}. {_PERSONA_REMEDY}")
+    entry = registry.find(name)
+    if entry is None:
+        raise ValueError(f"{shown}'s Persona {name!r} is not registered in {reg}. "
+                         f"{_PERSONA_REMEDY}")
+    card = Path(entry.card) if entry.card else None  # the registry resolves it absolute
+    if card is None or not card.is_file():
+        where = card if card is not None else f"its {reg} bullet links none, so it"
+        raise ValueError(f"{shown}'s Persona {entry.name!r} has no card: {where} names no "
+                         f"file. {_PERSONA_REMEDY}")
+    held = persona_review.blocking(root, card)
+    if not held:
+        return entry.name, card, None
+    if persona_review.standard_mode(root) != "report":
+        raise ValueError(f"{persona_review.refusal(root, card, held)}\n{_PERSONA_REMEDY}")
+    return entry.name, card, persona_review.report_line(root, card, held)
+
+
+def _panel_seating(root: Path, unit: str) -> dict | None:
+    """The unit's panel as a brief reads it: None when `review.solution_review.panel` is unset
+    or malformed (the brief's stderr line says why a malformed one refuses), else `panel`,
+    `seats`, `skipped` (`effective_panel`), the unit's ledger `rows` and `seat_of`, the reader
+    of the seat a Reviewer cell sits in (`_panel_seat`)."""
+    try:
+        panel = solution_review_panel(root)
+        if not panel:
+            return None
+        seats, skipped = effective_panel(root, unit)
+    except ValueError:
+        return None
+    key = _persona_key(_unit_persona(root, unit))
+    return {"panel": panel, "seats": seats, "skipped": skipped,
+            "rows": read_solution_reviews(root, unit), "seat_of": lambda c: _panel_seat(c, key)}
+
+
+def _seat_round(seating: dict, seat: str, reviewer: str) -> tuple[int, dict | None]:
+    """`(round, latest)`: the round the seat's next verdict takes (`_solution_round`'s per-seat
+    count) and the seat's own latest row, or None before any."""
+    own = [r for r in seating["rows"] if seating["seat_of"](r["reviewer"]) == seat]
+    return (_solution_round(seating["rows"], reviewer, seating["seat_of"]),
+            own[-1] if own else None)
+
+
+def _reply_file(unit: str, seat: str, rnd: int) -> str:
+    """The seat's reply file at its round, relative to the project root."""
+    return f"{_REPLY_DIR}/{sdlc_md.norm_id(unit)}-{seat}-r{rnd}.md"
+
+
+def _quoted_changes(cell: str) -> list[str]:
+    """A CHANGES cell as `> ` lines: read through `_unescape`, then cut before each item marker
+    (`_ITEM_MARK`) that is the next integer from 1, so `line 12.` inside an item is no item;
+    text before `1.` is its own line, and each line is stripped at its ends only."""
+    text = _unescape(cell or "").strip()
+    cuts, want = [], 1
+    for m in _ITEM_MARK.finditer(text):
+        if int(m.group(1)) == want:
+            cuts.append(m.start())
+            want += 1
+    bounds = [0, *cuts, len(text)]
+    return [f"> {part}" for a, b in zip(bounds, bounds[1:]) if (part := text[a:b].strip())]
+
+
+def approach_brief(repo_root: Path | str, unit: str, seat: str,
+                   note: Path | str) -> tuple[str, str | None]:
+    """A seat's review brief for the unit's approach note, and the line its verb prints on
+    stderr: None when `review.solution_review` names the unit, else that `approach record` will
+    refuse a verdict on it, and why. The brief is the seat's review render, the unit's Affects
+    and criteria, the decisions that bind it, the note verbatim, what to judge, the rules and
+    the two record commands. `persona`, while no project card declares that role, briefs the
+    unit's stakeholder persona from its card instead (`_stakeholder`). A seat
+    `review.solution_review.panel` seats also gets the other seated reviewers, its round, its own
+    latest CHANGES quoted and its reply file. Refused with ValueError, before any brief: an
+    unknown unit, a note that names no file, a note `approach_note_gaps` finds incomplete, and a
+    persona `_stakeholder` cannot frame; an unknown seat raises as `persona_resolve.review_card`
+    raises. Writes nothing."""
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    root = Path(repo_root)
+    path, text, shown, note_path, note_text = _approach_unit(root, unit, note)
+    persona = seat.strip().lower() == _PERSONA and _PERSONA not in _seat_cards(root)
+    held = None
+    if persona:
+        name, card, held = _stakeholder(root, text, shown)
+    else:
+        card = persona_resolve.review_card(root, seat)
     try:
         reason, why_not = _solution_review_rule(root, unit)
     except ValueError as exc:
         reason, why_not = None, str(exc)
-    warn = None if reason else (f"note: `critic.py approach record` will refuse a verdict on "
-                                f"{shown}: it takes no solution review ({why_not})")
+    warns = [] if reason else [f"note: `critic.py approach record` will refuse a verdict on "
+                               f"{shown}: it takes no solution review ({why_not})"]
+    if held:
+        warns.append(held)
     affects = sdlc_md.affects_files(text)
     scope = "\n".join(affects) if affects else "(no Affects declared)"
     lines = []
@@ -6959,9 +7083,44 @@ def approach_brief(repo_root: Path | str, unit: str, seat: str,
         root.resolve()) else str(note)
     recorded = run_state.lane_seat(root, unit)
     built_by = recorded or BUILD_SEAT
-    reviewer, author = seat_signature(root, seat), seat_signature(root, built_by)
+    reviewer = f"{name} (persona)" if persona else seat_signature(root, seat)
+    author = seat_signature(root, built_by)
     tail = (f"--note {shlex.quote(str(whole))} --reviewer {shlex.quote(reviewer)} "
             f"--author {shlex.quote(author)}")
+    role = _PERSONA if persona else seat.strip().lower()
+    seating = _panel_seating(root, unit)
+    seated = seating is not None and role in seating["seats"]
+    if seating is not None and not seated:
+        warns.append(f"note: `critic.py approach record` will refuse this seat's verdict on "
+                     f"{shown}: " + _panel_text(seating["panel"], seating["seats"],
+                                                 seating["skipped"], shown))
+    panel_part, rules = "", "Rules: read-only on the repository."
+    target, changes_arg = "a file under $TMPDIR (REVIEW.md below)", "REVIEW.md"
+    if seated:
+        rnd, last = _seat_round(seating, role, reviewer)
+        reply = root.resolve() / _reply_file(unit, role, rnd)
+        others = [(f"{_unit_persona(root, unit)} (persona)" if s == _PERSONA
+                   else seat_signature(root, s)) for s in seating["seats"] if s != role]
+        panel_part = (f"Panel: `{_PANEL_KEY}` seats {', '.join(others) or 'no other seat'} as "
+                      f"separate reviewers of this same note, each its own agent with its own "
+                      f"brief. You speak for {reviewer} alone; adopt none of them.\n"
+                      f"Round {rnd} of your review.\n")
+        if last is not None and last["verdict"] == "CHANGES":
+            panel_part += (f"Your own changes at round {last['round']} (note digest "
+                           f"{last['digest']}), quoted from sdlc-studio/reviews/"
+                           f"{SOLUTION_REVIEW_FILE}; check each is answered in the note:\n"
+                           + "\n".join(_quoted_changes(last["changes"])) + "\n")
+        elif last is not None:
+            now = note_digest(note_path)
+            panel_part += (f"Your GO at round {last['round']} is on the note as it stands "
+                           f"(digest {now}).\n" if last["digest"] == now else
+                           f"Your GO at round {last['round']} was on note digest "
+                           f"{last['digest']}, and the note has changed since (digest now "
+                           f"{now}), so judge it again.\n")
+        panel_part += "\n"
+        rules = (f"Rules: read-only on the repository, except your reply file, creating\n"
+                 f"{_REPLY_DIR}/ if it is absent.")
+        target, changes_arg = f"your reply file\n{reply}", shlex.quote(str(reply))
     notes = ""
     if not recorded:
         notes += (f"\nnote: no lane recorded the seat that built {shown}, so the author is "
@@ -6971,10 +7130,26 @@ def approach_brief(repo_root: Path | str, unit: str, seat: str,
                   f"approach, so a verdict recorded as printed is refused as a self-review; "
                   f"brief another seat")
     taken = f"{shown} takes a solution review: {reason}.\n\n" if reason else ""
-    return (f"""You are the {seat} review seat, reviewing a builder's APPROACH before it writes any
-code. Read and adopt the charter at
-{card} (the review render). You did NOT write this approach; judge it against the criteria below -
-they are law, your stance never overrides them.
+    if persona:
+        opening = (f"You are {name}, the stakeholder persona {shown} serves, reviewing a "
+                   f"builder's APPROACH\nbefore it writes any code. Read your card at\n{card}, "
+                   f"whole, and speak from it. You did NOT write this approach; judge it\n"
+                   f"against the criteria below - they are law, your view never overrides them.")
+        questions = ("Judge the plan, not code: there is none yet. Speak for the people you "
+                     "stand for. Ask:\n"
+                     "- Upgrade: what do the people you stand for meet when they upgrade to this "
+                     "change? Name\n  anything that would surprise them.\n"
+                     "- Defend: could they defend each sentence the plan states to the people "
+                     "they answer to?\n  Name any they could not.\n"
+                     "- Sign-off: is there any work or spend in the plan they would not sign "
+                     "off? Name it and why.")
+    else:
+        opening = (f"You are the {seat} review seat, reviewing a builder's APPROACH before it "
+                   f"writes any\ncode. Read and adopt the charter at\n{card} (the review "
+                   f"render). You did NOT write this approach; judge it against the criteria "
+                   f"below -\nthey are law, your stance never overrides them.")
+        questions = _APPROACH_SEAT_QUESTIONS
+    return (f"""{opening}
 
 Repo root: {root.resolve()}
 
@@ -6995,27 +7170,16 @@ The approach note ({rel}), verbatim:
 {note_text.rstrip()}
 --- END OF APPROACH NOTE ---
 
-Judge the plan, not code: there is none yet. Ask:
-- Reading: does the note read each criterion's key terms the way the criterion, its Notes and the
-  binding decisions mean them? Name any term read too narrowly or too widely, such as a noun read
-  as the shipped case only, or a setting the project never sets.
-- Can it hold: will each criterion pass beside the tests and pages already there? Name any test or
-  page the plan would contradict, and any line budget it would cross.
-- Tests: does each criterion's planned test fail on a real mutant of the line that matters? Name
-  the branches, guards, fallbacks, orderings, malformed inputs and error paths it does not pin.
-- Sentences: is each sentence the plan will state true of what the code will do? Name any that
-  over-claim.
-- Scope: anything outside the unit's Affects the plan needs, or anything it does that the criteria
-  do not ask.
+{panel_part}{questions}
 
-Rules: read-only on the repository.
+{rules}
 Spot-check by execution where it is cheap, in a scratch copy only (a throwaway fixture or a
 detached worktree under $TMPDIR), never in the repository itself.
 About {APPROACH_TOOL_BUDGET} tool calls.
 You will not review this unit's code: its code review goes to a fresh context that has not read
 this note, so agreeing the plan cannot anchor the verdict on the code.
 
-Return: write your review to a file under $TMPDIR (REVIEW.md below) whose first line is exactly
+Return: write your review to {target} whose first line is exactly
 `VERDICT: GO` or `VERDICT: CHANGES`, then a numbered list of the changes the builder must make
 before coding, each one sentence and checkable, citing file:line where it can. A GO may still list
 small notes.
@@ -7024,8 +7188,8 @@ small notes.
 Record a GO with:
   critic.py approach record --unit {shown} --verdict go {tail}
 Record CHANGES with:
-  critic.py approach record --unit {shown} --verdict changes --changes REVIEW.md {tail}{notes}""",
-            warn)
+  critic.py approach record --unit {shown} --verdict changes --changes {changes_arg} {tail}{notes}""",
+            "\n".join(warns) or None)
 
 
 def cmd_approach_brief(args: argparse.Namespace) -> int:
@@ -7034,6 +7198,72 @@ def cmd_approach_brief(args: argparse.Namespace) -> int:
         text, warn = approach_brief(args.root, args.unit, args.seat, args.note)
     except (OSError, ValueError, persona_resolve.RenderError) as exc:
         print(f"approach brief refused: {exc}", file=sys.stderr)
+        return 2
+    print(text)
+    if warn:
+        print(warn, file=sys.stderr)
+    return 0
+
+
+def approach_panel(repo_root: Path | str, unit: str,
+                   note: Path | str) -> tuple[str, str | None]:
+    """The roster of the unit's solution review, and the stderr lines its verb prints. Under
+    `review.solution_review.panel`: one line per seat it seats, in the panel's order (the
+    reviewer, the round its brief is at, its latest verdict, its `approach brief` command and its
+    reply file), one per seat it skips and why, and how the briefs and replies travel; unset,
+    that one seat's GO agrees the approach and the one-seat brief form. Refused with ValueError,
+    nothing printed: what `approach brief` refuses for the unit and note, a malformed panel, and
+    a seated persona `_stakeholder` cannot frame. Resolves no seat card. Writes nothing."""
+    root = Path(repo_root)
+    _path, text, shown, note_path, _ = _approach_unit(root, unit, note)
+    panel = solution_review_panel(root)
+    reason, why_not = _solution_review_rule(root, unit)
+    warns = [] if reason else [f"note: `critic.py approach record` will refuse a verdict on "
+                               f"{shown}: it takes no solution review ({why_not})"]
+    whole = shlex.quote(str(note_path.resolve()))
+
+    def brief(seat: str) -> str:
+        return f"critic.py approach brief --unit {shown} --seat {seat} --note {whole}"
+    if not panel:
+        return (f"`{_PANEL_KEY}` is unset, so one seat's GO on the note's digest now agrees "
+                f"{shown}'s approach. Brief that one seat, to its own agent, with:\n  "
+                f"{brief('<seat>')}", "\n".join(warns) or None)
+    seating = _panel_seating(root, unit)
+    lines = [f"{shown} approach panel, `{_PANEL_KEY}` is [{', '.join(panel)}]:"]
+    for seat in seating["seats"]:
+        if seat == _PERSONA:
+            name, _card, held = _stakeholder(root, text, shown)
+            if held:
+                warns.append(held)
+            who = f"{name} (persona)"
+        else:
+            who = seat_signature(root, seat)
+        rnd, last = _seat_round(seating, seat, who)
+        latest = f"latest {last['verdict']} at round {last['round']}" if last else "no verdict yet"
+        lines.append(f"- {who} at round {rnd} ({latest}): {brief(seat)}; reply file "
+                     f"{_reply_file(unit, seat, rnd)}")
+    lines += [f"- {seat} is skipped: {why}" for seat, why in seating["skipped"].items()]
+    lines += [
+        "Each brief goes to its own agent, never two in one brief.",
+        "A seat's next round resumes that seat's own agent where the host can, and otherwise "
+        "briefs a fresh agent for that seat.",
+        f"Each seat writes its reply file and records it with `critic.py approach record`; a "
+        f"reply reaches the builder through `sprint.py lane brief --units {shown}`.",
+        "The approach is agreed when every seat has a GO on the note's digest now."
+        if seating["seats"] else
+        f"`{_PANEL_KEY}` seats nobody on {shown}, so its approach cannot be agreed until the "
+        f"panel names a seat that sits on it.",
+        "The agent that reviewed the approach does not review the code: the code review goes to "
+        "a fresh context that has not read the note."]
+    return "\n".join(lines), "\n".join(warns) or None
+
+
+def cmd_approach_panel(args: argparse.Namespace) -> int:
+    import persona_resolve  # noqa: PLC0415 - sibling; the refusals its resolver raises
+    try:
+        text, warn = approach_panel(args.root, args.unit, args.note)
+    except (OSError, ValueError, persona_resolve.RenderError) as exc:
+        print(f"approach panel refused: {exc}", file=sys.stderr)
         return 2
     print(text)
     if warn:
@@ -7274,11 +7504,22 @@ def build_parser() -> argparse.ArgumentParser:
     apb.add_argument("--unit", required=True)
     apb.add_argument("--seat", required=True,
                      help="the reviewing seat's role: the project card declaring it under "
-                          "sdlc-studio/personas/seats/, else the shipped one")
+                          "sdlc-studio/personas/seats/, else the shipped one; `persona` for "
+                          "the stakeholder persona the unit's Persona field names")
     apb.add_argument("--note", required=True, metavar="NOTE.md",
                      help="the builder's approach note")
     apb.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
     apb.set_defaults(func=cmd_approach_brief)
+    app = aps.add_parser("panel",
+                         help="Print the roster of a unit's solution review: one `approach "
+                              "brief` command and one reply file per seat "
+                              "`review.solution_review.panel` seats, or the one-seat form when "
+                              "it is unset. Writes nothing.")
+    app.add_argument("--unit", required=True)
+    app.add_argument("--note", required=True, metavar="NOTE.md",
+                     help="the builder's approach note")
+    app.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
+    app.set_defaults(func=cmd_approach_panel)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--unrecorded-staged", dest="unrecorded_staged", action="store_true",
