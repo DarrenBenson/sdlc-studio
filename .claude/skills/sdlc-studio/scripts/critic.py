@@ -5948,7 +5948,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
                 print(unseen, file=sys.stderr)
             # A repair is the author's work too, so a re-review is preceded by the same check.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
-            for line in (notice, quoted):
+            for line in (notice, quoted, solution_review_notice(args.root, args.unit,
+                                                                args.seat)):
                 if line:
                     print(line, file=sys.stderr)
             print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat,
@@ -5988,7 +5989,10 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # The author's self-check, on stderr so the brief a reviewer reads from a file
             # carries none of it and its fingerprint is unmoved.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
-            for line in (notice, rejoinder_notice(args.root, args.unit, args.seat)):
+            # A seat that read the unit's approach note is told its code review needs a fresh
+            # context, on stderr, so the brief itself carries nothing of the solution review.
+            for line in (notice, rejoinder_notice(args.root, args.unit, args.seat),
+                         solution_review_notice(args.root, args.unit, args.seat)):
                 if line:
                     print(line, file=sys.stderr)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
@@ -6642,6 +6646,219 @@ def cmd_approach_record(args: argparse.Namespace) -> int:
     return 0
 
 
+#: The five level-2 headings an approach note holds, in the order a builder writes them. A
+#: heading counts when its text, case-insensitive, is the name or ends with it as a word, so
+#: `## What it may break` is the `May break` heading; a deeper heading never counts.
+APPROACH_HEADINGS = ("Reading", "Design", "May break", "Tests", "Sentences")
+#: The tool calls an approach review is told to spend: it judges a plan, not a diff.
+APPROACH_TOOL_BUDGET = 20
+
+
+def _approach_sections(note_text: str) -> dict[str, str]:
+    """Each of `APPROACH_HEADINGS` the note carries, mapped to its section: the lines after the
+    first level-2 heading that counts as it, up to the next level-2 heading or the note's end."""
+    lines = note_text.splitlines()
+    heads = [(i, ln[3:].strip().rstrip(":").strip().lower())
+             for i, ln in enumerate(lines) if ln.startswith("## ")]
+    out: dict[str, str] = {}
+    for n, (i, words) in enumerate(heads):
+        end = heads[n + 1][0] if n + 1 < len(heads) else len(lines)
+        for name in APPROACH_HEADINGS:
+            key = name.lower()
+            if name not in out and (words == key or words.endswith(f" {key}")):
+                out[name] = "\n".join(lines[i + 1:end])
+    return out
+
+
+def approach_note_gaps(note_text: str, unit_text: str) -> list[str]:
+    """What keeps an approach note from review, in one list: each of the five headings it lacks,
+    then each criterion id (the runner's own parse of the unit) its `## Tests` section does not
+    name as a whole word, so `AC20` is no test for AC2. Empty for a complete note."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import verify_ac  # noqa: PLC0415 - sibling; the criteria parser is the runner's own
+    sections = _approach_sections(note_text)
+    gaps = [f"no `## {name}` heading" for name in APPROACH_HEADINGS if name not in sections]
+    tests = sections.get("Tests")
+    if tests is not None:
+        ids = dict.fromkeys(b.ac_id for b in verify_ac.parse_story(unit_text))
+        gaps += [f"the `## Tests` section names no test for {ac}" for ac in ids
+                 if not re.search(rf"\b{re.escape(ac)}\b", tests)]
+    return gaps
+
+
+def _linked_texts(root: Path, text: str, field: str) -> list[str]:
+    """The text of each artefact the header `field` names by id, in the order it names them."""
+    out = []
+    for token in re.split(r"[\s,;]+", sdlc_md.extract_field(text, field) or ""):
+        found = sdlc_md.find_by_id(root, token.strip("[]()`*")) if token else None
+        if found:
+            out.append(sdlc_md.read_text_safe(found[0]))
+    return out
+
+
+def binding_decisions(repo_root: Path | str, text: str) -> list[dict]:
+    """The decisions that bind a unit, found by id only: each `D` and four digits named in the
+    unit's text, in the epic its `Epic` field names, or in a request its `Delivers` field or that
+    epic's `Parent` field names, once each in the order first named. Each is `{id, decision,
+    status}` from the decisions log, or `{id, missing: True}` when the log holds no such row."""
+    import decisions  # noqa: PLC0415 - sibling; the log's own parser
+    root = Path(repo_root)
+    epics = _linked_texts(root, text, "Epic")
+    texts = [text, *epics, *_linked_texts(root, text, "Delivers")]
+    for epic in epics:
+        texts += _linked_texts(root, epic, "Parent")
+    ids = dict.fromkeys(d for t in texts for d in re.findall(r"\bD\d{4}\b", t))
+    log = {row["id"]: row for row in decisions.list_decisions(root)}
+    return [({"id": d, "decision": log[d]["decision"], "status": log[d]["status"]}
+             if d in log else {"id": d, "missing": True}) for d in ids]
+
+
+def approach_brief(repo_root: Path | str, unit: str, seat: str,
+                   note: Path | str) -> tuple[str, str | None]:
+    """A seat's review brief for the unit's approach note, and the line its verb prints on
+    stderr: None when `review.solution_review` names the unit, else that `approach record` will
+    refuse a verdict on it, and why. The brief is the seat's review render, the unit's Affects
+    and criteria, the decisions that bind it, the note verbatim, what to judge, the rules and
+    the two record commands. Refused with ValueError, before any brief: an unknown unit, a note
+    that names no file, and a note `approach_note_gaps` finds incomplete; an unknown seat raises
+    as `persona_resolve.review_card` raises. Writes nothing."""
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r} - an approach brief needs a real unit")
+    path = found[0]
+    text = sdlc_md.read_text_safe(path)
+    shown = sdlc_md.extract_record_id(path.stem) or unit
+    note_path = Path(note)
+    if not note_path.is_file():
+        raise ValueError(f"the note {note} names no file")
+    note_text = note_path.read_text(encoding="utf-8")
+    gaps = approach_note_gaps(note_text, text)
+    if gaps:
+        raise ValueError(f"the approach note {note} is not complete: {'; '.join(gaps)}")
+    card = persona_resolve.review_card(root, seat)
+    try:
+        reason, why_not = _solution_review_rule(root, unit)
+    except ValueError as exc:
+        reason, why_not = None, str(exc)
+    warn = None if reason else (f"note: `critic.py approach record` will refuse a verdict on "
+                                f"{shown}: it takes no solution review ({why_not})")
+    affects = sdlc_md.affects_files(text)
+    scope = "\n".join(affects) if affects else "(no Affects declared)"
+    lines = []
+    for d in binding_decisions(root, text):
+        lines.append(f"- {d['id']}: not in sdlc-studio/decisions.md" if d.get("missing")
+                     else f"- {d['id']} ({d['status']}): {d['decision']}")
+    decided = "\n".join(lines) or "(none named)"
+    whole = note_path.resolve()
+    rel = whole.relative_to(root.resolve()).as_posix() if whole.is_relative_to(
+        root.resolve()) else str(note)
+    recorded = run_state.lane_seat(root, unit)
+    built_by = recorded or BUILD_SEAT
+    reviewer, author = seat_signature(root, seat), seat_signature(root, built_by)
+    tail = (f"--note {shlex.quote(str(whole))} --reviewer {shlex.quote(reviewer)} "
+            f"--author {shlex.quote(author)}")
+    notes = ""
+    if not recorded:
+        notes += (f"\nnote: no lane recorded the seat that built {shown}, so the author is "
+                  f"taken as the {BUILD_SEAT} seat; correct --author if another seat built it")
+    if seat.strip().lower() == built_by.lower():
+        notes += (f"\nnote: the {seat} seat built {shown} and is the seat briefed to review its "
+                  f"approach, so a verdict recorded as printed is refused as a self-review; "
+                  f"brief another seat")
+    taken = f"{shown} takes a solution review: {reason}.\n\n" if reason else ""
+    return (f"""You are the {seat} review seat, reviewing a builder's APPROACH before it writes any
+code. Read and adopt the charter at
+{card} (the review render). You did NOT write this approach; judge it against the criteria below -
+they are law, your stance never overrides them.
+
+Repo root: {root.resolve()}
+
+Unit: {shown} - {sdlc_md.extract_h1_title(text) or shown}
+Artefact: {path}
+{taken}Affects (the files the plan may change):
+{scope}
+
+Acceptance criteria (canonical - judge the plan against THESE, not a paraphrase):
+{_brief_criteria(text)}
+
+Binding decisions, found by id only (each decision id named in the unit, its epic or the request
+it delivers); a decision that binds by subject without being named is not found here:
+{decided}
+
+The approach note ({rel}), verbatim:
+--- APPROACH NOTE ---
+{note_text.rstrip()}
+--- END OF APPROACH NOTE ---
+
+Judge the plan, not code: there is none yet. Ask:
+- Reading: does the note read each criterion's key terms the way the criterion, its Notes and the
+  binding decisions mean them? Name any term read too narrowly or too widely, such as a noun read
+  as the shipped case only, or a setting the project never sets.
+- Can it hold: will each criterion pass beside the tests and pages already there? Name any test or
+  page the plan would contradict, and any line budget it would cross.
+- Tests: does each criterion's planned test fail on a real mutant of the line that matters? Name
+  the branches, guards, fallbacks, orderings, malformed inputs and error paths it does not pin.
+- Sentences: is each sentence the plan will state true of what the code will do? Name any that
+  over-claim.
+- Scope: anything outside the unit's Affects the plan needs, or anything it does that the criteria
+  do not ask.
+
+Rules: read-only on the repository.
+Spot-check by execution where it is cheap, in a scratch copy only (a throwaway fixture or a
+detached worktree under $TMPDIR), never in the repository itself.
+About {APPROACH_TOOL_BUDGET} tool calls.
+You will not review this unit's code: its code review goes to a fresh context that has not read
+this note, so agreeing the plan cannot anchor the verdict on the code.
+
+Return: write your review to a file under $TMPDIR (REVIEW.md below) whose first line is exactly
+`VERDICT: GO` or `VERDICT: CHANGES`, then a numbered list of the changes the builder must make
+before coding, each one sentence and checkable, citing file:line where it can. A GO may still list
+small notes.
+
+--- RECORD ---
+Record a GO with:
+  critic.py approach record --unit {shown} --verdict go {tail}
+Record CHANGES with:
+  critic.py approach record --unit {shown} --verdict changes --changes REVIEW.md {tail}{notes}""",
+            warn)
+
+
+def cmd_approach_brief(args: argparse.Namespace) -> int:
+    import persona_resolve  # noqa: PLC0415 - sibling; the refusals its resolver raises
+    try:
+        text, warn = approach_brief(args.root, args.unit, args.seat, args.note)
+    except (OSError, ValueError, persona_resolve.RenderError) as exc:
+        print(f"approach brief refused: {exc}", file=sys.stderr)
+        return 2
+    print(text)
+    if warn:
+        print(warn, file=sys.stderr)
+    return 0
+
+
+def solution_review_notice(repo_root: Path | str, unit: str, seat: str) -> str | None:
+    """The code review brief's stderr line for a seat that reviewed the unit's approach note at
+    any round, GO or CHANGES, or None for any other seat. Each ledger row's Reviewer cell names
+    its seat by its `(<role>)` group (`recorded_seat`), and by `verdict_seat` only when it has
+    none. A ledger that cannot be read is said, and never refuses the brief."""
+    shown = sdlc_md.display_id(repo_root, unit)
+    try:
+        rows = read_solution_reviews(repo_root, unit)
+    except (OSError, ValueError) as exc:
+        return (f"solution review: sdlc-studio/reviews/{SOLUTION_REVIEW_FILE} could not be read "
+                f"({exc}), so whether the {seat} seat read {shown}'s approach note is unknown: "
+                f"brief this code review to a fresh context that has not read it")
+    seats = {(recorded_seat(r["reviewer"]) or verdict_seat(repo_root, r["reviewer"])).lower()
+             for r in rows}
+    if seat.strip().lower() not in seats:
+        return None
+    return (f"solution review: the {seat} seat reviewed {shown}'s approach note before any code, "
+            f"so this code review must go to a fresh context that has not read the note or its "
+            f"review")
+
+
 def cmd_self_check_record(args: argparse.Namespace) -> int:
     try:
         claims = _entries(args.claims, "claims")
@@ -6846,6 +7063,19 @@ def build_parser() -> argparse.ArgumentParser:
     apr.add_argument("--author", required=True, help="the builder's id")
     apr.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
     apr.set_defaults(func=cmd_approach_record)
+    apb = aps.add_parser("brief",
+                         help="Print a seat's review brief for a unit's approach note: the "
+                              "seat's review render, the unit's criteria, the decisions it names "
+                              "by id, the note and the two record commands; refused for a note "
+                              "missing one of its five headings or a test for a criterion.")
+    apb.add_argument("--unit", required=True)
+    apb.add_argument("--seat", required=True,
+                     help="the reviewing seat's role: the project card declaring it under "
+                          "sdlc-studio/personas/seats/, else the shipped one")
+    apb.add_argument("--note", required=True, metavar="NOTE.md",
+                     help="the builder's approach note")
+    apb.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
+    apb.set_defaults(func=cmd_approach_brief)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--unrecorded-staged", dest="unrecorded_staged", action="store_true",

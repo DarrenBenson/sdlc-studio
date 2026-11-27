@@ -3259,6 +3259,14 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
     except EffortError:
         effort = None
     base = _lane_base(root)
+    # The solution review setting, read once per dispatch. Off, the default, reads nothing more,
+    # so a project that never set it is briefed as before; a value of the wrong shape refuses
+    # every unit rather than reading as off.
+    try:
+        low, classes = critic.solution_review_settings(root)
+        review_on, review_error = bool(low or classes), None
+    except ValueError as exc:
+        review_on, review_error = False, str(exc)
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -3266,24 +3274,36 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
         if not contract["ok"]:
             refused.append({"id": contract["id"], "refusal": contract["refusal"]})
             continue
+        try:
+            if review_error:
+                raise ValueError(review_error)
+            review = _solution_review_state(root, contract["id"]) if review_on else None
+        except (OSError, ValueError) as exc:
+            refused.append({"id": contract["id"],
+                            "refusal": f"{contract['id']} ({Path(contract['path']).name}): its "
+                                       f"solution review cannot be decided - {exc}"})
+            continue
         home = lane_home_isolated(contract["text"])
-        briefs.append({"id": contract["id"], "path": contract["path"],
-                       "criteria": contract["criteria"],
-                       "trd_constraints": trd_constraints(root, contract["text"]),
-                       "obligations": lane_obligations(home),
-                       "base": base,
-                       "proof": lane_proof(root, contract["id"]),
-                       "seams": [s for s in seams if contract["id"] in s["units"]],
-                       "lessons": injected,
-                       "affects": sdlc_md.affects_files(contract["text"]),
-                       "self_check": _hand_in_self_check(
-                           critic.author_self_check(root, contract["id"]), contract["id"]),
-                       "points": sdlc_md.read_points(contract["text"]),
-                       "home_isolated": home,
-                       "seat_card": str(seat) if seat else None,
-                       "seat": build_seat, "builder": builder,
-                       "effort": effort and effort_for(effort, route.work_kind(
-                           root, contract["path"], contract["text"]))})
+        brief = {"id": contract["id"], "path": contract["path"],
+                 "criteria": contract["criteria"],
+                 "trd_constraints": trd_constraints(root, contract["text"]),
+                 "obligations": lane_obligations(home),
+                 "base": base,
+                 "proof": lane_proof(root, contract["id"]),
+                 "seams": [s for s in seams if contract["id"] in s["units"]],
+                 "lessons": injected,
+                 "affects": sdlc_md.affects_files(contract["text"]),
+                 "self_check": _hand_in_self_check(
+                     critic.author_self_check(root, contract["id"]), contract["id"]),
+                 "points": sdlc_md.read_points(contract["text"]),
+                 "home_isolated": home,
+                 "seat_card": str(seat) if seat else None,
+                 "seat": build_seat, "builder": builder,
+                 "effort": effort and effort_for(effort, route.work_kind(
+                     root, contract["path"], contract["text"]))}
+        if review:
+            brief["solution_review"] = review
+        briefs.append(brief)
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
     # corpus is walked once per dispatch rather than once per lane; opened here and nowhere
@@ -3561,11 +3581,64 @@ def lane_brief_text(brief: dict) -> str:
     lines.append("Obligations on this lane:")
     lines.extend(f"  - {ob}" for ob in brief.get("obligations", ()))
     lines.extend(lessons.render_phase(brief.get("lessons") or {"phase": "build"}))
+    # A unit the solution review setting names writes its approach note before any build step.
+    if review := brief.get("solution_review"):
+        lines += ["", *_solution_review_lines(brief["id"], review)]
     if brief.get("self_check"):
         lines += ["", brief["self_check"]]
     lines += ["", *_lane_builder_commands(brief["id"], affects, brief.get("points"),
-                                          main_checkout=bool(brief.get("home_isolated")))]
+                                          main_checkout=bool(brief.get("home_isolated")),
+                                          approach=bool(review))]
     return "\n".join(lines)
+
+
+def _solution_review_state(root: Path, uid: str) -> dict | None:
+    """What `uid`'s lane brief says of its solution review: None when `review.solution_review`
+    does not name it, else why it does (`reason`), the note's path under LANE_HAND_IN (`note`)
+    and the unit's last row of the verdict ledger in file order (`latest`: its round, verdict,
+    digest and changes), or None before any verdict. Raises what the readers raise."""
+    import critic  # noqa: PLC0415 - deferred sibling; the solution review's own readers
+    from lib import lanes  # noqa: PLC0415 - one key for the note's name
+    reason = critic.solution_review_reason(root, uid)
+    if reason is None:
+        return None
+    rows = critic.read_solution_reviews(root, uid)
+    latest = ({k: rows[-1][k] for k in ("round", "verdict", "digest", "changes")}
+              if rows else None)
+    return {"reason": reason, "note": f"{LANE_HAND_IN}/{lanes.approach_hand_in_name(uid)}",
+            "latest": latest}
+
+
+def _solution_review_lines(uid: str, review: dict) -> list[str]:
+    """The brief's solution review section: with no verdict, write the approach note under its
+    five headings and hand back; after CHANGES, the changes quoted as a `> ` line and a revised
+    note asked for; after a GO, the round and digest agreed and the note to build to. Until a GO
+    it holds every build step below it."""
+    import critic  # noqa: PLC0415 - deferred sibling; the note's headings are critic's own
+    note, latest = review["note"], review.get("latest")
+    head = ["--- SOLUTION REVIEW ---", f"{uid} takes a solution review: {review['reason']}."]
+    hold = (f"Do none of the steps below this section (running the criteria, the self-check "
+            f"passes, the hand-in files, staging) until a GO is recorded on the note. Instead "
+            f"write {LANE_HAND_IN}/{LANE_HAND_OFF} saying the approach awaits review, stage "
+            f"nothing, and hand back HANDOFF.")
+    if latest and latest["verdict"] == "GO":
+        return [*head, f"The approach is agreed: GO at round {latest['round']} against note "
+                       f"digest {latest['digest']}. Build to {note} as agreed.",
+                "Editing the note voids this GO: it is bound to that digest, so a changed note "
+                "needs a new solution review before it is built to."]
+    if latest:
+        # Quoted, so a reply that reads as an instruction stays the reviewer's text; the
+        # ledger's cell holds one line.
+        return [*head, f"The solution review at round {latest['round']} asked for changes to "
+                       f"the approach (note digest {latest['digest']}):",
+                f"> {latest['changes']}",
+                f"Revise {note} to answer each change, as the note for the next round.", hold]
+    headings = ", ".join(f"`## {h}`" for h in critic.APPROACH_HEADINGS)
+    return [*head, f"Before any code or test, write your approach note to {note} under five "
+                   f"headings, {headings}: how you read each criterion's key terms; the change, "
+                   f"function by function; the existing tests and pages that read each file you "
+                   f"change; per criterion id, the test you will write and the mutant it must "
+                   f"kill; and each sentence you will state, with how you will check it.", hold]
 
 
 #: Where a lane hands its work in, relative to the project root: the commit message and the
@@ -3682,7 +3755,7 @@ def lane_home_isolated(text: str) -> bool:
 
 
 def _lane_builder_commands(uid: str, affects: list[str], points: int | None = None,
-                           main_checkout: bool = False) -> list[str]:
+                           main_checkout: bool = False, approach: bool = False) -> list[str]:
     """The builder's closing commands for `uid`: run its criteria, write the hand-in files,
     stage exactly its Affects and stop, within the call budget its points give. The builder
     neither commits nor records its self-check; `sprint lane land` commits from the hand-in
@@ -3694,9 +3767,11 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     mutant's test must name. A unit with test files the mutation runner can run none of
     (`critic.runner_can_run`) is sent by its self-check to the hand-run route alone, so it
     hands in no runner report, and may name a mutant's test by its path, as the record
-    accepts."""
+    accepts. An `approach` unit, one `review.solution_review` names, also hands in its approach
+    note, named beside the claims file by `lanes.approach_hand_in_name`."""
     import critic  # noqa: PLC0415 - deferred sibling; the record's own vocabulary
     import file_finding  # noqa: PLC0415 - sibling; the test-path rule the record reads
+    from lib import lanes  # noqa: PLC0415 - one key for the brief and the landing
     claims, mutants = _lane_hand_in_files(uid)
     required, optional = critic.claim_surfaces(affects)
     tests = [a for a in affects if file_finding.is_test_path(a)]
@@ -3716,6 +3791,9 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
              f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
              f"  Hand in, under {LANE_HAND_IN}/ at the project root:",
              f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
+             *([f"    {LANE_HAND_IN}/{lanes.approach_hand_in_name(uid)} - the approach note, "
+                f"written first under its five headings and agreed by a GO before any code"]
+               if approach else []),
              *mutation,
              f"    The values the record accepts, word for word, and no others - surface: "
              f"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, "

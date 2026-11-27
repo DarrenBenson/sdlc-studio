@@ -528,6 +528,13 @@ def report_hand_in_name(unit: str) -> str:
     return f"{sdlc_md.norm_id(unit)}-mutation-edits.json"
 
 
+def approach_hand_in_name(unit: str) -> str:
+    """The name `unit`'s approach note is handed in under, keyed as `hand_in_names` keys the
+    claims and mutants files, so an id spelled with or without a schema-3 dash names one file.
+    The lane brief names it for a unit `review.solution_review` names."""
+    return f"{sdlc_md.norm_id(unit)}-approach.md"
+
+
 def saved_brief_fingerprint(text: str) -> str:
     """The fingerprint of a saved QA brief as `critic.py brief` noted it, hashed by
     `critic.saved_brief_fingerprint` as `critic.py record --brief-file` hashes it."""
