@@ -107,6 +107,12 @@ review:
   # filed at Low, which that bar allows. tools/tests/test_lean_carry_severity_bar.py fails when
   # this setting and the bar the page names drift apart.
   blocking_priority: medium
+  #
+  # On here, off as shipped (D0647): a unit of 3 points or more, or of high risk, takes a
+  # solution review, and `sprint lane land` refuses it without a GO bound to its approach note.
+  solution_review:
+    min_points: 3
+    risk_classes: [high]
 
 # The component map (D0520, US1313): a path prefix to its risk class, standard < elevated < high.
 # The gates are high: a defect in one passes work it never judged. The rest of the skill's

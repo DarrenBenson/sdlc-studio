@@ -765,6 +765,26 @@ and its files named. Exit 2 is a refusal before anything was committed, 1 a land
 stopped or a unit left unbriefed. Re-run it after a repair: a committed branch is not committed
 twice.
 
+A unit `review.solution_review` names (its `min_points` or `risk_classes`; off by default)
+takes a solution review before code, and `lane land` refuses it, exit 2 before anything moves,
+unless the worktree's hand-in holds its approach note, `sdlc-studio/.local/lane/<unit>-approach.md`,
+and the unit's latest row in `sdlc-studio/reviews/solution-reviews.md` is a GO recorded against
+the note's digest as it stands. A missing note is refused with its path and
+`sprint.py lane brief --units <id>`, which tells the builder to write it; no verdict, a CHANGES
+round, or a GO bound to an earlier text of the note (any edit, whitespace included, voids it;
+the path is not compared) is refused naming which, with `critic.py approach brief` to brief a
+seat on the note and `critic.py approach record` to record its verdict. Every refused unit is
+named in one message, and a landing of several worktrees lands none of them. A worktree that
+`lane brief --repair` recreated holds no hand-in, so when the last landing kept the note under
+`sdlc-studio/.local/lane/landed/<worktree>/` the refusal says to copy it back: its digest is
+unchanged, so its GO still holds. An agreed unit's landing prints one line naming its GO, round
+and digest, for information; an unnamed unit lands as before. The check runs when a landing
+begins, so `--resume` does not repeat it. Only `lane land` checks this: `sprint drive` and
+`lane run` have no step that writes or reviews a note yet, so a unit the setting names stops at
+their land step; take it through `lane brief`, its note, `critic.py approach brief` and
+`critic.py approach record`, or leave `min_points` at 0 and `risk_classes` empty. A unit
+committed in the orchestrator's own tree is not checked.
+
 Once the reviewer answers that brief, one command finishes the unit:
 
 ```bash

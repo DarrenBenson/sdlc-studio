@@ -53,7 +53,10 @@ the root: the staged copy of whichever worktree of the landing changes them, the
 another's, and the root's where none does. One it would
 refuse, a required surface missing above all, stops the landing with exit 2 and nothing moved:
 the worktree, its staged change and the root's branch are as they were, so the builder repairs
-the hand-in in place. Each worktree's staged markdown is then linted, each file under the
+the hand-in in place. A unit `review.solution_review` names is refused the same way, every
+one named in one message, unless its worktree's hand-in holds its approach note and its latest
+solution review is a GO bound to the note's digest as it stands; each agreed unit's line is
+printed once the markdown below passes. Each worktree's staged markdown is then linted, each file under the
 markdownlint config nearest above it in the worktree (a dot-directory's page with none of its
 own there under the one config that dot-directory tracks, as the commit hook lints `.claude/`),
 and a lint failure stops the landing the same way, naming the file and the rule; a file no
@@ -656,6 +659,8 @@ class _Lane:
         self.name, self.keep, self.target = name, keep, target
         self.top, self.branch = top, branch
         self.units = list(units or [])
+        #: one line per unit whose solution review is agreed, printed once the markdown passes
+        self.agreed: list[str] = []
 
 
 def _raw(cwd: Path, *args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
@@ -981,13 +986,72 @@ def _refuse_self_checks(root_top: Path, lanes_: list[_Lane]) -> None:
                                 f"hand-in in the worktree and land again", 2)
 
 
+def _refuse_unagreed_approaches(root_top: Path, lanes_: list[_Lane]) -> None:
+    """Each unit `review.solution_review` names refused, before anything moves, unless its
+    worktree's hand-in holds its approach note and its latest solution review is a GO recorded
+    against the note's digest as it stands (`critic.approach_agreed`: only the digest is
+    bound, not the path the verdict's row names). Every unit of every worktree is judged and
+    one refusal names each one refused. With both settings at their defaults nothing is read; a
+    setting of the wrong shape, or a unit the project holds no artefact for, is refused. Each
+    agreed unit's line is kept on its lane for `_land` to print."""
+    import critic  # noqa: PLC0415 - sibling; it owns the solution review's rule and ledger
+    try:
+        if critic.solution_review_settings(root_top) == (0, []):
+            return
+    except ValueError as exc:
+        raise LandError(f"{exc}. Nothing was landed.", 2) from None
+    refused = []
+    for lane in lanes_:
+        for unit in lane.units:
+            try:
+                reason = critic.solution_review_reason(root_top, unit)
+            except ValueError as exc:
+                refused.append(f"{unit}: {exc}, so whether it takes a solution review is not "
+                               f"known")
+                continue
+            if reason is None:
+                continue
+            note = lane.top / HAND_IN / approach_hand_in_name(unit)
+            brief = (f"brief a seat on it with `critic.py approach brief --unit {unit} --seat "
+                     f"<role> --note {note}`, have its verdict recorded with `critic.py approach "
+                     f"record`, then land again")
+            if not note.is_file():
+                said = (f"{unit} ({reason}): its lane holds no approach note at {note}. Write "
+                        f"it as `sprint.py lane brief --units {unit}` directs, {brief}.")
+                kept = root_top / LANDED / lane.name / note.name
+                if kept.is_file():
+                    said += (f" A repair's recreated worktree holds no hand-in: if the approach "
+                             f"is unchanged, copy {kept} back to {note}; its digest is "
+                             f"unchanged, so its GO still holds.")
+                refused.append(said)
+                continue
+            ok, why = critic.approach_agreed(root_top, unit, note)
+            if ok:
+                lane.agreed.append(f"{unit} solution review agreed: {why}")
+            else:
+                refused.append(f"{unit} ({reason}): {why}. With the note at {note}, {brief}.")
+    if refused:
+        lines = "\n".join(f"- {line}" for line in refused)
+        raise LandError(
+            f"{len(refused)} unit(s) take a solution review and have no agreed approach:\n"
+            f"{lines}\nA GO holds only for the note's exact bytes: any edit, whitespace "
+            f"included, voids it, so ask for a new solution review; the note's path is not "
+            f"compared. Only `lane land` checks this: `sprint drive` and `lane run` have no step "
+            f"that writes or reviews a note yet, so a unit the setting names stops at their land "
+            f"step; take it through `lane brief`, its note, `critic.py approach brief` and "
+            f"`critic.py approach record`, or leave `review.solution_review.min_points` at 0 and "
+            f"`risk_classes` empty. A unit committed in the orchestrator's own tree is not "
+            f"checked. Nothing was landed.", 2)
+
+
 def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lane]:
     """Each named worktree resolved, its units assigned, and every refusal made before anything
     moves: a worktree named twice, one with nothing to land, and for several, a unit whose
     hand-in is in none or more than one of them, a worktree after the first holding commits
-    ahead of the root's branch, or a file two of them stage differently; then, for every one, a
-    change left out of the index (`_refuse_leftovers`) and a unit whose handed-in self-check the
-    critic would refuse (`_refuse_self_checks`)."""
+    ahead of the root's branch, a unit `review.solution_review` names with no agreed approach
+    (`_refuse_unagreed_approaches`), or a file two of them stage differently; then, for every
+    one, a change left out of the index (`_refuse_leftovers`) and a unit whose handed-in
+    self-check the critic would refuse (`_refuse_self_checks`)."""
     lanes_: list[_Lane] = []
     root_top = Path(root)
     for path in worktrees:
@@ -1019,6 +1083,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
     _refuse_commits_ahead(lanes_, 2)
     if not several:
         lanes_[0].units = list(units)
+        _refuse_unagreed_approaches(root_top, lanes_)
         _refuse_leftovers(lanes_, 2)
         _refuse_self_checks(root_top, lanes_)
         return lanes_
@@ -1035,6 +1100,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
         if not lane.units:
             raise LandError(f"{lane.top} carries the hand-in of none of the units named "
                             f"({', '.join(units)}). Nothing was landed.", 2)
+    _refuse_unagreed_approaches(root_top, lanes_)
     _refuse_overlap(lanes_, 2)
     _refuse_leftovers(lanes_, 2)
     _refuse_self_checks(root_top, lanes_)
@@ -1263,6 +1329,8 @@ def _land(root: Path, worktrees: list[Path], units: list[str], author: str | Non
     lanes_ = _preflight(root, worktrees, units)
     root_top = _top(root, "the root")
     _refuse_markdown(root_top, lanes_)
+    for line in (line for lane in lanes_ for line in lane.agreed):
+        _say(line)
     _keep_hand_ins(root_top, lanes_)
     names = [lane.name for lane in lanes_]
     record = {"worktrees": names, "paths": [str(lane.top) for lane in lanes_], "units": units,
