@@ -48,6 +48,7 @@ import retro  # noqa: E402
 import yaml  # noqa: E402
 from lib import cost_anatomy, risk_class  # noqa: E402
 import test_cache_read_fall as crf  # noqa: E402
+import test_change_failure_rate as cfr  # noqa: E402
 import test_delegation_disclosure as dd  # noqa: E402
 import test_effort_by_kind as ebk  # noqa: E402
 import test_engineering_leaders_page as elp  # noqa: E402
@@ -610,6 +611,22 @@ class DocsV65Tests(unittest.TestCase):
                        "`--decision` must name a row of `sdlc-studio/decisions.md`"):
             self.assertIn(needle, appetite, f"the Appetite section does not say {needle!r}")
         self.assertEqual(loop_guard.SPEND_WARNINGS, (95, 75))
+        # The order the page names, read against `resolve_appetite`: the flag, then
+        # `appetite.spend`, then `capacity.spend`.
+        self.assertIn("Without the flag, `appetite.spend`, else `capacity.spend`, sets the "
+                      "spend ceiling", appetite)
+        for config_text, flag, want, source in (
+                ("", None, 0, "config capacity.spend"),
+                ("capacity:\n  spend: 5000\n", None, 5000, "config capacity.spend"),
+                ("capacity:\n  spend: 5000\nappetite:\n  spend: 3000\n", None, 3000,
+                 "config appetite.spend"),
+                ("capacity:\n  spend: 5000\nappetite:\n  spend: 3000\n", 2000, 2000,
+                 "--appetite-spend")):
+            with self.subTest(config=config_text, flag=flag), tempfile.TemporaryDirectory() as d:
+                if config_text:
+                    _write(Path(d), "sdlc-studio/.config.yaml", config_text)
+                got = sprint.resolve_appetite(d, cli_spend=flag)
+                self.assertEqual((got["spend"], got["spend_source"]), (want, source))
         effort = _block(page, "**Reasoning effort:**")
         for needle in ("The `docs`, `bug` and `code` entries under `routing.effort`",
                        "they ship empty", "a bug by its id, else code when an Affects path is "
@@ -618,6 +635,18 @@ class DocsV65Tests(unittest.TestCase):
                        "unit's own effort", "`routing.effort.reviewer_below_builder`"):
             self.assertIn(needle, effort, f"the effort paragraph does not say {needle!r}")
         self.assertNotIn("stamps both on every unit", effort)
+        # "a role an entry leaves out taking the default": the role default, which is the
+        # setting's own `builder` and `reviewer`, not `inherit`.
+        self.assertIn("a role an entry leaves out taking the default", effort)
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "sdlc-studio/.config.yaml", "routing:\n  effort:\n    builder: high\n"
+                   "    reviewer: xhigh\n    docs: {builder: low}\n")
+            setting = sprint.effort_setting(Path(d))
+            self.assertEqual(sprint.effort_for(setting, "docs")["builder"], "low")
+            self.assertEqual(sprint.effort_for(setting, "docs")["reviewer"], "xhigh",
+                             "a role the docs entry leaves out did not take the default")
+            self.assertEqual(sprint.effort_for(setting, "code"),
+                             {"builder": "high", "reviewer": "xhigh", "kind": "code"})
 
         # The stop and the unread meter, through `loop_guard.py budget` on its own fixture.
         fx = _helper(lgs.LoopGuardSpendTests)
@@ -720,6 +749,20 @@ class DocsV65Tests(unittest.TestCase):
         rerun = rr._cli(root, "changelog-cut", "--version", "1.0.0")
         self.assertEqual(rerun.returncode, 0, rerun.stdout + rerun.stderr)
         self.assertEqual(cut, (root / release_cut.RELEASES_REL).read_bytes())
+        # "the release before it": the version cut before, null for the first cut, and "the
+        # signed reports since the previous release, those no earlier record names".
+        self.assertIn("the release before it, and the signed reports since the previous release",
+                      gate_page)
+        self.assertIsNone(record["previous"], record)
+        (root / "changelog.d" / "US0002.md").write_text(rr.FRAGMENT, encoding="utf-8")
+        rr._sign(root, "RPT0002", "2026-11-21T10:00:00Z")
+        second = rr._cli(root, "changelog-cut", "--version", "1.1.0")
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        first, later = rr._lines(root)
+        self.assertEqual((later["version"], later["previous"], later["reports"]),
+                         ("1.1.0", "1.0.0", ["RPT0002"]), later)
+        (root / "CHANGELOG.md").write_text(changelog, encoding="utf-8")  # an interrupted cut
+        (root / release_cut.RELEASES_REL).write_bytes(cut)
 
         seats = _section(_read(HELP / "retro.md"), "## Each seat's own record")
         for needle in ("the figure `escape.py failure-rate` prints for the same window",
@@ -727,12 +770,33 @@ class DocsV65Tests(unittest.TestCase):
                        "](deploy.md#commands)"):
             self.assertIn(needle, _flat(seats), f"help/retro.md's scorecard does not say "
                                                 f"{needle!r}")
+        self.assertIn("A release inside the settling period is pending and counted neither way",
+                      _flat(seats))
         _links_resolve(self, seats, HELP / "retro.md")
         self.assertIn(("failure-rate",), _verbs(escape.build_parser()))
         with tempfile.TemporaryDirectory() as tmp:
             rate = escape.failure_rate(tmp, "2026-01-01", "2026-03-31")
-        self.assertIsNone(rate.get("rate"), rate)
+        self.assertIn("rate_percent", rate, rate)
+        self.assertIsNone(rate["rate_percent"], rate)
         self.assertTrue(rate.get("not_measured"), rate)
+        # "counted neither way": a release inside the settling period that an incident names is
+        # in neither the counted nor the failed releases, and is listed as pending.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = cfr._project(tmp)
+            cfr._records(root, ("1.0.0", "2026-01-05"), ("1.1.0", "2026-03-30"))
+            cfr._issue(root, "IS0001", decomposed="BG0001")
+            cfr._bug(root, "BG0001", "v1.1.0", "IS0001")
+            pend = escape.failure_rate(root, "2026-01-01", "2026-03-31")
+        self.assertEqual((pend["pending"], pend["counted"], pend["failed"]),
+                         (["1.1.0"], ["1.0.0"], []), pend)
+        self.assertEqual(pend["rate_percent"], 0, pend)
+        # "no incident recorded", the third not-measured case the same sentence names.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = cfr._project(tmp)
+            cfr._records(root, ("1.0.0", "2026-01-05"))
+            quiet = escape.failure_rate(root, "2026-01-01", "2026-03-31")
+        self.assertIsNone(quiet["rate_percent"], quiet)
+        self.assertTrue(quiet["not_measured"], quiet)
 
         sign = _block(_read(HELP / "sprint.md"), "**`sign --report RPTxxxx")
         for needle in ("`sprint_report.py disclose --report RPTxxxx --decision Dnnnn`",
@@ -799,13 +863,23 @@ class DocsV65Tests(unittest.TestCase):
                     f"reference-workflow-personas.md#{SEATS_ANCHOR})")),
                 (elp.section_body(page, "change approval"), (
                     "`escape.py failure-rate` states the release change failure rate",
-                    "release records", "never 0%",
-                    "](../.claude/skills/sdlc-studio/scripts/escape.py)"))):
+                    "release records", "never 0%", "With no release record or no incident it "
+                    "reads not measured", "](../.claude/skills/sdlc-studio/scripts/escape.py)"))):
             for needle in needles:
                 self.assertIn(needle, _flat(body), f"engineering-leaders.md does not say "
                                                    f"{needle!r}")
             self.assertEqual(elp.claim_problems(body), [])
         self.assertNotIn("capped by wall-clock minutes and a number of units.", _flat(cost))
+        # The no-record and no-incident cases the page names, from the function.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = cfr._project(tmp)
+            for label, records in (("no release record", []), ("no incident", [("1.0.0",
+                                                                                 "2026-01-05")])):
+                if records:
+                    cfr._records(root, *records)
+                got = escape.failure_rate(root, "2026-01-01", "2026-03-31")
+                self.assertIsNone(got["rate_percent"], f"{label}: {got}")
+                self.assertTrue(got["not_measured"], f"{label}: {got}")
         self.assertIn(SEATS_ANCHOR, elp.anchors(SEATS_REF))
         self.assertIn("LOWER BOUND", loop_guard.__doc__)
         self.assertIn("late but never early", loop_guard.__doc__)
@@ -855,6 +929,11 @@ class DocsV65Tests(unittest.TestCase):
         self.assertTrue(fence, "the 6.5 section gives no YAML lines to turn the review on")
         lines = textwrap.dedent(fence.group(1)) + "\n"
         self.assertIn("solution_review", yaml.safe_load(lines).get("review", {}))
+        # "this repository's own values": the fence is the settings in this repository's config.
+        own = yaml.safe_load(_read(REPO / "sdlc-studio" / ".config.yaml"))
+        self.assertEqual(yaml.safe_load(lines)["review"]["solution_review"],
+                         own["review"]["solution_review"],
+                         "the page's lines are not this repository's own values")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _write(root, "sdlc-studio/stories/US0001-a-story.md",
