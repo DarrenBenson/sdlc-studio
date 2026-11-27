@@ -65,8 +65,6 @@ DISCLOSED = {
 }
 #: The reports the 6.4.0 pack is built over, in the order its header names them.
 PACK_REPORTS = list(DISCLOSED)
-#: The reports whose delegation the pack must state; RPT0028 joins once the pack is rebuilt.
-PACK_DISCLOSED = {k: v for k, v in DISCLOSED.items() if k != "RPT0028"}
 #: A `check` past this fails the node, never skips it. RPT0030's took up to 55 s at load 7, and
 #: RPT0029's 158 s alone at load 35 on eight cores, so a loaded host is not read as a failure.
 CHECK_TIMEOUT = 300
@@ -204,7 +202,7 @@ class DelegatedReportsDisclosedTests(unittest.TestCase):
             by_report.setdefault(named[0].removeprefix("- Report: ").rstrip("."),
                                  []).append(accountable[0])
         self.assertEqual(sorted(by_report), PACK_REPORTS, "each report contributes a change")
-        for rid, (run, decision, _seal, _twin) in PACK_DISCLOSED.items():
+        for rid, (run, decision, _seal, _twin) in DISCLOSED.items():
             held = _held(run)
             for line in by_report[rid]:
                 self.assertRegex(line, rf"entered under delegation, authorised by decision "
@@ -214,13 +212,13 @@ class DelegatedReportsDisclosedTests(unittest.TestCase):
         built = header[1]
         self.assertEqual(_git("merge-base", "--is-ancestor", built, "HEAD").returncode, 0,
                          f"the pack's build commit {built} is in this branch's history")
-        for rid, (_run, decision, _seal, _twin) in PACK_DISCLOSED.items():
+        for rid, (_run, decision, _seal, _twin) in DISCLOSED.items():
             sig = json.loads(_show(built, f"{REPORTS_REL}/{rid}.json"))["signature"]
             self.assertEqual((sig.get("delegated"), sig.get("decision")), (True, decision),
                              f"the commit the pack was built at holds {rid}'s disclosure")
 
         rows = _page_rows(PAGE.read_text(encoding="utf-8"))
-        for rid, (run, decision, _seal, _twin) in PACK_DISCLOSED.items():
+        for rid, (run, decision, _seal, _twin) in DISCLOSED.items():
             self.assertEqual(rows[run]["Report"], rid)
             self.assertEqual(rows[run]["Signed by"], _statement(_held(run)["principal"], decision),
                              f"the page's row for {run}")
