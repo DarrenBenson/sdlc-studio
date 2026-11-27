@@ -1,0 +1,367 @@
+{
+  "unit": "US1344",
+  "digest": "7be3c9d55bd3e45b at 2a8163411b3f",
+  "report": "sdlc-studio/.local/lane/landed/agent-ae0738c62c10a0322/US1344-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M01",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    elif points >= low:",
+      "new": "    elif points > low:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_setting_decides_which_units_take_the_step",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M02",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    elif cls in classes:",
+      "new": "    elif cls in classes and False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_setting_decides_which_units_take_the_step",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M03",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if reason is None:\n        raise ValueError(f\"{unit} takes no",
+      "new": "    if False:\n        raise ValueError(f\"{unit} takes no",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_setting_decides_which_units_take_the_step",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M04",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        rnd = len(read_solution_reviews(repo_root, unit)) + 1",
+      "new": "        rnd = 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_is_bound_to_the_note_digest_round_by_round",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M05",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    digest = note_digest(note)\n    cells",
+      "new": "    digest = \"000000000000\"\n    cells",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_is_bound_to_the_note_digest_round_by_round",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M06",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "reviewer, author, changes or \"-\")]",
+      "new": "reviewer, author, \"-\")]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_is_bound_to_the_note_digest_round_by_round",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M07",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\" if row[\"changes\"] == \"-\" else row[\"changes\"]",
+      "new": "row[\"changes\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_is_bound_to_the_note_digest_round_by_round",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M08",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if verdict == \"go\" and changes_file is not None:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_that_cannot_stand_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M09",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if verdict == \"changes\" and changes_file is None:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_that_cannot_stand_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not Path(note).is_file():\n        raise ValueError",
+      "new": "    if False:\n        raise ValueError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_that_cannot_stand_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not Path(note).is_file():\n        raise ValueError",
+      "new": "    if not Path(note).exists():\n        raise ValueError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_changes_file_a_note_or_a_value_that_cannot_be_written_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    ok, why = independence(reviewer, author)\n    if not ok:",
+      "new": "    ok, why = independence(reviewer, author)\n    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_that_cannot_stand_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if low == 0:",
+      "new": "    if low == -1:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_step_ships_off_and_the_reference_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "    min_points: 0\n    risk_classes: []",
+      "new": "    min_points: 1\n    risk_classes: []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_step_ships_off_and_the_reference_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "    min_points: 0\n    risk_classes: []",
+      "new": "    min_points: 0\n    risk_classes: [high]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_step_ships_off_and_the_reference_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"\" if rmap.declared else",
+      "new": "\"\" if True else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_an_undeclared_risk_map_reads_every_unit_standard",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    elif points is None:",
+      "new": "    elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_unit_without_points_and_an_unknown_unit_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not found:\n        raise ValueError(f\"no unit",
+      "new": "    if False:\n        raise ValueError(f\"no unit",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_unit_without_points_and_an_unknown_unit_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "return (\"; \".join(taken) or None)",
+      "new": "return (\", \".join(taken) or None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_both_reasons_are_named_when_both_rules_take_the_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M20",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not changes:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_changes_file_a_note_or_a_value_that_cannot_be_written_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M21",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if isinstance(low, bool) or not isinstance",
+      "new": "    if not isinstance",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M22",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "not isinstance(low, int) or low < 0:",
+      "new": "not isinstance(low, int):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M23",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if names is None or len(names) != len(classes) \\",
+      "new": "    if names is None \\",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M24",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "names = [c.strip().lower() for c in classes",
+      "new": "names = [c for c in classes",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M25",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            or any(c not in risk_class.CLASSES for c in names):",
+      "new": "            or False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M26",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if last[\"verdict\"] != \"GO\":",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_with_changes_the_latest_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M27",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if last[\"digest\"] != now:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_with_a_go_on_an_earlier_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M28",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    last = rows[-1]\n    if last[\"verdict\"] != \"GO\":",
+      "new": "    last = rows[0]\n    if last[\"verdict\"] != \"GO\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_reads_the_latest_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M29",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not Path(note).is_file():\n        return False",
+      "new": "    if False:\n        return False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_with_the_note_missing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M30",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not rows:\n        return False",
+      "new": "    if False:\n        return False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_with_no_review_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M31",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if unit is not None and sdlc_md.norm_id(row[\"unit\"]) != sdlc_md.norm_id(unit):",
+      "new": "if unit is not None and row[\"unit\"] != unit:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_approach_agreed_matches_a_hyphenated_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M32",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "replace(\"|\", \"\\x00\")).replace",
+      "new": "replace(\"|\", \"|\")).replace",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_changes_text_round_trips_through_the_ledger",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M33",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_clean(str(value).replace(\"\\x00\", \"\")",
+      "new": "_clean(str(value)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_changes_text_round_trips_through_the_ledger",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M34",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "row = {k: _unescape_outside_spans(v) for k, v in row.items()}",
+      "new": "row = dict(row)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_changes_text_round_trips_through_the_ledger",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M35",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    with _ledger_lock(path):\n        if not path.exists():\n            sdlc_md.atomic_write(path, _SOLUTION_HEADER)\n        rnd = len(",
+      "new": "    rnd0 = len(read_solution_reviews(repo_root, unit))\n    with _ledger_lock(path):\n        if not path.exists():\n            sdlc_md.atomic_write(path, _SOLUTION_HEADER)\n        rnd = rnd0 + 0 * len(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_two_records_at_once_take_two_rounds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M36",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if shown.is_relative_to(root) else str(note)",
+      "new": "if False else str(note)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_note_is_named_relative_to_the_project_when_inside_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M37",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if verdict not in SOLUTION_VERDICTS:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_library_caller_and_a_hand_written_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M38",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "int(row[\"round\"]) if row[\"round\"].isdigit() else 0",
+      "new": "int(row[\"round\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_library_caller_and_a_hand_written_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M39",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "row[\"verdict\"] = row[\"verdict\"].upper()",
+      "new": "row[\"verdict\"] = row[\"verdict\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_library_caller_and_a_hand_written_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M40",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    \"critic\": (\"approach\", \"brief\",",
+      "new": "    \"critic\": (\"brief\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SprintChecklistStageTests::test_the_stage_set_and_the_cycle_cannot_drift_apart",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

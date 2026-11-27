@@ -1,7 +1,7 @@
 {
   "unit": "BG1768",
-  "digest": "73c8c1a990ea777c at f7cb9a8b1d3b",
-  "report": "sdlc-studio/.local/lane/landed/agent-a546f112526ac0ae1/BG1768-mutation-edits.json",
+  "digest": "570e3688315d30f6 at ba7a16f07fa1",
+  "report": "sdlc-studio/.local/lane/landed/agent-a1b2ca60b2234bc0d/BG1768-mutation-edits.json",
   "mutants": [
     {
       "mutant": "route-ignores-since",
@@ -60,8 +60,8 @@
     {
       "mutant": "tree-not-passed",
       "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
-      "old": "changed=changed, tree=dict(INDEX_COPY_TREE))",
-      "new": "changed=changed)",
+      "old": "tree=dict(INDEX_COPY_TREE), report_as=root)",
+      "new": "report_as=root)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
       "result": "killed",
       "answer": ""
@@ -69,8 +69,8 @@
     {
       "mutant": "git-rev-of-copy",
       "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
-      "old": "    report[\"git_rev\"] = _git_rev(root)\n",
-      "new": "    report[\"git_rev\"] = report[\"git_rev\"]\n",
+      "old": "        report[\"git_rev\"] = _git_rev(report_as)\n",
+      "new": "        report[\"git_rev\"] = report[\"git_rev\"]\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_temp_directory_inside_a_repository_still_runs_the_copy",
       "result": "killed",
       "answer": ""
@@ -114,8 +114,8 @@
     {
       "mutant": "scratch-kept",
       "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
-      "old": "        shutil.rmtree(scratch, ignore_errors=True)\n    report = _to_repo",
-      "new": "        pass\n    report = _to_repo",
+      "old": "                        tree=dict(INDEX_COPY_TREE), report_as=root)\n    finally:\n        shutil.rmtree(scratch, ignore_errors=True)\n",
+      "new": "                        tree=dict(INDEX_COPY_TREE), report_as=root)\n    finally:\n        pass\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
       "result": "killed",
       "answer": ""
@@ -159,8 +159,8 @@
     {
       "mutant": "report-not-written",
       "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
-      "old": "    report[\"git_rev\"] = _git_rev(root)\n    if write_report:",
-      "new": "    report[\"git_rev\"] = _git_rev(root)\n    if False:",
+      "old": "        root = report_as\n    if write_report:",
+      "new": "        root = report_as\n    if False:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index",
       "result": "killed",
       "answer": ""
@@ -168,8 +168,8 @@
     {
       "mutant": "dry-run-ignored",
       "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
-      "old": "    report[\"git_rev\"] = _git_rev(root)\n    if write_report:",
-      "new": "    report[\"git_rev\"] = _git_rev(root)\n    if True:",
+      "old": "                        write_report=write_report, changed=changed,\n",
+      "new": "                        write_report=True, changed=changed,\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_an_ignored_target_is_unchecked_under_its_repository_path",
       "result": "killed",
       "answer": ""
@@ -216,8 +216,8 @@
       "old": "[\"git\", \"--no-optional-locks\", \"-C\", str(repo_root), \"status\",",
       "new": "[\"git\", \"-C\", str(repo_root), \"status\",",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index",
-      "result": "survived",
-      "answer": "EQUIVALENT when git finds no stale stat entry: plain `git status` rewrites the index only when it refreshes one, which this fixture may not provoke; kept so the route never writes the index."
+      "result": "killed",
+      "answer": ""
     },
     {
       "mutant": "page-fully-staged",
@@ -270,6 +270,195 @@
       "old": "capture_output=True, text=True, check=True, env=env).stdout\n    except (subprocess.CalledProcessError, OSError):\n        return {}",
       "new": "capture_output=True, text=True, check=True, env=None).stdout\n    except (subprocess.CalledProcessError, OSError):\n        return {}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_an_inherited_index_variable_does_not_redirect_the_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "since-is-head",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "for k, v in changed_lines(top, since, cached=True).items()}",
+      "new": "for k, v in changed_lines(top, \"HEAD\", cached=True).items()}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_copy_measures_the_diff_against_since_not_head",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-override-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-on-every-copy-run",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if tree is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-on-an-error-baseline",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if baseline != \"pass\" and tree is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-in-place-too",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if baseline == \"fail\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-tree-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if baseline == \"fail\" and tree is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-or",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "            if baseline == \"fail\" and tree is not None:",
+      "new": "            if baseline == \"fail\" or tree is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-names-no-working-tree",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "\"file in a private copy of the index, not over the working tree, and failed \"",
+      "new": "\"file in a private copy of the index, and failed \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-asks-no-staging",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "\"there. Stage the fix (`git add`) or fix the failing suite, then re-run\")",
+      "new": "\"there. Fix the failing suite, then re-run\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy-red-says-clean-the-tree",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "INDEX_COPY_RED = (\"a red baseline proves nothing: the suite ran over the staged version of every \"",
+      "new": "INDEX_COPY_RED = (\"a red baseline proves nothing: clean the working tree; the suite ran over the staged version of every \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_red_staged_suite_names_the_copy_not_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page-absolute-path-dropped",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "so an unstaged edit to a test or helper is not run, and a `--test` naming its tests by absolute path\nruns the working tree's tests, not the copy's. Otherwise",
+      "new": "so an unstaged edit to a test or helper is not run, and a `--test` naming its tests by absolute path\nruns the copy's tests. Otherwise",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_review_reference_states_the_staged_route",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-as-not-passed",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "tree=dict(INDEX_COPY_TREE), report_as=root)",
+      "new": "tree=dict(INDEX_COPY_TREE))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-as-guard-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "    if report_as is not None:\n",
+      "new": "    if report_as is None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-as-guard-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "    if report_as is not None:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-as-paths-unmapped",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "        report = _to_repo(report, str(root), report_as)\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-written-in-copy",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "        root = report_as\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "series-and-report-skipped-in-place",
+      "file": ".claude/skills/sdlc-studio/scripts/mutation.py",
+      "old": "        root = report_as\n    if write_report:",
+      "new": "        root = report_as\n    if write_report and report_as is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_without_since_a_staged_target_is_still_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-stale-control-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py",
+      "old": "self.assertNotEqual(before[0], index.read_bytes(), \"the stat data was not stale\")",
+      "new": "self.assertEqual(before[0], index.read_bytes(), \"the stat data was not stale\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-stale-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py",
+      "old": "            _fixture(top)\n            _stale(top)\n",
+      "new": "            _fixture(top)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-since-gap-one",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py",
+      "old": "self.assertEqual(counts[\"HEAD\"] + 2, counts[\"main\"],",
+      "new": "self.assertEqual(counts[\"HEAD\"] + 1, counts[\"main\"],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_copy_measures_the_diff_against_since_not_head",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-absolute-line-4-killed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py",
+      "old": "            self.assertEqual([4, 5], sorted(r[\"line\"] for r in report[\"mutations\"]\n                                            if r[\"verdict\"] == \"survived\"))",
+      "new": "            self.assertEqual([5], sorted(r[\"line\"] for r in report[\"mutations\"]\n                                            if r[\"verdict\"] == \"survived\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_an_absolute_test_path_runs_the_working_tree_not_the_copy",
       "result": "killed",
       "answer": ""
     }

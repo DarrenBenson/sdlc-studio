@@ -1,6 +1,6 @@
 # US1335: The close names a role whose cache-read share fell more than 10 points, and the retro must explain it
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1334, US1336, US1337, US1338
 > **Risk-class:** high
 > **Delivers:** CR0753
@@ -28,6 +28,7 @@ Beside its cost-per-point check, before its chain, the close reads the session's
 - **When** `sprint.py close` runs for the first time
 - **Then** it prints one line naming builder, 40.0%, the 64.1% mean, -24.1 points and the five pages, records a known issue with source `cache-read` naming the role, and reads the anatomy once: the Cost by role table the page states is the reading the check judged. Fails on: HEAD, whose close has no cache-read check and records no such issue
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_close_records_a_fall_from_one_anatomy_read
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py close` (`cmd_close`), whose cost step runs before its chain
 
 ### AC2: ten points or less, or no baseline, records nothing and says why
@@ -36,6 +37,7 @@ Beside its cost-per-point check, before its chain, the close reads the session's
 - **When** the close's cost check runs on each
 - **Then** only 49.9% records a known issue, and the close line names the reviewer as not judged and why. Shares are compared at one decimal place, as the pages print them. Fails on: HEAD, which prints no cache-read line, so a role left unjudged is never named
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py close` (`cmd_close`), whose cost step runs this check before its chain
 
 ### AC3: the retro must name each fallen role
@@ -44,6 +46,7 @@ Beside its cost-per-point check, before its chain, the close reads the session's
 - **When** `retro.py validate --id <retro>` runs on each
 - **Then** the first two fail naming the builder, its share and its mean; the third passes. Fails on: HEAD, which validates a retro with no `## Cost` section as ok over a run whose builder share fell 22.9 points below five signed pages
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_retro_validate_demands_each_fallen_role_be_named
+- **Verified:** yes (2026-11-27)
 - **Caller:** `retro.py validate`, which `sprint close` runs first in its chain
 
 ### AC4: a named fall does not halt a rolling boundary
@@ -52,6 +55,7 @@ Beside its cost-per-point check, before its chain, the close reads the session's
 - **When** `sprint.py boundary` reaches its close-gate check
 - **Then** the named one does not stop the boundary and the unnamed one stops it, naming the issue. Fails on: HEAD, which halts on every known issue except a cost issue whose cause is named and an unpriced unit, so a fall the retro explains would still halt it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_named_fall_does_not_halt_a_rolling_boundary
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py boundary` (`cmd_boundary`), the rolling run's close-gate check
 
 ## Notes

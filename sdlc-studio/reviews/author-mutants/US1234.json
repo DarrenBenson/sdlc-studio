@@ -1,0 +1,502 @@
+{
+  "unit": "US1234",
+  "digest": "a8859dd6081d6613 at 0f99dbdb230e",
+  "report": "sdlc-studio/.local/lane/landed/agent-af9662a89ecce5cf6/US1234-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no v strip",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    return version[1:] if version[:1] in (\"v\", \"V\") else version",
+      "new": "    return version",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "capital V not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "in (\"v\", \"V\") else version",
+      "new": "in (\"v\",) else version",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_parent_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Escaped read case-sensitively",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "(sdlc_md.extract_field(text, \"Escaped\") or \"\").lower() != \"yes\" or not shipped:",
+      "new": "(sdlc_md.extract_field(text, \"Escaped\") or \"\") != \"yes\" or not shipped:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_parent_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Escaped not read",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if (sdlc_md.extract_field(text, \"Escaped\") or \"\").lower() != \"yes\" or not shipped:",
+      "new": "if not shipped:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_linked_bug_not_escaped_or_with_no_release_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Shipped-in not required",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if (sdlc_md.extract_field(text, \"Escaped\") or \"\").lower() != \"yes\" or not shipped:",
+      "new": "if (sdlc_md.extract_field(text, \"Escaped\") or \"\").lower() != \"yes\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_linked_bug_not_escaped_or_with_no_release_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Decomposed-into link dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if k in parents or sdlc_md.norm_id(bid) in children[k]]",
+      "new": "if k in parents]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_decomposed_into_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Parent link dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if k in parents or sdlc_md.norm_id(bid) in children[k]]",
+      "new": "if sdlc_md.norm_id(bid) in children[k]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_parent_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Parent ids not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "parents = {sdlc_md.norm_id(p) for p in sdlc_md.parent_refs(text)}",
+      "new": "parents = set(sdlc_md.parent_refs(text))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_parent_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Decomposed-into ids not normalised",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "{sdlc_md.norm_id(b) for b in sdlc_md.decomposed_ids(text)}",
+      "new": "set(sdlc_md.decomposed_ids(text))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_incident_linked_through_decomposed_into_alone_fails_each_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every escaped bug counted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        if named:\n            links[bid]",
+      "new": "        if True:\n            links[bid]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ratio inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        return 100 * failed // counted",
+      "new": "        return 100 * counted // failed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "always whole",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if (100 * failed) % counted == 0:",
+      "new": "    if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_percentage_is_whole_when_exact_and_one_decimal_otherwise",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no decimal",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    return round(100 * failed / counted, 1)",
+      "new": "    return round(100 * failed / counted)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_percentage_is_whole_when_exact_and_one_decimal_otherwise",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settled against today",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    as_of = min(end, today)",
+      "new": "    as_of = today",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_release_younger_than_the_settling_period_is_pending",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settled against the window end",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    as_of = min(end, today)",
+      "new": "    as_of = end",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_future_end_date_settles_against_today",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "counted boundary strict",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "(as_of - when).days >= settle_days]",
+      "new": "(as_of - when).days > settle_days]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_settling_boundary_is_exactly_the_period",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending boundary inclusive",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "(as_of - when).days < settle_days]",
+      "new": "(as_of - when).days <= settle_days]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_settling_boundary_is_exactly_the_period",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending counted as a success",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    counted = [v for when, v in in_window if (as_of - when).days >= settle_days]",
+      "new": "    counted = [v for when, v in in_window]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_release_younger_than_the_settling_period_is_pending",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window start excluded",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if start <= when <= end)",
+      "new": "if start < when <= end)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_window_includes_both_end_dates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window end excluded",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if start <= when <= end)",
+      "new": "if start <= when < end)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_window_includes_both_end_dates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "counted not sorted by date",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    in_window = sorted((when, version)",
+      "new": "    in_window = list((when, version)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_window_includes_both_end_dates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default window one day longer",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "else end - timedelta(days=WINDOW_DAYS - 1))",
+      "new": "else end - timedelta(days=WINDOW_DAYS))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_default_window_is_the_ninety_days_ending_on_its_end_date",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default end not today",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    end = _date(until, \"--until\") if until is not None else today",
+      "new": "    end = _date(until, \"--until\") if until is not None else today - timedelta(days=1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_default_window_is_the_ninety_days_ending_on_its_end_date",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "since after until accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if start > end:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_flag_that_does_not_parse_is_refused_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negative settle accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if settle_days < 0:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_flag_that_does_not_parse_is_refused_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-release guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if not in_window:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "all-pending guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    elif not counted:",
+      "new": "    elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_every_release_pending_reads_not_measured_naming_them",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reasons reordered",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    elif not counted:",
+      "new": "    elif not counted and incidents:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_every_release_pending_reads_not_measured_naming_them",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-incident guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    elif not incidents:",
+      "new": "    elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate asked without the escape field",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "\"> **Escaped:** yes\\n\" + text, \"counted\")",
+      "new": "text, \"counted\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "own Escaped field masks the gate",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "\"> **Escaped:** yes\\n\" + text, \"counted\")",
+      "new": "text + \"> **Escaped:** yes\\n\", \"counted\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_an_issue_carrying_its_own_escaped_field_is_judged_by_its_root_cause",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every issue an incident",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        if not _root_cause_written(text):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_root_cause_the_gate_reads_as_unwritten_makes_no_incident",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "compact date accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if isinstance(value, str) and _DATE_RE.fullmatch(value):",
+      "new": "    if isinstance(value, str):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_flag_that_does_not_parse_is_refused_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "non-string date crashes",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if isinstance(value, str) and _DATE_RE.fullmatch(value):",
+      "new": "    if _DATE_RE.fullmatch(value):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_record_that_does_not_parse_is_refused_naming_its_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record ValueError escapes",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    except ValueError as exc:\n        raise RateRefused(str(exc)) from exc",
+      "new": "    except KeyError as exc:\n        raise RateRefused(str(exc)) from exc",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_record_that_does_not_parse_is_refused_naming_its_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank lines counted out of the numbering",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "enumerate(text.splitlines(), 1) if line.strip()]",
+      "new": "enumerate(text.splitlines(), 1)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_record_that_does_not_parse_is_refused_naming_its_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doubled release accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        if key in out:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_release_recorded_twice_is_refused_naming_both_lines",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unrecorded guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        if _bare(shipped) not in releases:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_bug_naming_a_release_no_record_holds_is_named_and_moves_no_figure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bugs not collected",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        hit[1].add(bid)",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "incidents not collected",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        hit[0].update(named)",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_two_bugs_and_two_incidents_in_one_release_fail_it_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending release failed",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "for v in counted if v in by_release]",
+      "new": "for v in counted + pending if v in by_release]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_pending_release_with_an_incident_stays_pending",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plural always",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "return f\"{noun}{'' if len(items) == 1 else 's'} {', '.join(items)}\"",
+      "new": "return f\"{noun}s {', '.join(items)}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not measured prints the lists",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if result[\"not_measured\"]:\n        return 0\n    print(f\"counted:",
+      "new": "    print(f\"counted:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    print(f\"window: {result['since']} to {result['until']} (both days included), {period}\")",
+      "new": "    pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no failed none",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "for f in result[\"failed\"]) or \"none\"))",
+      "new": "for f in result[\"failed\"]) or \"\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no pending none",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "if result[\"pending\"] else \"none\"))",
+      "new": "if result[\"pending\"] else \"\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window constant",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "WINDOW_DAYS = 90",
+      "new": "WINDOW_DAYS = 91",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_default_window_is_the_ninety_days_ending_on_its_end_date",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settle constant",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "SETTLE_DAYS = 14",
+      "new": "SETTLE_DAYS = 15",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_deploy_help_names_the_command_and_its_sources",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "settle flag default",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "type=int, default=SETTLE_DAYS",
+      "new": "type=int, default=7",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "json not printed",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    if args.format == \"json\":\n        print(json.dumps(result, indent=2))\n        return 0\n    if result[\"not_measured\"]:",
+      "new": "    if result[\"not_measured\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal exits 0",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        print(f\"escape failure-rate refused: {exc}\", file=sys.stderr)\n        return 2",
+      "new": "        print(f\"escape failure-rate refused: {exc}\", file=sys.stderr)\n        return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_flag_that_does_not_parse_is_refused_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable issue crashes",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        text = text or \"\"\n        if not _root_cause_written(text):",
+      "new": "        if not _root_cause_written(text):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_window_includes_both_end_dates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable bug crashes",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        text = text or \"\"\n        bid = ",
+      "new": "        bid = ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_window_includes_both_end_dates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "library refuses nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "        raise RateRefused(f\"--since {start} is after",
+      "new": "        return {}  # (f\"--since {start} is after",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_function_returns_what_the_json_prints_and_refuses_as_the_cli_does",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb not declared",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"escape\": (\"failure-rate\", \"to-class\", \"trace\"),",
+      "new": "\"escape\": (\"to-class\", \"trace\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_report_declares_failure_rate_as_a_non_ceremony_verb",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

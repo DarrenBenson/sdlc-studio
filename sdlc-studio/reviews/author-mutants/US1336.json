@@ -1,77 +1,212 @@
 {
   "unit": "US1336",
-  "digest": "ee1baf1e1d960d94 at e643e99bd1a8",
-  "report": "sdlc-studio/.local/lane/landed/agent-ac6d383b9c7a2bd3f/US1336-mutation-edits.json",
+  "digest": "29501b6ea3fa04a9 at c8c09d2b0693",
+  "report": "sdlc-studio/.local/lane/landed/agent-af43d37a8fa542f3a/US1336-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "unknown-key-refused-only-as-mapping",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
-      "new": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS) and isinstance(raw[key], dict):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .h from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".h\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unknown-key-refused-only-as-scalar",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
-      "new": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS) and not isinstance(raw[key], dict):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .kt from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".kt\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "documented-decision-key-refused",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
-      "new": "        if key not in (*EFFORT_ROLES, *EFFORT_KINDS):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .kts from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".kts\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "unknown-key-unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "raise EffortError(f\"routing.effort.{key} is not a key routing.effort takes: it \"",
-      "new": "raise EffortError(f\"routing.effort is not a key routing.effort takes: it \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .swift from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".swift\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "decision-key-unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "f\"takes builder, reviewer, reviewer_below_builder and an entry \"",
-      "new": "f\"takes builder, reviewer and an entry \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .php from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".php\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "kinds-unnamed",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "f\"for each kind of unit: {', '.join(EFFORT_KINDS)}\")",
-      "new": "f\"for each kind of unit\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "mutant": "drop .scala from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".php\", \".scala\",",
+      "new": "\".php\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test-scalar-case-valid-key",
+      "mutant": "drop .vue from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".vue\", \".svelte\"",
+      "new": "\".svelte\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .svelte from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".svelte\", \".sql\"",
+      "new": "\".sql\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .sql from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".sql\", \".dart\"",
+      "new": "\".dart\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .dart from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".sql\", \".dart\")",
+      "new": "\".sql\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .c from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".c\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .cpp from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".cpp\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop .cs from CODE_EXTS",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "\".cs\", ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a markdown file counted as code",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "return any(p.endswith(CODE_EXTS) for p in sdlc_md.affects_files(text))",
+      "new": "return any(p.endswith(CODE_EXTS + (\".md\",)) for p in sdlc_md.affects_files(text))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a config file counted as code",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "return any(p.endswith(CODE_EXTS) for p in sdlc_md.affects_files(text))",
+      "new": "return any(p.endswith(CODE_EXTS + (\".yaml\", \".json\", \".txt\")) for p in sdlc_md.affects_files(text))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a roles-only config's brief source names a default kind",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "source = f\"routing.effort, the {kind} kind\" if kind else \"routing.effort\"",
+      "new": "source = f\"routing.effort, the {kind} kind\" if kind else \"routing.effort, the default kind\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_the_lane_brief_names_the_units_own_effort",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the code entry set equal to the docs entry",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
-      "old": "(\"builder: medium\\n    reviwer: high\", r\"routing\\.effort\\.reviwer\\b\", KEYS),",
-      "new": "(\"builder: medium\\n    reviewer: high\", r\"routing\\.effort\\.reviwer\\b\", KEYS),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "old": "    code: {builder: high}\\n\")\n            stories",
+      "new": "    code: {builder: low}\\n\")\n            stories",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test-mapping-case-a-kind",
+      "mutant": "test: the tiny-tier cutpoints dropped, so the floor is not reached",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
-      "old": "(\"tests: {builder: low}\", r\"routing\\.effort\\.tests\\b\", KEYS),",
-      "new": "(\"code: {builder: low}\", r\"routing\\.effort\\.tests\\b\", KEYS),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "old": "\"thresholds\": {\"tiny\": 101, \"small\": 102, \"medium\": 103, \"large\": 104},",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the bug floor left at small, so a bug's floor is not reached",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "\"floor\": {\"bug\": \"tiny\"}}",
+      "new": "}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the bug's critic floor asserted absent",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "            picked = route.pick(root, kt_bug, \"critic\", routing)\n            self.assertIn(",
+      "new": "            picked = route.pick(root, kt_bug, \"critic\", routing)\n            self.assertNotIn(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the .kt bug stamped as code",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "{\"builder\": \"inherit\", \"reviewer\": \"inherit\", \"kind\": \"bug\"},\n                             efforts[\"BG0002\"]",
+      "new": "{\"builder\": \"high\", \"reviewer\": \"inherit\", \"kind\": \"code\"},\n                             efforts[\"BG0002\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a bug classed by its Affects, not its id",
+      "file": ".claude/skills/sdlc-studio/scripts/route.py",
+      "old": "    if _kind_of(path) == \"bug\":\n        return \"bug\"",
+      "new": "    if False:\n        return \"bug\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the floor asserted absent on code units",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "                    self.assertIn(\"critic:code-medium-floor\", picked[\"adjustments\"])",
+      "new": "                    self.assertNotIn(\"critic:code-medium-floor\", picked[\"adjustments\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_every_code_extension_classes_a_unit_code",
       "result": "killed",
       "answer": ""
     }

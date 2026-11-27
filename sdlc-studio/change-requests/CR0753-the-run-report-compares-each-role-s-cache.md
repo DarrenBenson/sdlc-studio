@@ -1,6 +1,6 @@
 # CR-0753: The run report compares each role's cache-read share with the project's earlier runs, and the retro names a fall
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0381
 > **Priority:** Medium
 > **Type:** Improvement

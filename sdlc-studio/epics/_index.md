@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 63 |
+| Draft | 61 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 10 |
-| Done | 279 |
+| Done | 281 |
 | Superseded | 34 |
 | **Total** | **386** |
 
@@ -117,7 +117,7 @@
 | [EP0364](EP0364-no-persona-prompt-template-ships-that-nothing-loads.md) | No persona prompt template ships that nothing loads or that teaches the retired persona model | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0365](EP0365-every-composed-changelog-entry-names-the-unit-its.md) | Every composed CHANGELOG entry names the unit its fragment was filed for | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0366](EP0366-a-run-awaiting-the-operator-signature-no-longer.md) | A run awaiting the operator signature no longer blocks the next, and a delegated signature is disclosed | Done | 4 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0367](EP0367-the-reports-signed-under-a-per-trip-authorisation.md) | The reports signed under a per-trip authorisation disclose the decision that authorised each signature | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0367](EP0367-the-reports-signed-under-a-per-trip-authorisation.md) | The reports signed under a per-trip authorisation disclose the decision that authorised each signature | In Progress | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0368](EP0368-pyyaml-is-a-required-dependency-refused-at-install.md) | PyYAML is a required dependency, refused at install and at every gate, and the specs say so | Done | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0369](EP0369-a-high-risk-unit-s-review-records-who.md) | A high-risk unit's review records who wrote and who judged it by model family, and a project can require the two to differ | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0370](EP0370-the-handoff-says-how-much-work-remains-and.md) | The handoff says how much work remains and which seat it needs | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
@@ -131,8 +131,8 @@
 | [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | In Progress | 4 | -- | 2026-11-23 | 2026-11-23 |
 | [EP0379](EP0379-v6-5-0-ships-with-paperwork-that-matches.md) | v6.5.0 ships with paperwork that matches the code | In Progress | 8 | -- | 2026-11-25 | 2026-11-25 |
 | [EP0380](EP0380-the-run-breaker-reads-spend-warnings-at-75.md) | The run breaker reads spend: warnings at 75 and 95 per cent, a clean stop at 100, and a raise on the record | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0381](EP0381-the-run-report-sets-each-role-s-cache.md) | The run report sets each role's cache-read share against earlier runs, and the retro explains a fall | In Progress | 2 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0382](EP0382-routing-effort-sets-an-effort-per-kind-of.md) | routing.effort sets an effort per kind of unit, and the plan and the lane brief carry each unit's | Draft | 1 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0381](EP0381-the-run-report-sets-each-role-s-cache.md) | The run report sets each role's cache-read share against earlier runs, and the retro explains a fall | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0382](EP0382-routing-effort-sets-an-effort-per-kind-of.md) | routing.effort sets an effort per kind of unit, and the plan and the lane brief carry each unit's | Done | 1 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0383](EP0383-the-cost-anatomy-measures-cache-re-writes-after.md) | The cost anatomy measures cache re-writes after the cache lifetime, per role, on the page | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0384](EP0384-the-person-owns-every-document-and-the-seats.md) | The person owns every document, and the seats check the work under delegated authority | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0385](EP0385-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, and the code review stays independent | Draft | 5 | -- | 2026-11-26 | 2026-11-26 |

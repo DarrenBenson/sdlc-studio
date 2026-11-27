@@ -1,6 +1,6 @@
 # EP0382: routing.effort sets an effort per kind of unit, and the plan and the lane brief carry each unit's
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0754
 > **Created:** 2026-11-26
@@ -14,7 +14,7 @@ Decomposed from CR0754. Delivers the work CR0754 requested.
 
 ## Story Breakdown
 
-- [ ] [US1336: routing.effort takes per-kind entries, and the plan and the lane brief carry each unit's resolved effort](../stories/US1336-routing-effort-takes-per-kind-entries-and-the.md)
+- [x] [US1336: routing.effort takes per-kind entries, and the plan and the lane brief carry each unit's resolved effort](../stories/US1336-routing-effort-takes-per-kind-entries-and-the.md)
 
 ## Revision History
 

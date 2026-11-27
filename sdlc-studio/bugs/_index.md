@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 49 |
+| Open | 47 |
 | In Progress | 0 |
-| Fixed | 1256 |
+| Fixed | 1259 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1775** |
+| **Total** | **1776** |
 
 ## All Bugs
 
@@ -843,14 +843,15 @@
 | [BG1765](BG1765-a-carry-is-always-filed-at-medium-so.md) | A carry is always filed at Medium, so a unit that checks a release bar barring Medium cannot close its own carry | Fixed | Low | 2026-11-26 | 2026-11-26 |
 | [BG1766](BG1766-bg1763-did-not-converge-in-review-round-2.md) | BG1763 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-26 | 2026-11-26 |
 | [BG1767](BG1767-bg1764-did-not-converge-in-review-round-2.md) | BG1764 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | 2026-11-26 |
-| [BG1768](BG1768-the-builder-s-diff-coverage-mutation-pass-refuses.md) | The builder's diff-coverage mutation pass refuses uncommitted work, so the pass the lane brief asks for never runs before review | Open | Low | 2026-11-26 | 2026-11-26 |
+| [BG1768](BG1768-the-builder-s-diff-coverage-mutation-pass-refuses.md) | The builder's diff-coverage mutation pass refuses uncommitted work, so the pass the lane brief asks for never runs before review | Fixed | Low | 2026-11-26 | 2026-11-26 |
 | [BG1769](BG1769-us1339-did-not-converge-in-review-round-2.md) | US1339 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | 2026-11-26 |
 | [BG1770](BG1770-us1233-did-not-converge-in-review-round-2.md) | US1233 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | 2026-11-26 |
 | [BG1774](BG1774-us1333-did-not-converge-in-review-round-2.md) | US1333 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | 2026-11-26 |
 | [BG1771](BG1771-bg1765-did-not-converge-in-review-round-2.md) | BG1765 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | -- |
 | [BG1773](BG1773-a-request-s-decomposed-into-keeps-only-its.md) | A request's Decomposed-into keeps only its last child when ids are Crockford-style, because `decomposed_ids` reads none of them | Fixed | Medium | 2026-11-26 | -- |
-| [BG1775](BG1775-us1336-did-not-converge-in-review-round-2.md) | US1336 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-27 | 2026-11-27 |
+| [BG1775](BG1775-us1336-did-not-converge-in-review-round-2.md) | US1336 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
 | [BG1772](BG1772-critic-py-raises-on-a-declared-seat-card.md) | critic.py raises on a declared seat card that is not valid UTF-8, so recording a verdict fails with a traceback | Open | Low | 2026-11-26 | -- |
+| [BG1776](BG1776-bg1768-did-not-converge-in-review-round-2.md) | BG1768 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases
 

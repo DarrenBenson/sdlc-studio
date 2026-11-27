@@ -1,0 +1,322 @@
+{
+  "unit": "US1335",
+  "digest": "fd825c3139df1a50 at edff9e5eb590",
+  "report": "sdlc-studio/.local/lane/landed/agent-afde97cb18b0355d1/US1335-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "fall at exactly 10 points recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        fell = change < -limit\n",
+      "new": "        fell = change <= -limit\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rise counted by its size",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        fell = change < -limit\n",
+      "new": "        fell = abs(change) > limit\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "share compared unrounded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        share = sprint_report._cell_pct(cost_anatomy._cell(  # noqa: SLF001 - the page's cell\n            (row.get(\"split\") or {}).get(\"cache_read\"), \"pct\"))\n",
+      "new": "        share = (lambda v: None if v is None else 100 * v)(\n            (row.get(\"split\") or {}).get(\"cache_read\"))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-judged reasons swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                            if share is None else\n",
+      "new": "                            if share is not None else\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a role with an earlier page left unjudged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if share is None or got is None:\n",
+      "new": "        if share is None or got is None or len(got['reports']) < 5:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reading not held for the stamp",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if fresh:\n",
+      "new": "        if not fresh:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_close_records_a_fall_from_one_anatomy_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp re-reads the anatomy",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                run_state.stamp_cost_roles(root, roles=held)\n",
+      "new": "                run_state.stamp_cost_roles(root)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_close_records_a_fall_from_one_anatomy_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "issues left out of known",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    known: list[dict] = ([cost[\"issue\"]] if cost[\"issue\"] else []) + kept + fall[\"issues\"]\n",
+      "new": "    known: list[dict] = ([cost[\"issue\"]] if cost[\"issue\"] else []) + kept\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_close_records_a_fall_from_one_anatomy_read",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held reading read, not consumed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    held = _HELD_ROLES.pop(str(Path(root).resolve()), None)\n",
+      "new": "    held = _HELD_ROLES.get(str(Path(root).resolve()))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_nothing_is_held_past_a_close",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hand-off not cleared at the top",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    _HELD_ROLES.clear()   # no earlier close's reading is this one's\n",
+      "new": "    pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_nothing_is_held_past_a_close",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a reopened re-close judged from the old window",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if end and not sprint_report.reopened_since(state, end):\n        got = sprint_report._closing_roles(  # noqa: SLF001 - the page's own reader\n",
+      "new": "    if end:\n        got = sprint_report._closing_roles(  # noqa: SLF001 - the page's own reader\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_re_close_judges_the_stamped_reading_and_a_reopen_reads_again",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a re-close reads the anatomy again",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if end and not sprint_report.reopened_since(state, end):\n        got = sprint_report._closing_roles(  # noqa: SLF001 - the page's own reader\n",
+      "new": "    if False:\n        got = sprint_report._closing_roles(  # noqa: SLF001 - the page's own reader\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_re_close_judges_the_stamped_reading_and_a_reopen_reads_again",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unjudged close drops the earlier issue",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        replace = not roles.get(\"reason\")\n",
+      "new": "        replace = True\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_re_close_judges_the_stamped_reading_and_a_reopen_reads_again",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the earlier issue kept beside this one's",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if not replace and isinstance(g, dict) and g.get(\"source\") == retro.CACHE_READ_ISSUE]\n",
+      "new": "            if isinstance(g, dict) and g.get(\"source\") == retro.CACHE_READ_ISSUE]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_re_close_judges_the_stamped_reading_and_a_reopen_reads_again",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unmeasured reading judged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if roles.get(\"reason\"):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_re_close_judges_the_stamped_reading_and_a_reopen_reads_again",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no session check on the first-close reading",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return run_state._cost_roles(got, probe.get(\"source\")), True  # noqa: SLF001\n",
+      "new": "    return got, True\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_reading_of_another_session_is_judged_by_nobody",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no probe reading judged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not probe:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_reading_of_another_session_is_judged_by_nobody",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "boundary filter without the cache-read test",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if not _cost_cause_named(root, g) and not _cache_fall_named(root, g)\n",
+      "new": "            if not _cost_cause_named(root, g)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_named_fall_does_not_halt_a_rolling_boundary",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any cache-read issue counted as named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return bool(path) and retro.names_role(path.read_text(encoding=\"utf-8\"), str(gap.get(\"role\")))\n",
+      "new": "    return bool(path)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_named_fall_does_not_halt_a_rolling_boundary",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "named check reads any source",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not (isinstance(gap, dict) and gap.get(\"source\") == retro.CACHE_READ_ISSUE\n",
+      "new": "    if not (isinstance(gap, dict)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_named_check_reads_only_a_cache_read_issue_with_its_retro",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "three-line path without the demand",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "                  + cache_read_errors(root, retro_id, text)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_retro_validate_demands_each_fallen_role_be_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "older path without the demand",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    errors.extend(cache_read_errors(root, retro_id, text))\n",
+      "new": "    pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_older_retro_shape_is_held_to_the_demand_too",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "threshold 9",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "CACHE_READ_FALL_POINTS = 10\n",
+      "new": "CACHE_READ_FALL_POINTS = 9\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "threshold 11",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "CACHE_READ_FALL_POINTS = 10\n",
+      "new": "CACHE_READ_FALL_POINTS = 11\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_ten_points_or_less_or_no_baseline_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "case-sensitive match",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "new": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hyphen not a name character",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "new": "    pattern = re.compile(rf\"(?<!\\w){re.escape(role)}s?(?!\\w)\", re.IGNORECASE)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role read as a pattern",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "new": "    pattern = re.compile(rf\"(?<![\\w-]){role}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plural not a name",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "new": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}(?![\\w-])\", re.IGNORECASE)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "inside a longer word",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    pattern = re.compile(rf\"(?<![\\w-]){re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "new": "    pattern = re.compile(rf\"{re.escape(role)}s?(?![\\w-])\", re.IGNORECASE)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder bullet read",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    return any(pattern.search(b) for b in _real_bullets(sections(text).get(COST_SECTION, [])))\n",
+      "new": "    return any(pattern.search(b) for b in sections(text).get(COST_SECTION, []))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_a_role_is_named_by_word_whatever_its_characters",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another retro's issue demanded",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "            and sdlc_md.norm_id(str(g.get(\"retro\") or \"\")).upper() == rid]\n",
+      "new": "            ]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_every_fallen_role_is_demanded_and_only_this_retros",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a named role still demanded",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "            for g in cache_read_issues(root, retro_id) if not names_role(text, str(g.get(\"role\")))]\n",
+      "new": "            for g in cache_read_issues(root, retro_id)]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_retro_validate_demands_each_fallen_role_be_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp ignores the handed reading",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    got = _cost_roles(read_cost_roles(repo_root, transcripts_dir) if roles is None else roles,\n",
+      "new": "    got = _cost_roles(read_cost_roles(repo_root, transcripts_dir),\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_stamp_checks_a_handed_reading_against_its_session",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "handed reading of any session recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    if not source or name != Path(str(source)).stem:\n",
+      "new": "    if not source:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_stamp_checks_a_handed_reading_against_its_session",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a reason replaced by the session message",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    if reading.get(\"reason\"):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cache_read_fall.py::CacheReadFallTests::test_the_stamp_checks_a_handed_reading_against_its_session",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

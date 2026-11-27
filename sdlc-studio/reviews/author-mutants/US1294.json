@@ -1,0 +1,214 @@
+{
+  "unit": "US1294",
+  "digest": "cabb92bec969529e at dbf64a7eccc0",
+  "report": "sdlc-studio/.local/lane/landed/agent-abf6ee68127ba3ae1/US1294-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "index-guard-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if index:\n        _sync_report_index(root, d, rid, md, report)",
+      "new": "    _sync_report_index(root, d, rid, md, report)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_keeps_the_report_index_row_where_it_stands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "disclose-syncs-index",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "                 index=False)",
+      "new": "                 index=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_keeps_the_report_index_row_where_it_stands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unsigned-guard-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not str(sig.get(\"principal\") or \"\").strip():",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision-refusal-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if why:\n        raise ReportError(f\"{rid}: {why}\")",
+      "new": "    if not why:\n        raise ReportError(f\"{rid}: {why}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_leaves_the_signed_report_valid",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision-refusal-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if why:\n        raise ReportError(f\"{rid}: {why}\")",
+      "new": "    if False:\n        raise ReportError(f\"{rid}: {why}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "repeat-no-op-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if held == did:\n        return False, did",
+      "new": "    if False:\n        return False, did",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_repeating_a_disclosure_writes_it_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank-decision-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if held is not None:\n        raise ReportError(f\"{rid}'s",
+      "new": "    if held not in (None, \"\"):\n        raise ReportError(f\"{rid}'s",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held-guard-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if held is not None:\n        raise ReportError(f\"{rid}'s",
+      "new": "    if False:\n        raise ReportError(f\"{rid}'s",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "raw-decision-written",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"delegated\": True, \"decision\": did}},",
+      "new": "\"delegated\": True, \"decision\": decision}},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_decision_in_another_spelling_is_normalised_and_a_non_id_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delegated-key-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "{**sig, \"delegated\": True, \"decision\": did}",
+      "new": "{**sig, \"decision\": did}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_leaves_the_signed_report_valid",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-exits-0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        print(f\"error: {exc}\", file=sys.stderr)\n        return 2\n    rid = sdlc_md.norm_id(args.report)",
+      "new": "        print(f\"error: {exc}\", file=sys.stderr)\n        return 0\n    rid = sdlc_md.norm_id(args.report)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-change-branch-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not changed:\n        print(f\"disclose: {rid} already",
+      "new": "    if changed:\n        print(f\"disclose: {rid} already",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_repeating_a_disclosure_writes_it_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "shared-check-undelegated",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "root, argparse.Namespace(delegated=True, decision=named))",
+      "new": "root, argparse.Namespace(delegated=False, decision=named))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_leaves_the_signed_report_valid",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "column-renamed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    (\"Signed by\", \"`signature.principal`, followed",
+      "new": "    (\"Signer\", \"`signature.principal`, followed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_page_names_each_delegated_signature",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cell-reads-principal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "             signed_by(rep[\"signature\"]))",
+      "new": "             rep[\"signature\"][\"principal\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_page_names_each_delegated_signature",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verb-not-registered",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"sprint_report\": (\"evidence\", \"disclose\"),",
+      "new": "\"sprint_report\": (\"evidence\",),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_verb_is_in_every_registry_a_new_verb_implies",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-any-report-delegation",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if on_report and in_record is None:",
+      "new": "    if on_report:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-any-unrecorded",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if on_report and in_record is None:",
+      "new": "    if in_record is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-refusal-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if why:\n        return {}, (f\"the report's signature discloses",
+      "new": "    if not why:\n        return {}, (f\"the report's signature discloses",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-spelling-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    if did != decision:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-reads-working-log",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "_show(root, sha, DECISIONS_REL) or \"\"",
+      "new": "((Path(root) / DECISIONS_REL).read_text(encoding=\"utf-8\") if (Path(root) / DECISIONS_REL).is_file() else \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-drops-delegation",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "    return {**held, \"delegated\": True, \"decision\": did}, \"\"",
+      "new": "    return held, \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pack-finding-tail",
+      "file": ".claude/skills/sdlc-studio/scripts/evidence_pack.py",
+      "old": "({why.split('; ', 1)[0]})",
+      "new": "({why.split('; ', 1)[-1]})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

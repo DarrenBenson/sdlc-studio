@@ -1,6 +1,6 @@
 # BG1768: The builder's diff-coverage mutation pass refuses uncommitted work, so the pass the lane brief asks for never runs before review
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/mutation.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py, changelog.d/BG1768.md
@@ -36,6 +36,7 @@ Let `--since` judge the staged diff (index against the base) when the surface ca
   and `git status --porcelain` byte for byte as they were. Fails on: HEAD, which refuses with
   exit 2, `uncommitted changes on pkg/calc.py`.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_a_staged_target_is_mutated_in_a_private_copy_of_the_index
+- **Verified:** yes (2026-11-27)
 
 ### AC2: unstaged and untracked work is still refused, and the refusal names the staged route
 
@@ -47,6 +48,7 @@ Let `--since` judge the staged diff (index against the base) when the surface ca
   committing or stashing. Fails on: HEAD, whose route is "Mutate an ISOLATED CHECKOUT instead
   (`git worktree add`), or commit or stash the work first." and names no staged route.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_unstaged_and_untracked_work_is_still_refused_naming_the_staged_route
+- **Verified:** yes (2026-11-27)
 
 ### AC3: the JSON report states the run was isolated and names repository paths
 
@@ -57,6 +59,7 @@ Let `--since` judge the staged diff (index against the base) when the surface ca
   no scratch copy remains after the run. Fails on: HEAD, which refuses; and the same mutants run
   by hand in an exported copy report `isolated: None` and the copy's paths.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_report_states_isolation_and_names_repository_paths
+- **Verified:** yes (2026-11-27)
 
 ### AC4: the review reference states the staged route at no cost in lines
 
@@ -68,6 +71,7 @@ Let `--since` judge the staged diff (index against the base) when the surface ca
   page is the same number of lines. Fails on: HEAD, where the section has 0 mentions of staged
   work or `--since`.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation_staged_since.py::StagedSinceTests::test_the_review_reference_states_the_staged_route
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

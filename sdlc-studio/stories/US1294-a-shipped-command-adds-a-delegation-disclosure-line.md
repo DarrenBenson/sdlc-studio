@@ -1,6 +1,6 @@
 # US1294: A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1233, US1333, US1338
 > **Risk-class:** elevated
 > **Delivers:** CR0730
@@ -42,6 +42,7 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 - **When** `sprint_report.py disclose --report RPT0001 --decision D0001` runs
 - **Then** the report's JSON signature block carries `delegated: true` and `decision: D0001`, its Markdown twin's Signed by cell reads that the signature was entered under delegation, authorised by decision D0001, the fingerprint and the tracked run record are byte-identical to before, and `sprint_report.py check` reads VALID before and after the change is committed. Fails on: HEAD, where `sprint_report.py disclose` exits 2 with `invalid choice: 'disclose'`; a disclosure that rewrites the run record's signature, which HEAD's check reads INVALID ("no reopen is recorded between them"); or one that leaves the twin as it was, which HEAD's check reads INVALID (the twin's wording differs from its JSON)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_leaves_the_signed_report_valid
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py disclose`, which US1295 runs over RPT0030 to RPT0034; `sprint_report.py check` reads the result
 
 ### AC2: a disclosure is refused for an unsigned report, an unaccepted decision or a delegation already recorded
@@ -50,6 +51,7 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 - **When** the command runs on each, the last naming D0001
 - **Then** each run exits non-zero naming why, and the report's JSON, its twin and the reports index are byte-identical to before. Fails on: HEAD, which has no such command; a disclosure written onto a page nobody signed, one citing a decision the log does not show as accepted, or one replacing the decision a signature was sealed with
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py disclose`
 
 ### AC3: repeating a disclosure changes no byte
@@ -58,6 +60,7 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 - **When** the command runs again with D0001
 - **Then** it exits 0 saying nothing changed, no byte of the report, its twin or the index moves, the twin carries the statement once, and the report still reads VALID. Fails on: HEAD, which has no such command; a second statement for the same decision, or a re-run that rewrites the page
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_repeating_a_disclosure_writes_it_once
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py disclose`, re-run by US1295's builder after an interrupted pass
 
 ### AC4: the evidence pack states a disclosed delegation
@@ -66,6 +69,7 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 - **When** `release_cut.py evidence-pack --version 1.0.0 --reports RPT0001,RPT0002` runs
 - **Then** the pack is written, each change from RPT0001 says on its Accountable line that the signature on its report was entered under delegation, authorised by decision D0001, each change from RPT0002 says its principal signed it, and the delegation refusals `test_evidence_pack_build.py` holds for US1292 still pass. Fails on: HEAD, where the pack refuses a report-side delegation the run record does not hold ("the report's signature and its run record ... disagree on delegation"), and refuses one written into the run record too ("the signature was rewritten after it was sealed")
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_pack_states_a_disclosed_delegation
+- **Verified:** yes (2026-11-27)
 - **Caller:** `release_cut.py evidence-pack`, which US1295 runs to rebuild the 6.4.0 pack
 
 ### AC5: the evidence page names each delegated signature
@@ -74,6 +78,7 @@ signatures stand and gain a disclosure; US1295 applies this command to them.
 - **When** `sprint_report.py evidence --out docs/evidence.md` writes the page
 - **Then** its table carries a column, after the existing ones, giving each run's signer as the report's Signed by cell gives it, so the two delegated rows name the delegation and their decisions and the third names the principal alone, and its legend names the field the column reads; and this repository's `docs/evidence.md` is regenerated in the same commit, so `evidence --check` exits 0. Fails on: HEAD, whose seven columns (Run, Report, Goal verdict, Verdict note, Dollars per point, Model, Hours to signature) name no signer, and whose `docs/evidence.md` says nothing of delegation (`grep -ci delegat` prints 0) though RPT0035 to RPT0045 were signed under D0528, D0535, D0539 and D0545
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegation_disclosure.py::DelegationDisclosureTests::test_the_evidence_page_names_each_delegated_signature
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py evidence`, and `release_cut.py tag-check`, which refuses a tag over an evidence page that differs from what the signed reports render
 
 ---

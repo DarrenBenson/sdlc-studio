@@ -70,7 +70,7 @@ and regenerates the two records built from them. Nothing is re-signed.
 
 ### Out of Scope
 
-- RPT0029 (see Open Questions), and RPT0035 onwards, which `sprint sign --delegated` already disclosed
+- RPT0035 onwards, which `sprint sign --delegated` already disclosed (RPT0029 joined the disclosure under D0640)
 - Any re-signature, reopen or run-record change
 - The command, the pack's acceptance rule and the page column (US1294)
 
@@ -97,7 +97,7 @@ and regenerates the two records built from them. Nothing is re-signed.
 | A disclose run fails part-way through the six | Re-run: a disclosed report is left as it is (US1294 AC3) |
 | The pack refuses a report | Nothing is written; fix the cause, never hand-edit the pack |
 | A report is signed after the page is regenerated | `--check` notes it as newer, which does not fail (as at HEAD) |
-| RPT0029 is ruled in later | One more `disclose` run and a rewrite of the pack and the page; AC2's test does not assert RPT0029 either way |
+| RPT0029, ruled in under D0640 | It takes its own `disclose` run, and AC1 and AC2 assert it like the other five, RUN-01M77177's page row included |
 
 ---
 
@@ -127,3 +127,4 @@ and regenerates the two records built from them. Nothing is re-signed.
 | 2026-11-26 | engineering seat | Re-grounded against HEAD for run twenty-eight (D0638) |
 | 2026-11-26 | orchestrator | RPT0029 joins the disclosure under D0640: Affects, the table, AC1 and AC2 name it |
 | 2026-11-26 | sdlc-studio | Retitled: was 'RPT0030 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature' |
+| 2026-11-27 | orchestrator (D0545) | Out of Scope and Edge Cases now agree with D0640: RPT0029 is in, and AC1 and AC2 assert it (the approach panel found both lines stale) |

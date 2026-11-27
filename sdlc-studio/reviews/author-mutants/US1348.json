@@ -1,0 +1,295 @@
+{
+  "unit": "US1348",
+  "digest": "028ad236796efe49 at e9d81a033346",
+  "report": "sdlc-studio/.local/lane/landed/agent-a327298de455e57fe/US1348-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "first-round read as the first verdict being APPROVE",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if critic.REJECT not in (u[\"verdicts\"] or []))",
+      "new": "if (u[\"verdicts\"] or [\"\"])[0] == critic.APPROVE)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the REJECT test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if critic.REJECT not in (u[\"verdicts\"] or []))",
+      "new": "if critic.REJECT in (u[\"verdicts\"] or []))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit the delivery review never judged counted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if u[\"rounds\"] and bool(taken.get(u[\"id\"])) is took]",
+      "new": "if bool(taken.get(u[\"id\"])) is took]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_a_run_where_no_unit_took_the_step_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the groups swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "bool(taken.get(u[\"id\"])) is took]",
+      "new": "bool(taken.get(u[\"id\"])) is not took]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rate rounded down",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return f\"{(200 * n + d) // (2 * d)}%\"",
+      "new": "return f\"{(100 * n) // d}%\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rate rounded half to even",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return f\"{(200 * n + d) // (2 * d)}%\"",
+      "new": "return f\"{round(100 * n / d)}%\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delivery rounds summed over every unit, not the group's",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "round(sum(u[\"rounds\"] for u in units) / n, 1)",
+      "new": "round(sum(u[\"rounds\"] for u in ledger) / n, 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "solution review rounds counted as rows, not the highest Round cell",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "sum(max(r[\"round\"] for r in taken[u[\"id\"]]) for u in units)",
+      "new": "sum(len(taken[u[\"id\"]]) for u in units)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit with no priced figure not named",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "unpriced = [u[\"id\"] for u in units if not _num(u[\"priced\"])]",
+      "new": "unpriced = [u[\"id\"] for u in units if u[\"priced\"] is None and False]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "measured with no unit taking the step",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not any(taken.values()):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_a_run_where_no_unit_took_the_step_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "measured only when every unit took the step",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not any(taken.values()):",
+      "new": "    if not all(taken.values()):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the missing delivery ledger read as zero rounds",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not vpath.is_file():",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_a_run_where_no_unit_took_the_step_reads_not_measured",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a solution row dated outside the run counted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "out[uid] = [r for r in mine if _in_run(str(r.get(\"date\") or \"\").strip(), *window)]",
+      "new": "out[uid] = list(mine)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the frozen rows ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        if isinstance(frozen, dict):\n            keep = set(",
+      "new": "        if False:\n            keep = set(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the freeze not written on the record",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "DISCHARGED: discharged,\n                                  SOLUTION_ROWS: solution})",
+      "new": "DISCHARGED: discharged})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a re-prepare reads the earlier freeze",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    live = {k: v for k, v in state.items() if k != SOLUTION_ROWS}",
+      "new": "    live = state",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a row's identity its unit alone",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for k in (\"unit\", \"round\", \"verdict\", \"digest\", \"date\")]",
+      "new": "for k in (\"unit\",)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rule hard-wired on in revalidate",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "solution_review_rule=bool(_section_of(basis, \"solution_review\")),",
+      "new": "solution_review_rule=True,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the section built with the rule off",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        if solution_review_rule else None,",
+      "new": "        if True else None,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verdicts read from every row of the unit, superseded and out of the run too",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for r in _run_rows(uid, by_unit.get(uid, []), frozen, state,\n                                             later.get(uid), window)]),",
+      "new": "for r in by_unit.get(uid, [])]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the section left out of APPENDIX",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"calibration\", \"solution_review\", \"rulings\",",
+      "new": "\"calibration\", \"rulings\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the did-not row's solution cell reads a number",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "SR_NOT_TAKEN = \"took a solution review\", \"took none\", \"not taken\"",
+      "new": "SR_NOT_TAKEN = \"took a solution review\", \"took none\", \"0.0\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty group's cells read as figures",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return fig(key, value, src) if n else unmeasured(key, src, _SR_EMPTY)",
+      "new": "return fig(key, value, src)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Markdown block not gated on the section",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "<!-- when: solution_review_present -->\n<!-- when: solution_review_measured -->\n\n**Solution",
+      "new": "<!-- when: solution_review_measured -->\n\n**Solution",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the HTML block not gated on the section",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<!-- when: solution_review_present -->\n<!-- when: solution_review_measured -->\n  <p class=\"lede\"><strong>Solution",
+      "new": "<!-- when: solution_review_measured -->\n  <p class=\"lede\"><strong>Solution",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Markdown lede drops what the delivery figure counts",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "Delivery rounds count\nverdict rows",
+      "new": "Delivery rounds count\nrounds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the annex loses the section row",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `solution_review` | Solution review | appendix | always | - |\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the annex loses the carries-none clause",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "`solution_review` section carries",
+      "new": "`solution_review` section may carry",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the annex loses a row key",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `solution_review` | `rows` | `sr_priced` |",
+      "new": "| `solution_review` | `rows` | `sr_priced_tokens` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the group sourced to the run record",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"sr_group\": fig(\"sr_group\", label, sol_rel),",
+      "new": "\"sr_group\": fig(\"sr_group\", label, state_rel),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unit count sourced to the delivery ledger alone",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"sr_units\": fig(\"sr_units\", n, f\"{vrel}, {sol_rel}\"),",
+      "new": "\"sr_units\": fig(\"sr_units\", n, vrel),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the tokens cell sourced to the delivery ledger",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "round(sum(u[\"priced\"] for u in units) / n),\n                                   state_rel))})",
+      "new": "round(sum(u[\"priced\"] for u in units) / n),\n                                   vrel))})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

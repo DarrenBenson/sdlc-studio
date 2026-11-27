@@ -89,11 +89,9 @@ buy honestly.
 | `BG1755` | Low | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch |
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
-| `BG1768` | Low | The builder's diff-coverage mutation pass refuses uncommitted work, so the pass the lane brief asks for never runs before review |
 | `BG1772` | Low | critic.py raises on a declared seat card that is not valid UTF-8, so recording a verdict fails with a traceback |
-| `BG1775` | Low | US1336 did not converge in review: round 2 REJECT findings |
 
-49 findings: 0 Medium, 49 Low.
+47 findings: 0 Medium, 47 Low.
 
 ## Not carried
 

@@ -1,6 +1,6 @@
 # US1336: routing.effort takes per-kind entries, and the plan and the lane brief carry each unit's resolved effort
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1332, US1333
 > **Risk-class:** high
 > **Delivers:** CR0754
@@ -28,6 +28,7 @@
 - **When** `sprint.py plan --stories Ready --bugs Open --format json` runs, then again with the `docs` and `bug` entries removed
 - **Then** the first plan stamps the docs story `{builder: low, reviewer: high, kind: docs}`, the code story `{builder: medium, reviewer: high, kind: code}` and the bug `{builder: high, reviewer: high, kind: bug}`; the second stamps builder medium and reviewer high on all three. Fails on: HEAD, which stamps builder medium and reviewer high on every unit whatever the kind entries say
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_each_unit_is_stamped_with_its_kinds_effort
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint plan --write`, whose stamp `lanes.stamped_effort` and the report's `_effort_counts` read
 
 ### AC2: an unknown kind, role or value is refused by name
@@ -36,6 +37,7 @@
 - **When** `sprint.py plan --stories Ready` runs on each
 - **Then** each exits 2 with nothing selected or written, naming `routing.effort.doc` and the kinds it takes, then `routing.effort.docs.author` and the roles, then `routing.effort.docs.builder` and the efforts. Fails on: HEAD, which plans with `doc:` present and exits 0, ignoring it
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py plan` (`cmd_plan`), which resolves the effort before it selects or writes anything
 
 ### AC3: a reviewer below its builder within a kind needs a recorded decision
@@ -44,6 +46,7 @@
 - **When** `sprint.py plan --stories Ready` runs on each
 - **Then** the first is refused naming the docs kind and both efforts; the second plans and prints the decision id. Fails on: HEAD, which accepts the pair and stamps inherit for both roles, since it never reads the kind entry
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_a_reviewer_below_its_builder_within_a_kind_needs_a_decision
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py plan` (`cmd_plan`), which resolves the effort before it selects or writes anything
 
 ### AC4: the lane brief names the unit's own effort
@@ -52,6 +55,7 @@
 - **When** `sprint.py lane brief --units <docs story>` runs, and then for the code story
 - **Then** the docs brief tells the orchestrator to spawn the builder at low effort and the reviewer at high, naming the docs kind; the code brief says medium and high. Fails on: HEAD, which reads `routing.effort` once per dispatch for every unit, and with only kind entries set prints "Effort: dispatch the builder and its reviewer at the session's own effort (routing.effort is not set)."
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_the_lane_brief_names_the_units_own_effort
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py lane brief` (`lane_brief_text`), which the orchestrator reads before it spawns a builder
 
 ## Notes

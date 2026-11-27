@@ -7,7 +7,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py, changelog.d/US1235.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py, changelog.d/US1235.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py
 > **Epic:** EP0339
 > **Points:** 5
 > **Persona:** Abena Osei
@@ -71,7 +71,7 @@ the run as the lesson store does.
 
 - **Given** `reference-evidence-schema.md` and `sprint_report.EVIDENCE_SCHEMA_VERSION`
 - **When** the annex's Report sections, figure keys and row keys tables are read
-- **Then** `release_cfr` is listed as conditional (absent on a page filed before it) with how a signed page keeps it, and each of its figure and row keys is catalogued, under the annex version US1334 sets for the release, with no second bump. Fails on: HEAD, where `grep -c release_cfr` prints 0 for the annex and for `sprint_report.py`
+- **Then** `release_cfr` is listed as an always section, with a note under the table that a page filed before it carries none and how a signed page keeps it (D0651, as D0644 ruled for cache_read_trend), and each of its figure and row keys is catalogued, under the annex version US1334 sets for the release, with no second bump. Fails on: HEAD, where `grep -c release_cfr` prints 0 for the annex and for `sprint_report.py`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_annex_catalogues_the_section
 - **Caller:** `tests/test_evidence_annex_report.py`, which holds the annex to every section a filed page carries
 
@@ -137,3 +137,4 @@ the run as the lesson store does.
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Re-grounded against HEAD for run twenty-eight (D0638) |
+| 2026-11-27 | orchestrator (D0545) | AC5 re-ruled under D0651 (always section plus a note, as D0644), and Affects gains `tests/test_evidence_annex_report.py`, whose full fixture the section needs: both raised by the approach panel before coding |
