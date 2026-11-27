@@ -1,6 +1,6 @@
 # US1346: sprint lane brief tells a builder whose unit takes a solution review to write its approach note first and stop
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0756
 > **Created:** 2026-11-26
@@ -31,6 +31,7 @@ what to hand in first, **so that** I do not write code before the plan is agreed
   Fails on: HEAD, whose brief for a 3-point unit under that setting has 0 lines naming an
   approach note or a solution review.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first
+- **Verified:** yes (2026-11-27)
 
 ### AC2: the brief follows the recorded verdict
 
@@ -42,6 +43,7 @@ what to hand in first, **so that** I do not write code before the plan is agreed
   that editing the note voids the GO. Fails on: HEAD, where nothing in sprint.py reads a solution
   review.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict
+- **Verified:** yes (2026-11-27)
 
 ### AC3: the note is named in the hand-in list by the unit's key
 
@@ -51,6 +53,7 @@ what to hand in first, **so that** I do not write code before the plan is agreed
   as `lanes.hand_in_names` keys them for both ids. Fails on: HEAD, where lib/lanes.py has 0
   mentions of an approach and the hand-in list names four files.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_note_is_named_by_the_unit_key
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

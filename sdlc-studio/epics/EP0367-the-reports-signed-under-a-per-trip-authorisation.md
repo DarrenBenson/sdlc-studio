@@ -1,6 +1,6 @@
 # EP0367: The reports signed under a per-trip authorisation disclose the decision that authorised each signature
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 7
 > **Parent:** CR0730
 > **Created:** 2026-11-17
@@ -15,7 +15,7 @@ Decomposed from CR0730. Delivers the work CR0730 requested.
 ## Story Breakdown
 
 - [x] [US1294: A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID](../stories/US1294-a-shipped-command-adds-a-delegation-disclosure-line.md)
-- [ ] [US1295: RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature](../stories/US1295-rpt0029-to-rpt0034-and-the-6-4-0.md)
+- [x] [US1295: RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature](../stories/US1295-rpt0029-to-rpt0034-and-the-6-4-0.md)
 
 ## Acceptance Criteria (Epic Level)
 

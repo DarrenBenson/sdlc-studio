@@ -1,0 +1,6 @@
+UNIT: BG1772
+BRIEF: d64a66093165-c9feaf65
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Ran critic.py record in a fixture with a non-UTF-8 card (role legal) beside a valid qa card. It exits 0 and records the verdict. stderr carries one line that names the card, says critic reads no reviewer from it, and says to save it as UTF-8. An owner knows what happened and what to do. seat_roster still lists legal, so the "critic reads no reviewer" wording and the fragment's "roster and cost anatomy unchanged" sentence are both true. The old "declares no seat" overclaim is gone.

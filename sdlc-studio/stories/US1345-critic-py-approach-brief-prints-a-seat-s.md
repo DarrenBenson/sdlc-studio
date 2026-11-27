@@ -1,6 +1,6 @@
 # US1345: critic.py approach brief prints a seat's review of the approach note, and the code review brief carries none of it
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0756
 > **Created:** 2026-11-26
@@ -31,6 +31,7 @@ same law the code will be judged by, and the code reviewer stays unanchored.
   the code, and a record footer naming `critic.py approach record` with the unit, both verdicts
   and the note path. Fails on: HEAD, where `critic.py approach` is an invalid choice.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against
+- **Verified:** yes (2026-11-27)
 
 ### AC2: an incomplete note is refused before any brief
 
@@ -41,6 +42,7 @@ same law the code will be judged by, and the code reviewer stays unanchored.
   with nothing on stdout, and the complete note prints its brief (the control). Fails on: HEAD,
   which has no such verb.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_an_incomplete_note_is_refused_before_any_brief
+- **Verified:** yes (2026-11-27)
 
 ### AC3: the code review brief carries none of the solution review
 
@@ -52,6 +54,7 @@ same law the code will be judged by, and the code reviewer stays unanchored.
   fresh context that has not read the note. Fails on: HEAD, where no GO can be recorded and
   `critic.py brief` says nothing of a solution review on either stream.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_code_review_brief_carries_none_of_the_solution_review
+- **Verified:** yes (2026-11-27)
 
 ### AC4: the runbook and the catalogue name both commands
 
@@ -63,6 +66,7 @@ same law the code will be judged by, and the code reviewer stays unanchored.
   columns unchanged, and the catalogue entry names both verbs and the ledger. Fails on: HEAD,
   where both pages have 0 mentions of an approach or a solution review.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_runbook_and_the_catalogue_name_both_commands
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

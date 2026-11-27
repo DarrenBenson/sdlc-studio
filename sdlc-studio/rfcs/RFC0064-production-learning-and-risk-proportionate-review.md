@@ -1,6 +1,6 @@
 # RFC-0064: Production learning and risk-proportionate review
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Forced-override:** 2026-11-14: --force waived 1 gate(s) on Accepted - RFC0064 cannot be Accepted: its status is DERIVED from its children, and 2 is/are not yet resolved: CR0695 (Proposed), CR0696 (Proposed). Finish or close them first
 > **Decomposed-into:** CR0695, CR0696
 > **Priority:** High

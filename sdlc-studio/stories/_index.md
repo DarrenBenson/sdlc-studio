@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 153 |
-| Ready | 17 |
+| Ready | 10 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 993 |
+| Done | 1000 |
 | Won't Implement | 96 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -271,8 +271,8 @@
 | [US1231](US1231-the-engineering-brief-carries-the-trd-s-failure.md) | The engineering brief carries the TRD's failure and observability checks for touched components, under a cap | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
 | [US1232](US1232-the-engineering-seat-charter-asks-for-a-finding.md) | The engineering seat charter asks for a finding on an undeclared failure path and a note on a missing section | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
 | [US1233](US1233-the-release-cut-writes-a-committed-record-of.md) | The release cut writes a committed record of each release, with its date and the reports it shipped | Done | EP0339 | 2026-11-17 | 2026-11-17 |
-| [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Ready | EP0339 | 2026-11-17 | 2026-11-17 |
-| [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Ready | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Done | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Done | EP0339 | 2026-11-17 | 2026-11-17 |
 | [US1236](US1236-the-trunk-guidance-tells-the-agent-to-wait.md) | The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first | Done | EP0340 | 2026-11-17 | 2026-11-17 |
 | [US1237](US1237-a-project-sets-the-ci-wait-timeout-and.md) | A project sets the CI wait timeout and the rerun limit in config, with the defaults documented | Done | EP0340 | 2026-11-17 | 2026-11-17 |
 | [US1238](US1238-a-red-ci-run-is-recorded-against-its.md) | A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes | Done | EP0340 | 2026-11-17 | 2026-11-17 |
@@ -332,7 +332,7 @@
 | [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Done | EP0367 | 2026-11-17 | 2026-11-17 |
-| [US1295](US1295-rpt0029-to-rpt0034-and-the-6-4-0.md) | RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Ready | EP0367 | 2026-11-17 | 2026-11-17 |
+| [US1295](US1295-rpt0029-to-rpt0034-and-the-6-4-0.md) | RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Done | EP0367 | 2026-11-17 | 2026-11-17 |
 | [US1296](US1296-both-installers-refuse-on-a-machine-that-cannot.md) | Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1297](US1297-the-config-reader-refuses-without-pyyaml-so-no.md) | The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1298](US1298-the-gate-prerequisite-check-and-every-gate-bearing.md) | The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent | Done | EP0368 | 2026-11-17 | 2026-11-17 |
@@ -382,11 +382,11 @@
 | [US1342](US1342-the-help-and-public-pages-tell-a-6.md) | The help and public pages tell a 6.4 team how to cap a run's spend, answer a cache-read fall and read a release's change failure rate | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
 | [US1343](US1343-the-prd-trd-and-tsd-describe-the-widened.md) | The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
 | [US1344](US1344-a-project-sets-which-units-take-a-solution.md) | A project sets which units take a solution review, and critic.py records a seat's go or changes against the approach note | Ready | EP0385 | 2026-11-26 | 2026-11-26 |
-| [US1345](US1345-critic-py-approach-brief-prints-a-seat-s.md) | critic.py approach brief prints a seat's review of the approach note, and the code review brief carries none of it | Ready | EP0385 | 2026-11-26 | 2026-11-26 |
-| [US1346](US1346-sprint-lane-brief-tells-a-builder-whose-unit.md) | sprint lane brief tells a builder whose unit takes a solution review to write its approach note first and stop | Ready | EP0385 | 2026-11-26 | 2026-11-26 |
+| [US1345](US1345-critic-py-approach-brief-prints-a-seat-s.md) | critic.py approach brief prints a seat's review of the approach note, and the code review brief carries none of it | Done | EP0385 | 2026-11-26 | 2026-11-26 |
+| [US1346](US1346-sprint-lane-brief-tells-a-builder-whose-unit.md) | sprint lane brief tells a builder whose unit takes a solution review to write its approach note first and stop | Done | EP0385 | 2026-11-26 | 2026-11-26 |
 | [US1347](US1347-sprint-lane-land-refuses-a-unit-that-takes.md) | sprint lane land refuses a unit that takes a solution review without an agreed approach | Ready | EP0385 | 2026-11-26 | 2026-11-26 |
-| [US1348](US1348-the-sprint-report-shows-first-round-approval-and.md) | The sprint report shows first-round approval and rounds per unit for units that took the solution review and units that did not | Ready | EP0385 | 2026-11-26 | 2026-11-26 |
-| [US1349](US1349-the-framing-rules-say-a-brief-carries-one.md) | The framing rules say a brief carries one identity, and a test holds every brief the skill prints to it | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
+| [US1348](US1348-the-sprint-report-shows-first-round-approval-and.md) | The sprint report shows first-round approval and rounds per unit for units that took the solution review and units that did not | Done | EP0385 | 2026-11-26 | 2026-11-26 |
+| [US1349](US1349-the-framing-rules-say-a-brief-carries-one.md) | The framing rules say a brief carries one identity, and a test holds every brief the skill prints to it | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1350](US1350-a-project-names-the-seats-on-a-unit.md) | A project names the seats on a unit's approach panel, each records its own verdict in its own rounds, and the approach is agreed only when every one has a GO | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1351](US1351-critic-py-approach-panel-names-one-brief-and.md) | critic.py approach panel names one brief and one reply file per seat, and approach brief frames the unit's stakeholder persona | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1352](US1352-sprint-lane-brief-relays-each-seat-s-reply.md) | sprint lane brief relays each seat's reply to the builder, and this repository seats a three-member approach panel | Ready | EP0386 | 2026-11-27 | 2026-11-27 |

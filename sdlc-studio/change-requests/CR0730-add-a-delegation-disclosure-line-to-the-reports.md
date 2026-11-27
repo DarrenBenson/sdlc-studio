@@ -1,6 +1,6 @@
 # CR-0730: Add a delegation disclosure line to the reports already signed under a per-trip authorisation
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0367
 > **Parent:** RFC0065
 > **Priority:** Medium

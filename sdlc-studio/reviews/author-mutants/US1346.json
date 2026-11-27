@@ -1,0 +1,250 @@
+{
+  "unit": "US1346",
+  "digest": "768e9452d2abd2fd at 443817d049bd",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac49b27f2160cd603/US1346-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M01 the named test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    reason = critic.solution_review_reason(root, uid)\n    if reason is None:\n        return None",
+      "new": "    reason = critic.solution_review_reason(root, uid)\n    if reason is not None:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M02 the section never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        lines += [\"\", *_solution_review_lines(brief[\"id\"], review)]",
+      "new": "        lines += []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M03 a heading dropped from the render",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    headings = \", \".join(f\"`## {h}`\" for h in critic.APPROACH_HEADINGS)",
+      "new": "    headings = \", \".join(f\"`## {h}`\" for h in critic.APPROACH_HEADINGS[:-1])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M04 the hold dropped before any verdict",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "kill; and each sentence you will state, with how you will check it.\", hold]",
+      "new": "kill; and each sentence you will state, with how you will check it.\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M05 the reason dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"{uid} takes a solution review: {review['reason']}.\"]",
+      "new": "f\"{uid} takes a solution review.\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M06 the hand-back no longer says the approach awaits review",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"write {LANE_HAND_IN}/{LANE_HAND_OFF} saying the approach awaits review, stage \"",
+      "new": "f\"write {LANE_HAND_IN}/{LANE_HAND_OFF} saying the work is done, stage \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M07 the either-setting rule read as both",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        review_on, review_error = bool(low or classes), None",
+      "new": "        review_on, review_error = bool(low and classes), None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_named_unit_is_told_to_write_its_note_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M08 the first row read instead of the last",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    latest = ({k: rows[-1][k] for k",
+      "new": "    latest = ({k: rows[0][k] for k",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M09 the ledger's last row read whatever its unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    rows = critic.read_solution_reviews(root, uid)",
+      "new": "    rows = critic.read_solution_reviews(root)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 CHANGES falls through to GO",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if latest and latest[\"verdict\"] == \"GO\":",
+      "new": "    if latest:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 a GO never matched",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if latest and latest[\"verdict\"] == \"GO\":",
+      "new": "    if latest and latest[\"verdict\"] == \"go\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 the changes unquoted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                f\"> {latest['changes']}\",",
+      "new": "                f\"{latest['changes']}\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13 no revised note asked for",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                f\"Revise {note} to answer each change, as the note for the next round.\", hold]",
+      "new": "                hold]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14 the hold dropped after CHANGES",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                f\"Revise {note} to answer each change, as the note for the next round.\", hold]",
+      "new": "                f\"Revise {note} to answer each change, as the note for the next round.\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15 the GO's voiding rule dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                \"Editing the note voids this GO: it is bound to that digest, so a changed note \"",
+      "new": "                \"It is bound to that digest, so a changed note \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16 the GO's note to build to dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"digest {latest['digest']}. Build to {note} as agreed.\"",
+      "new": "f\"digest {latest['digest']}.\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_brief_follows_the_recorded_verdict",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17 the hand-in line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "               if approach else []),",
+      "new": "               if False else []),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_note_is_named_by_the_unit_key",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18 the raw id in place of norm_id",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    return f\"{sdlc_md.norm_id(unit)}-approach.md\"",
+      "new": "    return f\"{unit}-approach.md\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_note_is_named_by_the_unit_key",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19 the approach line named for every unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                                          approach=bool(review))]",
+      "new": "                                          approach=True)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_an_unnamed_brief_keeps_its_four_hand_in_files",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M20 the off short-circuit removed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            review = _solution_review_state(root, contract[\"id\"]) if review_on else None",
+      "new": "            review = _solution_review_state(root, contract[\"id\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_setting_off_reads_nothing_more",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M21 the setting read as always on",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        review_on, review_error = bool(low or classes), None",
+      "new": "        review_on, review_error = True, None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_setting_off_reads_nothing_more",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M22 a malformed setting read as off",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if review_error:\n                raise ValueError(review_error)",
+      "new": "            if False:\n                raise ValueError(review_error)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_malformed_setting_refuses_every_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M23 a malformed setting crashes the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    except ValueError as exc:\n        review_on, review_error = False, str(exc)",
+      "new": "    except KeyError as exc:\n        review_on, review_error = False, str(exc)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_a_malformed_setting_refuses_every_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M24 the state key dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if review:\n            brief[\"solution_review\"] = review",
+      "new": "        if False:\n            brief[\"solution_review\"] = review",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_json_names_the_state_for_a_named_unit_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M25 no verdict read as an empty row",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "              if rows else None)",
+      "new": "              if rows else {})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_json_names_the_state_for_a_named_unit_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T01 test: five hand-in files expected for an unnamed unit",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py",
+      "old": "        self.assertEqual(len(listed), 4, listed)",
+      "new": "        self.assertEqual(len(listed), 5, listed)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_an_unnamed_brief_keeps_its_four_hand_in_files",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T02 test: the note expected before the claims file",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py",
+      "old": "        self.assertLess(names.index(claims), names.index(NOTE_PATH))",
+      "new": "        self.assertGreater(names.index(claims), names.index(NOTE_PATH))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_lane_brief.py::SolutionReviewLaneBriefTests::test_the_note_is_named_by_the_unit_key",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

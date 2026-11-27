@@ -1,0 +1,52 @@
+{
+  "unit": "BG1772",
+  "digest": "8514f58da0f9e437 at 5fc68d712d68",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac0c1466f84ec4dcf/BG1772-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "old wording",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so critic reads no reviewer from it: skipped \"",
+      "new": "so it declares no seat: skipped \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declared_reviewers_bad_card.py::DeclaredReviewersBadCardTests::test_the_warning_claims_no_seat_for_a_card_whose_role_the_resolver_still_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no save hint",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"(save it as UTF-8)\"",
+      "new": "f\"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declared_reviewers_bad_card.py::DeclaredReviewersBadCardTests::test_the_warning_claims_no_seat_for_a_card_whose_role_the_resolver_still_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no critic scope",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "so critic reads no reviewer from it",
+      "new": "so it is skipped",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declared_reviewers_bad_card.py::DeclaredReviewersBadCardTests::test_the_warning_claims_no_seat_for_a_card_whose_role_the_resolver_still_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warn each call",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if str(card) not in _UNDECODABLE_CARDS:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declared_reviewers_bad_card.py::DeclaredReviewersBadCardTests::test_the_warning_is_given_once_however_often_the_seats_are_resolved",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "except wrong",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "except ValueError:  # UnicodeDecodeError",
+      "new": "except KeyError:  # UnicodeDecodeError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_declared_reviewers_bad_card.py::DeclaredReviewersBadCardTests::test_the_bad_card_is_skipped_and_the_valid_cards_beside_it_are_read",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

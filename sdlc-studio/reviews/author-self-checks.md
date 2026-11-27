@@ -935,3 +935,14 @@
 | US1348 | Dani Okafor (engineering) | 2026-11-27 | TRUE 18, FALSE 0, UNVERIFIABLE 0 | killed 32, survived 0 | 028ad236796efe49 at e9d81a033346 |
 | BG1768 | Dani Okafor (engineering) | 2026-11-27 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 51, survived 0 | 570e3688315d30f6 at ba7a16f07fa1 |
 | US1234 | Dani Okafor (engineering) | 2026-11-27 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 55, survived 0 | a8859dd6081d6613 at 0f99dbdb230e |
+| BG1772 | Dani Okafor (engineering) | 2026-11-27 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 0 | 1b476a97b1cb9d8f at dadca12a7e02 |
+| US1344 | Dani Okafor (engineering) | 2026-11-27 | TRUE 19, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 0 | 24f9d8d3fdd82dee at 517e83e148c3 |
+| US1348 | Dani Okafor (engineering) | 2026-11-27 | TRUE 18, FALSE 0, UNVERIFIABLE 0 | killed 24, survived 0 | 1616fdfe0fd362c2 at ae62136b7070 |
+| US1295 | Dani Okafor (engineering) | 2026-11-27 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 23, survived 0 | 3684fa24b52bca29 at 376015221d03 |
+| US1345 | Dani Okafor (engineering) | 2026-11-27 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 44, survived 0 | 87857d9edad83a42 at 443817d049bd |
+| US1346 | Dani Okafor (engineering) | 2026-11-27 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 27, survived 0 | 768e9452d2abd2fd at 443817d049bd |
+| BG1772 | Dani Okafor (engineering) | 2026-11-27 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | 8514f58da0f9e437 at 5fc68d712d68 |
+| US1344 | Dani Okafor (engineering) | 2026-11-27 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 14d2870408dcc02c at c290d42efcb4 |
+| US1235 | Dani Okafor (engineering) | 2026-11-27 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 38, survived 0 | e2f6e5b8d911a772 at ed588377dfa7 |
+| US1350 | Dani Okafor (engineering) | 2026-11-27 | TRUE 12, FALSE 0, UNVERIFIABLE 1 | killed 32, survived 0 | 9e0bdf1e31ea49e8 at abfeeca766bc |
+| US1349 | Dani Okafor (engineering) | 2026-11-27 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 24, survived 0 | 2589bddb2413b597 at d4b7a132757f |

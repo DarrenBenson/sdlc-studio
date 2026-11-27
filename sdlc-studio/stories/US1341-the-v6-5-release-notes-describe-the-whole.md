@@ -4,7 +4,7 @@
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1338, US1339, US1340, US1233, US1234, US1235, US1294, US1295, BG1764
+> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1338, US1339, US1340, US1233, US1234, US1235, US1294, US1295, BG1764, US1344, US1345, US1346, US1347, US1348, US1349, US1350, US1351, US1352, US1353, BG1768
 > **Affects:** docs/release-notes-v6.5.0.md, tools/tests/test_lean_release_notes_v65.py, changelog.d/US1341.md
 > **Epic:** EP0379
 > **Points:** 3
@@ -149,6 +149,25 @@ carry.
 - **Caller:** `tools/known_issues.py write --release 6.5.0`, which fills the count line at the
   cut (`NOTES_TEMPLATE`)
 
+### AC6: the lead names the solution review, and the upgrade path names its keys
+
+- **Given** docs/release-notes-v6.5.0.md once US1344 to US1353 and BG1768 are Done
+- **When** the first section, the Sources table and the 'Upgrading from 6.4' section are read
+- **Then** the first section holds one more theme bullet for the solution review, naming exactly
+  US1344 to US1353 and BG1768 and no decision. It says a builder's approach note can be reviewed
+  before any code is written; that the step ships off (`review.solution_review.min_points` 0 and
+  `review.solution_review.risk_classes` empty) and the lines that turn it on; each `critic.py
+  approach` verb, as its parser reads it; that `sprint lane land` refuses a named unit until a GO
+  stands on the note as it is; and that the code review brief carries none of the note. It states
+  no measured figure. The Sources table gains the theme's row, and the upgrade path's list of the
+  keys 6.5 adds names `review.solution_review.min_points`, `review.solution_review.risk_classes`
+  and `review.solution_review.panel`, each with the default `reference-config.md` states.
+  `THEMES` and `NEW_KEYS` widen to match. Fails on: the notes at HEAD `f946c5460`, which name no
+  solution review (`grep -ciE 'solution.review|approach (brief|record|panel|spend)'` prints 0),
+  and the existing lead and upgrade checks, which refuse a planted solution review bullet and key.
+- **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys
+- **Caller:** n/a: the subject is the page
+
 ## Notes
 
 - Serves: Abena Osei, End goal 3, verbatim from her card: "Know what each team's delivery
@@ -190,3 +209,4 @@ carry.
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | product seat | Groomed for run twenty-eight under D0638 |
 | 2026-11-26 | orchestrator | Names RPT0029 beside RPT0030 to RPT0034 (D0640) |
+| 2026-11-27 | product seat (D0545) | Adds AC6 and the EP0385 and EP0386 dependencies under D0652: the operator added the solution review to 6.5 (D0646, D0648) after these notes were groomed, and they named none of it |

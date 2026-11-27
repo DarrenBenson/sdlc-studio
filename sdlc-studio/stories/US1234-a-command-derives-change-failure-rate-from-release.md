@@ -1,6 +1,6 @@
 # US1234: A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1233, US1294
 > **Risk-class:** elevated
 > **Delivers:** CR0695
@@ -41,6 +41,7 @@ a third verb there: `escape.py failure-rate`.
 - **When** `escape.py failure-rate --since 2026-01-01 --until 2026-03-31` runs, as text and with `--format json`
 - **Then** it states 25% (1 of 4 releases), names the four releases counted, names 1.1.0 as failed with IS0001 and BG0001, and names the window 2026-01-01 to 2026-03-31 and the 14-day settling period; the JSON carries the same values. Fails on: HEAD, where `escape.py failure-rate` exits 2 with `invalid choice: 'failure-rate' (choose from 'trace', 'to-class')`; a bare percentage; or a release counted as failed for an escaped bug no incident names
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_rate_names_the_releases_counted_the_incident_and_the_window
+- **Verified:** yes (2026-11-27)
 - **Caller:** `escape.py failure-rate`, the operator's command; `sprint_report.py` and `retro.py seats` call the same function (US1235)
 
 ### AC2: a release inside the settling period is pending
@@ -49,6 +50,7 @@ a third verb there: `escape.py failure-rate`.
 - **When** the command runs over the same window, then again with `--settle-days 3`
 - **Then** the first run lists 1.4.0 as pending inside the 14-day settling period, in neither the releases counted nor the failed ones, and still states 25% (1 of 4); the second counts 1.4.0 as settled and states 20% (1 of 5). Fails on: HEAD, which has no such verb; or a young release counted as a success, which lowers the rate before an incident could be linked
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_a_release_younger_than_the_settling_period_is_pending
+- **Verified:** yes (2026-11-27)
 - **Caller:** `escape.py failure-rate --settle-days N`
 
 ### AC3: no release record, or no incident record, reads not measured and never 0%
@@ -57,6 +59,7 @@ a third verb there: `escape.py failure-rate`.
 - **When** the command runs in each
 - **Then** the first two print `not measured:` with a reason naming what is absent (no release record in the window; no incident recorded) and no percentage, each exiting 0, and the third states 0% (0 of 4) naming the four releases. Fails on: HEAD, which has no such verb; 0% for a project that records no incident; or not measured where incidents are recorded and none is linked
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_no_release_or_no_incident_record_reads_not_measured
+- **Verified:** yes (2026-11-27)
 - **Caller:** `escape.py failure-rate`; US1235 carries the same reason onto the report
 
 ### AC4: the help names the command and how its rate differs from the deploy ledger's
@@ -65,6 +68,7 @@ a third verb there: `escape.py failure-rate`.
 - **When** they are read
 - **Then** the deploy help's Commands table has a row for `escape.py failure-rate` naming its window and settling period flags and defaults, its sources (the release records `release_cut.py changelog-cut` writes and incident issues linked through the escaped bugs they were triaged into), and saying it counts releases with a linked incident where `deploy.py metrics` counts `failed` and `rolled-back` rows of the deploy ledger; and the reference section names the verb. Fails on: HEAD, where `grep -c failure-rate` prints 0 for both files, leaving two figures called change failure rate with nothing to tell them apart
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_change_failure_rate.py::ChangeFailureRateTests::test_the_deploy_help_names_the_command_and_its_sources
+- **Verified:** yes (2026-11-27)
 - **Caller:** `help/deploy.md`, the page `/sdlc-studio deploy` loads, and `reference-scripts-review.md`, the script catalogue
 
 ---
@@ -126,9 +130,9 @@ a third verb there: `escape.py failure-rate`.
 
 ---
 
-## Open Questions
+## Resolved Questions
 
-- [ ] Are a 90-day window and a 14-day settling period the defaults the board wants? Each is one constant and a flag. - Owner: operator
+- [x] Are a 90-day window and a 14-day settling period the defaults the board wants? Each is one constant and a flag. - Owner: operator. Resolved by D0653: both stay the defaults for 6.5; a board sets other periods per run with the flags.
 
 ---
 
@@ -139,3 +143,4 @@ a third verb there: `escape.py failure-rate`.
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Re-grounded against HEAD for run twenty-eight (D0638) |
 | 2026-11-26 | orchestrator | Affects names sdlc-studio/reviews/command-audit.md (and, for US1333, `test_artifact.py`), the registry the plan says a new flag implies |
+| 2026-11-27 | orchestrator (D0545) | The open question on the 90-day window and the 14-day settling period is resolved by D0653 |

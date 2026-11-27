@@ -1,0 +1,349 @@
+{
+  "unit": "US1235",
+  "digest": "e2f6e5b8d911a772 at ed588377dfa7",
+  "report": "sdlc-studio/.local/lane/landed/agent-aa0389ba56e11dcbf/US1235-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "window ends today",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "got = release_rate(root, end.date().isoformat())",
+      "new": "got = release_rate(root, None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rows over the failed releases",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "                     for v in got[\"counted\"]])",
+      "new": "                     for v in [f[\"release\"] for f in got[\"failed\"]]])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "failed release not folded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if hit is None:\n        return version",
+      "new": "    if True:\n        return version",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "counts swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "({len(got['failed'])} of {len(got['counted'])} releases)",
+      "new": "({len(got['counted'])} of {len(got['failed'])} releases)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "source not the record file",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    return {**got, \"source\": release_cut.RELEASES_REL}",
+      "new": "    return {**got, \"source\": \"sdlc-studio/\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section off by default",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "release_cfr_rule: bool = True, filed_release_cfr",
+      "new": "release_cfr_rule: bool = False, filed_release_cfr",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "left out of APPENDIX",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"dora\", \"release_cfr\", \"calibration\"",
+      "new": "\"dora\", \"calibration\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal raised through the close",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except escape.RateRefused as exc:",
+      "new": "    except KeyError as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window clause on a refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    return (f\"{got['not_measured']}; window {_cfr_window(got)}\" if \"since\" in got",
+      "new": "    return (f\"{got['not_measured']}; window {_cfr_window(got)}\" if True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "window clause dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    return (f\"{got['not_measured']}; window {_cfr_window(got)}\" if \"since\" in got",
+      "new": "    return (f\"{got['not_measured']}; window {_cfr_window(got)}\" if False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "measured check inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if got[\"rate_percent\"] is None:\n        return _section(\"release_cfr\"",
+      "new": "    if got[\"rate_percent\"] is not None:\n        return _section(\"release_cfr\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "0% read as not measured",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if got[\"rate_percent\"] is None:\n        return _section(\"release_cfr\"",
+      "new": "    if not got[\"rate_percent\"]:\n        return _section(\"release_cfr\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal suffix dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "f\"{exc}; nothing is counted until the record file is corrected, \"",
+      "new": "f\"{exc}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "signed page not replayed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        _release_cfr_section(root, end, readings[\"release_cfr\"] if filed is not None",
+      "new": "        _release_cfr_section(root, end, None if filed is not None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replay ignored by the section",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if replay is not None:\n        return replay\n    got = release_rate",
+      "new": "    if False:\n        return replay\n    got = release_rate",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page readings key misread",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if s.get(\"key\") == \"release_cfr\"), None),",
+      "new": "if s.get(\"key\") == \"release_cfr_\"), None),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_page_readings_carry_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-page readings lack the key",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"effort\": None, \"release_cfr\": None}",
+      "new": "\"effort\": None}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_page_readings_carry_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unsigned page's own not replayed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "                             else filed_release_cfr) if release_cfr_rule else None,",
+      "new": "                             else None) if release_cfr_rule else None,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_an_unsigned_page_replays_its_own_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "revalidate hands no page section",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "filed_release_cfr=_page_readings(stored)[\"release_cfr\"],",
+      "new": "filed_release_cfr=None,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_an_unsigned_page_replays_its_own_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule always on at re-derivation",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "release_cfr_rule=bool(_section_of(basis, \"release_cfr\")),",
+      "new": "release_cfr_rule=True,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_page_filed_without_the_section_stays_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule read from the disk page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "release_cfr_rule=bool(_section_of(basis, \"release_cfr\")),",
+      "new": "release_cfr_rule=bool(_section_of(stored, \"release_cfr\")),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_page_filed_without_the_section_stays_without_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nouns fixed singular, first only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "{plural('incident', hit['incidents'])}; {plural('bug', hit['bugs'])}",
+      "new": "incident {hit['incidents'][0]}; bug {hit['bugs'][0]}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_two_incidents_and_two_bugs_read_plural",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pending left off the figure",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "pending: {', '.join(got['pending']) or 'none'}",
+      "new": "pending: none",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_window_and_the_settling_period_are_the_commands",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scorecard words always measured",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if got[\"rate_percent\"] is None:\n        return f\"not measured",
+      "new": "    if False:\n        return f\"not measured",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scorecard drops the releases counted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    return f\"{_cfr_rate(got)}; counted: {counted}\"",
+      "new": "    return _cfr_rate(got)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scorecard window ends today",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "sprint_report.release_rate(root, misses[\"window\"][\"until\"])",
+      "new": "sprint_report.release_rate(root, None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-Date clause dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "f\"today\" if window.get(\"until\") is None else \"\")",
+      "new": "f\"today\" if False else \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-Date clause on a dated retro",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "f\"today\" if window.get(\"until\") is None else \"\")",
+      "new": "f\"today\" if window.get(\"until\") is not None else \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scorecard line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    out.append(f\"  release change failure rate {sprint_report.release_rate_words(rate)}",
+      "new": "    (f\"  release change failure rate {sprint_report.release_rate_words(rate)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Markdown block not behind present",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "<!-- when: release_cfr_present -->",
+      "new": "<!-- when: dora_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "HTML block not behind present",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<!-- when: release_cfr_present -->",
+      "new": "<!-- when: dora_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Markdown NOT MEASURED reason dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "NOT MEASURED - {{release_cfr_reason}}",
+      "new": "NOT MEASURED",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "HTML NOT MEASURED reason dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "</b> - {{release_cfr_reason}}</p>",
+      "new": "</b></p>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "HTML rows dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "    <li>{{cfr_release}}</li>",
+      "new": "    <li></li>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Markdown rows dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "- {{cfr_release}}",
+      "new": "-",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex lists it conditional",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `release_cfr` | Release change failure rate | appendix | always | - |",
+      "new": "| `release_cfr` | Release change failure rate | appendix | conditional | filed before |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex figure key misnamed",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `release_cfr` | `cfr_rate` |",
+      "new": "| `release_cfr` | `cfr_ratio` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex note's keeping clause dropped",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "signed one keeps the figures it was filed with",
+      "new": "signed one re-reads its records",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_annex_catalogues_the_section",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

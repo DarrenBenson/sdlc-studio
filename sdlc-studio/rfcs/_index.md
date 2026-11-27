@@ -8,10 +8,10 @@
 | --- | --- |
 | Draft | 1 |
 | In Review | 1 |
-| Accepted | 26 |
+| Accepted | 24 |
 | Superseded | 2 |
 | Withdrawn | 3 |
-| Delivered | 36 |
+| Delivered | 38 |
 | **Total** | **69** |
 
 ## All RFCs
@@ -26,8 +26,8 @@
 | [RFC-0061](RFC0061-personas-become-accountable-team-members-each-keeps-its.md) | Personas become accountable team members: each keeps its own memory, learns from its own verdicts at the retro, and passes a persona review before it is trusted | High | Accepted | Claude Opus 5.5 | 2026-10-09 | CR0631, CR0632, CR0633, CR0634 |
 | [RFC-0062](RFC0062-token-efficient-delivery-a-sprint-costs-at-most.md) | Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness | High | Accepted | Claude Opus 5.5 | 2026-11-06 | CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683 |
 | [RFC-0063](RFC0063-human-in-the-lead-the-accountable-engineering-lead.md) | Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-09 | CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702, CR0704, CR0706 |
-| [RFC-0064](RFC0064-production-learning-and-risk-proportionate-review.md) | Production learning and risk-proportionate review | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-10 | CR0695, CR0696 |
-| [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Accepted | sdlc-studio | 2026-11-17 | CR0729, CR0730 |
+| [RFC-0064](RFC0064-production-learning-and-risk-proportionate-review.md) | Production learning and risk-proportionate review | High | Delivered | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-10 | CR0695, CR0696 |
+| [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Delivered | sdlc-studio | 2026-11-17 | CR0729, CR0730 |
 | [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Delivered | sdlc-studio | 2026-11-17 | CR0731 |
 | [RFC-0067](RFC0067-what-the-skill-should-learn-from-estate-scale.md) | What the skill should learn from estate-scale autonomous delivery: impact analysis before refine, tests before brownfield change, runtime inputs and running-app evidence | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0735, CR0736, CR0737, CR0738 |
 | [RFC-0068](RFC0068-should-the-canonical-skill-source-move-out-of.md) | Should the canonical skill source move out of .claude/skills/ to a harness-neutral path | Low | Draft | sdlc-studio | 2026-11-18 | -- |

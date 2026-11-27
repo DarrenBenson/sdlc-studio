@@ -4,7 +4,7 @@
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1338, US1339, US1340, US1233, US1234, US1235, US1294, US1295, BG1764
+> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1338, US1339, US1340, US1233, US1234, US1235, US1294, US1295, BG1764, US1344, US1345, US1346, US1347, US1348, US1349, US1350, US1351, US1352, US1353
 > **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_specs_v65.py, tools/tests/test_lean_trd_refresh.py, changelog.d/US1343.md
 > **Epic:** EP0379
 > **Points:** 5
@@ -141,6 +141,24 @@ Non-Goals hold, so it rewrites no section.
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_spend_breaker_and_change_failure_rate
 - **Caller:** n/a: the subject is the specification
 
+### AC6: the PRD and the TRD name the solution review, its keys and its ledger
+
+- **Given** the PRD's Feature Inventory and Feature Flags and the TRD's committed records table,
+  once US1344 to US1353 are Done
+- **When** they are read
+- **Then** the PRD's 'v5 and v6 capabilities' inventory gains one Complete row for the solution
+  review naming US1344 to US1353, with a Location that resolves and no `<script>.py <verb>` its
+  script lacks; the Feature Flags table lists `review.solution_review.min_points`,
+  `review.solution_review.risk_classes` and `review.solution_review.panel`, each at the default
+  `reference-config.md` states, with the flags introduction's count of keys that ship off kept
+  true; and the TRD's committed records table gains a row for the ledger at the path
+  `critic.SOLUTION_REVIEW_FILE` gives, its writer `critic.py approach record`, held by
+  `test_lean_trd_refresh.pending_records()` until this repository tracks the ledger. `FEATURES`
+  and `FLAGS` gain the row and the keys. Fails on: the PRD and the TRD at HEAD `f946c5460`, which
+  name no solution review and no `solution-reviews.md`.
+- **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review
+- **Caller:** `tools/tests/test_lean_trd_refresh.py`'s records sweep
+
 ## Notes
 
 - Serves: Abena Osei, End goals 1, 2 and 3 (quoted under story 1), and Rowan Achterberg, who
@@ -176,3 +194,4 @@ Non-Goals hold, so it rewrites no section.
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | product seat | Groomed for run twenty-eight under D0638 |
 | 2026-11-26 | orchestrator | Names RPT0029 beside RPT0030 to RPT0034 (D0640) |
+| 2026-11-27 | product seat (D0545) | Adds AC6 and the EP0385 and EP0386 dependencies under D0652: the operator added the solution review to 6.5 (D0646, D0648) after this story was groomed, and US1344 left its keys and its ledger's TRD row to the release paperwork |

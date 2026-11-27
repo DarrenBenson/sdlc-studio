@@ -1,6 +1,6 @@
 # RFC-0065: Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature
 
-> **Status:** Accepted
+> **Status:** Delivered
 > **Forced-override:** 2026-11-17: --force waived 1 gate(s) on Accepted - RFC0065 cannot be Accepted: its status is DERIVED from its children, and 2 is/are not yet resolved: CR0729 (Proposed), CR0730 (Proposed). Finish or close them first
 > **Decomposed-into:** CR0729, CR0730
 > **Evidence:** audit AUDIT-2026-11-17, project profile, rfc lens, survived 3 of 3 refute votes; observed at sdlc-studio/decisions.md D0467, D0472, D0475, D0479 (rows dated 2026-11-12 to 2026-11-15) against sdlc-studio/rfcs/RFC0060-the-dark-factory-a-sprint-that-decides-for.md line 204 (Open Decisions, D6) and RFC0051's Decision / D0059

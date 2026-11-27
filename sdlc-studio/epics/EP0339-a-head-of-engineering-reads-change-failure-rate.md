@@ -1,6 +1,6 @@
 # EP0339: A head of engineering reads change failure rate per release beside escapes per 100 points
 
-> **Status:** In Progress
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0695
 > **Created:** 2026-11-17
@@ -15,8 +15,8 @@ Decomposed from CR0695. Delivers the work CR0695 requested.
 ## Story Breakdown
 
 - [x] [US1233: The release cut writes a committed record of each release, with its date and the reports it shipped](../stories/US1233-the-release-cut-writes-a-committed-record-of.md)
-- [ ] [US1234: A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured](../stories/US1234-a-command-derives-change-failure-rate-from-release.md)
-- [ ] [US1235: The sprint report and the seat scorecard show the release change failure rate, naming its source records](../stories/US1235-the-sprint-report-and-the-seat-scorecard-show.md)
+- [x] [US1234: A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured](../stories/US1234-a-command-derives-change-failure-rate-from-release.md)
+- [x] [US1235: The sprint report and the seat scorecard show the release change failure rate, naming its source records](../stories/US1235-the-sprint-report-and-the-seat-scorecard-show.md)
 
 ## Acceptance Criteria (Epic Level)
 

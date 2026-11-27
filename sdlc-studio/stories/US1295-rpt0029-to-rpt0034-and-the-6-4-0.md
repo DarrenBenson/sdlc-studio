@@ -1,6 +1,6 @@
 # US1295: RPT0029 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1294
 > **Risk-class:** standard
 > **Delivers:** CR0730
@@ -48,6 +48,7 @@ and regenerates the two records built from them. Nothing is re-signed.
 - **When** each report's JSON and Markdown twin are read and `sprint_report.py check` runs on each
 - **Then** each JSON signature block carries `delegated: true` and its decision from the table, each twin's Signed by cell says the signature was entered under delegation and names that decision, each report's fingerprint is the one its tracked run record signed, the six run records are unchanged, and each check prints VALID. Fails on: HEAD, where none of the six signature blocks carries `delegated` (RPT0035 is the first that does) and each twin's Signed by cell reads `Darren Benson` alone; a decision that does not cover that run; or a report the amendment left INVALID
 - **Verify:** pytest tools/tests/test_lean_delegated_reports_disclosed.py::DelegatedReportsDisclosedTests::test_each_delegated_report_names_its_decision_and_checks_valid
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py disclose` (US1294) writes the disclosure; `sprint_report.py check` and `sprint_report.py evidence` read it
 
 ### AC2: the 6.4.0 evidence pack and the evidence page name the delegated signatures
@@ -56,6 +57,7 @@ and regenerates the two records built from them. Nothing is re-signed.
 - **When** the pack's Accountable lines and the page's rows are read, and `sprint_report.py evidence --out docs/evidence.md --check` runs
 - **Then** every Accountable line of a change from RPT0029 to RPT0034 says the signature on its report was entered under delegation and names that report's decision, no Accountable line of a change from RPT0028 says so, the pack's header names the seven reports, the page's rows for RUN-01M78TKD, RUN-01M7E52T, RUN-01M7EYR3, RUN-01M7GEHM and RUN-01M7HA6R name the delegation and the same decisions, and `--check` exits 0. Fails on: HEAD, where none of the pack's 108 Accountable lines says "entered under delegation" and `docs/evidence.md` names no delegation (`grep -ci delegat` prints 0); a pack that shows the five signatures as entered by the operator; or a page edited by hand away from its generator
 - **Verify:** pytest tools/tests/test_lean_delegated_reports_disclosed.py::DelegatedReportsDisclosedTests::test_the_evidence_pack_and_page_name_the_delegated_signatures
+- **Verified:** yes (2026-11-27)
 - **Caller:** `release_cut.py evidence-pack` and `sprint_report.py evidence`, which write the two records; `release_cut.py tag-check` judges the page at the 6.5.0 tag
 
 ---

@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 2 |
 | Approved | 0 |
-| In Progress | 79 |
-| Complete | 567 |
+| In Progress | 77 |
+| Complete | 569 |
 | Rejected | 36 |
 | Deferred | 8 |
 | Superseded | 66 |
@@ -106,7 +106,7 @@
 | [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | Complete | High | feature | 2026-11-10 | EP0308 |
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Complete | High | feature | 2026-11-10 | EP0309 |
 | [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306, CR0703 |
-| [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | In Progress | High | feature | 2026-11-10 | EP0339 |
+| [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Complete | High | feature | 2026-11-10 | EP0339 |
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Complete | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Complete | High | enhancement | 2026-11-10 | EP0340 |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | In Progress | Medium | enhancement | 2026-11-10 | EP0341 |
@@ -141,7 +141,7 @@
 | [CR-0727](CR0727-remove-the-superseded-review-seat-charter-template-now.md) | Remove the superseded review-seat-charter template now that nothing references it | In Progress | Low | Improvement | 2026-11-17 | EP0315 |
 | [CR-0728](CR0728-carry-each-changelog-fragment-s-unit-id-into.md) | Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut | In Progress | Low | Improvement | 2026-11-17 | EP0365 |
 | [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | Complete | High | Improvement | 2026-11-17 | EP0366 |
-| [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | In Progress | Medium | Improvement | 2026-11-17 | EP0367 |
+| [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | Complete | Medium | Improvement | 2026-11-17 | EP0367 |
 | [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | Complete | High | Improvement | 2026-11-17 | EP0368 |
 | [CR-0732](CR0732-a-high-risk-unit-s-review-records-the.md) | A high-risk unit's review records the model family of its author and its reviewer, and a project can require the two to differ | In Progress | Medium | Feature | 2026-11-17 | EP0369 |
 | [CR-0733](CR0733-the-handoff-states-each-remaining-item-s-points.md) | The handoff states each remaining item's points and the seat it needs, and totals them | In Progress | Low | Improvement | 2026-11-17 | EP0370 |

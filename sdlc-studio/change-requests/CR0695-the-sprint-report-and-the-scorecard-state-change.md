@@ -1,6 +1,6 @@
 # CR-0695: The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0339
 > **Parent:** RFC0064
 > **Depends on:** CR0693

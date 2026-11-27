@@ -1,0 +1,295 @@
+{
+  "unit": "US1350",
+  "digest": "9e0bdf1e31ea49e8 at abfeeca766bc",
+  "report": "sdlc-studio/.local/lane/landed/agent-a44ba72160441c5c7/US1350-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 the unset gate in the recorder inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not panel:\n        return None\n",
+      "new": "    if panel:\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 the no-seat guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat is None:\n        raise ValueError(f\"the reviewer {reviewer!r} names no",
+      "new": "    if False:\n        raise ValueError(f\"the reviewer {reviewer!r} names no",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 the on-panel check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat not in seats:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 the persona-name check at record dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if _panel_seat(reviewer, key) is None:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 the roster check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if name not in roster and name != _PERSONA:\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 persona dropped from what an entry may be",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if name not in roster and name != _PERSONA:\n",
+      "new": "        if name not in roster:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 the list check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not isinstance(raw, list):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_malformed_panel_is_refused_by_name_before_the_rule_and_the_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 entries no longer stripped and lower-cased",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        name = entry.strip().lower() if isinstance(entry, str) else None\n",
+      "new": "        name = entry if isinstance(entry, str) else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_entries_are_normalised_and_every_card_counts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 duplicates kept",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if name not in seats:\n            seats.append(name)\n",
+      "new": "        seats.append(name)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_entries_are_normalised_and_every_card_counts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 the reserved persona check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if name == _PERSONA and _PERSONA in roster:\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_persona_is_reserved_only_when_the_panel_names_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 the reserved persona check widened to every set panel",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if name == _PERSONA and _PERSONA in roster:\n",
+      "new": "        if _PERSONA in roster:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_persona_is_reserved_only_when_the_panel_names_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 the panel validated nowhere in the settings",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    solution_review_panel(repo_root)\n    return low, names\n",
+      "new": "    return low, names\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_malformed_panel_is_refused_by_name_before_the_rule_and_the_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13 the legacy amigos roles left out of the roster",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    own = (set(roster) | {role for role, _ in _declared_reviewers(repo_root)}) - set(shipped)\n",
+      "new": "    own = set(roster) - set(shipped)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_entries_are_normalised_and_every_card_counts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14 the shipped seats not listed first",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    shipped = [s for s in roster if s in persona_resolve.SEATS]\n",
+      "new": "    shipped = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15 the building seat not skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if seat == builder:\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16 persona not skipped for a unit with no Persona",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        elif seat == _PERSONA and not _persona_key(persona):\n",
+      "new": "        elif False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17 the lane's building seat ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    builder = run_state.lane_seat(repo_root, unit) or BUILD_SEAT\n    seats: list[str] = []\n",
+      "new": "    builder = BUILD_SEAT\n    seats: list[str] = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_building_seat_is_read_from_the_lane",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18 a persona cell sits whatever its name",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return seat if _persona_key(name) == persona else None\n",
+      "new": "    return seat\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19 the persona name matched without normalising",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return re.sub(r\"[^a-z0-9]\", \"\", (name or \"\").lower())\n",
+      "new": "    return (name or \"\").strip()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_persona_seat_follows_the_units_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M20 rounds counted across seats under a panel",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return 1 + sum(1 for row in rows if seat_of(row[\"reviewer\"]) == seat)\n",
+      "new": "    return len(rows) + 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_each_seat_numbers_its_own_rounds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M21 the seat filter on rounds dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return 1 + sum(1 for row in rows if seat_of(row[\"reviewer\"]) == seat)\n",
+      "new": "    return 1 + sum(1 for row in rows)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_each_seat_numbers_its_own_rounds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M22 the unset round path removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat_of is None:\n        return len(rows) + 1\n",
+      "new": "    if False:\n        return len(rows) + 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_each_seat_numbers_its_own_rounds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M23 the unset state read through the panel",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not panel:\n        ok, why = _last_row_agreed(rows, unit, now)\n",
+      "new": "    if False:\n        ok, why = _last_row_agreed(rows, unit, now)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M24 a set panel that seats nobody read as unset",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not seats:\n        return {**state, \"agreed\": False, \"why\": _panel_text(panel, seats, skipped, unit)}\n",
+      "new": "    if not seats:\n        ok, why = _last_row_agreed(rows, unit, now)\n        return {**state, \"agreed\": ok, \"why\": why}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M25 a CHANGES not counted against a seat",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        elif row[\"verdict\"] != \"GO\":\n",
+      "new": "        elif False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M26 the digest compare against the note dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        elif now is not None and row[\"digest\"] != now:\n",
+      "new": "        elif False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M27 the one-digest check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not problems and len({latest[seat][\"digest\"] for seat in seats}) > 1:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_panel_state_without_a_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M28 a row off the panel taken into latest",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if seat in latest:\n",
+      "new": "        if seat is not None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_panel_state_without_a_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M29 the persona's name left out of the reasons",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return f\" ({persona})\" if seat == _PERSONA else \"\"\n",
+      "new": "        return \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M30 a row's seat read by seat_for's name heuristic",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seat = recorded_seat(cell)\n    if seat != _PERSONA:\n",
+      "new": "    seat = seat_for(Path('.'), cell) or recorded_seat(cell)\n    if seat != _PERSONA:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M31 approach_agreed raises a malformed panel",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    try:\n        state = panel_state(repo_root, unit, note)\n    except ValueError as exc:\n        return False, str(exc)\n",
+      "new": "    state = panel_state(repo_root, unit, note)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_malformed_panel_is_refused_by_name_before_the_rule_and_the_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M32 the unset digest compare dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if now is not None and last[\"digest\"] != now:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

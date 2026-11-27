@@ -1,6 +1,6 @@
 # US1349: The framing rules say a brief carries one identity, and a test holds every brief the skill prints to it
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0757
 > **Created:** 2026-11-27
@@ -36,6 +36,7 @@ As an engineering lead whose orchestrator delegates to subagents, I want every b
   reads "**Guard.** None yet: CR0748 asks every brief the skill ships to name a seat and refuse one
   that does not." (E11)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_framing_rules_say_one_identity_per_brief
+- **Verified:** yes (2026-11-27)
 
 ### AC2: story creation, epic creation and the amigo panel seat one agent per seat
 
@@ -60,6 +61,7 @@ As an engineering lead whose orchestrator delegates to subagents, I want every b
   and the panel printed `take these 1 question(s) to the panel:` as its second line and no resolve
   command (E12)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_create_workflows_and_the_panel_seat_one_agent_per_seat
+- **Verified:** yes (2026-11-27)
 
 ### AC3: a merged brief reads two identities, and a quoted one reads none
 
@@ -77,6 +79,7 @@ As an engineering lead whose orchestrator delegates to subagents, I want every b
   brief's seat line) assert it is present, never a count (E18); the prototype reader gave the
   lane brief plus a `>`-quoted qa sentence one identity, and the merged texts two (E13)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_a_merged_brief_reads_two_identities
+- **Verified:** yes (2026-11-27)
 
 ### AC4: every brief the skill prints carries exactly one identity, and the panel none
 
@@ -97,6 +100,7 @@ As an engineering lead whose orchestrator delegates to subagents, I want every b
   `approach brief` is (E5), so one generator cannot run; and no module runs any two generators side
   by side (E18)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_every_brief_the_skill_prints_carries_one_identity
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

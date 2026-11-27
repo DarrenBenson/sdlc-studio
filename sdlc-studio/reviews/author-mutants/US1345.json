@@ -1,0 +1,403 @@
+{
+  "unit": "US1345",
+  "digest": "87857d9edad83a42 at 443817d049bd",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac49b27f2160cd603/US1345-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M01 heading check removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "gaps = [f\"no `## {name}` heading\" for name in APPROACH_HEADINGS if name not in sections]",
+      "new": "gaps = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_an_incomplete_note_is_refused_before_any_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M02 criterion id check removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not re.search(rf\"\\b{re.escape(ac)}\\b\", tests)]",
+      "new": "if False]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_an_incomplete_note_is_refused_before_any_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M03 word boundary dropped from the id match",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not re.search(rf\"\\b{re.escape(ac)}\\b\", tests)]",
+      "new": "if not re.search(rf\"{re.escape(ac)}\", tests)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M04 the Tests section read to the note's end",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        end = heads[n + 1][0] if n + 1 < len(heads) else len(lines)",
+      "new": "        end = len(lines)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M05 the last section read as empty",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        end = heads[n + 1][0] if n + 1 < len(heads) else len(lines)",
+      "new": "        end = heads[n + 1][0] if n + 1 < len(heads) else i + 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M06 heading equality in place of the last-words rule",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "(words == key or words.endswith(f\" {key}\"))",
+      "new": "(words == key)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M07 a deeper heading counted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "             for i, ln in enumerate(lines) if ln.startswith(\"## \")]",
+      "new": "             for i, ln in enumerate(lines) if ln.lstrip(\"#\").startswith(\" \")]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M08 id check run with no Tests section",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if tests is not None:\n        ids = dict.fromkeys",
+      "new": "    if True:\n        ids = dict.fromkeys",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_tests_section_is_bounded_and_ids_are_whole_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M09 epic hop dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    epics = _linked_texts(root, text, \"Epic\")",
+      "new": "    epics = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 Delivers hop dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    texts = [text, *epics, *_linked_texts(root, text, \"Delivers\")]",
+      "new": "    texts = [text, *epics]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 epic Parent hop dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        texts += _linked_texts(root, epic, \"Parent\")",
+      "new": "        texts += []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 decision ids not deduplicated",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    ids = dict.fromkeys(d for t in texts for d in re.findall(r\"\\bD\\d{4}\\b\", t))",
+      "new": "    ids = [d for t in texts for d in re.findall(r\"\\bD\\d{4}\\b\", t)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13 decision text omitted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "else f\"- {d['id']} ({d['status']}): {d['decision']}\")",
+      "new": "else f\"- {d['id']} ({d['status']}): \")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14 an id the log lacks printed as a row",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if d in log else {\"id\": d, \"missing\": True}) for d in ids]",
+      "new": "if d in log else {\"id\": d, \"decision\": \"\", \"status\": \"\"}) for d in ids]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15 note block omitted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "--- APPROACH NOTE ---\n{note_text.rstrip()}\n",
+      "new": "--- APPROACH NOTE ---\n\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16 CHANGES record command loses --changes",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "--verdict changes --changes REVIEW.md {tail}",
+      "new": "--verdict changes {tail}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17 spot-check rule dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "Spot-check by execution where it is cheap, in a scratch copy only (a throwaway fixture or a",
+      "new": "Check where it is cheap (a throwaway fixture or a",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18 no-code-review statement dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "You will not review this unit's code: its code review",
+      "new": "Its code review",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19 not-named stderr note inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    warn = None if reason else (",
+      "new": "    warn = None if not reason else (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M20 the stderr note printed on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        print(warn, file=sys.stderr)",
+      "new": "        print(warn, file=sys.stdout)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M21 malformed setting refuses the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except ValueError as exc:\n        reason, why_not = None, str(exc)",
+      "new": "    except KeyError as exc:\n        reason, why_not = None, str(exc)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M22 reason line dropped for a named unit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    taken = f\"{shown} takes a solution review: {reason}.\\n\\n\" if reason else \"\"",
+      "new": "    taken = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M23 self-review note for every seat",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat.strip().lower() == built_by.lower():",
+      "new": "    if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M24 self-review note never",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat.strip().lower() == built_by.lower():",
+      "new": "    if seat.strip().lower() != built_by.lower():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M25 a refusal printed on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        print(f\"approach brief refused: {exc}\", file=sys.stderr)",
+      "new": "        print(f\"approach brief refused: {exc}\", file=sys.stdout)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_a_missing_note_unknown_unit_and_unknown_seat_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M26 missing-note guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not note_path.is_file():\n        raise ValueError(f\"the note {note} names no file\")",
+      "new": "    if False:\n        raise ValueError(f\"the note {note} names no file\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_a_missing_note_unknown_unit_and_unknown_seat_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M27 unknown-unit guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not found:\n        raise ValueError(f\"no artefact with id {unit!r} - an approach brief needs a real unit\")",
+      "new": "    if False:\n        raise ValueError(f\"no artefact with id {unit!r} - an approach brief needs a real unit\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_a_missing_note_unknown_unit_and_unknown_seat_are_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M28 notice seat test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seat.strip().lower() not in seats:",
+      "new": "    if seat.strip().lower() in seats:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_code_review_brief_carries_none_of_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M29 notice dropped from the rejoinder branch",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "for line in (notice, quoted, solution_review_notice(args.root, args.unit,",
+      "new": "for line in (notice, quoted, (lambda *a: None)(args.root, args.unit,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_code_review_brief_carries_none_of_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M30 notice dropped from the first-round branch",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                         solution_review_notice(args.root, args.unit, args.seat)):",
+      "new": "                         (lambda *a: None)(args.root, args.unit, args.seat)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_code_review_brief_carries_none_of_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M31 seat read by name before role",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seats = {(recorded_seat(r[\"reviewer\"]) or verdict_seat(repo_root, r[\"reviewer\"])).lower()",
+      "new": "    seats = {(verdict_seat(repo_root, r[\"reviewer\"])).lower()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_notice_reads_the_recorded_role_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M32 fallback for a roleless cell dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seats = {(recorded_seat(r[\"reviewer\"]) or verdict_seat(repo_root, r[\"reviewer\"])).lower()",
+      "new": "    seats = {(recorded_seat(r[\"reviewer\"]) or \"\").lower()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_notice_reads_the_recorded_role_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M33 unreadable ledger said nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return (f\"solution review: sdlc-studio/reviews/{SOLUTION_REVIEW_FILE} could not be read \"",
+      "new": "        return None and (f\"solution review: sdlc-studio/reviews/{SOLUTION_REVIEW_FILE} could not be read \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_notice_reads_the_recorded_role_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M34 unreadable ledger refuses the code brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        rows = read_solution_reviews(repo_root, unit)\n    except (OSError, ValueError) as exc:\n        return (f\"solution review:",
+      "new": "        rows = read_solution_reviews(repo_root, unit)\n    except KeyError as exc:\n        return (f\"solution review:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_notice_reads_the_recorded_role_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M35 the tool budget unset",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "APPROACH_TOOL_BUDGET = 20",
+      "new": "APPROACH_TOOL_BUDGET = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M36 the Affects unread",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    affects = sdlc_md.affects_files(text)\n    scope = \"\\n\".join(affects) if affects else \"(no Affects declared)\"",
+      "new": "    affects = None\n    scope = \"\\n\".join(affects) if affects else \"(no Affects declared)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M37 the Affects scope unset",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    scope = \"\\n\".join(affects) if affects else \"(no Affects declared)\"",
+      "new": "    scope = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M38 the lane's recorded seat ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    recorded = run_state.lane_seat(root, unit)",
+      "new": "    recorded = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_author_is_the_seat_the_lane_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M39 the no-lane note guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not recorded:\n        notes +=",
+      "new": "    if recorded:\n        notes +=",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M40 the verb returns no exit code",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    print(text)\n    if warn:\n        print(warn, file=sys.stderr)\n    return 0",
+      "new": "    print(text)\n    if warn:\n        print(warn, file=sys.stderr)\n    return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_stderr_note_and_the_self_review_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M41 the notice names no unit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    shown = sdlc_md.display_id(repo_root, unit)\n    try:\n        rows = read_solution_reviews(repo_root, unit)",
+      "new": "    shown = None\n    try:\n        rows = read_solution_reviews(repo_root, unit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_notice_reads_the_recorded_role_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T01 test: the notice expected on the qa seat",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py",
+      "old": "self.assertEqual(notice, key[0] == \"engineering\"",
+      "new": "self.assertEqual(notice, key[0] == \"qa\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_code_review_brief_carries_none_of_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T02 test: an absent id expected as a row",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py",
+      "old": "self.assertIn(\"- D0199: not in sdlc-studio/decisions.md\", out)",
+      "new": "self.assertIn(\"- D0199 (accepted)\", out)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_brief_holds_what_the_seat_judges_against",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T03 test: the row expected before Build a unit",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py",
+      "old": "self.assertGreater(review, names.index(\"Build a unit\"))",
+      "new": "self.assertLess(review, names.index(\"Build a unit\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_brief.py::SolutionReviewBriefTests::test_the_runbook_and_the_catalogue_name_both_commands",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "unit": "US1349",
+  "digest": "2589bddb2413b597 at d4b7a132757f",
+  "report": "sdlc-studio/.local/lane/landed/agent-a6966555084073fe2/US1349-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "panel: skip branch inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "how = \"\" if args.skip_personas else",
+      "new": "how = \"\" if not args.skip_personas else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_create_workflows_and_the_panel_seat_one_agent_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel: resolve command dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "\" with `persona_resolve.py resolve --seat <role> --render review`\"",
+      "new": "\"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_create_workflows_and_the_panel_seat_one_agent_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel: one agent per seat clause dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "print(f\"brief one agent per seat{how} and take these",
+      "new": "print(f\"take these",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_create_workflows_and_the_panel_seat_one_agent_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel: to each back to the panel",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "f\"question(s) to each:\")",
+      "new": "f\"question(s) to the panel:\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_create_workflows_and_the_panel_seat_one_agent_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel: question guard made unconditional",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "if result[\"questions\"]:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_panel_without_a_question_or_with_unframed_seats",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel: skip branch removed",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "how = \"\" if args.skip_personas else",
+      "new": "how = \"\" if False else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_panel_without_a_question_or_with_unframed_seats",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: quoted test without strip",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "if line.lstrip().startswith(\">\"):",
+      "new": "if line.startswith(\">\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: quoted skip removed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "if line.lstrip().startswith(\">\"):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_a_merged_brief_reads_two_identities",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: persona pattern dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "patterns.append((persona, \"persona\"))",
+      "new": "pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_a_merged_brief_reads_two_identities",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: review seat form dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "(?:review seat|amigo)\\b\"",
+      "new": "(?:amigo)\\b\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_a_merged_brief_reads_two_identities",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: work render dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "(?:work|build|review) render",
+      "new": "(?:build|review) render",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_a_merged_brief_reads_two_identities",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: pattern one trailing boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "r\"\\bYou are the ([a-z][a-z0-9-]*) (?:review seat|amigo)\\b\"",
+      "new": "r\"\\bYou are the ([a-z][a-z0-9-]*) (?:review seat|amigo)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: pattern one leading boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "r\"\\bYou are the ([a-z][a-z0-9-]*) (?:review seat|amigo)\\b\"",
+      "new": "r\"You are the ([a-z][a-z0-9-]*) (?:review seat|amigo)\\b\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: pattern two trailing boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "r\"\\badopt the (?:work|build|review) render of the ([a-z][a-z0-9-]*) seat card\\b\"",
+      "new": "r\"\\badopt the (?:work|build|review) render of the ([a-z][a-z0-9-]*) seat card\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: pattern two leading boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "r\"\\badopt the (?:work|build|review) render of the ([a-z][a-z0-9-]*) seat card\\b\"",
+      "new": "r\"adopt the (?:work|build|review) render of the ([a-z][a-z0-9-]*) seat card\\b\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: longest-first dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "key=len, reverse=True)",
+      "new": "key=len)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_registry_bounds_a_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: empty-registry guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "    if not names:\n        return None",
+      "new": "    if False:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_registry_bounds_a_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: persona boundary dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "+ r\")\\b\")",
+      "new": "+ r\")\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: dedup removed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "if (kind, name) not in found:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_reader_keeps_the_order_of_appearance",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reader: position sort removed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "hits = sorted((m.start(), kind, m.group(1))",
+      "new": "hits = list((m.start(), kind, m.group(1))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_the_reader_keeps_the_order_of_appearance",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "assertion: zero identities passes",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "if len(found) != 1:",
+      "new": "if len(found) > 1:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_quoted_and_near_miss_lines_read_none",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "table: lane brief row expects qa",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "(\"lane\", \"brief\", \"--units\", \"{unit}\"), _seat(\"engineering\")),",
+      "new": "(\"lane\", \"brief\", \"--units\", \"{unit}\"), _seat(\"qa\")),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_every_brief_the_skill_prints_carries_one_identity",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "table: panel row expects a seat",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "(\"panel\", \"--ceremony\", \"refine\", \"--question\", \"X\"), ()),",
+      "new": "(\"panel\", \"--ceremony\", \"refine\", \"--question\", \"X\"), _seat(\"engineering\")),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_every_brief_the_skill_prints_carries_one_identity",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "table: approach rows expect the engineering seat",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py",
+      "old": "(\"approach\", \"brief\", \"--unit\", \"{unit}\", \"--seat\", s, \"--note\", \"{note}\"),\n                _seat(s))",
+      "new": "(\"approach\", \"brief\", \"--unit\", \"{unit}\", \"--seat\", s, \"--note\", \"{note}\"),\n                _seat(\"engineering\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_every_brief_the_skill_prints_carries_one_identity",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # US1348: The sprint report shows first-round approval and rounds per unit for units that took the solution review and units that did not
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0756
 > **Created:** 2026-11-26
@@ -29,6 +29,7 @@ whether the step saves money is a figure on the page of record.
   1.5 delivery rounds per unit and 1.5 solution review rounds per unit, and its did-not row reads
   1 unit, 0, 0% and 2.0. Fails on: HEAD, whose fixture report builds no such section.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_two_groups_stand_side_by_side
+- **Verified:** yes (2026-11-27)
 
 ### AC2: a run where no unit took the step reads not measured
 
@@ -37,6 +38,7 @@ whether the step saves money is a figure on the page of record.
 - **Then** the section reads NOT MEASURED with the reason that no unit in the run took a
   solution review, and never 0%. Fails on: HEAD, which has no such section.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_a_run_where_no_unit_took_the_step_reads_not_measured
+- **Verified:** yes (2026-11-27)
 
 ### AC3: the section holds at sign, and an older page renders as signed
 
@@ -48,6 +50,7 @@ whether the step saves money is a figure on the page of record.
   and the older page renders with no placeholder refused and no solution review section. Fails
   on: HEAD, which has no section to hold.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_section_holds_at_sign_and_an_older_page_renders
+- **Verified:** yes (2026-11-27)
 
 ### AC4: the evidence annex catalogues the section
 
@@ -58,6 +61,7 @@ whether the step saves money is a figure on the page of record.
   still read 1.1, and the annex is within its line ceiling. Fails on: HEAD, where the annex has 0
   mentions of `solution_review`.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_report.py::SolutionReviewReportTests::test_the_annex_catalogues_the_section
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

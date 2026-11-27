@@ -1,6 +1,6 @@
 # US1235: The sprint report and the seat scorecard show the release change failure rate, naming its source records
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1234, US1335
 > **Risk-class:** elevated
 > **Delivers:** CR0695
@@ -41,6 +41,7 @@ the run as the lesson store does.
 - **When** the report is built through `sprint_report.build_report` and rendered to Markdown and HTML
 - **Then** a `release_cfr` section after the DORA table states 25% (1 of 4) with its window and settling period, a row per release counted citing the release record file, and the failed release's row naming its incident issue and escaped bug; and the DORA table's "Change failure rate" row is present and unchanged. Fails on: HEAD, whose fixture report builds the sections goal, estimates, delivered, known_issues, signoff, cost, cost_prices, cost_roles, dora, calibration, rulings, waivers and lessons and no release rate (built 2026-11-26); or the release figure merged into the CI-run row
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_report_shows_the_release_rate_with_its_source_records
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint close`, which files the page through `sprint_report.py`, and `sprint sign`, which re-derives it
 
 ### AC2: the seat scorecard shows the figure the command derives
@@ -49,6 +50,7 @@ the run as the lesson store does.
 - **When** `retro.py seats --id RETROxxxx` runs, as text and with `--format json`
 - **Then** the scorecard states the release change failure rate with the release records and incident issues it read, and its rate and its counted, failed and pending releases equal what `escape.py failure-rate` prints for the same window. Fails on: HEAD, whose scorecard names no failure rate (on RETRO0159 its JSON keys are id, recorded_in_error_unattributed, rows, seats, unattributed, unattributed_authors, uncharged, units and window); or a second calculation that can disagree with the command
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_seat_scorecard_shows_the_figure_the_command_derives
+- **Verified:** yes (2026-11-27)
 - **Caller:** `retro.py seats`, run at the retro and read by the persona learn-brief (`persona_memory.py learn-brief`)
 
 ### AC3: not measured and pending reach the page
@@ -57,6 +59,7 @@ the run as the lesson store does.
 - **When** the report is built and rendered to Markdown and HTML in each
 - **Then** the section reads NOT MEASURED with the command's reason in the first, and NOT MEASURED naming the release as pending in the second, never 0% and never an empty cell, and both templates carry the section. Fails on: HEAD, which has no section; or 0% or a blank where nothing was measured
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_not_measured_and_pending_reach_the_report
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint_report.py render`, which renders a filed page to Markdown and HTML
 
 ### AC4: a signed page holds when an incident is linked later, and an older page renders
@@ -65,6 +68,7 @@ the run as the lesson store does.
 - **When** `sprint_report.py check` runs on the first, and the second is rendered to Markdown and HTML
 - **Then** the first reads VALID and still shows the rate it was signed with, and the second renders with no placeholder refused and no release-rate section. Fails on: HEAD, which has no section; or a section inside the fingerprint and re-derived from the moved records, which reads INVALIDATED on the next incident, the failure RPT0006 to RPT0008 showed for the lesson store
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_a_signed_page_holds_and_an_older_page_renders
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py sign` (`cmd_sign`), which re-derives the filed page and refuses a changed one
 
 ### AC5: the evidence annex catalogues the section
@@ -73,6 +77,7 @@ the run as the lesson store does.
 - **When** the annex's Report sections, figure keys and row keys tables are read
 - **Then** `release_cfr` is listed as an always section, with a note under the table that a page filed before it carries none and how a signed page keeps it (D0651, as D0644 ruled for cache_read_trend), and each of its figure and row keys is catalogued, under the annex version US1334 sets for the release, with no second bump. Fails on: HEAD, where `grep -c release_cfr` prints 0 for the annex and for `sprint_report.py`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_change_failure_rate.py::ReportChangeFailureRateTests::test_the_annex_catalogues_the_section
+- **Verified:** yes (2026-11-27)
 - **Caller:** `tests/test_evidence_annex_report.py`, which holds the annex to every section a filed page carries
 
 ---

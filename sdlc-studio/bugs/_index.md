@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 47 |
+| Open | 48 |
 | In Progress | 0 |
-| Fixed | 1259 |
+| Fixed | 1260 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1776** |
+| **Total** | **1778** |
 
 ## All Bugs
 
@@ -850,8 +850,10 @@
 | [BG1771](BG1771-bg1765-did-not-converge-in-review-round-2.md) | BG1765 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-26 | -- |
 | [BG1773](BG1773-a-request-s-decomposed-into-keeps-only-its.md) | A request's Decomposed-into keeps only its last child when ids are Crockford-style, because `decomposed_ids` reads none of them | Fixed | Medium | 2026-11-26 | -- |
 | [BG1775](BG1775-us1336-did-not-converge-in-review-round-2.md) | US1336 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
-| [BG1772](BG1772-critic-py-raises-on-a-declared-seat-card.md) | critic.py raises on a declared seat card that is not valid UTF-8, so recording a verdict fails with a traceback | Open | Low | 2026-11-26 | -- |
+| [BG1772](BG1772-critic-py-raises-on-a-declared-seat-card.md) | critic.py raises on a declared seat card that is not valid UTF-8, so recording a verdict fails with a traceback | Fixed | Low | 2026-11-26 | -- |
 | [BG1776](BG1776-bg1768-did-not-converge-in-review-round-2.md) | BG1768 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
+| [BG1777](BG1777-us1344-did-not-converge-in-review-round-2.md) | US1344 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-27 | 2026-11-27 |
+| [BG1778](BG1778-rpt0028-was-signed-under-the-operator-s-delegation.md) | RPT0028 was signed under the operator's delegation, and nothing discloses it | Open | Low | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases
 

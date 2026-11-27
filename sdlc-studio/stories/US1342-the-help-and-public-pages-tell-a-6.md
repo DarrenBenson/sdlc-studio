@@ -4,7 +4,7 @@
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1339, US1340, US1233, US1234, US1235, US1294
+> **Depends on:** US1332, US1333, US1334, US1335, US1336, US1337, US1339, US1340, US1233, US1234, US1235, US1294, US1344, US1345, US1346, US1347, US1348
 > **Affects:** .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/help/gate.md, README.md, docs/existing-users.md, docs/engineering-leaders.md, docs/enterprise.md, tools/tests/test_lean_docs_v65.py, changelog.d/US1342.md
 > **Epic:** EP0379
 > **Points:** 5
@@ -136,6 +136,23 @@ pages.
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds
 - **Caller:** n/a: the subject is the public pages
 
+### AC5: the upgrade page says how to turn on the solution review
+
+- **Given** docs/existing-users.md once US1344 to US1348 are Done
+- **When** its 'From 6.4 to 6.5' section is read
+- **Then** its optional-keys item names `review.solution_review.min_points` and
+  `review.solution_review.risk_classes`, each with the default `reference-config.md` states, and
+  one new item says the solution review is off at those defaults, gives the lines that turn it
+  on, says a risk class is read through `risk.components`, says `sprint lane land` refuses a
+  named unit until a seat's GO stands on its approach note, names `critic.py approach brief` and
+  `critic.py approach record` as their parser reads them, and links help/sprint.md's Lanes
+  section for the rest, naming no unit or decision id. `NEW_KEYS` gains the two keys, and the
+  turn-on lines, written to a fixture project's config, make `critic.solution_review_reason` give
+  a reason for a 3-point story where the shipped defaults give None. Fails on: existing-users.md
+  at HEAD `f946c5460`, which names no solution review and no `solution_review` key.
+- **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review
+- **Caller:** n/a: the subject is the upgrade page
+
 ## Notes
 
 - Serves: Abena Osei, End goals 2 and 3 (quoted under story 1), and Maya Okafor (Secondary) on
@@ -173,3 +190,4 @@ pages.
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | product seat | Groomed for run twenty-eight under D0638 |
+| 2026-11-27 | product seat (D0545) | Adds AC5 and the EP0385 dependencies under D0652: the operator added the solution review to 6.5 (D0646) after this story was groomed, and the upgrade page would send a 6.4 team to a land refusal it never mentions. No EP0386 unit is added, since US1352 depends on this story; US1347 and US1352 document the rest in help/sprint.md |
