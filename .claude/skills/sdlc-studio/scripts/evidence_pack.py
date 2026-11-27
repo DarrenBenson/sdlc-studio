@@ -33,7 +33,11 @@ agrees with it; a later commit that leaves the record's signature alone still bu
 change's accountable line names the run record's principal and that verified fingerprint. A
 signature entered under delegation (`sprint_report.delegation`) is said to be so on the line,
 with the decision that authorised it; the report and the run record must agree on it, and one
-that names no decision refuses.
+that names no decision refuses. The one exception is a delegation the report alone records, which
+`sprint_report.py disclose` adds to a report signed before a signature could carry one: it is
+accepted when the decisions log committed at the revision built holds that decision as accepted,
+under the id the report spells, and refused otherwise. A report that drops or changes a delegation
+its run record holds still refuses.
 """
 from __future__ import annotations
 
@@ -56,6 +60,7 @@ RUNS_REL = run_state.TRACKED_REL.as_posix()
 #: A run id as a report names it; it names a file, so nothing that could leave the folder.
 _RUN_RE = re.compile(r"^RUN-[0-9A-Za-z]+$")
 LEDGER_REL = "sdlc-studio/reviews/critic-verdicts.md"
+DECISIONS_REL = "sdlc-studio/decisions.md"
 SELF_CHECKS_REL = f"sdlc-studio/reviews/{critic.SELF_CHECK_FILE}"
 #: A release version: semantic, with an optional pre-release or build suffix. It names the
 #: pack's file, so nothing that could leave the reports folder is accepted.
@@ -233,6 +238,8 @@ def _verified_signature(root: Path, sha: str, rid: str, report: dict) -> tuple[d
             return {}, (f"the report's signature and its run record {rel} disagree on {key}: "
                         f"the report names {on_report!r}, the run record {in_record!r}")
     on_report, in_record = sprint_report.delegation(sig), sprint_report.delegation(held)
+    if on_report and in_record is None:
+        return _disclosed(root, sha, rel, on_report, held)
     if on_report != in_record:
         return {}, (f"the report's signature and its run record {rel} disagree on delegation: "
                     f"the report names {_delegated(on_report)}, the run record "
@@ -241,6 +248,27 @@ def _verified_signature(root: Path, sha: str, rid: str, report: dict) -> tuple[d
         return {}, ("its signature was entered under delegation but names no authorising "
                     "decision, so no decision accounts for it")
     return held, ""
+
+
+def _disclosed(root: Path, sha: str, rel: str, decision: str, held: dict) -> tuple[dict, str]:
+    """`(signature, "")` for a delegation the report alone records (`sprint_report.py disclose`):
+    the run record's signature with the delegation and its decision added, when the decisions log
+    committed at `sha` holds that decision as accepted (`sprint_report.authorising_decision`)
+    under the id the report spells; `({}, why)` otherwise. The working copy's log is never read."""
+    with tempfile.TemporaryDirectory() as tmp:
+        sdlc_md.atomic_write(Path(tmp) / DECISIONS_REL, _show(root, sha, DECISIONS_REL) or "")
+        did, why = sprint_report.authorising_decision(tmp, decision)
+    if why:
+        return {}, (f"the report's signature discloses a delegation under decision {decision} "
+                    f"that its run record {rel} does not hold, and the decisions log committed "
+                    f"at the revision built does not hold it as accepted "
+                    f"({why.split('; ', 1)[0]}): commit the decision to {DECISIONS_REL} as "
+                    f"accepted, then build the pack again")
+    if did != decision:
+        return {}, (f"the report's signature names decision {decision!r}, not {did} as the "
+                    f"decisions log spells it, so it is not the disclosure "
+                    f"`sprint_report.py disclose` writes")
+    return {**held, "delegated": True, "decision": did}, ""
 
 
 def _delegated(decision: str | None) -> str:

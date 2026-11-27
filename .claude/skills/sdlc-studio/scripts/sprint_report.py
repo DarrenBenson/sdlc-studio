@@ -957,7 +957,7 @@ NON_CEREMONY_VERBS = {
     "handoff": ("show",),
     # `evidence` renders the signed reports onto a page after the runs are signed; it reads
     # the record and certifies nothing a close could hold.
-    "sprint_report": ("evidence",),
+    "sprint_report": ("evidence", "disclose"),
     # `trace` reads an escaped bug back to the unit and verdict that let it through, and
     # `to-class` turns its root cause into a failure class; both are post-release records, run
     # after a defect is found, so no close can certify them.
@@ -5872,6 +5872,50 @@ def delegation(signature: dict | None) -> str | None:
     return str(sig.get("decision") or "").strip()
 
 
+def authorising_decision(root, named: str | None) -> tuple[str | None, str]:
+    """`(decision, refusal)`: the id of the accepted decision `named` names, as the decisions log
+    spells it, and why it cannot authorise a delegated signature, or "". The check is the one
+    `sprint sign --delegated` applies (`sprint._delegation`), shared by `disclose` and the
+    evidence pack: an id the log under `root` does not hold, one not accepted and a value that
+    is no id are each refused."""
+    import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    return sprint._delegation(  # noqa: SLF001 - the seal's own check, shared rather than copied
+        root, argparse.Namespace(delegated=True, decision=named))
+
+
+def disclose(root, report_id: str, decision: str | None) -> tuple[bool, str]:
+    """`(changed, decision)`: add a delegation statement to a signed report's signature.
+
+    The signature gains `delegated: true` and the accepted decision's id, as the decisions log
+    spells it, so the report's Signed by cell says it was entered under delegation, and the twin
+    is re-rendered with it. Only the report and its twin are written: the tracked run record,
+    the fingerprint and the reports index stay as they were, so a report that read VALID still
+    does. Nothing is checked or repaired beyond that. Refused (ReportError) for a report that
+    is missing or unsigned, a decision that is not accepted (`authorising_decision`), and a
+    signature already recording a delegation under another decision or none; one already
+    recording this decision is not written, and `changed` is False."""
+    root = Path(root)
+    stored = read_report(root, report_id)
+    rid = sdlc_md.norm_id(report_id)
+    sig = stored.get("signature") if isinstance(stored.get("signature"), dict) else {}
+    if not str(sig.get("principal") or "").strip():
+        raise ReportError(f"{rid} is not signed, so it has no signature to disclose a "
+                          f"delegation on")
+    did, why = authorising_decision(root, decision)
+    if why:
+        raise ReportError(f"{rid}: {why}")
+    held = delegation(sig)
+    if held == did:
+        return False, did
+    if held is not None:
+        raise ReportError(f"{rid}'s signature already records a delegation under "
+                          f"{f'decision {held}' if held else 'no recorded decision'}; a "
+                          f"disclosure never replaces what a signature records")
+    write_report(root, {**stored, "signature": {**sig, "delegated": True, "decision": did}},
+                 index=False)
+    return True, did
+
+
 def signed_by(signature: dict) -> str:
     """The signature block's Signed by cell: the principal, followed for a delegated signature by
     the statement that it was entered under delegation and the decision that authorised it. The
@@ -6128,7 +6172,7 @@ def file_report(root, report: dict) -> str:
     return rid
 
 
-def write_report(root, report: dict) -> Path:
+def write_report(root, report: dict, *, index: bool = True) -> Path:
     """Write a report's JSON of record and re-render its Markdown twin. Returns the JSON path.
 
     Both, always. The twin is a RENDERING of the JSON, so writing one without the other is how
@@ -6139,7 +6183,8 @@ def write_report(root, report: dict) -> Path:
     twin as they were. The two renames that follow are not one step: a failure between them
     leaves the JSON new and the twin the previous rendering, each whole, until the next write.
     Used by `file_report` when the page is first derived, and by the seal when a signature lands
-    on it.
+    on it. Each of those re-writes the report's row at the end of the reports index; `index=False`
+    leaves the index as it stands, for a write that changes no field the row shows (`disclose`).
     """
     root = Path(root)
     rid = sdlc_md.norm_id(report.get("report_id") or "")
@@ -6151,7 +6196,8 @@ def write_report(root, report: dict) -> Path:
     md = _twin_path(root, {**report, "report_id": rid})
     _write_together([(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n"),
                      (md, render_markdown(report))])
-    _sync_report_index(root, d, rid, md, report)
+    if index:
+        _sync_report_index(root, d, rid, md, report)
     return path
 
 
@@ -6935,6 +6981,23 @@ def cmd_render(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_disclose(args: argparse.Namespace) -> int:
+    try:
+        changed, did = disclose(Path(args.root), args.report, args.decision)
+    except ReportError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    rid = sdlc_md.norm_id(args.report)
+    if not changed:
+        print(f"disclose: {rid} already records a delegation under decision {did}; nothing "
+              f"changed")
+        return 0
+    print(f"disclose: {rid}'s signature now says it was entered under delegation, authorised by "
+          f"decision {did}; the twin is re-rendered, and the fingerprint, the run record and the "
+          f"reports index are unchanged")
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     try:
         state = revalidate(Path(args.root), args.report)
@@ -6988,6 +7051,11 @@ EVIDENCE_COLUMNS = (
               "or, where it has neither, the `model` figure of the `cost` section when that "
               "names one, or not recorded where none of these names a model"),
     ("Hours to signature", "the hours from `generated_at` to `signature.signed_at`"),
+    ("Signed by", "`signature.principal`, followed where `signature.delegated` is true by the "
+                  "statement that the signature was entered under delegation and the decision "
+                  "in `signature.decision` that authorised it, as the report's Signed by cell "
+                  "gives it; a signature holding neither key shows the principal alone, which "
+                  "says only that the report records no delegation"),
 )
 _ACHIEVED = "Judged achieved"
 #: The values that name no model: mixed and unrecorded, the tokens-by-model names for tokens
@@ -7056,7 +7124,8 @@ def _evidence_row(rep: dict) -> tuple[str, str]:
     built, signed = _at(rep.get("generated_at")), _at(rep["signature"]["signed_at"])
     hours = f"{(signed - built).total_seconds() / 3600:.1f}" if built else "not recorded"
     cells = (rep.get("run_id"), rep.get("report_id"), verdict,
-             "-" if verdict == _ACHIEVED else note, dollars, _evidence_models(rep), hours)
+             "-" if verdict == _ACHIEVED else note, dollars, _evidence_models(rep), hours,
+             signed_by(rep["signature"]))
     return str(rep.get("run_id")), "| " + " | ".join(_evidence_cell(c) for c in cells) + " |"
 
 
@@ -7209,6 +7278,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="write nothing; exit 1 naming each run whose row differs from the "
                         "reports the page names, and note a report signed after them")
     e.set_defaults(func=cmd_evidence)
+    d = sub.add_parser("disclose", help="Add a delegation statement to a signed report: its "
+                                        "signature gains `delegated` and the accepted decision, "
+                                        "and its twin is re-rendered. The run record, the "
+                                        "fingerprint and the reports index are not written.")
+    d.add_argument("--report", required=True, metavar="RPTxxxx")
+    d.add_argument("--decision", required=True, metavar="Dnnnn",
+                   help="the accepted decision in sdlc-studio/decisions.md that authorised the "
+                        "signature")
+    d.set_defaults(func=cmd_disclose)
     return p
 
 

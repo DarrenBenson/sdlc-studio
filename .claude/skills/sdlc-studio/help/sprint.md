@@ -158,7 +158,19 @@ log does not hold and a decision that is not accepted are each refused before an
 written, as is `--decision` without `--delegated`. The signature block records `delegated: true`
 and the decision id, the sealed line names it, the report's Signed by cell says the signature
 was entered under delegation and names the decision, and the release evidence pack says the
-same on its Accountable line. A signature the principal enters carries neither key.
+same on its Accountable line. A signature carries the two keys only when sealed under
+`--delegated`, or when a disclosure adds them afterwards.
+`sprint_report.py disclose --report RPTxxxx --decision Dnnnn` adds that statement to a report
+signed before `--delegated` existed. It writes the report and its twin only, so the fingerprint,
+the run record and the reports index are unchanged, and a report that read VALID before still
+reads VALID; it neither checks nor repairs the page, so one that read INVALID still does. The
+decision must be accepted. An unsigned report, and a signature already recording a delegation
+under another decision or none, are refused; a repeat under the same decision changes nothing
+and exits 0. The release evidence pack accepts that delegation when the decisions log committed
+at the revision built holds the decision as accepted. The evidence page names each run's signer
+in a Signed by column: a project that commits its own page regenerates it with
+`sprint_report.py evidence --out docs/evidence.md`, or `evidence --check` and `release_cut.py
+tag-check` refuse it.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
 close names the same units first - one short of its terminal as a known issue, one already moved
 to Done in the pre-flight's blocking `review-coverage` row - so the page you sign already shows
