@@ -2891,9 +2891,18 @@ def is_pre_gate(verdict: dict | None) -> bool:
     return bool(verdict) and _id(verdict.get("author", "")) == PRE_GATE
 
 
+#: The seat cards already warned about as not valid UTF-8, by path: a command resolves the
+#: declared seats several times, and one warning per card is enough.
+_UNDECODABLE_CARDS: set[str] = set()
+
+
 def _declared_reviewers(repo_root: Path | str) -> list[tuple[str, str]]:
     """(role, card person-name) pairs declared under personas/seats and
-    personas/amigos - the reviewers the project actually has."""
+    personas/amigos - the reviewers the project actually has.
+
+    A card that cannot be read is skipped. One that is not valid UTF-8 is skipped with a
+    warning on stderr naming it, given once per card in a process, and the cards beside it
+    are still read."""
     import re as _re
     out: list[tuple[str, str]] = []
     role_re = _re.compile(r"<!--\s*role:\s*([a-z][a-z0-9-]*)\s*-->", _re.I)
@@ -2906,6 +2915,12 @@ def _declared_reviewers(repo_root: Path | str) -> list[tuple[str, str]]:
             try:
                 text = card.read_text(encoding="utf-8")
             except OSError:
+                continue
+            except ValueError:  # UnicodeDecodeError: bytes that are not UTF-8
+                if str(card) not in _UNDECODABLE_CARDS:
+                    _UNDECODABLE_CARDS.add(str(card))
+                    print(f"WARNING: seat card sdlc-studio/personas/{sub}/{card.name} is not "
+                          f"valid UTF-8, so it declares no seat: skipped", file=sys.stderr)
                 continue
             rm = role_re.search(text)
             nm = name_re.search(text)

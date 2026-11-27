@@ -88,11 +88,18 @@ def _prompt(text: str) -> str:
     return json.dumps({"type": "user", "message": {"role": "user", "content": text}})
 
 
-def _cli(ws, *argv: str) -> tuple[int, str]:
+def _cli_apart(ws, *argv: str) -> tuple[int, str, str]:
+    """The command's exit, stdout and stderr, kept apart: the JSON form is read from stdout
+    alone, so a warning on stderr can neither break the parse nor hide inside it."""
     out, err = io.StringIO(), io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = meter._live("sprint").main(["cost", "--anatomy", *argv, "--root", str(ws.root)])
-    return rc, out.getvalue() + err.getvalue()
+    return rc, out.getvalue(), err.getvalue()
+
+
+def _cli(ws, *argv: str) -> tuple[int, str]:
+    rc, out, err = _cli_apart(ws, *argv)
+    return rc, out + err
 
 
 class CostAnatomyTests(meter._Case):
@@ -147,8 +154,8 @@ class CostAnatomyTests(meter._Case):
         return ws
 
     def _json(self, ws) -> dict:
-        rc, out = _cli(ws, "--format", "json")
-        self.assertEqual(0, rc, out)
+        rc, out, err = _cli_apart(ws, "--format", "json")
+        self.assertEqual(0, rc, out + err)
         return json.loads(out)
 
     def test_per_role_rows_from_lane_records(self) -> None:
@@ -339,7 +346,8 @@ class CostAnatomyTests(meter._Case):
         """BG1764 AC1, a seat card that is not valid UTF-8 beside a valid one. MUTANTS: the
         failed read left to raise, or caught as OSError only (the command exits 1 on the
         UnicodeDecodeError); the seats then read as the shipped three only, losing the valid
-        `security` card beside the bad one. Each moves the exit or a row asserted."""
+        `security` card beside the bad one; the card's warning printed into stdout's JSON, or
+        not at all. Each moves the exit, the parse or a row or line asserted."""
         ws = self._session()
         critic = meter._live("critic")
         critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (security)",
@@ -352,12 +360,19 @@ class CostAnatomyTests(meter._Case):
         (seats_dir / "ren.md").write_bytes(b"# Ren\xe9e Smith - Legal\n\nNo role field.\n")
         (seats_dir / "security.md").write_text(
             "# Pat Doe - security\n\n<!-- role: security -->\n", encoding="utf-8")
+        # the JSON form first: the bad card's warning is given once per process, so this run
+        # is the one that carries it, on stderr and never inside the JSON on stdout
+        rc, out, err = _cli_apart(ws, "--format", "json")
+        self.assertEqual(0, rc, out + err)
+        self.assertNotIn("Traceback", err)
+        self.assertEqual(1, err.count(
+            "seat card sdlc-studio/personas/seats/ren.md is not valid UTF-8"), err)
+        got = {row["role"]: row for row in json.loads(out)["roles"]}
+        self.assertEqual(["agent-a1", "agent-q0", "agent-q3", "agent-q4"],
+                         got["reviewer"]["agent_ids"])
         rc, text = _cli(ws)
         self.assertEqual(0, rc, text)
         self.assertNotIn("Traceback", text)
-        got = {row["role"]: row for row in self._json(ws)["roles"]}
-        self.assertEqual(["agent-a1", "agent-q0", "agent-q3", "agent-q4"],
-                         got["reviewer"]["agent_ids"])
         seats = meter._live("lib.cost_anatomy").project_seats(ws.root)
         self.assertEqual({"engineering", "qa", "product", "security"}, set(seats))
 
@@ -386,8 +401,8 @@ class CostAnatomyTests(meter._Case):
         ws.tx.main.write_text(_assistant(None, meter.MAIN_1, [{"type": "text"}]) + "\n"
                               + _assistant(None, MAIN_2, [{"type": "text"}]) + "\n",
                               encoding="utf-8")
-        rc, out = _cli(ws, "--format", "json")
-        self.assertEqual(0, rc, out)
+        rc, out, err = _cli_apart(ws, "--format", "json")
+        self.assertEqual(0, rc, out + err)
         orch = json.loads(out)["roles"][0]
         self.assertEqual(("orchestrator", None, None, None),
                          (orch["role"], orch["calls"], orch["first_context"], orch["avg_context"]))
@@ -424,8 +439,8 @@ class CostAnatomyTests(meter._Case):
         ws = self.workspace(agents=False)
         ws.tx.main.write_text(_assistant(None, meter.MAIN_1, [{"type": "text"}]) + "\n",
                               encoding="utf-8")
-        rc, out = _cli(ws, "--format", "json")
-        self.assertEqual(0, rc, out)
+        rc, out, err = _cli_apart(ws, "--format", "json")
+        self.assertEqual(0, rc, out + err)
         self.assertIsNone(json.loads(out)["start_context"])
         rc, text = _cli(ws)
         self.assertIn("main thread start context: not available", text.split("\n\n", 1)[0])
@@ -503,8 +518,8 @@ class CostAnatomyTests(meter._Case):
         self.assertEqual(2, len(flagged), text)
         self.assertTrue(any("agent-heavy" in ln and "125,005 tokens" in ln for ln in flagged))
         # the path beside: the whole session judges agent-gone too, at the same first calls
-        rc, out = _cli(ws, "--session", "--format", "json")
-        self.assertEqual(0, rc, out)
+        rc, out, err = _cli_apart(ws, "--session", "--format", "json")
+        self.assertEqual(0, rc, out + err)
         self.assertEqual([("agent-b7", _ctx(BUILD_X)), ("agent-gone", 125_005),
                           ("agent-heavy", 125_005)],
                          sorted((o["agent"], o["start"])
@@ -713,8 +728,8 @@ class CostAnatomyTests(meter._Case):
         reading the run's window for the subagents; the header still naming the run. The control:
         the meter's own reading of the whole session."""
         ws = self._two_runs()
-        rc, out = _cli(ws, "--session", "--format", "json")
-        self.assertEqual(0, rc, out)
+        rc, out, err = _cli_apart(ws, "--session", "--format", "json")
+        self.assertEqual(0, rc, out + err)
         doc = json.loads(out)
         self._figures(doc, {"orchestrator": (1, (meter.MAIN_1, MAIN_4, MAIN_2, MAIN_3)),
                             "builder": (1, (BUILD_X, BUILD_Y)), "reviewer": (0, ()),
