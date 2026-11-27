@@ -98,6 +98,15 @@ review:
   brief_diff_lines:
     full: 400
     light: 150
+  # Which units take a solution review: before any code, a seat reviews the builder's approach
+  # note, and `critic.py approach record` records its GO or CHANGES against the note's digest
+  # in sdlc-studio/reviews/solution-reviews.md, refusing a unit these do not name. A unit takes
+  # it at `min_points` points or more (0 takes none by points), or when its risk class, read
+  # through the `risk.components` map, is listed in `risk_classes`. Both ship off, so the step
+  # is off until a project sets one; a value of the wrong shape refuses the record.
+  solution_review:
+    min_points: 0
+    risk_classes: []
 
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking

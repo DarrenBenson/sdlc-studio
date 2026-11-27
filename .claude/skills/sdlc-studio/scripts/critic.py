@@ -6418,6 +6418,200 @@ def _superseded_suffix(verdict: dict) -> str:
             f"(authorised by {verdict.get('superseded_by', '')})")
 
 
+# ---------------------------------------------------------------------------
+# The solution review: a seat's verdict on a builder's approach note, before any code
+# ---------------------------------------------------------------------------
+
+SOLUTION_REVIEW_FILE = "solution-reviews.md"
+SOLUTION_VERDICTS = ("go", "changes")
+_SOLUTION_COLS = ("unit", "round", "verdict", "digest", "note", "reviewer", "author", "date",
+                  "changes")
+_SOLUTION_HEADER = (
+    "# Solution reviews\n\n"
+    "One row per round of a seat's review of a builder's approach note, before any code, "
+    "written by `critic.py approach record`: GO or CHANGES, bound to the note's digest (the "
+    "first 12 hex digits of the sha256 of its bytes).\n\n"
+    "| Unit | Round | Verdict | Digest | Note | Reviewer | Author | Date | Changes |\n"
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+_MIN_KEY = "review.solution_review.min_points"
+_CLASSES_KEY = "review.solution_review.risk_classes"
+
+
+def solution_reviews_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / SOLUTION_REVIEW_FILE
+
+
+def note_digest(path: Path | str) -> str:
+    """The first 12 hex digits of the sha256 of the note's bytes."""
+    import hashlib  # noqa: PLC0415 - local; only this path needs it
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
+    """`(min_points, risk_classes)` in force. A value of the wrong shape raises ValueError
+    naming its key, never read as off, so a typo cannot switch the step off silently."""
+    import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
+    from lib import risk_class  # noqa: PLC0415
+    low = config.get(repo_root, "review.solution_review.min_points", 0)
+    classes = config.get(repo_root, "review.solution_review.risk_classes", [])
+    if isinstance(low, bool) or not isinstance(low, int) or low < 0:
+        raise ValueError(f"`{_MIN_KEY}` is {low!r}, which is not a whole number of 0 or more "
+                         f"- refused rather than read as off")
+    names = [c.strip().lower() for c in classes if isinstance(c, str)] \
+        if isinstance(classes, list) else None
+    if names is None or len(names) != len(classes) \
+            or any(c not in risk_class.CLASSES for c in names):
+        raise ValueError(f"`{_CLASSES_KEY}` is {classes!r}, which is not a list of risk "
+                         f"classes ({', '.join(risk_class.CLASSES)}) - refused rather than "
+                         f"read as off")
+    return low, names
+
+
+def _solution_review_rule(repo_root: Path | str, unit: str) -> tuple[str | None, str]:
+    """`(reason, why_not)`: why the settings name the unit, or None and why they do not."""
+    from lib import risk_class  # noqa: PLC0415
+    low, classes = solution_review_settings(repo_root)
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        raise ValueError(f"no unit {unit} is found in this project")
+    text = Path(found[0]).read_text(encoding="utf-8")
+    raw = (sdlc_md.extract_field(text, "Points") or "").strip()
+    points = int(raw) if raw.isdigit() else None
+    rmap = risk_class.load_map(repo_root)
+    cls = unit_risk_class(repo_root, text, rmap)
+    taken, refused = [], []
+    if low == 0:
+        refused.append(f"`{_MIN_KEY}` is 0, so no unit takes it by points")
+    elif points is None:
+        refused.append(f"{unit} carries no Points, so `{_MIN_KEY}` {low} does not take it")
+    elif points >= low:
+        taken.append(f"{points} points, at or above `{_MIN_KEY}` {low}")
+    else:
+        refused.append(f"{points} points, below `{_MIN_KEY}` {low}")
+    if not classes:
+        refused.append(f"`{_CLASSES_KEY}` is empty, so no unit takes it by risk class")
+    elif cls in classes:
+        taken.append(f"risk class {cls}, listed in `{_CLASSES_KEY}`")
+    else:
+        unmapped = "" if rmap.declared else (f": no `{risk_class.CONFIG_KEY}` map is declared, "
+                                            f"so every unit reads {risk_class.DEFAULT}")
+        refused.append(f"risk class {cls}, not listed in `{_CLASSES_KEY}` "
+                       f"({', '.join(classes)}){unmapped}")
+    return ("; ".join(taken) or None), "; ".join(refused)
+
+
+def solution_review_reason(repo_root: Path | str, unit: str) -> str | None:
+    """Why `review.solution_review` names the unit for a solution review, or None when it does
+    not. Raises ValueError for a unit not found or a setting of the wrong shape."""
+    return _solution_review_rule(repo_root, unit)[0]
+
+
+def read_solution_reviews(repo_root: Path | str, unit: str | None = None) -> list[dict]:
+    """The ledger's rows in file order, the unit's alone when one is named (matched as
+    `norm_id` matches ids, so `US-0001` is `us0001`): `round` an int (0 when unreadable),
+    `verdict` GO or CHANGES, and the text cells as their author wrote them, `changes` empty
+    for a GO."""
+    out = []
+    for row in _read_rows(solution_reviews_path(repo_root), _SOLUTION_COLS):
+        if unit is not None and sdlc_md.norm_id(row["unit"]) != sdlc_md.norm_id(unit):
+            continue
+        row = {k: _unescape_outside_spans(v) for k, v in row.items()}
+        row["round"] = int(row["round"]) if row["round"].isdigit() else 0
+        row["verdict"] = row["verdict"].upper()
+        row["changes"] = "" if row["changes"] == "-" else row["changes"]
+        out.append(row)
+    return out
+
+
+def approach_agreed(repo_root: Path | str, unit: str, note: Path | str) -> tuple[bool, str]:
+    """`(ok, why)`: ok when the unit's latest solution review is a GO recorded against the
+    note's digest as it stands now; otherwise why not."""
+    if not Path(note).is_file():
+        return False, f"the note {note} names no file"
+    rows = read_solution_reviews(repo_root, unit)
+    if not rows:
+        return False, (f"no solution review is recorded for {unit} in "
+                       f"sdlc-studio/reviews/{SOLUTION_REVIEW_FILE}")
+    last = rows[-1]
+    if last["verdict"] != "GO":
+        return False, (f"the latest solution review of {unit} is {last['verdict']} at round "
+                       f"{last['round']}: revise the note and record a new verdict")
+    now = note_digest(note)
+    if last["digest"] != now:
+        return False, (f"the GO at round {last['round']} was recorded against note digest "
+                       f"{last['digest']}, and the note's digest now is {now}")
+    return True, f"GO at round {last['round']} against note digest {now}"
+
+
+def _solution_cell(value: str) -> str:
+    """A free-text cell through `_clean`, its pipes kept as `\\|` (which `table_cells` reads
+    back as `|`) rather than folded to `/`. A NUL is dropped: it stands in for the pipe."""
+    return _clean(str(value).replace("\x00", "").replace("|", "\x00")).replace("\x00", "\\|")
+
+
+def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note: Path | str,
+                           reviewer: str, author: str,
+                           changes_file: Path | str | None = None) -> tuple[Path, dict, str]:
+    """Append one round of a seat's verdict on the unit's approach note to the ledger, bound to
+    the note's digest; `(path, row, reason)`. Refused with ValueError, nothing written: a GO
+    with changes, a CHANGES without them, a note that names no file, a reviewer not independent
+    of the author, a value no cell can hold, or a unit `review.solution_review` does not name.
+    The round is counted and the row appended under the ledger lock."""
+    verdict = verdict.lower()
+    if verdict not in SOLUTION_VERDICTS:
+        raise ValueError(f"`--verdict` is {verdict!r}, not one of {', '.join(SOLUTION_VERDICTS)}")
+    if verdict == "go" and changes_file is not None:
+        raise ValueError("`--verdict go` takes no `--changes`: a GO agrees the approach as it "
+                         "stands")
+    if verdict == "changes" and changes_file is None:
+        raise ValueError("`--verdict changes` needs `--changes FILE` naming what the approach "
+                         "must change")
+    changes = ""
+    if changes_file is not None:
+        try:
+            changes = Path(changes_file).read_text(encoding="utf-8").strip()
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"the changes file {changes_file} cannot be read ({exc})") from exc
+        if not changes:
+            raise ValueError(f"the changes file {changes_file} is empty")
+    if not Path(note).is_file():
+        raise ValueError(f"the note {note} names no file")
+    ok, why = independence(reviewer, author)
+    if not ok:
+        raise ValueError(f"the reviewer must be independent of the author: {why}")
+    reason, why_not = _solution_review_rule(repo_root, unit)
+    if reason is None:
+        raise ValueError(f"{unit} takes no solution review: {why_not}")
+    root = Path(repo_root).resolve()
+    shown = Path(note).resolve()
+    shown = shown.relative_to(root).as_posix() if shown.is_relative_to(root) else str(note)
+    digest = note_digest(note)
+    cells = [_solution_cell(v) for v in (unit, shown, reviewer, author, changes or "-")]
+    path = solution_reviews_path(repo_root)
+    with _ledger_lock(path):
+        if not path.exists():
+            sdlc_md.atomic_write(path, _SOLUTION_HEADER)
+        rnd = len(read_solution_reviews(repo_root, unit)) + 1
+        with path.open("a", encoding="utf-8") as fh:  # append-only
+            fh.write(f"| {cells[0]} | {rnd} | {verdict.upper()} | {digest} | {cells[1]} | "
+                     f"{cells[2]} | {cells[3]} | {sdlc_md.now_date()} | {cells[4]} |\n")
+    return path, read_solution_reviews(repo_root, unit)[-1], reason
+
+
+def cmd_approach_record(args: argparse.Namespace) -> int:
+    try:
+        path, row, reason = record_solution_review(args.root, args.unit, args.verdict,
+                                                   args.note, args.reviewer, args.author,
+                                                   changes_file=args.changes)
+    except (OSError, ValueError) as exc:
+        print(f"approach record refused: {exc}. Nothing was written.", file=sys.stderr)
+        return 2
+    print(f"recorded {row['verdict']} for {args.unit} at round {row['round']} against note "
+          f"digest {row['digest']} -> {path}")
+    print(f"{args.unit} takes a solution review: {reason}")
+    return 0
+
+
 def cmd_self_check_record(args: argparse.Namespace) -> int:
     try:
         claims = _entries(args.claims, "claims")
@@ -6603,6 +6797,25 @@ def build_parser() -> argparse.ArgumentParser:
     # is nested a level below, so a "." default would overwrite `--root X self-check record`.
     scr.add_argument("--root", default=argparse.SUPPRESS)
     scr.set_defaults(func=cmd_self_check_record)
+    ap = sub.add_parser("approach",
+                        help="A seat's review of a builder's approach note, before any code.")
+    aps = ap.add_subparsers(dest="approach_cmd", required=True)
+    apr = aps.add_parser("record",
+                         help="Record a seat's GO or CHANGES on a unit's approach note in "
+                              "sdlc-studio/reviews/solution-reviews.md, bound to the note's "
+                              "digest; refused for a unit `review.solution_review` does not "
+                              "name.")
+    apr.add_argument("--unit", required=True)
+    apr.add_argument("--verdict", required=True, choices=SOLUTION_VERDICTS)
+    apr.add_argument("--note", required=True, metavar="NOTE.md",
+                     help="the approach note the seat judged; its digest is recorded")
+    apr.add_argument("--changes", default=None, metavar="FILE",
+                     help="what the approach must change; required with --verdict changes, "
+                          "refused with --verdict go")
+    apr.add_argument("--reviewer", required=True, help="the reviewing seat's id")
+    apr.add_argument("--author", required=True, help="the builder's id")
+    apr.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
+    apr.set_defaults(func=cmd_approach_record)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--unrecorded-staged", dest="unrecorded_staged", action="store_true",

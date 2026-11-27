@@ -951,7 +951,9 @@ NON_CEREMONY_VERBS = {
     "sprint": ("appetite", "close", "boundary", "report", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call", "cost",
                "handoff", "resume", "drive"),
-    "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
+    # `approach` reviews an approach note before code; the close certifies the code review.
+    "critic": ("approach", "brief", "caller-check", "correct", "self-check", "show",
+               "supersede"),
     "handoff": ("show",),
     # `evidence` renders the signed reports onto a page after the runs are signed; it reads
     # the record and certifies nothing a close could hold.
