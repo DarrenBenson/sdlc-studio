@@ -960,8 +960,9 @@ NON_CEREMONY_VERBS = {
     "sprint_report": ("evidence", "disclose"),
     # `trace` reads an escaped bug back to the unit and verdict that let it through, and
     # `to-class` turns its root cause into a failure class; both are post-release records, run
-    # after a defect is found, so no close can certify them.
-    "escape": ("to-class", "trace"),
+    # after a defect is found, so no close can certify them. `failure-rate` reads the release
+    # records and incidents into an advisory figure; it certifies nothing either.
+    "escape": ("failure-rate", "to-class", "trace"),
     # A persona's learnings are recorded and read between runs; no verb certifies a close.
     "persona_memory": ("add", "approve", "approve-brief", "learn-brief", "list", "propose",
                        "recall"),

@@ -28,6 +28,7 @@ harness around a deploy you run yourself.
 | `deploy.py preflight` | Gate + readiness verdict + the operator hand-off (no deploy). Exit 0 if ready |
 | `deploy.py record --status <s> --detail "..."` | Append an outcome (`rolled-out`/`verified`/`rolled-back`/`failed`) to `sdlc-studio/deploy-log.md` |
 | `deploy.py metrics` | The DORA four keys from records already kept: deployment frequency + change failure rate (the ledger), lead time (git author times between deploy events), MTTR (High/Critical bugs Created -> Fixed). Advisory - no key feeds a gate; an absent source is named UNMEASURABLE; no ledger = not applicable, never a nag |
+| `escape.py failure-rate [--since D] [--until D] [--settle-days N]` | Change failure rate from records: the releases with at least one linked incident over the releases counted. `--since`/`--until` set the window (default the 90 days ending today, both days included); a release younger than `--settle-days` (default 14) at the window's end, or today if earlier, is pending and counted neither way, even when an incident names it. Its sources are the release records `release_cut.py changelog-cut` writes and incidents, issues whose `## Root Cause` section is written, linked through the escaped bugs they were triaged into. No release record or no incident reads not measured, never 0%. Where `deploy.py metrics` counts `failed` and `rolled-back` rows of the deploy ledger, this counts releases with a linked incident; the sprint report's DORA row counts CI push runs. Advisory, as `deploy.py metrics` is |
 
 ## Prerequisites
 

@@ -20,6 +20,16 @@ injected at build and review, citing the bug and its `Escaped-via` unit as evide
 the bug's Affects as the files it applies to. A bug not escaped, not confirmed, or whose Root
 Cause is unwritten, and a class the store already holds, are refused with nothing written.
 
+`failure-rate [--since D] [--until D] [--settle-days N]` derives change failure rate: the
+releases with at least one linked incident divided by the releases counted, from the release
+records `release_cut.py changelog-cut` writes. An incident is an issue whose Root Cause section is
+written, linked to a release through each escaped bug it was triaged into (the issue's
+`Decomposed-into`, or a bug naming it as `Parent`) and that bug's `Shipped-in`. The window is the
+`WINDOW_DAYS` days ending on `--until` (today by default), both days included. A release younger
+than `SETTLE_DAYS` days (`--settle-days`) at the earlier of the window's end and today is pending,
+counted neither way even when an incident already names it. No release record in the window,
+every release pending, or no incident recorded reads not measured, never 0%. It writes nothing.
+
 Verbs are subcommands, so a further step of the escape record adds a parser beside these.
 """
 from __future__ import annotations
@@ -29,6 +39,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -42,10 +53,19 @@ UNIT_TYPES = ("story", "bug")
 _UNIT_ID_RE = re.compile(r"(?<![A-Za-z0-9])(?:US|BG)-?\d{4,}(?![0-9])", re.I)
 #: The record separator between commit messages in the log a release is read from.
 _MSG_SEP = "\x1e"
+#: The days a change failure rate counts by default, ending on the window's end date.
+WINDOW_DAYS = 90
+#: The days a release is held as pending before it counts, so an incident can be linked first.
+SETTLE_DAYS = 14
+_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 class TraceRefused(Exception):
     """A trace that cannot be made or recorded; the CLI exits 2 with its message."""
+
+
+class RateRefused(Exception):
+    """A change failure rate that cannot be read; the CLI exits 2 with its message."""
 
 
 def _git(root: Path, *args: str) -> str | None:
@@ -243,6 +263,183 @@ def to_class(root: Path | str, bug: str, name: str, rule: str, behaviour: str) -
         raise TraceRefused(f"{exc}; nothing written") from exc
 
 
+def _date(value, what: str) -> date:
+    """`value` as a date when it is a `YYYY-MM-DD` string naming a real day, else `RateRefused`
+    naming `what`. The pattern is checked first, so a compact `20260105` is refused on every
+    Python, not only on those whose `fromisoformat` rejects it."""
+    if isinstance(value, str) and _DATE_RE.fullmatch(value):
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            pass
+    raise RateRefused(f"{what} is not a date YYYY-MM-DD: {value!r}")
+
+
+def _bare(version: str) -> str:
+    """A release name with one leading `v` or `V` dropped, so `v1.1.0` and `1.1.0` are one."""
+    return version[1:] if version[:1] in ("v", "V") else version
+
+
+def _root_cause_written(text: str) -> bool:
+    """True when an issue's Root Cause section is written, judged by the one reader of an
+    unwritten section, the escaped-bug gate. The gate is asked with `Escaped: yes` set first,
+    so the issue's own fields cannot excuse it from the test."""
+    import transition  # noqa: PLC0415 - deferred sibling, as `to_class` reads it
+    return transition._escaped_root_cause_gate("> **Escaped:** yes\n" + text, "counted") is None
+
+
+def _release_dates(root: Path) -> dict[str, tuple[str, date]]:
+    """{bare version: (version as recorded, date)} from the release record file, empty when it
+    is absent. Raises `RateRefused` naming the line for a line `release_cut` cannot read, a
+    record whose `date` is not `YYYY-MM-DD`, and a release recorded on two lines."""
+    import release_cut  # noqa: PLC0415 - deferred sibling: the reader of the record it writes
+    try:
+        text, records = release_cut._release_records(root)
+    except ValueError as exc:
+        raise RateRefused(str(exc)) from exc
+    lines = [n for n, line in enumerate(text.splitlines(), 1) if line.strip()]
+    out: dict[str, tuple[str, date]] = {}
+    first: dict[str, int] = {}
+    for n, rec in zip(lines, records):
+        when = _date(rec.get("date"), f"{release_cut.RELEASES_REL} line {n}'s date")
+        key = _bare(rec["version"])
+        if key in out:
+            raise RateRefused(f"{release_cut.RELEASES_REL} lines {first[key]} and {n} both "
+                              f"record release {key}; keep one")
+        out[key], first[key] = (rec["version"], when), n
+    return out
+
+
+def _incident_links(root: Path) -> tuple[set[str], dict[str, tuple[str, list[str]]]]:
+    """(the incident ids, {bug id: (Shipped-in, [incident ids])}) for each escaped bug with a
+    `Shipped-in` that an incident is linked to: named in the issue's `Decomposed-into`, or
+    naming the issue as its `Parent`."""
+    incidents: dict[str, str] = {}
+    children: dict[str, set[str]] = {}
+    for path, text in sdlc_md.iter_artifact_files("issue", root):
+        text = text or ""
+        if not _root_cause_written(text):
+            continue
+        iid = sdlc_md.extract_record_id(path.stem)
+        incidents[sdlc_md.norm_id(iid)] = iid
+        children[sdlc_md.norm_id(iid)] = {sdlc_md.norm_id(b) for b in sdlc_md.decomposed_ids(text)}
+    links: dict[str, tuple[str, list[str]]] = {}
+    for path, text in sdlc_md.iter_artifact_files("bug", root):
+        text = text or ""
+        bid = sdlc_md.extract_record_id(path.stem)
+        shipped = sdlc_md.extract_field(text, "Shipped-in")
+        if (sdlc_md.extract_field(text, "Escaped") or "").lower() != "yes" or not shipped:
+            continue
+        parents = {sdlc_md.norm_id(p) for p in sdlc_md.parent_refs(text)}
+        named = [incidents[k] for k in incidents
+                 if k in parents or sdlc_md.norm_id(bid) in children[k]]
+        if named:
+            links[bid] = (shipped, named)
+    return set(incidents.values()), links
+
+
+def _percent(failed: int, counted: int) -> int | float:
+    """The rate as a whole number when exact, else rounded to one decimal."""
+    if (100 * failed) % counted == 0:
+        return 100 * failed // counted
+    return round(100 * failed / counted, 1)
+
+
+def failure_rate(root: Path | str, since: str | None = None, until: str | None = None,
+                 settle_days: int = SETTLE_DAYS) -> dict:
+    """Change failure rate over a window: the releases with at least one linked incident divided
+    by the releases counted. The one calculation, which `failure-rate` prints.
+
+    The window runs from `since` to `until`, both included, as `YYYY-MM-DD`: `until` defaults
+    to today (UTC, the clock the release cut dates its records by), `since` to the
+    `WINDOW_DAYS` days ending on `until`. A release dated in it is pending while it is younger
+    than `settle_days` at the earlier of `until` and today, and is then neither counted nor
+    failed, even when an incident already names it. Returns {rate_percent, counted, failed:
+    [{release, incidents, bugs}], pending, unrecorded: [{bug, shipped_in, incidents}], since,
+    until, settle_days, not_measured}. `rate_percent` is None and `not_measured` gives the
+    reason when the window holds no release record, every release in it is pending, or no
+    incident is recorded, checked in that order. `unrecorded` names the linked bugs whose
+    release no record holds, which move no figure. Raises `RateRefused` for a date that does not
+    parse, `since` after `until`, a negative `settle_days`, or a record file it cannot read."""
+    root = Path(root)
+    today = date.fromisoformat(sdlc_md.now_date())
+    end = _date(until, "--until") if until is not None else today
+    start = (_date(since, "--since") if since is not None
+             else end - timedelta(days=WINDOW_DAYS - 1))
+    if start > end:
+        raise RateRefused(f"--since {start} is after --until {end}")
+    if settle_days < 0:
+        raise RateRefused(f"--settle-days must be 0 or more, not {settle_days}")
+    releases = _release_dates(root)
+    as_of = min(end, today)
+    in_window = sorted((when, version) for version, when in releases.values()
+                       if start <= when <= end)
+    counted = [v for when, v in in_window if (as_of - when).days >= settle_days]
+    pending = [v for when, v in in_window if (as_of - when).days < settle_days]
+    incidents, links = _incident_links(root)
+    by_release: dict[str, tuple[set[str], set[str]]] = {}
+    unrecorded = []
+    for bid, (shipped, named) in links.items():
+        if _bare(shipped) not in releases:
+            unrecorded.append({"bug": bid, "shipped_in": shipped, "incidents": named})
+            continue
+        hit = by_release.setdefault(releases[_bare(shipped)][0], (set(), set()))
+        hit[0].update(named)
+        hit[1].add(bid)
+    failed = [{"release": v, "incidents": sorted(by_release[v][0]),
+               "bugs": sorted(by_release[v][1])} for v in counted if v in by_release]
+    if not in_window:
+        reason = ("no release record in the window: a release is recorded when `release_cut.py "
+                  "changelog-cut` cuts it, so one cut before that record existed has none")
+    elif not counted:
+        reason = (f"every release in the window is still inside the {settle_days}-day settling "
+                  f"period: {', '.join(pending)}")
+    elif not incidents:
+        reason = ("no incident recorded: an incident is an issue whose `## Root Cause` section "
+                  "is written, triaged into the escaped bugs it caused")
+    else:
+        reason = None
+    return {"rate_percent": None if reason else _percent(len(failed), len(counted)),
+            "counted": counted, "failed": failed, "pending": pending, "unrecorded": unrecorded,
+            "since": start.isoformat(), "until": end.isoformat(), "settle_days": settle_days,
+            "not_measured": reason}
+
+
+def _plural(noun: str, items: list[str]) -> str:
+    return f"{noun}{'' if len(items) == 1 else 's'} {', '.join(items)}"
+
+
+def cmd_failure_rate(args: argparse.Namespace) -> int:
+    try:
+        result = failure_rate(args.root, args.since, args.until, args.settle_days)
+    except RateRefused as exc:
+        print(f"escape failure-rate refused: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(result, indent=2))
+        return 0
+    if result["not_measured"]:
+        print(f"change failure rate not measured: {result['not_measured']}")
+    else:
+        print(f"change failure rate {result['rate_percent']}% ({len(result['failed'])} of "
+              f"{len(result['counted'])} releases)")
+    period = f"{result['settle_days']}-day settling period"
+    print(f"window: {result['since']} to {result['until']} (both days included), {period}")
+    if result["not_measured"]:
+        return 0
+    print(f"counted: {', '.join(result['counted'])}")
+    print("failed: " + ("; ".join(
+        f"{f['release']} ({_plural('incident', f['incidents'])}; {_plural('bug', f['bugs'])})"
+        for f in result["failed"]) or "none"))
+    print("pending: " + (f"{', '.join(result['pending'])} (inside the {period})"
+                         if result["pending"] else "none"))
+    for u in result["unrecorded"]:
+        print(f"linked to an unrecorded release: {u['bug']} names {u['shipped_in']} "
+              f"({_plural('incident', u['incidents'])}); it moves no figure: record the release "
+              f"or correct the bug's Shipped-in")
+    return 0
+
+
 def cmd_to_class(args: argparse.Namespace) -> int:
     try:
         row = to_class(args.root, args.bug, args.class_name, args.rule, args.behaviour)
@@ -311,6 +508,21 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("--root", default=".")
     c.add_argument("--format", choices=("text", "json"), default="text")
     c.set_defaults(func=cmd_to_class)
+    r = sub.add_parser("failure-rate", help="change failure rate: releases with a linked incident "
+                                            "over the releases counted, or not measured")
+    r.add_argument("--since", metavar="YYYY-MM-DD",
+                   help=f"the window's first day (default: the {WINDOW_DAYS} days ending on "
+                        f"--until, both days included)")
+    r.add_argument("--until", metavar="YYYY-MM-DD",
+                   help="the window's last day (default: today, UTC)")
+    r.add_argument("--settle-days", type=int, default=SETTLE_DAYS, metavar="N",
+                   help=f"days a release is held as pending before it counts (default: "
+                        f"{SETTLE_DAYS})")
+    r.add_argument("--root", default=".")
+    r.add_argument("--format", choices=("text", "json"), default="text",
+                   help="text or json; the rate prints as a whole number when exact, else to "
+                        "one decimal")
+    r.set_defaults(func=cmd_failure_rate)
     sdlc_md.add_global_root(p)
     return p
 
