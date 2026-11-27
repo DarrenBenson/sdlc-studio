@@ -6455,6 +6455,9 @@ _SOLUTION_HEADER = (
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 _MIN_KEY = "review.solution_review.min_points"
 _CLASSES_KEY = "review.solution_review.risk_classes"
+_PANEL_KEY = "review.solution_review.panel"
+#: The panel entry for the unit's own Persona, sitting as a stakeholder beside the seats.
+_PERSONA = "persona"
 
 
 def solution_reviews_path(repo_root: Path | str) -> Path:
@@ -6471,7 +6474,8 @@ def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
     """`(min_points, risk_classes)` in force. A value of the wrong shape, either key's or that of
     the `review` or `review.solution_review` block above them, raises ValueError naming its key,
     never read as off, so a mistyped value cannot switch the step off silently. An empty block
-    reads as the defaults."""
+    reads as the defaults. A malformed `review.solution_review.panel` raises here too, as
+    `solution_review_panel` refuses it, so it refuses every reader before any unit is read."""
     import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
     from lib import risk_class  # noqa: PLC0415
     try:
@@ -6498,6 +6502,7 @@ def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
         raise ValueError(f"`{_CLASSES_KEY}` is {classes!r}, which is not a list of risk "
                          f"classes ({', '.join(risk_class.CLASSES)}) - refused rather than "
                          f"read as off")
+    solution_review_panel(repo_root)
     return low, names
 
 
@@ -6556,12 +6561,103 @@ def read_solution_reviews(repo_root: Path | str, unit: str | None = None) -> lis
     return out
 
 
-def approach_agreed(repo_root: Path | str, unit: str, note: Path | str) -> tuple[bool, str]:
-    """`(ok, why)`: ok when the unit's latest solution review is a GO recorded against the
-    note's digest as it stands now; otherwise why not."""
-    if not Path(note).is_file():
-        return False, f"the note {note} names no file"
-    rows = read_solution_reviews(repo_root, unit)
+def _seat_cards(repo_root: Path | str) -> list[str]:
+    """The seats the project has a card for: the shipped seats, then each other role a project
+    card declares, under `personas/seats` or the legacy `personas/amigos`, sorted."""
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    roster = persona_resolve.seat_roster(repo_root)
+    shipped = [s for s in roster if s in persona_resolve.SEATS]
+    own = (set(roster) | {role for role, _ in _declared_reviewers(repo_root)}) - set(shipped)
+    return shipped + sorted(own)
+
+
+def solution_review_panel(repo_root: Path | str) -> list[str]:
+    """The entries of `review.solution_review.panel`, stripped, lower-cased and each once, in
+    the order written; empty when unset. Raises ValueError naming the key, never read as empty:
+    a value that is not a list, an entry that is not a seat the project has a card for or
+    `persona`, and `persona` while a project card declares the role `persona` too."""
+    import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
+    raw = config.get(repo_root, _PANEL_KEY, [])
+    if not isinstance(raw, list):
+        raise ValueError(f"`{_PANEL_KEY}` is {raw!r}, which is not a list of seats, each a seat "
+                         f"the project has a card for, or `persona` - refused rather than read "
+                         f"as empty")
+    roster = _seat_cards(repo_root)
+    seats: list[str] = []
+    for entry in raw:
+        name = entry.strip().lower() if isinstance(entry, str) else None
+        if name not in roster and name != _PERSONA:
+            raise ValueError(f"`{_PANEL_KEY}` is {raw!r}, and {entry!r} is not a seat the "
+                             f"project has a card for, or `persona`: the seats it has a card "
+                             f"for are {', '.join(roster)} (the shipped seats and the "
+                             f"project's own seat cards) - refused rather than read as empty")
+        if name == _PERSONA and _PERSONA in roster:
+            raise ValueError(f"`{_PANEL_KEY}` names `persona`, which is ambiguous here: a "
+                             f"project seat card declares the role `persona`; rename that "
+                             f"card's role, or drop `persona` from the panel - refused rather "
+                             f"than read as empty")
+        if name not in seats:
+            seats.append(name)
+    return seats
+
+
+def _persona_key(name: str) -> str:
+    """A persona name as the registry matches it: letters and digits only, lower-cased."""
+    return re.sub(r"[^a-z0-9]", "", (name or "").lower())
+
+
+def _unit_persona(repo_root: Path | str, unit: str) -> str:
+    """The unit's `Persona` field, stripped, empty when it names none."""
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        raise ValueError(f"no unit {unit} is found in this project")
+    return (sdlc_md.extract_field(sdlc_md.read_text_safe(found[0]), "Persona") or "").strip()
+
+
+def effective_panel(repo_root: Path | str, unit: str) -> tuple[list[str], dict[str, str]]:
+    """`(seats, skipped)`: the entries of `review.solution_review.panel` that sit on the unit,
+    in the panel's order, and each entry left out mapped to why: the seat that builds the unit
+    (the lane brief's record, else the engineering seat), and `persona` for a unit that names
+    no Persona. Both empty when the panel is unset. Raises ValueError for a malformed panel or
+    a unit not found."""
+    panel = solution_review_panel(repo_root)
+    persona = _unit_persona(repo_root, unit)
+    builder = run_state.lane_seat(repo_root, unit) or BUILD_SEAT
+    seats: list[str] = []
+    skipped: dict[str, str] = {}
+    for seat in panel:
+        if seat == builder:
+            skipped[seat] = f"the {seat} seat builds {unit}"
+        elif seat == _PERSONA and not _persona_key(persona):
+            skipped[seat] = f"{unit} names no Persona, so no stakeholder sits"
+        else:
+            seats.append(seat)
+    return seats, skipped
+
+
+def _panel_seat(cell: str, persona: str) -> str | None:
+    """The seat a Reviewer cell sits in on a panel: its `(<role>)` group (`recorded_seat`),
+    except that a `(persona)` cell sits only when the name before the group is the unit's
+    Persona (`persona`, as `_persona_key` spells it), and otherwise in no seat."""
+    seat = recorded_seat(cell)
+    if seat != _PERSONA:
+        return seat
+    text = _unescape(cell or "")
+    name = text[:_RECORDED_SEAT.search(text).start()]
+    return seat if _persona_key(name) == persona else None
+
+
+def _skipped_text(skipped: dict[str, str]) -> str:
+    return "".join(f"; {seat} is skipped: {why}" for seat, why in skipped.items())
+
+
+def _panel_text(panel: list[str], seats: list[str], skipped: dict[str, str], unit: str) -> str:
+    return (f"`{_PANEL_KEY}` is [{', '.join(panel)}], which seats {', '.join(seats) or 'nobody'} "
+            f"on {unit}{_skipped_text(skipped)}")
+
+
+def _last_row_agreed(rows: list[dict], unit: str, now: str | None) -> tuple[bool, str]:
+    """`(ok, why)` from the unit's latest row alone: a GO, against `now` when it is a digest."""
     if not rows:
         return False, (f"no solution review is recorded for {unit} in "
                        f"sdlc-studio/reviews/{SOLUTION_REVIEW_FILE}")
@@ -6569,11 +6665,80 @@ def approach_agreed(repo_root: Path | str, unit: str, note: Path | str) -> tuple
     if last["verdict"] != "GO":
         return False, (f"the latest solution review of {unit} is {last['verdict']} at round "
                        f"{last['round']}: revise the note and record a new verdict")
-    now = note_digest(note)
-    if last["digest"] != now:
+    if now is not None and last["digest"] != now:
         return False, (f"the GO at round {last['round']} was recorded against note digest "
                        f"{last['digest']}, and the note's digest now is {now}")
-    return True, f"GO at round {last['round']} against note digest {now}"
+    return True, f"GO at round {last['round']} against note digest {last['digest']}"
+
+
+def panel_state(repo_root: Path | str, unit: str, note: Path | str | None = None) -> dict:
+    """The unit's approach panel as the ledger stands: `set` (whether
+    `review.solution_review.panel` names any entry), `panel` (the entries), `seats` and
+    `skipped` (`effective_panel`), `latest` (each seat's latest row, None for a seat with none),
+    `agreed` and `why`. With the panel set, agreed means each seat's latest row is a GO, against
+    the note's digest now when a note is named, otherwise all on one digest; a set panel that
+    seats nobody agrees nothing. Unset, agreed and why read the unit's latest row alone. Raises
+    ValueError for a malformed panel or, with the panel set, a unit not found."""
+    rows = read_solution_reviews(repo_root, unit)
+    panel = solution_review_panel(repo_root)
+    now = note_digest(note) if note is not None else None
+    if not panel:
+        ok, why = _last_row_agreed(rows, unit, now)
+        return {"set": False, "panel": [], "seats": [], "skipped": {}, "latest": {},
+                "agreed": ok, "why": why}
+    seats, skipped = effective_panel(repo_root, unit)
+    persona = _unit_persona(repo_root, unit)
+    key = _persona_key(persona)
+    latest: dict[str, dict | None] = {seat: None for seat in seats}
+    for row in rows:
+        seat = _panel_seat(row["reviewer"], key)
+        if seat in latest:
+            latest[seat] = row
+    state = {"set": True, "panel": panel, "seats": seats, "skipped": skipped, "latest": latest}
+    if not seats:
+        return {**state, "agreed": False, "why": _panel_text(panel, seats, skipped, unit)}
+
+    def who(seat: str) -> str:
+        return f" ({persona})" if seat == _PERSONA else ""
+
+    problems = []
+    for seat in seats:
+        row = latest[seat]
+        if row is None:
+            problems.append(f"{seat} seat{who(seat)}: no verdict recorded")
+        elif row["verdict"] != "GO":
+            problems.append(f"{seat} seat{who(seat)}: latest verdict {row['verdict']} at round "
+                            f"{row['round']}")
+        elif now is not None and row["digest"] != now:
+            problems.append(f"{seat} seat{who(seat)}: GO at round {row['round']} on note digest "
+                            f"{row['digest']}")
+    if not problems and len({latest[seat]["digest"] for seat in seats}) > 1:
+        problems.append("the GOs are on more than one note digest: " + ", ".join(
+            f"{seat} {latest[seat]['digest']}" for seat in seats))
+    if problems:
+        on, tail = ("the note as it stands", f"; the note's digest now is {now}") if now \
+            else ("one note", "")
+        return {**state, "agreed": False,
+                "why": (f"not every seat on `{_PANEL_KEY}` has a GO on {on} for {unit}: "
+                        f"{'; '.join(problems)}{tail}{_skipped_text(skipped)}")}
+    rounds = ", ".join(f"{seat}{who(seat)} at round {latest[seat]['round']}" for seat in seats)
+    return {**state, "agreed": True,
+            "why": (f"every seat on `{_PANEL_KEY}` has a GO against note digest "
+                    f"{latest[seats[0]]['digest']}: {rounds}{_skipped_text(skipped)}")}
+
+
+def approach_agreed(repo_root: Path | str, unit: str, note: Path | str) -> tuple[bool, str]:
+    """`(ok, why)`: ok when the unit's latest solution review is a GO recorded against the
+    note's digest as it stands now; with `review.solution_review.panel` set, when every seat on
+    the unit's panel has such a GO (`panel_state`). Otherwise why not, a malformed panel and an
+    unknown unit included, never raised."""
+    if not Path(note).is_file():
+        return False, f"the note {note} names no file"
+    try:
+        state = panel_state(repo_root, unit, note)
+    except ValueError as exc:
+        return False, str(exc)
+    return state["agreed"], state["why"]
 
 
 def _solution_cell(value: str) -> str:
@@ -6582,13 +6747,48 @@ def _solution_cell(value: str) -> str:
     return _clean(str(value).replace("\x00", "").replace("|", "\x00")).replace("\x00", "\\|")
 
 
+def _panel_recorder(repo_root: Path | str, unit: str, reviewer: str):
+    """With `review.solution_review.panel` set, a reader of the seat each Reviewer cell sits in
+    on the unit's panel (`_panel_seat`); None when the panel is unset. Refused with ValueError:
+    a reviewer naming no `(<seat>)`, one in a seat the unit's panel does not seat (naming the
+    panel and each skipped seat and why), and a `(persona)` reviewer who is not the unit's
+    Persona."""
+    panel = solution_review_panel(repo_root)
+    if not panel:
+        return None
+    seats, skipped = effective_panel(repo_root, unit)
+    persona = _unit_persona(repo_root, unit)
+    seat = recorded_seat(reviewer)
+    if seat is None:
+        raise ValueError(f"the reviewer {reviewer!r} names no `(<seat>)`, so it sits in no seat: "
+                         f"{_panel_text(panel, seats, skipped, unit)}")
+    if seat not in seats:
+        raise ValueError(f"the reviewer {reviewer!r} sits as {seat}, and "
+                         f"{_panel_text(panel, seats, skipped, unit)}")
+    key = _persona_key(persona)
+    if _panel_seat(reviewer, key) is None:
+        raise ValueError(f"the reviewer {reviewer!r} sits as persona, and {unit}'s Persona is "
+                         f"{persona}: only the unit's own Persona sits in the persona seat")
+    return lambda cell: _panel_seat(cell, key)
+
+
+def _solution_round(rows: list[dict], reviewer: str, seat_of) -> int:
+    """The round a new row takes: the unit's rows so far plus one; with a panel set (`seat_of`
+    a seat reader), the rows recorded in the reviewer's seat plus one."""
+    if seat_of is None:
+        return len(rows) + 1
+    seat = seat_of(reviewer)
+    return 1 + sum(1 for row in rows if seat_of(row["reviewer"]) == seat)
+
+
 def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note: Path | str,
                            reviewer: str, author: str,
                            changes_file: Path | str | None = None) -> tuple[Path, dict, str]:
     """Append one round of a seat's verdict on the unit's approach note to the ledger, bound to
     the note's digest; `(path, row, reason)`. Refused with ValueError, nothing written: a GO
     with changes, a CHANGES without them, a note that names no file, a reviewer not independent
-    of the author, a value no cell can hold, or a unit `review.solution_review` does not name.
+    of the author, a value no cell can hold, a unit `review.solution_review` does not name, or a
+    reviewer the unit's panel does not seat (`_panel_recorder`).
     The round is counted, the row appended and read back under the ledger lock, so the row
     returned is this call's own. The Unit cell holds the id as its artefact file spells it
     (`display_id`, so a schema v3 id keeps its dash), the Note cell the note's path relative to
@@ -6618,6 +6818,7 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
     reason, why_not = _solution_review_rule(repo_root, unit)
     if reason is None:
         raise ValueError(f"{unit} takes no solution review: {why_not}")
+    seat_of = _panel_recorder(repo_root, unit, reviewer)
     shown = Path(os.path.relpath(Path(note).resolve(), Path(repo_root).resolve())).as_posix()
     digest = note_digest(note)
     cells = [_solution_cell(v) for v in (sdlc_md.display_id(repo_root, unit), shown, reviewer,
@@ -6626,7 +6827,7 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
     with _ledger_lock(path):
         if not path.exists():
             sdlc_md.atomic_write(path, _SOLUTION_HEADER)
-        rnd = len(read_solution_reviews(repo_root, unit)) + 1
+        rnd = _solution_round(read_solution_reviews(repo_root, unit), reviewer, seat_of)
         with path.open("a", encoding="utf-8") as fh:  # append-only
             fh.write(f"| {cells[0]} | {rnd} | {verdict.upper()} | {digest} | {cells[1]} | "
                      f"{cells[2]} | {cells[3]} | {sdlc_md.now_date()} | {cells[4]} |\n")

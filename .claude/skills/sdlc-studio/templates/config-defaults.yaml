@@ -107,6 +107,11 @@ review:
   solution_review:
     min_points: 0
     risk_classes: []
+    # The seats that review a unit's approach, each its own agent and review. Empty, one
+    # seat's GO agrees it; a list such as [qa, product, persona] needs a GO from every seat,
+    # each in its own rounds. `persona` is the unit's Persona and sits only when the unit
+    # names one; the seat that builds a unit is skipped for it.
+    panel: []
 
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking
