@@ -258,6 +258,28 @@ NOT MEASURED - {{dora_reason}}
 | --- | --- | --- |
 | Tokens per point | {{cal_tokens_per_point}} | {{cal_tokens_source}} |
 | Minutes per point | {{cal_minutes_per_point}} | {{cal_minutes_source}} |
+<!-- when: solution_review_present -->
+<!-- when: solution_review_measured -->
+
+**Solution review.** First-round approval and rounds per unit for the units that took a seat's
+review of their approach before any code, beside the units that did not. A unit counts once the
+delivery review has judged it in the run, a dropped or carried unit too, and is approved at its
+first round when none of its delivery verdicts in the run is a REJECT. Delivery rounds count
+verdict rows, as the Delivered table does, so a unit two seats approve counts two; solution review
+rounds are the highest round a unit's approach note reached. Priced tokens per unit is the mean,
+over the group's units, of the priced tokens of the agents recorded against each unit.
+
+| Group | Units | First-round approvals | Rate | Delivery rounds per unit | Solution review rounds per unit | Priced tokens per unit |
+| --- | --- | --- | --- | --- | --- | --- |
+<!-- repeat: solution_review -->
+| {{sr_group}} | {{sr_units}} | {{sr_first_round}} | {{sr_rate}} | {{sr_delivery_rounds}} | {{sr_solution_rounds}} | {{sr_priced}} |
+<!-- end -->
+<!-- end -->
+<!-- unless: solution_review_measured -->
+
+**Solution review: NOT MEASURED** - {{solution_review_reason}}
+<!-- end -->
+<!-- end -->
 
 ### Rulings
 

@@ -3477,7 +3477,8 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
 SCHEMA = 2
 #: The front page, in order, and the appendix beneath it.
 FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
-APPENDIX = ("goal_judgement", "cost", "dora", "calibration", "rulings", "waivers", "lane_yield", "lessons")
+APPENDIX = ("goal_judgement", "cost", "dora", "calibration", "solution_review", "rulings",
+            "waivers", "lane_yield", "lessons")
 
 
 def _num(value) -> bool:
@@ -3521,6 +3522,12 @@ REVIEW_ROWS = "review_rows"
 #: (`discharged_carries`), frozen beside `REVIEW_ROWS`. Read in place of the live reading
 #: whenever present, so a filed page never reads a status that moves after it.
 DISCHARGED = "report_discharged"
+
+#: The run record's field holding, per unit the run lists, the identities (`_solution_identity`)
+#: of its solution review rows dated inside the run's days, frozen beside `REVIEW_ROWS`. A page
+#: then reads the frozen rows the ledger still holds, so a row recorded after the close moves no
+#: figure. A record without it reads the ledger live by the date rule.
+SOLUTION_ROWS = "solution_review_rows"
 
 
 def _counted_rows(uid: str, rows: list[dict], state: dict, later_base: int | None,
@@ -3581,19 +3588,61 @@ def counted_review_rows(root: Path, state: dict, window: tuple) -> dict[str, lis
             for uid in _unit_order(state)[-1]}
 
 
+def _solution_identity(row: dict) -> str:
+    """A solution review row's identity: a digest of its unit, round, verdict, note digest and
+    date."""
+    cells = [str(row.get(k, "")).strip() for k in ("unit", "round", "verdict", "digest", "date")]
+    return hashlib.sha256("\x1f".join(cells).encode("utf-8")).hexdigest()[:16]
+
+
+def _solution_rows_by_unit(root: Path, state: dict, window: tuple) -> dict[str, list[dict]]:
+    """Per unit `state` lists, its solution review rows in this run, in ledger order: the rows
+    PREPARE froze (`SOLUTION_ROWS`) that the ledger still holds, else
+    those dated inside `window`, the run's `(start, end)`, by `_in_run`. The rule is the date's,
+    so a row another run recorded for the unit on the same day before the freeze is counted."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    path = critic.solution_reviews_path(root)
+    rows = critic.read_solution_reviews(root) if path.is_file() else []
+    frozen = state.get(SOLUTION_ROWS)
+    if isinstance(frozen, dict):
+        frozen = {sdlc_md.norm_id(u): ids for u, ids in frozen.items()}
+    out: dict[str, list[dict]] = {}
+    for uid in _unit_order(state)[-1]:
+        mine = [r for r in rows if sdlc_md.norm_id(r.get("unit", "")) == uid]
+        if isinstance(frozen, dict):
+            keep = set(frozen.get(uid) or [])
+            out[uid] = [r for r in mine if _solution_identity(r) in keep]
+        else:
+            out[uid] = [r for r in mine if _in_run(str(r.get("date") or "").strip(), *window)]
+    return out
+
+
+def counted_solution_rows(root: Path, state: dict, window: tuple) -> dict[str, list[str]]:
+    """Per unit `state` lists, the identities of its solution review rows dated inside `window`
+    by `_in_run`, read from the ledger itself (never an earlier freeze), as PREPARE records them
+    in `SOLUTION_ROWS`."""
+    live = {k: v for k, v in state.items() if k != SOLUTION_ROWS}
+    return {uid: [_solution_identity(r) for r in rows]
+            for uid, rows in _solution_rows_by_unit(root, live, window).items()}
+
+
 def freeze_review_rows(root: Path) -> dict:
     """PREPARE's reading of the verdict ledger, recorded on the live run as `REVIEW_ROWS`, over
     the window the page will state (`started_at` to now), and with it the carries those rows
     discharge (`DISCHARGED`), read once here like `report_gate_clear`: a discharged unit is
     dropped from the batch, so the seal never moves it, and a page reading its status live
-    moved when it was moved by hand after filing. Re-read on every prepare; the ledger itself
-    is only read. Returns the rows recorded."""
+    moved when it was moved by hand after filing. The solution review rows each unit holds
+    inside the same window are frozen too (`SOLUTION_ROWS`), so a row recorded after this
+    prepare is outside the page. Re-read on every prepare; the ledgers themselves are only read.
+    Returns the rows recorded."""
     try:
         state = run_state.read(root) or {}
         window = (state.get("started_at"), sdlc_md.now_iso8601())
         frozen = counted_review_rows(root, state, window)
         discharged = discharged_carries(root, {**state, REVIEW_ROWS: frozen}, window)
-        run_state.update(root, **{REVIEW_ROWS: frozen, DISCHARGED: discharged})
+        solution = counted_solution_rows(root, state, window)
+        run_state.update(root, **{REVIEW_ROWS: frozen, DISCHARGED: discharged,
+                                  SOLUTION_ROWS: solution})
     except (run_state.RunStateError, OSError) as exc:
         raise ReportError(f"the review rows could not be frozen on the run record: {exc}"
                           ) from exc
@@ -3694,6 +3743,9 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
         present = Counter(critic.row_identity(r) for r in verdicts)
     later = (_later_review_bases(root, state)
              if ledger_found and not isinstance(frozen, dict) else {})
+    by_unit: dict[str, list[dict]] = {}
+    for r in verdicts:
+        by_unit.setdefault(sdlc_md.norm_id(r.get("unit", "")), []).append(r)
     frozen_discharged = state.get(DISCHARGED)
     if isinstance(frozen_discharged, list):
         frozen_discharged = {sdlc_md.norm_id(u) for u in frozen_discharged}
@@ -3752,6 +3804,11 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
                        _frozen_rounds(frozen.get(uid) or [], present)
                        if isinstance(frozen, dict) else
                        len(_counted_rows(uid, verdicts, state, later.get(uid), window))),
+            # The verdict of each row `rounds` counts, read by the same rule.
+            "verdicts": (None if not ledger_found else
+                         [str(r.get("verdict") or "").strip().upper()
+                          for r in _run_rows(uid, by_unit.get(uid, []), frozen, state,
+                                             later.get(uid), window)]),
             "rounds_rel": ledger_rel})
     return out
 
@@ -4901,6 +4958,68 @@ def _cost_cache_writes_section(state: dict, state_rel: str, roles: dict,
         state_rel)}, rows)
 
 
+SR_TOOK, SR_NONE, SR_NOT_TAKEN = "took a solution review", "took none", "not taken"
+_SR_EMPTY = "no unit in this group was judged by the delivery review in the run"
+
+
+def whole_percent(n: int, d: int) -> str:
+    """`n` of `d` as a whole percent, rounded half up in integers: 1 of 8 reads 13%."""
+    return f"{(200 * n + d) // (2 * d)}%"
+
+
+def _solution_review_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
+                             window: tuple) -> dict:
+    """First-round approval and rounds per unit for the units that took a solution review
+    beside those that took none. A unit counts once the delivery review judged it in the run
+    (one or more of its verdict rows counted), a dropped or carried unit too; it took the step
+    when it holds a solution review row in the run (`_solution_rows_by_unit`), and it was
+    approved at its first round when none of its counted verdict rows is a REJECT. Delivery
+    rounds are the Delivered table's, verdict rows, so two seats approving count two; a unit's
+    solution review rounds are the highest Round cell among its rows in the run, so a panel's
+    several verdicts in one round count one. Priced tokens per unit is the mean of the priced
+    tokens of the agents recorded against each unit, NOT MEASURED naming any unit with none. The section is NOT MEASURED when no unit the run lists took the step, or when there
+    is no delivery ledger."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    title = "Solution review"
+    sol_rel = _rel(root, critic.solution_reviews_path(root))
+    vpath = critic.verdicts_path(root, "delivery")
+    vrel = _rel(root, vpath)
+    taken = _solution_rows_by_unit(root, state, window)
+    if not any(taken.values()):
+        return _section("solution_review", title, not_measured=unmeasured(
+            "solution_review", sol_rel, "no unit in the run took a solution review"))
+    if not vpath.is_file():
+        return _section("solution_review", title, not_measured=unmeasured(
+            "solution_review", vrel,
+            f"no verdict ledger at {vrel}, so no unit's delivery rounds are known"))
+    rows = []
+    for label, took in ((SR_TOOK, True), (SR_NONE, False)):
+        units = [u for u in ledger if u["rounds"] and bool(taken.get(u["id"])) is took]
+        n = len(units)
+        first = sum(1 for u in units if critic.REJECT not in (u["verdicts"] or []))
+        unpriced = [u["id"] for u in units if not _num(u["priced"])]
+
+        def measured(key: str, value, src: str) -> dict:
+            return fig(key, value, src) if n else unmeasured(key, src, _SR_EMPTY)
+        rows.append({
+            "sr_group": fig("sr_group", label, sol_rel),
+            "sr_units": fig("sr_units", n, f"{vrel}, {sol_rel}"),
+            "sr_first_round": measured("sr_first_round", first, vrel),
+            "sr_rate": measured("sr_rate", n and whole_percent(first, n), vrel),
+            "sr_delivery_rounds": measured(
+                "sr_delivery_rounds", n and round(sum(u["rounds"] for u in units) / n, 1), vrel),
+            "sr_solution_rounds": (measured("sr_solution_rounds", n and round(
+                sum(max(r["round"] for r in taken[u["id"]]) for u in units) / n, 1), sol_rel)
+                if took
+                else fig("sr_solution_rounds", SR_NOT_TAKEN, sol_rel)),
+            "sr_priced": (unmeasured("sr_priced", state_rel, _SR_EMPTY) if not n else
+                          unmeasured("sr_priced", state_rel, f"no priced figure in the "
+                                     f"Estimates table for {', '.join(unpriced)}") if unpriced
+                          else fig("sr_priced", round(sum(u["priced"] for u in units) / n),
+                                   state_rel))})
+    return _section("solution_review", title, rows=rows)
+
+
 def _calibration_section(state: dict, state_rel: str) -> dict:
     """The rates the plan was estimated from, and where each came from."""
     rates = (state.get("plan_snapshot") or {}).get("rates") or {}
@@ -5090,7 +5209,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  evidence_schema: str | None = None,
                  cost_forecast_rule: bool = True, effort_rule: bool = True,
                  filed_effort: dict | None = None, cache_trend_rule: bool = True,
-                 cache_writes_rule: bool = True) -> dict:
+                 cache_writes_rule: bool = True, solution_review_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -5130,6 +5249,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     `cache_writes_rule` states each role's cache-write split in its own section after those
     two. It is True for a first derivation, and a re-derivation passes whether the filed page
     carries the section, so a page filed before it re-derives without it.
+    `solution_review_rule` sets the units that took a solution review beside those that took
+    none, after Calibration; a re-derivation passes whether the page carries it too.
     """
     root = Path(root)
     state, read_rel = _run_state_for(root, run_id, record)
@@ -5259,6 +5380,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
+        _solution_review_section(root, state, state_rel, ledger,
+                                 (state.get("started_at"), _iso(end)))
+        if solution_review_rule else None,
         _rulings_section(state, state_rel),
         # Bounded at both ends by the run's own window, like DORA, so a decision taken before
         # or after the run cannot move a signed page.
@@ -6571,6 +6695,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          effort_rule=basis.get(EFFORT_RULE) == EFFORT_STATED,
                          cache_trend_rule=bool(_section_of(basis, "cache_read_trend")),
                          cache_writes_rule=bool(_section_of(basis, "cost_cache_writes")),
+                         solution_review_rule=bool(_section_of(basis, "solution_review")),
                          # Unsigned, the page's own effort: a clone without its plan reads it.
                          filed_effort=_page_readings(stored)["effort"] if anchor is None
                          else None,

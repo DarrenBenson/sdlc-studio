@@ -225,6 +225,18 @@ def _run(root: Path, full: bool) -> None:
         _write(root, "sdlc-studio/.local/refusals.jsonl",
                json.dumps({"lane": "gate", "ts": "2026-09-20T09:00:00Z",
                            "staged": ["src/widget.py"]}) + "\n")
+        # A delivery verdict and a solution review GO inside the run, so the solution review
+        # section carries its rows and every row key the annex catalogues.
+        _write(root, "sdlc-studio/reviews/critic-verdicts.md",
+               "# Critic verdicts\n\n| Unit | Verdict | Reviewer | Author | Date | Brief | Tier "
+               "| Issues |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+               "| US0101 | APPROVE | Rowan Vale | author-session | 2026-09-20 | bf0001 | full "
+               "| none |\n")
+        _write(root, "sdlc-studio/reviews/solution-reviews.md",
+               "# Solution reviews\n\n| Unit | Round | Verdict | Digest | Note | Reviewer | Author "
+               "| Date | Changes |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+               "| US0101 | 1 | GO | 0123456789ab | note.md | Lena Marsh | Dani Okafor "
+               "| 2026-09-20 | - |\n")
     _write(root, "sdlc-studio/.local/run-state.json", json.dumps(state))
 
 
