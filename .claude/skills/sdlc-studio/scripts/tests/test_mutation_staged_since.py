@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -36,6 +37,8 @@ TESTS = ("import sys\nfrom pathlib import Path\n\n"
          "def test_low():\n    assert clamp(-1, 0, 10) == 0\n\n\n"
          "def test_mid():\n    assert clamp(5, 0, 10) == 5\n")
 OTHER = "def other(a):\n    if a:\n        return 1\n    return 2\n"
+DOUBLE = "\n\ndef double(x):\n    return x * 2\n"
+RED = "\n\ndef test_red():\n    assert False\n"
 
 
 def _load():
@@ -66,6 +69,16 @@ def _fixture(top: Path, sub: str = "", ceiling: int | None = 2) -> Path:
     (root / "tests" / "test_calc.py").write_text(TESTS, encoding="utf-8")
     gitutil.git(["add", "-A"], top)
     return root
+
+
+def _stale(top: Path) -> None:
+    """Age every file outside .git by 100 seconds: the bytes still match the index, but its
+    cached stat data no longer does, so a `git status` free to take the index lock rewrites
+    the index to refresh that data (as after a builder saves a staged file unchanged)."""
+    for p in top.rglob("*"):
+        if p.is_file() and ".git" not in p.relative_to(top).parts:
+            st = p.stat()
+            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns - 100 * 10**9))
 
 
 def _state(top: Path) -> tuple:
@@ -110,7 +123,9 @@ class StagedSinceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             top = Path(d) / "repo"
             _fixture(top)
-            before = _state(top)
+            _stale(top)
+            index = top / ".git" / "index"
+            before, mtime = _state(top), index.stat().st_mtime_ns
             code, out, err = _cli(top, Path(d) / "tmp", "--files", "pkg/calc.py",
                                   "--since", "main", "--test", TEST_CMD)
             self.assertEqual(1, code, out + err)                 # one survivor, no refusal
@@ -119,6 +134,7 @@ class StagedSinceTests(unittest.TestCase):
             calc = str(top / "pkg" / "calc.py")
             self.assertIn(f"SURVIVED  {calc}:5 ", out)
             self.assertEqual(before, _state(top), "the index, the tree or the status changed")
+            self.assertEqual(mtime, index.stat().st_mtime_ns, "the run rewrote the index")
             report = json.loads((top / "sdlc-studio" / ".local" / "mutation-report.json")
                                 .read_text(encoding="utf-8"))
             self.assertEqual([calc], report["targets"])
@@ -127,6 +143,10 @@ class StagedSinceTests(unittest.TestCase):
             self.assertEqual([5], [r["line"] for r in report["mutations"]
                                    if r["verdict"] == "survived"])
             self.assertNotIn("mutation_staged_", json.dumps(report))
+            # The control: the stat data really is stale, so a status free to take the index
+            # lock rewrites the index the run above left alone.
+            gitutil.git(["status", "--porcelain"], top)
+            self.assertNotEqual(before[0], index.read_bytes(), "the stat data was not stale")
         # At the default ceiling every mutant fits, and the diff counts still name the two
         # changed-line mutants: a line map left keyed to the copy's paths would count none.
         with tempfile.TemporaryDirectory() as d:
@@ -168,6 +188,7 @@ class StagedSinceTests(unittest.TestCase):
                                   "--test", TEST_CMD, "--format", "json")
             report = _json(out)
             self.assertFalse(report["refused"], out + err)
+            self.assertIsNone(report["remedy"])
             self.assertIs(True, report["summary"]["tree"]["isolated"])
             self.assertIn("private copy of the index", report["summary"]["tree"]["why"])
             calc = str(top / "pkg" / "calc.py")
@@ -184,6 +205,8 @@ class StagedSinceTests(unittest.TestCase):
         for pattern in (r"(?i)unstaged or untracked", r"--since", r"(?i)fully staged",
                         r"(?i)private copy of the index",
                         r"(?i)index version of every file[^.]*unstaged edit[^.]*not run",
+                        r"(?i)`--test` naming its tests by absolute path runs the "
+                        r"working tree's tests, not the copy's",
                         r"(?i)isolated checkout", r"(?i)mutation\.py[^.]*refus",
                         r"(?i)uncommitted changes"):
             self.assertRegex(body, pattern)
@@ -196,6 +219,10 @@ class StagedSinceTests(unittest.TestCase):
                                   "--test", TEST_CMD, "--format", "json")
             self.assertEqual(2, code, out + err)
             self.assertEqual("uncommitted-surface", _json(out)["refusal_kind"])
+            # Run in place, the refusal is still written to the repository's report.
+            written = json.loads((top / "sdlc-studio" / ".local" / "mutation-report.json")
+                                 .read_text(encoding="utf-8"))
+            self.assertEqual("uncommitted-surface", written["refusal_kind"])
 
     def test_mixed_targets_take_the_copy_only_when_every_one_is_staged_or_clean(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -280,6 +307,77 @@ class StagedSinceTests(unittest.TestCase):
             self.assertIn(gen, unread[0]["reason"])
             self.assertNotIn("mutation_staged_", out)
             self.assertFalse((top / "sdlc-studio" / ".local" / "mutation-report.json").exists())
+
+    def test_the_copy_measures_the_diff_against_since_not_head(self) -> None:
+        """With HEAD a commit past the ref, lines 4 and 5 sit in that commit, so only a diff
+        against the ref counts them; a diff against HEAD sees the staged line alone."""
+        with tempfile.TemporaryDirectory() as d:
+            top, tmp = Path(d) / "repo", Path(d) / "tmp"
+            _fixture(top)
+            gitutil.git(["checkout", "-q", "-b", "work"], top)
+            gitutil.git(["commit", "-qm", "past main"], top)
+            (top / "pkg" / "calc.py").write_text(STAGED + DOUBLE, encoding="utf-8")
+            gitutil.git(["add", "-A"], top)
+            counts = {}
+            for ref in ("main", "HEAD"):
+                _code, out, err = _cli(top, tmp, "--files", "pkg/calc.py", "--since", ref,
+                                       "--test", TEST_CMD, "--format", "json", "--dry-run")
+                report = _json(out)
+                self.assertIn("private copy of the index", report["summary"]["tree"]["why"],
+                              out + err)
+                counts[ref] = report["summary"]["diff_mutations"]
+            self.assertGreater(counts["HEAD"], 0, "the staged line was not counted")
+            self.assertEqual(counts["HEAD"] + 2, counts["main"],
+                             "--since main did not count lines 4 and 5 committed past it")
+
+    def test_a_red_staged_suite_names_the_copy_not_the_working_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            top, tmp = Path(d) / "repo", Path(d) / "tmp"
+            _fixture(top)
+            test = top / "tests" / "test_calc.py"
+            test.write_text(TESTS + RED, encoding="utf-8")
+            gitutil.git(["add", "-A"], top)
+            test.write_text(TESTS, encoding="utf-8")        # the fix, on disk and unstaged
+            code, out, err = _cli(top, tmp, "--files", "pkg/calc.py", "--since", "main",
+                                  "--test", TEST_CMD)
+            self.assertEqual(2, code, out + err)
+            self.assertIn("REFUSED - baseline fail", err)
+            for words in ("staged version of every file", "private copy of the index",
+                          "not over the working tree", "Stage the fix (`git add`)"):
+                self.assertIn(words, err)
+            self.assertNotIn("clean the working tree", err)
+            self.assertEqual(TESTS, test.read_text(encoding="utf-8"))
+            # A command that cannot run still errors with its own remedy over the copy.
+            code, out, err = _cli(top, tmp, "--files", "pkg/calc.py", "--since", "main",
+                                  "--test", "exit 127")
+            self.assertEqual(2, code, out + err)
+            self.assertIn("REFUSED - baseline error", err)
+            self.assertIn("the test command errored", err)
+            self.assertNotIn("private copy", err)
+            # The control: red on disk and run in place, the remedy still names the tree.
+            gitutil.git(["commit", "-qm", "staged"], top)
+            test.write_text(TESTS + RED, encoding="utf-8")
+            code, out, err = _cli(top, tmp, "--files", "pkg/calc.py", "--since", "main",
+                                  "--test", TEST_CMD)
+            self.assertEqual(2, code, out + err)
+            self.assertIn("clean the working tree", err)
+            self.assertNotIn("private copy", err)
+
+    def test_an_absolute_test_path_runs_the_working_tree_not_the_copy(self) -> None:
+        """The page's warning, measured: the copy route runs a test named by its absolute
+        repository path from the working tree, which imports the unmutated `pkg.calc`, so
+        line 4's mutant, killed by the relative command in the first test, survives."""
+        with tempfile.TemporaryDirectory() as d:
+            top = Path(d) / "repo"
+            _fixture(top)
+            absolute = f"{sys.executable} -m pytest -q -p no:cacheprovider {top / 'tests'}"
+            _code, out, err = _cli(top, Path(d) / "tmp", "--files", "pkg/calc.py", "--since",
+                                   "main", "--test", absolute, "--format", "json", "--dry-run")
+            report = _json(out)
+            self.assertIn("private copy of the index", report["summary"]["tree"]["why"],
+                          out + err)
+            self.assertEqual([4, 5], sorted(r["line"] for r in report["mutations"]
+                                            if r["verdict"] == "survived"))
 
     def test_changed_lines_reads_the_index_when_cached(self) -> None:
         m = _load()

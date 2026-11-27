@@ -539,10 +539,10 @@ indistinguishable from it once restored, and one there **silently reverted** a s
 The author-side rule that follows: `scripts/mutation.py run` **refuses a target with uncommitted changes**
 that are unstaged or untracked, naming the file, before it applies a mutant. Under `--since` it judges a
 fully staged target in a private copy of the index instead, which holds the index version of every file,
-so an unstaged edit to a test or helper is not run. Otherwise commit the work first, or point the run at an
-isolated checkout. `git stash` is fine for an AUTHOR clearing their own tree and is forbidden to a delegated
-REVIEWER - it is tree-wide, so in a shared tree it reverts another reviewer's mutant mid-run, which is why
-the reviewer works in a checkout of its own. Reasoning about a red-turning edit needs no tree at all.
+so an unstaged edit to a test or helper is not run, and a `--test` naming its tests by absolute path
+runs the working tree's tests, not the copy's. Otherwise commit the work, or use an isolated checkout.
+`git stash` is fine for an AUTHOR clearing their own tree, never for a delegated REVIEWER: it is tree-wide,
+so in a shared tree it reverts another reviewer's mutant mid-run. Reasoning about a mutant needs no tree.
 
 **The rule is in the brief too.** The refusal above protects only the author: four reviewers once
 ran concurrently over one tree and left a live mutant in it. So `critic.py brief` states the rule at

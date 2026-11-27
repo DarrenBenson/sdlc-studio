@@ -1213,12 +1213,16 @@ def attribute_kill(row: dict, run_output: str) -> dict:
 def run_gate(repo_root: Path | str, files, test_cmd: str,
              max_mutations: int | None = None,
              classes: tuple = FAULT_CLASSES, write_report: bool = True,
-             changed: dict | None = None, tree: dict | None = None) -> dict:
+             changed: dict | None = None, tree: dict | None = None,
+             report_as: Path | None = None) -> dict:
     """The gate: enumerate, apply one at a time, re-run tests, verdict each mutation.
 
     `tree` is the isolation already established for `repo_root` when it is a private copy
     (see `run_in_index_copy`): the dirty check is skipped, since a copy holds nobody's work and
-    is no git tree to ask, and `tree` is reported as where the run was measured.
+    is no git tree to ask, `tree` is reported as where the run was measured, and a red baseline
+    names the copy rather than the working tree, which did not run. `report_as` is the
+    repository such a copy stands for: the report names its paths and its commit, never the
+    copy's, and is written under it.
 
     Baseline first: the tests must be green over UNMUTATED code. A red or broken baseline
     cannot judge anything, so the gate REFUSES immediately - no mutant is applied, the report
@@ -1287,6 +1291,9 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
                           if baseline == "fail"
                           else "the test command errored on unmutated code: fix the command or "
                                "the environment, then re-run")
+            if baseline == "fail" and tree is not None:
+                # Over a private copy the working tree never ran, so cleaning it is no remedy.
+                remedy = INDEX_COPY_RED
     records: list[dict] = []
     if not refused and not empty_surface:
         sidecar = _inflight_path(root)
@@ -1365,20 +1372,19 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
         "summary": summary,
     }
     report["elapsed_s"] = round(time.monotonic() - started, 3)
+    if report_as is not None:
+        report = _to_repo(report, str(root), report_as)
+        report["git_rev"] = _git_rev(report_as)
+        root = report_as
     if write_report:
-        _write_report(root, report)
+        # The per-run series, written whatever the outcome: a refused or all-errored run costs
+        # wall-clock too, and a series that recorded only the runs that worked would flatter the
+        # gate exactly where CR0379 wants it judged.
+        report["series"] = append_series(root, report, report["elapsed_s"])
+        out = root / "sdlc-studio" / ".local" / "mutation-report.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
-
-
-def _write_report(root: Path, report: dict) -> None:
-    """Append the run to the series and write the report under `root`."""
-    # The per-run series, written whatever the outcome: a refused or all-errored run costs
-    # wall-clock too, and a series that recorded only the runs that worked would flatter the
-    # gate exactly where CR0379 wants it judged.
-    report["series"] = append_series(root, report, report["elapsed_s"])
-    out = root / "sdlc-studio" / ".local" / "mutation-report.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
 #: Where a run over a private copy of the index says it was measured.
@@ -1386,6 +1392,10 @@ INDEX_COPY_TREE = {"isolated": True,
                    "why": "a private copy of the index (`git checkout-index`) in a scratch "
                           "directory removed after the run, so neither the working tree nor the "
                           "index was touched; every file is its staged version"}
+#: A red baseline over that copy: the working tree did not run, so cleaning it is no remedy.
+INDEX_COPY_RED = ("a red baseline proves nothing: the suite ran over the staged version of every "
+                  "file in a private copy of the index, not over the working tree, and failed "
+                  "there. Stage the fix (`git add`) or fix the failing suite, then re-run")
 
 
 def _to_repo(obj, base: str, root: Path):
@@ -1425,15 +1435,11 @@ def run_in_index_copy(repo_root: Path | str, files, test_cmd: str, since: str,
         copied = [base / os.path.relpath(f, root) for f in files]
         changed = {str(scratch / Path(k).relative_to(top)): v
                    for k, v in changed_lines(top, since, cached=True).items()}
-        report = run_gate(base, copied, test_cmd, max_mutations=max_mutations,
-                          write_report=False, changed=changed, tree=dict(INDEX_COPY_TREE))
+        return run_gate(base, copied, test_cmd, max_mutations=max_mutations,
+                        write_report=write_report, changed=changed,
+                        tree=dict(INDEX_COPY_TREE), report_as=root)
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
-    report = _to_repo(report, str(base), root)
-    report["git_rev"] = _git_rev(root)
-    if write_report:
-        _write_report(root, report)
-    return report
 
 
 # --- The per-run cost/yield series -----------------------------------------------------------
