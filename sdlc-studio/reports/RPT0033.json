@@ -10,7 +10,9 @@
     "principal": "Darren Benson",
     "signed_at": "2026-11-16T04:12:46Z",
     "report": "RPT0033",
-    "fingerprint": "47fd8b167ed17112"
+    "fingerprint": "47fd8b167ed17112",
+    "delegated": true,
+    "decision": "D0493"
   },
   "sections": [
     {

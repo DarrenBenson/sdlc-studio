@@ -1,7 +1,8 @@
 # Evidence from the runs
 
-Every sprint run of SDLC Studio that its operator signed, one row per run, read from the run's
-latest signed report of record in `sdlc-studio/reports/`. Nothing in the table is typed by hand:
+Every sprint run of SDLC Studio whose report was signed, by its operator or under a decision that
+delegated the signature, one row per run, read from the run's latest signed report of record in
+`sdlc-studio/reports/`. Nothing in the table is typed by hand:
 the table is written by the command under [Regenerating this page](#regenerating-this-page), and
 the same command checks that it still matches the reports. A report nobody signed is left out.
 Dollars per point reads not recorded for a run whose report predates that figure, and NOT
@@ -41,12 +42,12 @@ Each column reads one field of the report its row names:
 | RUN-01M7SS62 | RPT0037 | Judged achieved | - | $2.64 | claude-opus-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0539) |
 | RUN-01M7QMZ0 | RPT0036 | Judged partial | The repository's front door is done: the GitHub About box, the README first screen, docs/harnesses.md, docs/enterprise.md, the skill metadata and llms.txt present SDLC Studio as harness-agnostic with people in the lead, every claim checked against the tree. CR0742 names the website home page as the third front-door surface; it lives in the website's own repository and is delivered by a change request run there next, so a reviewer who lands on the site still reads the old positioning. | $2.18 | claude-opus-5-5 | 0.2 | Darren Benson (entered under delegation, authorised by decision D0535) |
 | RUN-01M7NTY5 | RPT0035 | Judged partial | Every gate the audit named now refuses work it never judged, and a run closed in the operator's absence awaits a signature that must name its authority; BG1582 leaves one sign path (HEAD past the close commit, no later run open) that skips the whole-tree check, deferred to the operator | $2.00 | claude-opus-5-5 | 4.9 | Darren Benson (entered under delegation, authorised by decision D0528) |
-| RUN-01M7HA6R | RPT0034 | Judged achieved | - | $2.08 | claude-opus-5-5 | 0.1 | Darren Benson |
-| RUN-01M7GEHM | RPT0033 | Judged achieved | - | $2.18 | claude-opus-5-5 | 0.1 | Darren Benson |
-| RUN-01M7EYR3 | RPT0032 | Judged achieved | - | $2.35 | claude-opus-5-5 | 0.1 | Darren Benson |
-| RUN-01M7E52T | RPT0031 | Judged achieved | - | $2.27 | claude-opus-5-5, claude-sonnet-5-5 | 0.1 | Darren Benson |
-| RUN-01M78TKD | RPT0030 | Judged partial | All 24 planned units, 49 points, delivered on independent APPROVEs (four after one repair round each). Lanes land and die cleanly (BG1336, BG1337, BG1339, BG1344, BG1261, BG1262) and verifiers no longer read green wrongly or leak (BG1005, BG1009, BG0991, BG1112, BG1190, BG1228). Cost is priced over the whole window and for long Grok prompts (BG1279, BG1305, BG1330, BG1331), but every lane this run was multi-unit and lane return cannot split one builder's total, so per-unit cost stays unpriced (BG1397). BG1420, added when the push gate found five red tests, fixed them but was carried as BG1425 after its repair's round-2 review. | $2.28 | claude-opus-5-5, claude-sonnet-5-5 | 35.3 | Darren Benson |
-| RUN-01M77177 | RPT0029 | Judged achieved | - | $2.22 | claude-haiku-5-5, claude-opus-5-5 | 0.1 | Darren Benson |
+| RUN-01M7HA6R | RPT0034 | Judged achieved | - | $2.08 | claude-opus-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0493) |
+| RUN-01M7GEHM | RPT0033 | Judged achieved | - | $2.18 | claude-opus-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0493) |
+| RUN-01M7EYR3 | RPT0032 | Judged achieved | - | $2.35 | claude-opus-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0479) |
+| RUN-01M7E52T | RPT0031 | Judged achieved | - | $2.27 | claude-opus-5-5, claude-sonnet-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0475) |
+| RUN-01M78TKD | RPT0030 | Judged partial | All 24 planned units, 49 points, delivered on independent APPROVEs (four after one repair round each). Lanes land and die cleanly (BG1336, BG1337, BG1339, BG1344, BG1261, BG1262) and verifiers no longer read green wrongly or leak (BG1005, BG1009, BG0991, BG1112, BG1190, BG1228). Cost is priced over the whole window and for long Grok prompts (BG1279, BG1305, BG1330, BG1331), but every lane this run was multi-unit and lane return cannot split one builder's total, so per-unit cost stays unpriced (BG1397). BG1420, added when the push gate found five red tests, fixed them but was carried as BG1425 after its repair's round-2 review. | $2.28 | claude-opus-5-5, claude-sonnet-5-5 | 35.3 | Darren Benson (entered under delegation, authorised by decision D0472) |
+| RUN-01M77177 | RPT0029 | Judged achieved | - | $2.22 | claude-haiku-5-5, claude-opus-5-5 | 0.1 | Darren Benson (entered under delegation, authorised by decision D0467) |
 | RUN-01M7061X | RPT0028 | Judged achieved | - | $2.48 | not recorded | 15.7 | Darren Benson |
 | RUN-01M6RZQZ | RPT0027 | Judged partial | Run seven's cost features now hold: all seven hardening bugs are Fixed and the non-Claude models are priced (US1135), and every agent starts leaner (AGENTS.md at 6,580 chars, the lean builder and reviewer definitions at about 16k start context against 34k). Commits got only partly leaner: the self-written trailers landed after a carry (US1133, fixed in-run as BG1274), the quiet commit path (US1134) went to 6.4 under D0419, and Copilot's token billing (CR0685) and the pricing gaps (BG1266) are carried. | $2.89 | not recorded | 0.7 | Darren Benson |
 | RUN-01M6RAP7 | RPT0026 | Judged partial | Every supported CLI harness is now metered on one normalised basis, per lane through lane run and per session through the Copilot, OpenCode and Codex readers, with dollars per model and a per-role table; partial because the role table reads the whole session rather than the run (BG1254), only Claude models are priced so far, a two-model lane session prices at one model (BG1252), and the benchmark cannot yet run a real session (BG1248) | NOT MEASURED | not recorded | 0.4 | Darren Benson |
@@ -91,11 +92,11 @@ run's report. A note reading not recorded is one the report never held.
 ## How the wait for a signature is measured
 
 Hours to signature runs from the moment the report of record was built, at the run's close, to
-the moment the operator signed it. The first is the report's `generated_at`; the second is
-`signature.signed_at`, written when the operator signs
+the moment its signature was entered. The first is the report's `generated_at`; the second is
+`signature.signed_at`, written when the signature is entered
 ([report envelope keys](../.claude/skills/sdlc-studio/reference-evidence-schema.md#report-envelope-keys)).
-It is the time a finished run waited for its accountable person to read and sign the evidence,
-not the time the run took. A long wait is a run signed after a night, a weekend or a review of
+It is the time a finished run waited for its signature, entered by its accountable person or by a
+delegate on a recorded decision, not the time the run took. A long wait is a run signed after a night, a weekend or a review of
 its own; the report's figures do not change while it waits, because signing seals the report
 that was built.
 
