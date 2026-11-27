@@ -1390,8 +1390,8 @@ def run_gate(repo_root: Path | str, files, test_cmd: str,
 #: Where a run over a private copy of the index says it was measured.
 INDEX_COPY_TREE = {"isolated": True,
                    "why": "a private copy of the index (`git checkout-index`) in a scratch "
-                          "directory removed after the run, so neither the working tree nor the "
-                          "index was touched; every file is its staged version"}
+                          "directory removed after the run, so no mutant touched the working "
+                          "tree; every file is its staged version"}
 #: A red baseline over that copy: the working tree did not run, so cleaning it is no remedy.
 INDEX_COPY_RED = ("a red baseline proves nothing: the suite ran over the staged version of every "
                   "file in a private copy of the index, not over the working tree, and failed "
