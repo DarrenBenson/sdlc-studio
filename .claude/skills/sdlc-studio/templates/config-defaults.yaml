@@ -295,9 +295,10 @@ routing:
     builder: inherit      # inherit | low | medium | high | xhigh | max (inherit: the session's)
     reviewer: inherit     # sprint plan refuses a reviewer below its builder unless...
     reviewer_below_builder: ""  # ...this names a decision id recorded in decisions.md
-    docs: {}              # an entry per kind of unit (a bug by its id, else code when an Affects
-    bug: {}               #  path is code, else docs), each role it sets replacing the default
-    code: {}              #  above, e.g. docs: {builder: low}; set from measuring your own work
+    docs: {}              # an entry per kind of unit: a bug by its id, else code when an Affects
+    bug: {}               #  path ends in one of CODE_EXTS in scripts/route.py, else docs. Each
+    code: {}              #  role an entry sets replaces the default above, e.g.
+                          #  docs: {builder: low}; set from measuring your own work
 
 # Deploy contract - the orchestrate-only deploy last-mile. The skill GATES before and
 # VERIFIES after a deploy; it never holds the production trigger, never auto-rolls-back, and never

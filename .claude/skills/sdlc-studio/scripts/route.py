@@ -62,9 +62,11 @@ DEFAULT_THRESHOLDS = {"tiny": 20, "small": 40, "medium": 60, "large": 80}
 DEFAULT_FLOOR = {"bug": "small", "security": "medium"}
 MISSING_DEFAULT = 0.5   # unknown difficulty is never minimal
 SCOPE_FULL = 5          # files touched at/above this = max scope subscore
-# Extensions that mark a unit as touching CODE (vs doc/config) for the critic floor.
+# Extensions that mark a unit as touching CODE (vs doc/config), for the critic floor and for the
+# kind `work_kind` gives `routing.effort`: a unit that is not a bug and names none is docs.
 CODE_EXTS = (".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java", ".rb", ".sh",
-             ".c", ".cc", ".cpp", ".cs")
+             ".c", ".cc", ".cpp", ".cs", ".h", ".kt", ".kts", ".swift", ".php", ".scala",
+             ".vue", ".svelte", ".sql", ".dart")
 
 
 def _routing_config(root: Path) -> dict:

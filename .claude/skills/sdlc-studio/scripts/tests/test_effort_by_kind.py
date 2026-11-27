@@ -41,6 +41,14 @@ AC1 = ("routing:\n  effort:\n    builder: medium\n    reviewer: high\n"
 ROLES_ONLY = "routing:\n  effort:\n    builder: medium\n    reviewer: high\n"
 #: Every key `routing.effort` takes, which a refusal of any other key names.
 KEYS = ("builder", "reviewer", "reviewer_below_builder", "docs", "bug", "code")
+#: Code extensions a unit's kind must count, each pinned on its own: the ones `CODE_EXTS` held
+#: before kinds decided an effort, and the ones added so a Kotlin, Swift, PHP or SQL unit is not
+#: classed docs.
+CODE_EXTS_PINNED = (".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".java", ".rb", ".sh",
+                    ".c", ".cc", ".cpp", ".cs", ".kt", ".kts", ".swift", ".php", ".scala", ".vue",
+                    ".sql", ".h", ".dart", ".svelte")
+#: Near misses that stay docs: a code extension inside a markdown name, config and plain text.
+NOT_CODE = ("notes/app.kt.md", "config/app.yaml", "data/app.json", "docs/app.txt")
 
 
 def _live(name: str):
@@ -159,6 +167,48 @@ class EffortByKindTests(unittest.TestCase):
             self.assertEqual("code", route.work_kind(
                 root, stories / f"{DOCS}-docs.md", "> **Affects:** tools/x.sh\n"))
 
+    def test_every_code_extension_classes_a_unit_code(self) -> None:
+        """A story naming a file in any language `CODE_EXTS` lists is code, for its effort and
+        for the critic's code floor, and one naming only other files is docs; a bug naming one is
+        a bug for its effort and code for the floor. MUTANTS: any one extension dropped from
+        `CODE_EXTS`; a markdown, config or text file counted as code."""
+        units = {f"US{100 + i:04d}": f"src/app{ext}" for i, ext in enumerate(CODE_EXTS_PINNED)}
+        controls = {f"US{200 + i:04d}": path for i, path in enumerate(NOT_CODE)}
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(d, "routing:\n  effort:\n    docs: {builder: low}\n"
+                               "    code: {builder: high}\n")
+            stories = root / "sdlc-studio" / "stories"
+            for uid, path in {**units, **controls}.items():
+                (root / path).parent.mkdir(parents=True, exist_ok=True)
+                (root / path).write_text("x\n", encoding="utf-8")
+                _unit(stories / f"{uid}-x.md", uid, "Ready", path)
+            kt_bug = root / "sdlc-studio" / "bugs" / "BG0002-kt.md"
+            _unit(kt_bug, "BG0002", "Open", "src/app.kt", "> **Severity:** Medium\n")
+            rc, out, err = _plan(root, "--bugs", "Open")
+            self.assertEqual(rc, 0, err)
+            efforts = _efforts(out)
+            code = {"builder": "high", "reviewer": "inherit", "kind": "code"}
+            docs = {"builder": "low", "reviewer": "inherit", "kind": "docs"}
+            # Cutpoints above any 0-100 score, and a bug floor of tiny, keep every unit's tier
+            # below medium, so only the code floor lifts its critic to medium.
+            routing = {"thresholds": {"tiny": 101, "small": 102, "medium": 103, "large": 104},
+                       "floor": {"bug": "tiny"}}
+            for uid, path in units.items():
+                with self.subTest(path=path):
+                    self.assertEqual(code, efforts[uid])
+                    picked = route.pick(root, stories / f"{uid}-x.md", "critic", routing)
+                    self.assertIn("critic:code-medium-floor", picked["adjustments"])
+            for unit, uid, path in [(f"{DOCS}-docs.md", DOCS, "docs/guide.md"),
+                                    *((f"{u}-x.md", u, p) for u, p in controls.items())]:
+                with self.subTest(path=path):
+                    self.assertEqual(docs, efforts[uid])
+                    picked = route.pick(root, stories / unit, "critic", routing)
+                    self.assertNotIn("critic:code-medium-floor", picked["adjustments"])
+            self.assertEqual({"builder": "inherit", "reviewer": "inherit", "kind": "bug"},
+                             efforts["BG0002"])
+            picked = route.pick(root, kt_bug, "critic", routing)
+            self.assertIn("critic:code-medium-floor", picked["adjustments"])
+
     def test_an_unknown_kind_role_or_value_is_refused_by_name(self) -> None:
         """AC2. Any key `routing.effort` does not take is refused, a misspelt role default as
         well as a near-miss kind, scalar or mapping. MUTANTS: an unknown kind ignored; an
@@ -276,7 +326,8 @@ class EffortByKindTests(unittest.TestCase):
 
     def test_the_lane_brief_names_the_units_own_effort(self) -> None:
         """AC4. MUTANTS: the brief reading the role defaults for every unit; the kind left out
-        of the line; a kind's both-inherit pair read as `routing.effort is not set`."""
+        of the line; a kind's both-inherit pair read as `routing.effort is not set`; the line a
+        config of only 6.4's keys reads changed by a word."""
         with tempfile.TemporaryDirectory() as d:
             root = _project(d, AC1)
             run_state.open_run(root, batch=[DOCS, CODE], goal="g")
@@ -293,6 +344,13 @@ class EffortByKindTests(unittest.TestCase):
             self.assertIn("at the session's own effort", line)
             self.assertIn("the docs kind", line)
             self.assertNotIn("not set", line)
+
+            # Only the keys 6.4 documented: the line 6.4's `lane brief` printed, word for word.
+            _config(root, "routing:\n  effort:\n    builder: high\n    reviewer: high\n"
+                          "    reviewer_below_builder: ''\n")
+            self.assertEqual("Effort: dispatch the builder at high effort and its reviewer at high "
+                             "effort (routing.effort) - pass each to the agent spawn.",
+                             _brief_line(root, DOCS))
 
             # The entries as they ship, empty: the line a project that sets nothing has always read.
             _config(root, "routing:\n  effort:\n    docs: {}\n    bug: {}\n    code: {}\n")
