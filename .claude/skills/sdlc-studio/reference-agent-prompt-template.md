@@ -142,7 +142,7 @@ never crashes. A resolved seat card requested for `--render review` that lacks i
 sections (Lens / Pushes Back When / Shadow) is a **hard error**, never a silent fallback to the
 generic card - a half-authored seat is surfaced, not quietly dropped.
 
-Four rules govern the framing, none negotiable:
+Five rules govern the framing, none negotiable:
 
 1. **Stance after contract, never through it.** The amigo card is appended *after* Quality Gates as a
    disposition layer. It never rewrites or dilutes READ THESE FILES FIRST / Files to Create-Modify-DO
@@ -156,6 +156,11 @@ Four rules govern the framing, none negotiable:
    build only works *with* the persona, the contract was underspecified - fix the contract.
 4. **Green stays the oracle.** The QA seat authors and runs the tests, but pass/fail is `verify_ac`
    plus the conformance gate, never the seat's judgement.
+5. **One seat or one persona per brief.** A brief handed to an agent carries exactly one identity,
+   one seat or one persona, never two. Several views are several agents, one brief each, whose
+   replies are recorded files the orchestrator passes on, and no agent speaks for another.
+   `scripts/tests/test_one_identity_brief.py` holds to it the lane, review, approach and seat
+   briefs the skill prints.
 
 ## Delivery-Review Charter: untraced spec edits {#spec-edit-charter}
 

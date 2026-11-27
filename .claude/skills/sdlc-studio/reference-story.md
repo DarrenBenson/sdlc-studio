@@ -183,13 +183,13 @@ Detailed workflows for User Story generation, quality enforcement, and managemen
    The amigo seats ship with the skill, so this step needs no project user personas: seat each
    amigo with `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`.
 
-   **Per-epic batch:** For each epic's stories, consult all three amigos.
+   **Per-seat review:** each seat reads every story the run generated, epic by epic.
    Per-persona focus list: `reference-workflow-personas.md#story-integration`
    - do not restate it here.
 
    **Process:**
-   - Run consultations in parallel (one agent per epic)
-   - Each agent reviews all stories in its epic from all three perspectives
+   - Each seat is its own agent: run three agents in parallel, one per seat, each reviewing the
+     stories the run generated; a seat gets more than one agent only when its stories will not fit in one
    - Apply improvements directly to story files where feedback is actionable
    - Add persona attribution to revision history for changes made
    - Report summary of findings, changes applied, and items needing user decision

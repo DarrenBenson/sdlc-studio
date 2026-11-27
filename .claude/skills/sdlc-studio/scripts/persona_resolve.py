@@ -419,6 +419,10 @@ RETIRED_CEREMONIES = {
 
 
 def cmd_panel(args: argparse.Namespace) -> int:
+    """Print the ceremony's panel, lead first. With questions, the next line says to brief one
+    agent per seat and take every question to each, naming the per-seat `resolve` command
+    unless `--skip-personas` leaves the seats unframed; then the questions, one per line.
+    `--format json` prints the consult whole."""
     roles = PANELS[args.ceremony]
     try:
         result = consult(args.root, roles, args.question or [], skip_personas=args.skip_personas)
@@ -432,7 +436,10 @@ def cmd_panel(args: argparse.Namespace) -> int:
     lead = result["lead"]
     print(f"{args.ceremony} amigo panel ({lead} leads): {named}")
     if result["questions"]:
-        print(f"take these {len(result['questions'])} question(s) to the panel:")
+        how = "" if args.skip_personas else \
+            " with `persona_resolve.py resolve --seat <role> --render review`"
+        print(f"brief one agent per seat{how} and take these {len(result['questions'])} "
+              f"question(s) to each:")
         for q in result["questions"]:
             print(f"  - {q}")
     return 0

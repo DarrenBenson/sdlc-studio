@@ -110,8 +110,8 @@ from `resume_at` rather than re-implementing Done stories.
 
 7. **Three Amigos + Stakeholder Assessment (Default)**
    Unless `--skip-personas` flag used, run Three Amigos review plus affected stakeholder consultation.
-   The amigo seats ship with the skill, so this step needs no project user personas: seat each
-   amigo with `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`.
+   The amigo seats ship with the skill, so this step needs no project user personas. Each seat is
+   its own agent with its own brief, seated with `scripts/persona_resolve.py resolve --seat <product|engineering|qa> --render review`.
 
    a. **Three Amigos review each epic.** Per-persona focus list:
       `reference-workflow-personas.md#epic-integration` - do not restate it here.
@@ -122,7 +122,7 @@ from `resume_at` rather than re-implementing Done stories.
         - Personas whose pain points are addressed
         - Personas whose workflows are impacted
       - Populate "Affected Personas" section in each Epic
-      - Consult affected stakeholder personas for domain-specific feedback
+      - Consult each affected stakeholder persona as its own agent with its own brief, for domain-specific feedback (only where the project registers user personas)
 
    c. **Apply findings:**
       - Update epic AC with improvements from Three Amigos
