@@ -296,7 +296,7 @@ The keys of each row, by the list the row sits in (**In**).
 | `cost_cache_writes` | `rows` | `writes_growth` | Its cache writes within their lifetime. |
 | `cost_cache_writes` | `rows` | `writes_rewrite_5m` | Its 5-minute writes re-written after expiry. |
 | `cost_cache_writes` | `rows` | `writes_rewrite_1h` | Its 1-hour writes re-written after expiry. |
-| `cost_cache_writes` | `rows` | `writes_rewrite_share` | Its re-writes' share of its cache writes, or `not available` with the reason. |
+| `cost_cache_writes` | `rows` | `writes_rewrite_share` | Its re-writes' share of its cache writes; `not available` when its split is, or `not available - this role wrote no cache`. |
 | `dora` | `rows` | `dora_key` | The DORA metric. |
 | `dora` | `rows` | `dora_value` | Its value. |
 | `dora` | `rows` | `dora_mapping` | How the metric maps onto the project. |

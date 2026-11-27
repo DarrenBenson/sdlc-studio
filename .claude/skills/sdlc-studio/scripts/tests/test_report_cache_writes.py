@@ -12,6 +12,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import sys
 import unittest
 import unittest.mock
@@ -43,6 +44,19 @@ SPLIT = {"orchestrator": ("2,500", "0", "9,000", "78.3%"),
          "builder": ("3,800", "4,000", "0", "51.3%"),
          "reviewer": ("0", "0", "0", NO_CACHE), "repair": ("0", "0", "0", NO_CACHE),
          "other": ("0", "0", "0", NO_CACHE)}
+#: What growth and a re-write are, as the section's `writes_basis` defines them.
+BASIS = ("growth is a call's cache write within its kind's lifetime of the call before it in "
+         "its transcript (300 seconds for cache_write_5m, 3,600 seconds for cache_write_1h), "
+         "and a re-write follows a longer gap and counts the call's whole write, so it "
+         "overstates by one turn")
+#: The paragraph both twins open the section with, after its bold title.
+LEDE = ("Each role's cache writes at the run's closing reading, in tokens, split into growth "
+        f"and re-writes after expiry: {BASIS}. The re-write share is the role's re-writes over "
+        "its cache writes. A role reads not available when any agent in it has a model call's "
+        "usage record with no readable timestamp or no message id, and the share of a role "
+        "that wrote no cache reads not available, never 0.")
+HEADS = ("Role", "Growth", "Re-written after five-minute expiry",
+         "Re-written after one-hour expiry", "Re-write share")
 
 
 def section(page: dict, key: str = KEY) -> dict:
@@ -106,40 +120,74 @@ class CacheWritesReportTests(meter._Case):
         the share's numerator or denominator missing a kind; a role that wrote no cache read
         0.0% or its whole row not available; the section left off the page; the oldest
         closing reading read rather than the newest (the decoy); either template's row
-        dropped."""
+        dropped; the whole record read rather than the window's (`state` for `metered`), so
+        a reading after the window's end is stated; the basis's lifetimes or its "longer gap"
+        changed; either twin's column headings swapped, its basis dropped from the lede, or
+        its share defined over anything but the role's cache writes."""
         sr = self.sr
-        page = self._closed("closing").page()
+        ws = self._closed("closing")
+        page = ws.page()
         sec = section(page)
         self.assertIsNone(sec.get("not_measured"), sec)
         self.assertEqual(SPLIT, rows_of(sec))
         self.assertEqual(["cost_roles", "cache_read_trend", KEY],
                          keys_of(page)[keys_of(page).index("cost_roles"):][:3])
-        basis = sec["figures"]["writes_basis"]["value"]
-        self.assertIn("300 seconds for cache_write_5m, 3,600 seconds for cache_write_1h", basis)
+        self.assertEqual(BASIS, sec["figures"]["writes_basis"]["value"])
+        # Both twins carry the definitions, the basis after its colon, and the columns in order.
         md, html = sr.render_markdown(page), sr.render_html(page)
-        self.assertIn("**Cache writes by role.**", md)
-        self.assertIn(basis, md)
-        self.assertIn("| Role | Growth | Re-written after five-minute expiry | Re-written after "
-                      "one-hour expiry | Re-write share |", md)
-        self.assertIn("<strong>Cache writes by role.</strong>", html)
+        self.assertIn(f"**Cache writes by role.** {LEDE}", " ".join(md.split()))
+        self.assertIn(f'<p class="lede"><strong>Cache writes by role.</strong> {LEDE}</p>', html)
+        self.assertIn("| " + " | ".join(HEADS) + " |", md)
+        self.assertIn(f'<thead><tr><th scope="col">{HEADS[0]}</th>'
+                      + "".join(f'<th scope="col" class="num">{h}</th>' for h in HEADS[1:])
+                      + "</tr></thead>", html)
         for role, cells in SPLIT.items():
             self.assertIn(f"| {role} | " + " | ".join(cells) + " |", md)
             self.assertIn(f'<tr><th scope="row">{role}</th>'
                           + "".join(f'<td class="num">{c}</td>' for c in cells) + "</tr>", html)
+        # A reading stamped after the window's end is not the page's: the section and the Cost
+        # by role table read the window's newest.
+        st = ws.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(st.read_text(encoding="utf-8"))
+        closing = state[self.rs.TOKEN_STAMPS][-1]
+        end = closing["at"]
+        later = (sr._at(end) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        state[self.rs.TOKEN_STAMPS].append({**closing, "at": later, self.rs.COST_ROLES: {
+            **closing[self.rs.COST_ROLES],
+            "roles": [{**r, "cache_writes": rw._split(7, 7, 7)}
+                      for r in closing[self.rs.COST_ROLES]["roles"]]}})
+        st.write_text(json.dumps(state), encoding="utf-8")
+        held = sr.build_report(ws.root, meter.RETRO, window_end=end)
+        self.assertEqual(SPLIT, rows_of(section(held)))
+        self.assertEqual(section(page, "cost_roles")["rows"], section(held, "cost_roles")["rows"])
+        moved = sr.build_report(ws.root, meter.RETRO, window_end=later)
+        self.assertEqual(dict.fromkeys(SPLIT, ("7", "7", "7", "66.7%")), rows_of(section(moved)),
+                         "control: the later reading is read when the window takes it in")
 
     def test_no_split_reads_not_measured_and_an_older_page_renders(self) -> None:
         """AC2. MUTANTS: no split judged by value rather than by the key's presence (a reading
         whose every role is keyed None reads rows, below); judged on every role rather than
         any (one role keyed); a reading with no roles taken as measured; the Cost by role
-        table's own NOT MEASURED not carried; either template's `present` guard dropped, so
-        a page filed before the section renders a block it has no figures for."""
+        table's own NOT MEASURED not carried, or carried with the record path it was handed
+        for the source that table names; either template's `present` guard dropped, so a
+        page filed before the section renders a block it has no figures for."""
         sr = self.sr
         root = self.tmp / "fixture"
         tsr.fixture_run(root)
-        sec = section(sr.build_report(root, tsr.FIX_RETRO))
+        page = sr.build_report(root, tsr.FIX_RETRO)
+        sec = section(page)
         self.assertEqual("the Cost by role table is not measured: no closing reading in the "
                          "run's window recorded the spend by role", sec["not_measured"]["reason"])
+        self.assertEqual(section(page, "cost_roles")["not_measured"]["source"],
+                         sec["not_measured"]["source"])
         self.assertEqual([], sec["rows"])
+        # The source is the one the Cost by role table's NOT MEASURED names, not the path the
+        # section was handed.
+        nm = sr._cost_cache_writes_section({}, "the record handed", {"not_measured": {
+            "source": "the record consulted", "reason": "it could not be read"}}, None)
+        self.assertEqual(("the record consulted",
+                          "the Cost by role table is not measured: it could not be read"),
+                         (nm["not_measured"]["source"], nm["not_measured"]["reason"]))
         for splits in ({}, {"builder": rw._split(1, 2, 3)}):   # before the split; one keyed
             stamp_split(root, splits)
             page = sr.build_report(root, tsr.FIX_RETRO)
@@ -168,7 +216,8 @@ class CacheWritesReportTests(meter._Case):
     def test_a_role_with_no_split_or_no_cache_reads_not_available(self) -> None:
         """MUTANTS: a role whose split is None (an agent's call untimed) read as NOT MEASURED
         for the page or as 0; the no-cache guard testing growth alone, so a role whose every
-        write is a re-write reads not available rather than 100.0%."""
+        write is a re-write reads not available rather than 100.0%; the annex's share row
+        promising a value the page does not state, or leaving out one it does."""
         sr = self.sr
         root = self.tmp / "keyed"
         tsr.fixture_run(root)
@@ -187,6 +236,14 @@ class CacheWritesReportTests(meter._Case):
             self.assertIn("A role reads not available when any agent in it has a model call's "
                           "usage record with no readable timestamp or no message id",
                           " ".join(render(page).split()))
+        # The annex's share row names exactly the two values the page states in place of a
+        # share: bare for a role with no split, with the reason for a role that wrote none.
+        meaning = next(r["Meaning"] for r in annex.annex_table("Report row keys")
+                       if (annex._key(r["Section"]), annex._key(r["Row key"]))
+                       == (KEY, "writes_rewrite_share"))
+        shares = {cells[-1] for cells in rows_of(section(page)).values()}
+        self.assertEqual({NA, NO_CACHE}, {s for s in shares if not s.endswith("%")})
+        self.assertEqual({NA, NO_CACHE}, set(re.findall(r"`([^`]+)`", meaning)), meaning)
 
     def test_the_section_is_replayed_at_sign_and_catalogued(self) -> None:
         """AC3. MUTANTS: the signed page's section not replayed (`_page_readings` handing None,
