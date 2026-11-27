@@ -68,6 +68,15 @@ only when it cites the unit, shares an `Affects` file with it and cites three id
 charge goes to every seat whose latest verdict on the unit approved, in any run, each miss with
 its basis. See [seat evidence](../reference-retro.md#seat-evidence-each-seat-on-its-own-record).
 
+It also states the release change failure rate, `escape.failure_rate`'s figure over the 90 days
+ending on the retro's Date, or on today when the retro carries no Date it can read, which the line
+says, with the 14-day settling period: the rate, the releases pending, each release counted with
+the incident issues and escaped bugs that failed it, and the release record file it was read from.
+`--format json` carries the function's figure as `release_cfr`, with `source` naming the record
+file beside it. With no release recorded in the window, every one pending or no incident recorded
+it reads not measured with the command's reason, and a record file the function cannot read reads
+not measured naming the line, never a refusal.
+
 ## Persona learnings, listed at the close and struck at the signature
 
 The close's `persona-memory` step writes a `## Persona learnings` block on the retro: every

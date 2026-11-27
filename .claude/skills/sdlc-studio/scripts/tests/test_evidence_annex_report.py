@@ -160,7 +160,8 @@ def _components(scale: int) -> dict:
 def _run(root: Path, full: bool) -> None:
     """A run one delivered unit wide. Both runs carry metered and priced cost, the spend by
     role, delegated tokens, a plan, rulings and a waiver in force. `full` adds what fills each
-    conditional section: a refusal log and a checklist row the close could not measure."""
+    conditional section: a refusal log and a checklist row the close could not measure, and the
+    release records and the incident that give the release rate its figure and its rows."""
     _write(root, ".gitignore", "sdlc-studio/.local/\n")
     _git(root, "init", "-q")
     _git(root, "add", ".gitignore")
@@ -225,6 +226,15 @@ def _run(root: Path, full: bool) -> None:
         _write(root, "sdlc-studio/.local/refusals.jsonl",
                json.dumps({"lane": "gate", "ts": "2026-09-20T09:00:00Z",
                            "staged": ["src/widget.py"]}) + "\n")
+        # 1.1.0 is counted; 1.0.0 is before the window and 1.2.0 inside the settling period.
+        _write(root, "sdlc-studio/reports/releases.jsonl", "".join(
+            json.dumps({"version": v, "date": d, "previous": None, "reports": []}) + "\n"
+            for v, d in (("1.0.0", "2026-05-01"), ("1.1.0", "2026-08-01"),
+                         ("1.2.0", "2026-09-20"))))
+        _write(root, "sdlc-studio/issues/IS0001-the-checkout-fell-over.md",
+               "# IS0001: the checkout fell over\n\n> **Status:** Triaged\n> **Created:** "
+               "2026-08-02\n\n## Root Cause\n\nThe review approved a checkout total never "
+               "tested at the empty basket, so the boundary shipped unpinned.\n")
         # A delivery verdict and a solution review GO inside the run, so the solution review
         # section carries its rows and every row key the annex catalogues.
         _write(root, "sdlc-studio/reviews/critic-verdicts.md",

@@ -251,6 +251,25 @@ wrote no cache reads not available, never 0.
 <!-- unless: dora_measured -->
 NOT MEASURED - {{dora_reason}}
 <!-- end -->
+<!-- when: release_cfr_present -->
+
+### Release change failure rate
+
+<!-- when: release_cfr_measured -->
+{{cfr_rate}}. The rate is the releases with an incident linked to them over the releases counted,
+as `escape.py failure-rate` derives it, not the share of push-triggered CI runs on main the DORA
+table counts; with no incident recorded anywhere it reads not measured, never zero. Each release
+counted, as `sdlc-studio/reports/releases.jsonl` records it, with the incident issues and escaped
+bugs that failed it:
+
+<!-- repeat: release_cfr -->
+- {{cfr_release}}
+<!-- end -->
+<!-- end -->
+<!-- unless: release_cfr_measured -->
+NOT MEASURED - {{release_cfr_reason}}
+<!-- end -->
+<!-- end -->
 
 ### Calibration
 

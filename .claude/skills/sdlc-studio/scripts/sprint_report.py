@@ -2907,7 +2907,7 @@ def _page_readings(page: dict | None) -> dict:
     """
     if page is None:
         return {"points": None, "findings": None, "waivers": None, "roles": None,
-                "cache_writes": None, "price_table": None, "effort": None}
+                "cache_writes": None, "price_table": None, "effort": None, "release_cfr": None}
     rows = {s.get("key"): s.get("rows") or [] for s in page.get("sections") or []}
 
     def val(row: dict, key: str):
@@ -2932,6 +2932,10 @@ def _page_readings(page: dict | None) -> dict:
                                   if s.get("key") == "cost_cache_writes"), None),
             "price_table": page.get(PRICE_TABLE),
             # The plan the effort was read from is overwritten by the next run's plan.
+            # The release records and incident issues move when a release is cut or an incident
+            # is triaged after the run.
+            "release_cfr": next((s for s in page.get("sections") or []
+                                 if s.get("key") == "release_cfr"), None),
             "effort": {key: f for s in page.get("sections") or [] if s.get("key") == "cost"
                        for key, f in (s.get("figures") or {}).items()
                        if key in dict(EFFORT_FIGURES).values()} or None}
@@ -3478,7 +3482,8 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
 SCHEMA = 2
 #: The front page, in order, and the appendix beneath it.
 FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
-APPENDIX = ("goal_judgement", "cost", "dora", "calibration", "solution_review", "rulings",
+APPENDIX = ("goal_judgement", "cost", "dora", "release_cfr", "calibration", "solution_review",
+            "rulings",
             "waivers", "lane_yield", "lessons")
 
 
@@ -5038,6 +5043,82 @@ def _solution_review_section(root: Path, state: dict, state_rel: str, ledger: li
     return _section("solution_review", title, rows=rows)
 
 
+def release_rate(root, until: str | None) -> dict:
+    """The release change failure rate over the 90 days ending on `until` (`YYYY-MM-DD`, today
+    when None) with the 14-day settling period, as `escape.failure_rate` derives it, the one
+    calculation `escape.py failure-rate` prints, with `source` naming the release record file.
+    A record file the function refuses is not raised: the rate reads not measured, the refusal,
+    which names the line, as its reason."""
+    import escape  # noqa: PLC0415 - deferred sibling: the one calculation of the rate
+    import release_cut  # noqa: PLC0415 - deferred sibling: the writer of the record file
+    try:
+        got = escape.failure_rate(root, until=until)
+    except escape.RateRefused as exc:
+        got = {"rate_percent": None,
+               "not_measured": f"{exc}; nothing is counted until the record file is corrected, "
+                               f"and a close files its page regardless"}
+    return {**got, "source": release_cut.RELEASES_REL}
+
+
+def _cfr_window(got: dict) -> str:
+    return (f"{got['since']} to {got['until']} (both days included), {got['settle_days']}-day "
+            f"settling period")
+
+
+def _cfr_rate(got: dict) -> str:
+    """The measured rate with its basis, as `25% (1 of 4 releases) over <window>, pending:
+    none`."""
+    return (f"{got['rate_percent']}% ({len(got['failed'])} of {len(got['counted'])} releases) "
+            f"over {_cfr_window(got)}, pending: {', '.join(got['pending']) or 'none'}")
+
+
+def _cfr_reason(got: dict) -> str:
+    """Why the rate is not measured: the command's reason and the window it read, or a refusal
+    alone, which read no window."""
+    return (f"{got['not_measured']}; window {_cfr_window(got)}" if "since" in got
+            else got["not_measured"])
+
+
+def _cfr_release(got: dict, version: str) -> str:
+    """A counted release with the incident issues and escaped bugs that failed it, in the
+    words `escape.py failure-rate` prints a failed release in."""
+    import escape  # noqa: PLC0415 - deferred sibling: the command's own phrasing
+    hit = next((f for f in got["failed"] if f["release"] == version), None)
+    if hit is None:
+        return version
+    plural = escape._plural  # noqa: SLF001 - the command's own phrasing, not a copy
+    return f"{version} ({plural('incident', hit['incidents'])}; {plural('bug', hit['bugs'])})"
+
+
+def release_rate_words(got: dict) -> str:
+    """`release_rate`'s figure as one clause: the rate with its basis and the releases counted,
+    or why it is not measured. `retro.py seats` states it."""
+    if got["rate_percent"] is None:
+        return f"not measured: {_cfr_reason(got)}"
+    counted = ", ".join(_cfr_release(got, v) for v in got["counted"])
+    return f"{_cfr_rate(got)}; counted: {counted}"
+
+
+def _release_cfr_section(root: Path, end, replay: dict | None) -> dict:
+    """The release change failure rate over the 90 days ending on the page's window end
+    (`release_rate`): the rate with its window, settling period and pending releases, and a row
+    per release counted naming the incident issues and escaped bugs that failed it, each figure
+    citing the release record file. NOT MEASURED with the command's reason and the window when
+    nothing is measured, or with the refusal when the record file cannot be read, never 0%. The
+    records and the incident issues move after the run, so a re-derivation hands in the section
+    the page was filed with (`replay`), returned as filed and never re-read."""
+    if replay is not None:
+        return replay
+    got = release_rate(root, end.date().isoformat())
+    src, title = got["source"], "Release change failure rate"
+    if got["rate_percent"] is None:
+        return _section("release_cfr", title, not_measured=unmeasured(
+            "release_cfr", src, _cfr_reason(got)))
+    return _section("release_cfr", title, {"cfr_rate": fig("cfr_rate", _cfr_rate(got), src)},
+                    [{"cfr_release": fig("cfr_release", _cfr_release(got, v), src)}
+                     for v in got["counted"]])
+
+
 def _calibration_section(state: dict, state_rel: str) -> dict:
     """The rates the plan was estimated from, and where each came from."""
     rates = (state.get("plan_snapshot") or {}).get("rates") or {}
@@ -5227,7 +5308,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  evidence_schema: str | None = None,
                  cost_forecast_rule: bool = True, effort_rule: bool = True,
                  filed_effort: dict | None = None, cache_trend_rule: bool = True,
-                 cache_writes_rule: bool = True, solution_review_rule: bool = True) -> dict:
+                 cache_writes_rule: bool = True, solution_review_rule: bool = True,
+                 release_cfr_rule: bool = True, filed_release_cfr: dict | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -5266,7 +5348,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     own section after Cost by role; a re-derivation passes whether the page carries it.
     `cache_writes_rule` states each role's cache-write split in its own section after those
     two. It is True for a first derivation, and a re-derivation passes whether the filed page
-    carries the section, so a page filed before it re-derives without it.
+    carries the section, so a page filed before it re-derives without it. `release_cfr_rule`
+    states the release change failure rate after DORA, and a re-derivation passes whether the
+    page carries it: a signed page's section is replayed, else `filed_release_cfr`, an unsigned
+    page's own handed in by `revalidate`, and neither is read afresh.
     `solution_review_rule` sets the units that took a solution review beside those that took
     none, after Calibration; a re-derivation passes whether the page carries it too.
     """
@@ -5397,6 +5482,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         if roles is not None and cache_writes_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
+        _release_cfr_section(root, end, readings["release_cfr"] if filed is not None
+                             else filed_release_cfr) if release_cfr_rule else None,
         _calibration_section(state, state_rel),
         _solution_review_section(root, state, state_rel, ledger,
                                  (state.get("started_at"), _iso(end)))
@@ -6714,6 +6801,9 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          cache_trend_rule=bool(_section_of(basis, "cache_read_trend")),
                          cache_writes_rule=bool(_section_of(basis, "cost_cache_writes")),
                          solution_review_rule=bool(_section_of(basis, "solution_review")),
+                         release_cfr_rule=bool(_section_of(basis, "release_cfr")),
+                         # The page's own section, used only where no signed page is replayed.
+                         filed_release_cfr=_page_readings(stored)["release_cfr"],
                          # Unsigned, the page's own effort: a clone without its plan reads it.
                          filed_effort=_page_readings(stored)["effort"] if anchor is None
                          else None,

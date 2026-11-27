@@ -1880,7 +1880,10 @@ def _seat_misses_cached(root, retro_path) -> dict:
 
 def seat_record(root, retro_path, unit_ids: list) -> dict:
     """`seat_evidence` over the batch with `seat_misses` over the retro's window folded in: a
-    seat charged a later bug joins the record even when it reviewed nothing in the batch."""
+    seat charged a later bug joins the record even when it reviewed nothing in the batch. It
+    carries the release change failure rate over the 90 days ending on the retro's Date, today
+    when it carries none (`sprint_report.release_rate`), as `release_cfr`."""
+    import sprint_report  # noqa: PLC0415 - deferred; the page's own reading of the rate
     ev = seat_evidence(root, unit_ids)
     misses = seat_misses(root, retro_path)
     seats = ev["seats"]
@@ -1888,6 +1891,7 @@ def seat_record(root, retro_path, unit_ids: list) -> dict:
         for key, items in charged.items():
             seats.setdefault(role, _empty_seat())[key].extend(items)
     return {**ev, "window": misses["window"], "uncharged": misses["uncharged"],
+            "release_cfr": sprint_report.release_rate(root, misses["window"]["until"]),
             "seats": {r: seats[r] for r in sorted(seats)}}
 
 
@@ -1910,6 +1914,12 @@ def render_seat_evidence(ev: dict, retro_id: str) -> list:
         after = f"after {window['since']} and " if window.get("since") else ""
         out.append(f"  later bugs charged to the approval that missed them: bugs created "
                    f"{after}on or before {window['until']}")
+    import sprint_report  # noqa: PLC0415 - deferred; the page's own words for the rate
+    rate = ev["release_cfr"]
+    no_date = (f"; {retro_id} carries no Date, so the window is the command's default, ending "
+               f"today" if window.get("until") is None else "")
+    out.append(f"  release change failure rate {sprint_report.release_rate_words(rate)} (read "
+               f"from {rate['source']}){no_date}")
     if window.get("undated"):
         out.append(f"  {len(window['undated'])} bug(s) carry no Created date, so no window "
                    f"holds them")

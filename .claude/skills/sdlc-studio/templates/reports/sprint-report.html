@@ -301,6 +301,20 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- unless: dora_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{dora_reason}}</p>
 <!-- end -->
+<!-- when: release_cfr_present -->
+  <h3>Release change failure rate</h3>
+<!-- when: release_cfr_measured -->
+  <p>{{cfr_rate}}. The rate is the releases with an incident linked to them over the releases counted, as <code>escape.py failure-rate</code> derives it, not the share of push-triggered CI runs on main the DORA table counts; with no incident recorded anywhere it reads not measured, never zero. Each release counted, as <code>sdlc-studio/reports/releases.jsonl</code> records it, with the incident issues and escaped bugs that failed it:</p>
+  <ul>
+<!-- repeat: release_cfr -->
+    <li>{{cfr_release}}</li>
+<!-- end -->
+  </ul>
+<!-- end -->
+<!-- unless: release_cfr_measured -->
+  <p class="unmeasured"><b>NOT MEASURED</b> - {{release_cfr_reason}}</p>
+<!-- end -->
+<!-- end -->
 
   <h3>Calibration</h3>
   <div class="scroll"><table>
