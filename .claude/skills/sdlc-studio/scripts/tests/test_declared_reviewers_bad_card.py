@@ -74,8 +74,19 @@ class DeclaredReviewersBadCardTests(unittest.TestCase):
         self.assertEqual([("qa", "Sam Eriksson"), ("product", "Lena Fischer")], got)
         self.assertEqual("", out)  # mutant 4: stdout is parsed by `sprint lane accept`
         self.assertEqual(
-            "WARNING: seat card sdlc-studio/personas/seats/bad.md is not valid UTF-8, so it "
-            "declares no seat: skipped\n", err)
+            "WARNING: seat card sdlc-studio/personas/seats/bad.md is not valid UTF-8, so critic "
+            "reads no reviewer from it: skipped (save it as UTF-8)\n", err)
+
+    def test_the_warning_claims_no_seat_for_a_card_whose_role_the_resolver_still_reads(
+            self) -> None:
+        # persona_resolve reads this card's role past the bad bytes, so the seat roster and the
+        # cost anatomy still count `legal`: the warning may speak only for critic's reader
+        _card(self.root, "seats", "bad.md", b"\xff\xfe<!-- role: legal -->\n")
+        got, _out, err = _declared(self.root)
+        self.assertEqual([], got)
+        self.assertNotIn("declares no seat", err)
+        self.assertIn("critic reads no reviewer from it", err)
+        self.assertIn("save it as UTF-8", err)
 
     def test_the_warning_names_a_bad_card_under_amigos_by_its_own_folder(self) -> None:
         _card(self.root, "amigos", "bad.md", BAD)

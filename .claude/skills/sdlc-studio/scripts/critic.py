@@ -2920,7 +2920,8 @@ def _declared_reviewers(repo_root: Path | str) -> list[tuple[str, str]]:
                 if str(card) not in _UNDECODABLE_CARDS:
                     _UNDECODABLE_CARDS.add(str(card))
                     print(f"WARNING: seat card sdlc-studio/personas/{sub}/{card.name} is not "
-                          f"valid UTF-8, so it declares no seat: skipped", file=sys.stderr)
+                          f"valid UTF-8, so critic reads no reviewer from it: skipped "
+                          f"(save it as UTF-8)", file=sys.stderr)
                 continue
             rm = role_re.search(text)
             nm = name_re.search(text)
