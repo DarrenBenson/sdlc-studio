@@ -308,7 +308,7 @@ The keys of each row, by the list the row sits in (**In**).
 | `solution_review` | `rows` | `sr_first_round` | Those with no REJECT among their delivery verdicts in the run. |
 | `solution_review` | `rows` | `sr_rate` | That count over the units, a whole percent rounded half up. |
 | `solution_review` | `rows` | `sr_delivery_rounds` | Delivery rounds per unit, counted as verdict rows, as the Delivered table counts them. |
-| `solution_review` | `rows` | `sr_solution_rounds` | The mean of each unit's highest Round cell in the run in `sdlc-studio/reviews/solution-reviews.md`, or `not taken`. |
+| `solution_review` | `rows` | `sr_solution_rounds` | The mean, over the units, of the most rows in the run in `sdlc-studio/reviews/solution-reviews.md` one seat recorded for the unit (the Reviewer cell's role, else the reviewer), so a panel agreeing at once counts one; or `not taken`. |
 | `solution_review` | `rows` | `sr_priced` | The mean priced tokens of the agents recorded against each unit. |
 | `waivers` | `rows` | `waiver_id` | The waiver's decision, or the overridden unit. |
 | `waivers` | `rows` | `waiver_subject` | What it stood down. |

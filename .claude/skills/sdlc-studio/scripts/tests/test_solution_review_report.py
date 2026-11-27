@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -35,6 +36,7 @@ REPO = Path(__file__).resolve().parents[5]
 ANNEX = REPO / ".claude" / "skills" / "sdlc-studio" / "reference-evidence-schema.md"
 DAY = "2026-09-15"   # the fixture run's one day
 LATER = "2026-09-16"  # the day after it
+EARLIER = "2026-09-01"  # a fortnight before it
 UNITS = ["US0101", "US0102", "US0103"]
 TOOK, NONE, NOT_TAKEN = "took a solution review", "took none", "not taken"
 NO_UNIT = "no unit in the run took a solution review"
@@ -58,6 +60,23 @@ def md_section(md: str) -> str:
     """The Markdown twin from the section's lede to the next heading."""
     start = md.index("**Solution review")
     return md[start:md.index("\n###", start)]
+
+
+def md_table(md: str) -> list[list[tuple]]:
+    """The Markdown twin's rows, each keyed by its column heading, in column order."""
+    lines = [ln for ln in md_section(md).splitlines() if ln.startswith("|")]
+    cells = [[c.strip() for c in ln.strip("|").split("|")] for ln in lines]
+    return [list(zip(cells[0], row)) for row in cells[2:]]
+
+
+def html_table(html: str) -> list[list[tuple]]:
+    """The HTML twin's rows, each keyed by its column heading, in column order."""
+    start = html.index("<strong>Solution review.</strong>")
+    table = html[start:html.index("</table>", start)]
+    heads = re.findall(r"<th scope=\"col\"[^>]*>(.*?)</th>", table)
+    body = table[table.index("<tbody>"):]
+    return [list(zip(heads, re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", row)))
+            for row in re.findall(r"<tr>(.*?)</tr>", body)]
 
 
 class SolutionReviewReportTests(unittest.TestCase):
@@ -100,11 +119,12 @@ class SolutionReviewReportTests(unittest.TestCase):
         (self.root / VERDICTS).write_text(tsr.VERDICTS + "\n".join(lines) + "\n",
                                           encoding="utf-8")
 
-    def solution(self, uid: str, verdict: str, day: str = DAY) -> None:
-        """One round of a seat's verdict, through the shipped writer, dated `day`."""
+    def solution(self, uid: str, verdict: str, day: str = DAY,
+                 reviewer: str = "Lena Marsh") -> None:
+        """One verdict on the unit's approach, through the shipped writer, dated `day`."""
         with mock.patch.object(sdlc_md, "now_date", return_value=day):
             critic.record_solution_review(
-                self.root, uid, verdict, self.note, "Lena Marsh", "Dani Okafor",
+                self.root, uid, verdict, self.note, reviewer, "Dani Okafor",
                 changes_file=self.changes if verdict == "changes" else None)
 
     def priced(self, figures: dict) -> None:
@@ -130,9 +150,11 @@ class SolutionReviewReportTests(unittest.TestCase):
         """AC1. MUTANTS: first-round read as the first row being APPROVE; the REJECT test
         inverted; rounds per unit over every unit rather than the group's; the rate rounded
         down or to even; a unit the delivery review never judged counted; solution review
-        rounds counted as rows rather than the highest Round cell; a solution row dated outside
-        the run counted as taken; a superseded delivery row counted; the tokens mean taken over
-        the units that have a figure."""
+        rounds read as the highest Round cell, or as rows, rather than the most one seat
+        recorded in the run; a seat read from the reviewer's name alone, or from the role group
+        alone; a solution row dated outside the run counted as taken; a superseded delivery row,
+        or a later run's, counted; the tokens mean taken over the units that have a figure; the
+        twins' columns or headings swapped; the lede's first-round rule reworded."""
         self.three_units()
         self.priced({"US0101": 100_000, "US0102": 300_000, "US0103": 250_000})
         page = self.build()
@@ -168,16 +190,20 @@ class SolutionReviewReportTests(unittest.TestCase):
                       '<td class="num">1.5</td><td class="num">200,000</td></tr>', html)
         for text in (md, html):
             flat = " ".join(text.split())
+            self.assertIn("is approved at its first round when none of its delivery verdicts in "
+                          "the run is a REJECT", flat)
             self.assertIn("Delivery rounds count verdict rows, as the Delivered table does", flat)
-            self.assertIn("solution review rounds are the highest round a unit's approach note "
-                          "reached", flat)
+            self.assertIn("solution review rounds count the most verdicts any one seat recorded "
+                          "on a unit's approach in the run, so a panel whose seats each give one "
+                          "verdict counts one", flat)
             self.assertIn("the mean, over the group's units, of the priced tokens of the agents "
                           "recorded against each unit", flat)
         # One took unit with no priced record makes the whole cell NOT MEASURED, naming it.
         self.priced({"US0101": 100_000, "US0103": 250_000})
         cell = section(self.build())["rows"][0]["sr_priced"]
         self.assertEqual(sr.NOT_MEASURED, cell["value"])
-        self.assertEqual("no priced figure in the Estimates table for US0102", cell["reason"])
+        self.assertEqual("no agent recorded against US0102 carries a priced figure",
+                         cell["reason"])
         # Two seats: qa APPROVE then engineering REJECT is no first-round approval; two
         # APPROVEs are one, at two rounds.
         self.delivery([("US0101", "APPROVE", "Ada Seat"), ("US0101", "REJECT", "Eng Seat"),
@@ -186,6 +212,15 @@ class SolutionReviewReportTests(unittest.TestCase):
         got = values(section(self.build()))
         self.assertEqual((2, 1, "50%", 2.5), tuple(got[0][k] for k in KEYS[1:5]))
         self.assertEqual((1, 1, "100%", 1.0), tuple(got[1][k] for k in KEYS[1:5]))
+        # Each twin's column under its own heading, in order: every took cell differs.
+        self.priced({"US0101": 100_000, "US0102": 300_000, "US0103": 250_000})
+        page = self.build()
+        heads = ("Group", "Units", "First-round approvals", "Rate", "Delivery rounds per unit",
+                 "Solution review rounds per unit", "Priced tokens per unit")
+        want = [list(zip(heads, (TOOK, "2", "1", "50%", "2.5", "1.5", "200,000"))),
+                list(zip(heads, (NONE, "1", "1", "100%", "1.0", NOT_TAKEN, "250,000")))]
+        self.assertEqual(want, md_table(sr.render_markdown(page)))
+        self.assertEqual(want, html_table(sr.render_html(page)))
         # A carried unit with a REJECT joins its group, lowering its rate.
         self.edit_state(batch_changes=[{"id": "US0104", "action": "drop",
                                         "reason": "carried at the review cap"}])
@@ -204,8 +239,9 @@ class SolutionReviewReportTests(unittest.TestCase):
         self.solution("US0103", "go")
         got = values(section(self.build()))
         self.assertEqual((3, 2, "67%", round(4 / 3, 1)), tuple(got[0][k] for k in KEYS[1:5]))
-        # Its highest Round cell in the run: US0103's round one fell the day after.
-        self.assertEqual(1.7, got[0]["sr_solution_rounds"])
+        # Only its rows in the run count: US0103's round one fell the day after, so it reads
+        # one round, not its Round cell of two.
+        self.assertEqual(round(4 / 3, 1), got[0]["sr_solution_rounds"])
         self.assertEqual((0, sr.NOT_MEASURED, sr.NOT_MEASURED),
                          (got[1]["sr_units"], got[1]["sr_first_round"], got[1]["sr_rate"]))
         self.assertEqual(EMPTY, section(self.build())["rows"][1]["sr_rate"]["reason"])
@@ -218,6 +254,33 @@ class SolutionReviewReportTests(unittest.TestCase):
         for n, d, want in ((1, 3, "33%"), (2, 3, "67%"), (1, 8, "13%"), (1, 2, "50%"),
                            (0, 1, "0%"), (1, 1, "100%")):
             self.assertEqual(want, sr.whole_percent(n, d), f"{n} of {d}")
+        # A panel of two seats agreeing at once is one round, though the writer numbers the
+        # second verdict round two; a seat is the Reviewer cell's role, else the reviewer.
+        self.solution("US0102", "go", reviewer="Kai Other")
+        self.assertEqual([1, 2], [r["round"] for r in critic.read_solution_reviews(
+            self.root, "US0102")])
+        self.assertEqual(round(4 / 3, 1), values(section(self.build()))[0]["sr_solution_rounds"])
+        self.solution("US0101", "go", reviewer="Ada Seat (qa)")
+        self.solution("US0101", "go", reviewer="Eng Seat (engineering)")
+        self.assertEqual(round(4 / 3, 1), values(section(self.build()))[0]["sr_solution_rounds"])
+        # Two holders of one seat are that seat's two rounds.
+        self.solution("US0102", "go", reviewer="Bo Seat (qa)")
+        self.solution("US0102", "go", reviewer="Cy Seat (qa)")
+        self.assertEqual(round(5 / 3, 1), values(section(self.build()))[0]["sr_solution_rounds"])
+        # A later run's verdict on the same day is not this run's: US0103's REJECT, after the
+        # base a run opened that afternoon recorded, leaves its first-round approval.
+        archive = self.root / "sdlc-studio" / ".local" / "run-archive"
+        archive.mkdir(parents=True, exist_ok=True)
+        (archive / "later.json").write_text(json.dumps(
+            {"schema": 1, "run_id": "RUN-LATER", "started_at": f"{DAY}T15:00:00Z",
+             run_state.REVIEW_BASE: {"US0103": 1}}), encoding="utf-8")
+        self.delivery([("US0101", "APPROVE"), ("US0102", "APPROVE"), ("US0103", "APPROVE"),
+                       ("US0103", "REJECT", "Eng Seat")])
+        self.assertEqual((3, 3, "100%", 1.0),
+                         tuple(values(section(self.build()))[0][k] for k in KEYS[1:5]))
+        (archive / "later.json").unlink()
+        self.assertEqual((3, 2, "67%", round(4 / 3, 1)),
+                         tuple(values(section(self.build()))[0][k] for k in KEYS[1:5]))
 
     def test_a_run_where_no_unit_took_the_step_reads_not_measured(self) -> None:
         """AC2. MUTANTS: the section measured with no solution row; a row for a unit outside
@@ -245,6 +308,8 @@ class SolutionReviewReportTests(unittest.TestCase):
         got = values(sec)
         self.assertEqual((TOOK, 0, sr.NOT_MEASURED, sr.NOT_MEASURED, sr.NOT_MEASURED, sr.NOT_MEASURED,
                           sr.NOT_MEASURED), tuple(got[0][k] for k in KEYS))
+        self.assertEqual({k: EMPTY for k in KEYS[2:]},
+                         {k: sec["rows"][0][k]["reason"] for k in KEYS[2:]})
         self.assertEqual((NONE, 2, 1, "50%", 1.0), tuple(got[1][k] for k in KEYS[:5]))
         # No delivery ledger: no unit's rounds are known.
         (self.root / VERDICTS).unlink()
@@ -257,7 +322,8 @@ class SolutionReviewReportTests(unittest.TestCase):
     def test_the_section_holds_at_sign_and_an_older_page_renders(self) -> None:
         """AC3. MUTANTS: the frozen rows ignored, or read from the ledger whole without the
         frozen identities; `solution_review_rule` hard-wired on in `revalidate`; the `when` gate
-        dropped from either template."""
+        dropped from either template; the freeze read over every day rather than the run's."""
+        self.solution("US0103", "go", day=EARLIER)
         self.three_units()
         for cmd in (["init", "-q", "."], ["add", "-A"],
                     ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false",
@@ -268,6 +334,8 @@ class SolutionReviewReportTests(unittest.TestCase):
         self.assertEqual([2, 1, 0], [len(state[sr.SOLUTION_ROWS][u]) for u in UNITS])
         self.assertIn(sr.REVIEW_ROWS, state)
         page = self.build()
+        self.assertEqual([(TOOK, 2), (NONE, 1)],
+                         [(r["sr_group"], r["sr_units"]) for r in values(section(page))])
         rid = sr.file_report(self.root, page)
         stored = sr.read_report(self.root, rid)
         # After the close: one more GO for US0102 on the run's day, and a duplicated row.
@@ -315,7 +383,8 @@ class SolutionReviewReportTests(unittest.TestCase):
     def test_the_annex_catalogues_the_section(self) -> None:
         """AC4. MUTANTS: the section, or a row key, left out of the annex; the section listed
         as conditional or out of page order; the note that a page filed before it carries none
-        dropped; the constant or the masthead moved off 1.1; the annex over its ceiling."""
+        dropped; the solution rounds meaning back to the Round cell; the constant or the
+        masthead moved off 1.1; the annex over its ceiling."""
         sections = annex.keyed("Report sections", "Section")
         row = sections["solution_review"]
         self.assertEqual(("Solution review", "appendix", "always", "-"),
@@ -343,6 +412,9 @@ class SolutionReviewReportTests(unittest.TestCase):
             "Report row keys") if r["Section"] == "`solution_review`"}
         self.assertIn("verdict rows", meanings["sr_delivery_rounds"])
         self.assertIn(LEDGER, meanings["sr_solution_rounds"])
+        self.assertIn("one seat recorded for the unit (the Reviewer cell's role, else the "
+                      "reviewer), so a panel agreeing at once counts one",
+                      meanings["sr_solution_rounds"])
         self.assertEqual("1.1", stamp.masthead_version())
         self.assertEqual("1.1", sr.EVIDENCE_SCHEMA_VERSION)
         self.assertEqual("1.1", page[run_state.EVIDENCE_SCHEMA])

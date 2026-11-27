@@ -4968,6 +4968,21 @@ def whole_percent(n: int, d: int) -> str:
     return f"{(200 * n + d) // (2 * d)}%"
 
 
+def _solution_rounds(rows: list[dict]) -> int:
+    """A unit's solution review rounds in the run: the most of `rows`, its rows in the run, that
+    any one seat recorded, each row counted once by its identity (`_solution_identity`). A seat
+    is the role the Reviewer cell names (`critic.recorded_seat`), else the reviewer named. The
+    writer numbers every row the unit's next round, a second seat's verdict too, so the Round
+    cell would count a panel agreeing at once as two rounds, and a carried unit's earlier runs
+    as this run's."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    seats: dict[str, set[str]] = {}
+    for r in rows:
+        seat = critic.recorded_seat(r["reviewer"]) or r["reviewer"]
+        seats.setdefault(seat, set()).add(_solution_identity(r))
+    return max(len(ids) for ids in seats.values())
+
+
 def _solution_review_section(root: Path, state: dict, state_rel: str, ledger: list[dict],
                              window: tuple) -> dict:
     """First-round approval and rounds per unit for the units that took a solution review
@@ -4976,10 +4991,11 @@ def _solution_review_section(root: Path, state: dict, state_rel: str, ledger: li
     when it holds a solution review row in the run (`_solution_rows_by_unit`), and it was
     approved at its first round when none of its counted verdict rows is a REJECT. Delivery
     rounds are the Delivered table's, verdict rows, so two seats approving count two; a unit's
-    solution review rounds are the highest Round cell among its rows in the run, so a panel's
-    several verdicts in one round count one. Priced tokens per unit is the mean of the priced
-    tokens of the agents recorded against each unit, NOT MEASURED naming any unit with none. The section is NOT MEASURED when no unit the run lists took the step, or when there
-    is no delivery ledger."""
+    solution review rounds are the most of its rows in the run any one seat recorded
+    (`_solution_rounds`), so a panel whose seats each give one verdict counts one. Priced
+    tokens per unit is the mean of the priced tokens of the agents recorded against each unit,
+    NOT MEASURED naming any unit with none. The section is NOT MEASURED when no unit the run
+    lists took the step, or when there is no delivery ledger."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     title = "Solution review"
     sol_rel = _rel(root, critic.solution_reviews_path(root))
@@ -5010,12 +5026,13 @@ def _solution_review_section(root: Path, state: dict, state_rel: str, ledger: li
             "sr_delivery_rounds": measured(
                 "sr_delivery_rounds", n and round(sum(u["rounds"] for u in units) / n, 1), vrel),
             "sr_solution_rounds": (measured("sr_solution_rounds", n and round(
-                sum(max(r["round"] for r in taken[u["id"]]) for u in units) / n, 1), sol_rel)
+                sum(_solution_rounds(taken[u["id"]]) for u in units) / n, 1), sol_rel)
                 if took
                 else fig("sr_solution_rounds", SR_NOT_TAKEN, sol_rel)),
             "sr_priced": (unmeasured("sr_priced", state_rel, _SR_EMPTY) if not n else
-                          unmeasured("sr_priced", state_rel, f"no priced figure in the "
-                                     f"Estimates table for {', '.join(unpriced)}") if unpriced
+                          unmeasured("sr_priced", state_rel, f"no agent recorded against "
+                                     f"{', '.join(unpriced)} carries a priced figure")
+                          if unpriced
                           else fig("sr_priced", round(sum(u["priced"] for u in units) / n),
                                    state_rel))})
     return _section("solution_review", title, rows=rows)

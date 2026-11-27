@@ -266,8 +266,9 @@ review of their approach before any code, beside the units that did not. A unit 
 delivery review has judged it in the run, a dropped or carried unit too, and is approved at its
 first round when none of its delivery verdicts in the run is a REJECT. Delivery rounds count
 verdict rows, as the Delivered table does, so a unit two seats approve counts two; solution review
-rounds are the highest round a unit's approach note reached. Priced tokens per unit is the mean,
-over the group's units, of the priced tokens of the agents recorded against each unit.
+rounds count the most verdicts any one seat recorded on a unit's approach in the run, so a panel
+whose seats each give one verdict counts one. Priced tokens per unit is the mean, over the group's
+units, of the priced tokens of the agents recorded against each unit.
 
 | Group | Units | First-round approvals | Rate | Delivery rounds per unit | Solution review rounds per unit | Priced tokens per unit |
 | --- | --- | --- | --- | --- | --- | --- |
