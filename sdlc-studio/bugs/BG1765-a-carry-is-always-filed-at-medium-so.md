@@ -1,6 +1,6 @@
 # BG1765: A carry is always filed at Medium, so a unit that checks a release bar barring Medium cannot close its own carry
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1765.md, sdlc-studio/.config.yaml, tools/tests/test_lean_carry_severity_bar.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py
@@ -34,3 +34,4 @@ File the carry at the severity of the most severe blocking finding the carried v
 | 2026-11-26 | sdlc-studio | Filed |
 | 2026-11-26 | orchestrator | Affects adds sdlc-studio/.config.yaml and `tools/tests/test_lean_carry_severity_bar.py`: the repair sets `review.blocking_priority` to medium here and pins it in step with the release bar (D0642) |
 | 2026-11-26 | orchestrator (D0545) | Affects widened to sprint.py and the close's judgement test: both review seats found at round two that the close passes the judge no project root, so `review.blocking_priority`, which the repair's config comment and tests say the close reads, is ignored there; the carry repair makes the close read it (D0561). |
+| 2026-11-27 | orchestrator (D0545) | Reopened: set Fixed by hand after its qa carry-exit APPROVE, but its risk class is high and it still takes the product seat; Fixed again only on that seat's APPROVE |

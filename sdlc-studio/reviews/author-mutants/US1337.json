@@ -1,0 +1,448 @@
+{
+  "unit": "US1337",
+  "digest": "67df12b1f54ee387 at ce75757b544d",
+  "report": "sdlc-studio/.local/lane/landed/agent-a7edee7a6ef441047/US1337-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "gap-ge",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "gap > life else",
+      "new": "gap >= life else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gap-ge-hour",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "gap > life else",
+      "new": "gap >= life else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "five-301",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_5m\": (300, \"rewrite_5m\")",
+      "new": "\"cache_write_5m\": (301, \"rewrite_5m\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "five-3600",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_5m\": (300, \"rewrite_5m\")",
+      "new": "\"cache_write_5m\": (3_600, \"rewrite_5m\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hour-3601",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_1h\": (3_600, \"rewrite_1h\")",
+      "new": "\"cache_write_1h\": (3_601, \"rewrite_1h\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hour-300",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_1h\": (3_600, \"rewrite_1h\")",
+      "new": "\"cache_write_1h\": (300, \"rewrite_1h\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "hour-key-5m",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_1h\": (3_600, \"rewrite_1h\")",
+      "new": "\"cache_write_1h\": (3_600, \"rewrite_5m\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-call-rewrite",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "gap is not None and gap > life",
+      "new": "(gap is None or gap > life)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one-lifetime-300",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "            out[key if gap is not None and gap > life else GROWTH] += parts[kind]",
+      "new": "            out[key if gap is not None and gap > 300 else GROWTH] += parts[kind]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one-lifetime-per-call",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "            out[key if gap is not None and gap > life else GROWTH] += parts[kind]",
+      "new": "            out[key if gap is not None and gap > (3_600 if parts[\"cache_write_1h\"] else 300) else GROWTH] += parts[kind]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prev-every-record",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if msg_id not in gaps:\n            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()\n            prev = moment",
+      "new": "        if msg_id not in gaps:\n            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()\n        prev = moment",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gap-every-record",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if msg_id not in gaps:\n            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()\n            prev = moment",
+      "new": "        gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()\n        prev = moment",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "negative-gap-abs",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "(moment - prev).total_seconds()",
+      "new": "abs((moment - prev).total_seconds())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "synthetic-ends-gap",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if model == SYNTHETIC_MODEL:\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "synthetic-gap-get",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "gap = gaps.get(msg_id)",
+      "new": "gap = gaps[msg_id]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "booked-from-all-records",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "booked = {rec[1]: rec[3] for rec in kept if rec[1] is not None}",
+      "new": "booked = {rec[1]: rec[3] for rec in records if rec[1] is not None}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "shared-left-out",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "writes = _cache_writes(every, booked)",
+      "new": "writes = _cache_writes([r for r in every if r[1] in booked], booked)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_each_gap_runs_from_the_previous_call_in_file_order",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "id-less-measured",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "if msg_id is None or moment is None:",
+      "new": "if moment is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_an_unmeasurable_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unparseable-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if msg_id is None or moment is None:\n            return None",
+      "new": "        if msg_id is None:\n            return None\n        if moment is None:\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_an_unmeasurable_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "untimed-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if msg_id is None or moment is None:\n            return None",
+      "new": "        if msg_id is None:\n            return None\n        if moment is None:\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "untimed-unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "if msg_id is None or moment is None:",
+      "new": "if msg_id is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gaps-over-window",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "writes = _cache_writes(every, booked)",
+      "new": "writes = _cache_writes(records, booked)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_window_call_measures_its_gap_from_the_call_before_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "booked-over-whole",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "writes = _cache_writes(every, booked)",
+      "new": "writes = _cache_writes(every, {r[1]: r[3] for r in every if r[1] is not None})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_window_call_measures_its_gap_from_the_call_before_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "straddle-booked-over-whole",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "writes = _cache_writes(every, booked)",
+      "new": "writes = _cache_writes(every, {r[1]: r[3] for r in every if r[1] is not None})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_call_straddling_the_window_start_is_timed_from_its_first_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none-not-sticky",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        elif row[\"cache_writes\"] is not None:",
+      "new": "        else:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none-not-set",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if writes is None:\n            row[\"cache_writes\"] = None",
+      "new": "        if writes is None:\n            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "from-reading-zeros",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "row[\"calls\"] = row[\"cache_writes\"] = None",
+      "new": "row[\"calls\"] = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_an_unmeasurable_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "finish-drops-key",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"components\": comps, \"cache_writes\": row[\"cache_writes\"],",
+      "new": "\"components\": comps,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-na-as-0",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "(NOT_AVAILABLE if w is None else (",
+      "new": "(\"0 growth\" if w is None else (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-swap",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "{_cell(w['rewrite_5m'])} re-written after 5-minute",
+      "new": "{_cell(w['rewrite_1h'])} re-written after 5-minute",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-block-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    lines += [\"\", *_cache_writes_lines(got)]\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-na-from-reading",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "(NOT_AVAILABLE if w is None else (",
+      "new": "(\"0 growth\" if w is None else (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_an_unmeasurable_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "growth-key",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "GROWTH = \"growth\"",
+      "new": "GROWTH = \"grown\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "five-key-1h",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_write_5m\": (300, \"rewrite_5m\")",
+      "new": "\"cache_write_5m\": (300, \"rewrite_1h\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "keys-short",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "CACHE_WRITE_KEYS = (GROWTH, *(key for _life, key in CACHE_LIFETIMES.values()))",
+      "new": "CACHE_WRITE_KEYS = (GROWTH, \"rewrite_5m\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "out-starts-at-1",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    out = dict.fromkeys(CACHE_WRITE_KEYS, 0)",
+      "new": "    out = dict.fromkeys(CACHE_WRITE_KEYS, 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "row-starts-at-1",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_writes\": dict.fromkeys(CACHE_WRITE_KEYS, 0)}",
+      "new": "\"cache_writes\": dict.fromkeys(CACHE_WRITE_KEYS, 1)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "row-starts-none",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\"cache_writes\": dict.fromkeys(CACHE_WRITE_KEYS, 0)}",
+      "new": "\"cache_writes\": None}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prev-never-set",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        if msg_id not in gaps:\n            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()\n            prev = moment",
+      "new": "        if msg_id not in gaps:\n            gaps[msg_id] = None if prev is None else (moment - prev).total_seconds()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prev-is-not-none",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "None if prev is None else",
+      "new": "None if prev is not None else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-gap-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "None if prev is None else",
+      "new": "0.0 if prev is None else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "survived",
+      "answer": "equivalent: a first call's gap of 0 seconds is not longer than either lifetime (300 or 3,600 s), so the rule books its writes as growth exactly as it books a call with no gap; no reading of the split can tell 0 from None. Probe: the runner applies the edit and the AC1 test, whose first call writes 3,000 as growth, stays green."
+    },
+    {
+      "mutant": "sum-loop-short",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "            for k in CACHE_WRITE_KEYS:\n",
+      "new": "            for k in CACHE_WRITE_KEYS[:2]:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-no-blank",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    lines += [\"\", *_cache_writes_lines(got)]\n",
+      "new": "    lines += [*_cache_writes_lines(got)]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "render-growth-label",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "{_cell(w[GROWTH])} growth",
+      "new": "{_cell(w['rewrite_5m'])} growth",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "t-exact-five-moved",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py",
+      "old": "(\"msg_e2\", _five(4_000), 6)",
+      "new": "(\"msg_e2\", _five(4_000), 6.5)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "t-six-minute-hour-moved",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py",
+      "old": "(\"msg_m2\", _hour(500), 6)",
+      "new": "(\"msg_m2\", _hour(500), 61)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "t-window-write-moved",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py",
+      "old": "((\"msg_w2\", _five(4_000), 9),)",
+      "new": "((\"msg_w2\", _five(4_000), 5.5),)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_window_call_measures_its_gap_from_the_call_before_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "t-untimed-timed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py",
+      "old": "_line(\"msg_u2\", _five(800), None)",
+      "new": "_line(\"msg_u2\", _five(800), _at(3))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "t-straddle-first-inside",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py",
+      "old": "_line(\"msg_x2\", _five(4_000), _at(5, base, ms=50_000))",
+      "new": "_line(\"msg_x2\", _five(4_000), _at(6, base, ms=10_000))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_call_straddling_the_window_start_is_timed_from_its_first_record",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

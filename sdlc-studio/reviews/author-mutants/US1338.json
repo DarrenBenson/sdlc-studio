@@ -1,0 +1,340 @@
+{
+  "unit": "US1338",
+  "digest": "2170c983012e24af at 70fd476cdc5d",
+  "report": "sdlc-studio/.local/lane/landed/agent-a03a7f22ee4a3a4d1/US1338-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "html-heads-swapped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "class=\"num\">Re-written after five-minute expiry</th><th scope=\"col\" class=\"num\">Re-written after one-hour expiry</th>",
+      "new": "class=\"num\">Re-written after one-hour expiry</th><th scope=\"col\" class=\"num\">Re-written after five-minute expiry</th>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-basis-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "expiry: {{writes_basis}}.",
+      "new": "expiry.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-basis-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "expiry: {{writes_basis}}.",
+      "new": "expiry.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-heads-swapped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "| Re-written after five-minute expiry | Re-written after one-hour expiry |",
+      "new": "| Re-written after one-hour expiry | Re-written after five-minute expiry |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-share-over-growth",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "re-writes over its cache writes.",
+      "new": "re-writes over its growth.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-share-over-growth",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "re-writes over its cache writes.",
+      "new": "re-writes over its growth.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "basis-shorter-gap",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "a re-write follows a longer ",
+      "new": "a re-write follows a shorter ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "basis-understates",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "so it overstates by one turn",
+      "new": "so it understates by one turn",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "basis-lifetimes-unformatted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "f\"{life:,} seconds for {kind}\"",
+      "new": "f\"{life} seconds for {kind}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-reads-whole-record",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "_cost_cache_writes_section(metered, state_rel",
+      "new": "_cost_cache_writes_section(state, state_rel",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-measured-source-handed-path",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"cost_cache_writes\", nm[\"source\"],",
+      "new": "\"cost_cache_writes\", state_rel,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex-share-promises-a-reason",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "; `not available` when its split is, or `not available - this role wrote no cache`.",
+      "new": ", or `not available` with the reason.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_a_role_with_no_split_or_no_cache_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role-keys-drop-split",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "\"avg_context\", \"cache_writes\")",
+      "new": "\"avg_context\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-split-judged-by-value",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "any(\"cache_writes\" not in r for r in got)",
+      "new": "any(r.get(\"cache_writes\") is None for r in got)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_a_role_with_no_split_or_no_cache_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-split-judged-on-every-role",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "any(\"cache_writes\" not in r for r in got)",
+      "new": "all(\"cache_writes\" not in r for r in got)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-roles-taken-as-measured",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if not got or any(\"cache_writes\"",
+      "new": "if any(\"cache_writes\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "share-numerator-one-kind",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "cell((whole - w[\"growth\"]) / whole, \"pct\")",
+      "new": "cell(w[\"rewrite_5m\"] / whole, \"pct\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "share-denominator-missing-growth",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "whole = sum(w[k] for _f, k in CACHE_WRITE_COLUMNS)",
+      "new": "whole = sum(w[k] for _f, k in CACHE_WRITE_COLUMNS[1:])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-cache-guard-on-growth",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if whole else _NO_CACHE",
+      "new": "if w[\"growth\"] else _NO_CACHE",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_a_role_with_no_split_or_no_cache_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none-split-counts-read-0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "cell(None if w is None else w[name])",
+      "new": "cell(0 if w is None else w[name])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_a_role_with_no_split_or_no_cache_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "none-split-share-read-no-cache",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "            share = cell(None)\n",
+      "new": "            share = _NO_CACHE\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_a_role_with_no_split_or_no_cache_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replay-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if replay is not None:\n        return replay\n    title = \"Cache writes by role\"",
+      "new": "    title = \"Cache writes by role\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if roles is not None and cache_writes_rule else None",
+      "new": "if roles is not None else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "revalidate-always-builds",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "cache_writes_rule=bool(_section_of(basis, \"cost_cache_writes\"))",
+      "new": "cache_writes_rule=True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "columns-read-other-kind",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "(\"writes_rewrite_5m\", \"rewrite_5m\"),\n                       (\"writes_rewrite_1h\", \"rewrite_1h\"))",
+      "new": "(\"writes_rewrite_5m\", \"rewrite_1h\"),\n                       (\"writes_rewrite_1h\", \"rewrite_5m\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-row-cells-swapped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "| {{writes_rewrite_5m}} | {{writes_rewrite_1h}} |",
+      "new": "| {{writes_rewrite_1h}} | {{writes_rewrite_5m}} |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-row-cells-swapped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<td class=\"num\">{{writes_rewrite_5m}}</td><td class=\"num\">{{writes_rewrite_1h}}</td>",
+      "new": "<td class=\"num\">{{writes_rewrite_1h}}</td><td class=\"num\">{{writes_rewrite_5m}}</td>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-measured-table-reason-bare",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"cost_cache_writes\", nm[\"source\"],\n            f\"the Cost by role table is not measured: {nm.get('reason')}\"",
+      "new": "\"cost_cache_writes\", nm[\"source\"],\n            nm.get('reason')",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-split-reason-changed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "_NO_SPLIT = \"the run's closing reading recorded no cache-write split by role\"",
+      "new": "_NO_SPLIT = \"the run's closing reading recorded no split\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page-readings-drop-section",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"cache_writes\": next((s for s in page.get(\"sections\") or []",
+      "new": "\"cache_writes\": None and next((s for s in page.get(\"sections\") or []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-present-guard-on-cost-roles",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "<!-- when: cost_cache_writes_present -->",
+      "new": "<!-- when: cost_roles_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-present-guard-on-cost-roles",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<!-- when: cost_cache_writes_present -->",
+      "new": "<!-- when: cost_roles_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex-section-emitted-changed",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `cost_cache_writes` | Cache writes by role | appendix | always | - |",
+      "new": "| `cost_cache_writes` | Cache writes by role | appendix | when measured | - |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closing-roles-oldest",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "next((s.get(run_state.COST_ROLES) for s in reversed(",
+      "new": "next((s.get(run_state.COST_ROLES) for s in (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-not-measured-reason-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<b>Cache writes by role: NOT MEASURED</b> - {{cost_cache_writes_reason}}",
+      "new": "<b>Cache writes by role: NOT MEASURED</b>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md-not-measured-reason-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "**Cache writes by role: NOT MEASURED** - {{cost_cache_writes_reason}}",
+      "new": "**Cache writes by role: NOT MEASURED**",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html-lede-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<strong>Cache writes by role.</strong> Each role's",
+      "new": "<strong>Cache writes by role.</strong>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

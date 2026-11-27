@@ -1,0 +1,205 @@
+{
+  "unit": "BG1765",
+  "digest": "17c6234986056231 at 682afd401cfa",
+  "report": "sdlc-studio/.local/lane/landed/agent-a3a94919a60024611/BG1765-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the carry filed at a fixed Medium whatever the bar",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        \"severity\": severity,\n",
+      "new": "        \"severity\": \"Medium\",\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rule sentence left off the bug",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"reviewed again. {rule} The findings still open: {issues}\"",
+      "new": "f\"reviewed again. The findings still open: {issues}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bar not read: the shipped bar always",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    barred = blocking_priorities(repo_root)\n",
+      "new": "    barred = blocking_priorities(None)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bar read as allowing Medium",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if CARRY_SEVERITY.lower() not in barred:\n",
+      "new": "    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bar's vocabulary read raw, so Medium never matches",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if CARRY_SEVERITY.lower() not in barred:\n",
+      "new": "    if CARRY_SEVERITY not in barred:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the default guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if CARRY_SEVERITY.lower() not in barred:\n",
+      "new": "    if CARRY_SEVERITY.lower() in barred:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the every-severity guard dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if \"low\" not in barred:\n",
+      "new": "    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the every-severity guard inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if \"low\" not in barred:\n",
+      "new": "    if \"low\" in barred:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the default raised to High",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "CARRY_SEVERITY = \"Medium\"\n",
+      "new": "CARRY_SEVERITY = \"High\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the default raised to the most severe level the bar allows",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return CARRY_SEVERITY, (f\"Filed at {CARRY_SEVERITY}",
+      "new": "        return (\"High\" if \"high\" not in barred else CARRY_SEVERITY), (f\"Filed at {CARRY_SEVERITY}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a bar barring Medium stepping to Medium",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        return \"Low\", (f\"Filed at Low rather than",
+      "new": "        return \"Medium\", (f\"Filed at Low rather than",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a bar barring every severity filing at Medium",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return \"Low\", f\"Filed at Low, the least severe level",
+      "new": "    return \"Medium\", f\"Filed at Low, the least severe level",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the allowed rule's sentence dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": ", (f\"Filed at {CARRY_SEVERITY}, the carry's default, which {bar} \"\n                                \"allows.\")",
+      "new": ", \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the every-severity rule sentence reworded to the stepped one",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"Filed at Low, the least severe level, because {bar} bars every severity.\"",
+      "new": "f\"Filed at Low rather than the carry's default {CARRY_SEVERITY}: {bar} bars {CARRY_SEVERITY}, and Low is the most severe level it allows.\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_bar_above_medium_keeps_the_default_and_one_barring_all_takes_low",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "this repository's setting removed, so it reads high (drift pin)",
+      "file": "sdlc-studio/.config.yaml",
+      "old": "  blocking_priority: medium\n",
+      "new": "",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_the_setting_bars_what_the_named_bar_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "this repository's setting removed, so a carry here files Medium",
+      "file": "sdlc-studio/.config.yaml",
+      "old": "  blocking_priority: medium\n",
+      "new": "",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_a_carry_here_is_filed_at_a_level_this_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "this repository's setting set to high",
+      "file": "sdlc-studio/.config.yaml",
+      "old": "  blocking_priority: medium\n",
+      "new": "  blocking_priority: high\n",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_the_setting_bars_what_the_named_bar_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "this repository's setting set to low, barring Low too",
+      "file": "sdlc-studio/.config.yaml",
+      "old": "  blocking_priority: medium\n",
+      "new": "  blocking_priority: low\n",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_the_setting_bars_what_the_named_bar_bars",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "this repository's setting removed, so the named bar and the setting differ under a newer bar",
+      "file": "sdlc-studio/.config.yaml",
+      "old": "  blocking_priority: medium\n",
+      "new": "",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_a_new_bar_moves_the_pin_only_once_the_page_names_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the carry here read from the shipped bar, not the setting",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    barred = blocking_priorities(repo_root)\n",
+      "new": "    barred = blocking_priorities(None)\n",
+      "test": "tools/tests/test_lean_carry_severity_bar.py::CarrySeverityBarTests::test_a_carry_here_is_filed_at_a_level_this_bar_allows",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the close's goal judgement called without the project root",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        ruling = critic.judge_defects_against_goal(defects, clauses, root)\n",
+      "new": "        ruling = critic.judge_defects_against_goal(defects, clauses)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseSeverityFloorTests::test_an_open_medium_blocks_the_close_where_the_project_bars_medium",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the close's goal judgement given no root explicitly",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        ruling = critic.judge_defects_against_goal(defects, clauses, root)\n",
+      "new": "        ruling = critic.judge_defects_against_goal(defects, clauses, None)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseSeverityFloorTests::test_an_open_medium_blocks_the_close_where_the_project_bars_medium",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

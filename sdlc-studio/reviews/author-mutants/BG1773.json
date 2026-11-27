@@ -1,0 +1,232 @@
+{
+  "unit": "BG1773",
+  "digest": "7bba34624d95afcd at d028caabff24",
+  "report": "sdlc-studio/.local/lane/landed/agent-afa7ac150479957b4/BG1773-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "LINK_ID_SEARCH_RE built without the normalised v3 splice",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids reads with ID_SEARCH_RE again (through the artifact.py CLI)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    for m in LINK_ID_SEARCH_RE.finditer(raw):",
+      "new": "    for m in ID_SEARCH_RE.finditer(raw):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::CrockfordSpawnTests::test_two_spawns_under_one_parent_keep_both_with_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids reads with ID_SEARCH_RE again (unit)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    for m in LINK_ID_SEARCH_RE.finditer(raw):",
+      "new": "    for m in ID_SEARCH_RE.finditer(raw):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "_field_id (Change Request:, RFC:) reads with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    mid = LINK_ID_SEARCH_RE.search(m.group(1))",
+      "new": "    mid = ID_SEARCH_RE.search(m.group(1))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_link_readers_read_normalised_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parent_refs reads with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        mm = LINK_ID_SEARCH_RE.search(val)",
+      "new": "        mm = ID_SEARCH_RE.search(val)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_link_readers_read_normalised_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "child_parent reads the Epic field with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        m = LINK_ID_SEARCH_RE.search(epic)",
+      "new": "        m = ID_SEARCH_RE.search(epic)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_link_readers_read_normalised_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "LINK_ID_SEARCH_RE built from CITED_ID_RE, which adds the LL prefix",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    CITED_ID_RE.pattern,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_no_word_as_a_crockford_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the normalised suffix may open on any base32 character",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX.replace(\"[0-7]\", \"[0-9A-Z]\"), 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_no_word_as_a_crockford_id",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "LINK_ID_SEARCH_RE drops IGNORECASE",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "_V3_NORM_SUFFIX, 1),\n    ID_SEARCH_RE.flags)",
+      "new": "_V3_NORM_SUFFIX, 1),\n    0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_keeps_reading_a_lowercase_prefix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids returns the normalised key, not the id as written",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "            seen.add(key)\n            out.append(m.group(0))",
+      "new": "            seen.add(key)\n            out.append(key)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids keeps a second spelling of one id",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        if key not in seen:\n            seen.add(key)\n            out.append(m.group(0))",
+      "new": "        if True:\n            seen.add(key)\n            out.append(m.group(0))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids no longer strips a parenthetical",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    raw = _PAREN_RUN_RE.sub(\" \", raw)\n    out: list[str] = []",
+      "new": "    out: list[str] = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_crockford_ids",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the dashless v3 form tried after the v2 digit run",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(r\"|-?\\d{4,})\", r\"|-?\\d{4,}|\" + _V3_NORM_SUFFIX + \")\", 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_decomposed_ids_reads_a_dashless_id_whose_suffix_opens_on_digits",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reconcile's epic points roll-up reads the Epic field with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        m = sdlc_md.LINK_ID_SEARCH_RE.search(epic_ref)",
+      "new": "        m = sdlc_md.ID_SEARCH_RE.search(epic_ref)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DashlessSchema3LinkTests::test_a_dashless_epic_rolls_story_points_up",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unit_corpus reads its Delivers/Epic/Supersedes wiring with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "                           *sdlc_md.LINK_ID_SEARCH_RE.findall(wiring))}",
+      "new": "                           *sdlc_md.ID_SEARCH_RE.findall(wiring))}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DashlessSchema3LinkTests::test_a_dashless_epic_counts_as_a_units_wiring",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parent_refs reads with ID_SEARCH_RE again (reconcile's lost-child report)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        mm = LINK_ID_SEARCH_RE.search(val)",
+      "new": "        mm = ID_SEARCH_RE.search(val)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DashlessSchema3LinkTests::test_a_lost_dashless_child_reports_link_asymmetry",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decomposed_ids reads with ID_SEARCH_RE again (reconcile's correct links)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    for m in LINK_ID_SEARCH_RE.finditer(raw):",
+      "new": "    for m in ID_SEARCH_RE.finditer(raw):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::DashlessSchema3LinkTests::test_dashless_schema3_links_report_no_link_drift",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the spliced dashless suffix cut at exactly 8 characters ({7})",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX.replace(\"{7,}\", \"{7}\"), 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_link_readers_read_an_extended_dashless_id_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the spliced dashless suffix cut at exactly 8 characters, through the append path",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX.replace(\"{7,}\", \"{7}\"), 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_refine.py::CrockfordSpawnTests::test_a_spawn_keeps_an_extended_dashless_child_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the spliced dashless suffix needs only 6 characters ({5,})",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX.replace(\"{7,}\", \"{5,}\"), 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_a_v2_id_glued_to_a_short_or_lowercase_run_still_reads_as_v2",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the spliced dashless suffix is case-insensitive ((?: for (?-i:)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX, 1),",
+      "new": "    ID_SEARCH_RE.pattern.replace(_V3_SUFFIX, _V3_SUFFIX + \"|\" + _V3_NORM_SUFFIX.replace(\"(?-i:\", \"(?:\"), 1),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_a_v2_id_glued_to_a_short_or_lowercase_run_still_reads_as_v2",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the shared normalised suffix cut at exactly 8 characters",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "_V3_NORM_SUFFIX = r\"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{7,})\"",
+      "new": "_V3_NORM_SUFFIX = r\"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{7})\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_link_readers_read_an_extended_dashless_id_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the shared normalised suffix needs only 6 characters",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "_V3_NORM_SUFFIX = r\"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{7,})\"",
+      "new": "_V3_NORM_SUFFIX = r\"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{5,})\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_a_v2_id_glued_to_a_short_or_lowercase_run_still_reads_as_v2",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the shared normalised suffix is case-insensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "_V3_NORM_SUFFIX = r\"(?-i:[0-7][0-9A-HJKMNP-TV-Z]{7,})\"",
+      "new": "_V3_NORM_SUFFIX = r\"(?:[0-7][0-9A-HJKMNP-TV-Z]{7,})\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_a_v2_id_glued_to_a_short_or_lowercase_run_still_reads_as_v2",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "epic_story_census reads the Epic field with ID_SEARCH_RE again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        m = LINK_ID_SEARCH_RE.search(field)",
+      "new": "        m = ID_SEARCH_RE.search(field)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::CrockfordLinkIdTests::test_epic_story_census_counts_a_dashless_epic",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

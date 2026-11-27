@@ -1,0 +1,37 @@
+# BG1771: BG1765 did not converge in review: round 2 REJECT findings
+
+> **Status:** Fixed
+> **Severity:** Low
+> **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1765.md, sdlc-studio/.config.yaml, tools/tests/test_lean_carry_severity_bar.py
+> **Created:** 2026-11-26
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+> **Raised-in-batch:** RUN-01M8B7DJ - raised during the run, 2026-11-26T08:47:27Z
+
+## Summary
+
+BG1765 was rejected at round 2, the review cap, by agent-af10ebc5f663207f5 (qa), so it was carried as a known issue rather than reviewed again. Filed at Low rather than the carry's default Medium: the release bar (`review.blocking_priority`) bars Medium, and Low is the most severe level it allows. The findings still open: BLOCKING: [new] the repair's own text says the close's severity floor reads `review.blocking_priority`, and by execution it does not: sdlc-studio/.config.yaml:103-104 ("the close's severity floor and the severity a unit carried at the cap is filed at both read this"), tools/tests/test\_lean\_carry\_severity\_bar.py:3-4 ("the close's severity floor reads it") and its test docstring at :61 ("bars Low too, so every open Low would block the close"). The close's one call of the floor, `critic.judge_defects_against_goal(defects, clauses)` at sprint.py:10353, passes no repo root, so `blocking_priorities(None)` reads the shipped `high` whatever the config says. Run through `sprint.close_goal_judgement` on a fixture holding one open Medium bug and a two-clause goal, the record reads "0 BLOCKING, 1 leavable" with `blocking_priority: medium` set and unset alike, while the same judge given the root rules it blocking. The setting's only live effect here is the carry's severity, and the close refuses on neither basis in any case (critic.py:1963, sprint.py:10279), so no open Low could "block the close". D0642, outside Affects, rests on the same premise ("the close names any open Medium to the signer as one a release cannot carry"). Repair inside the unit: say only that the carry's severity reads the setting in the config comment and both test docstrings, and correct D0642's sentence beside it\; making the close pass its root is a behaviour change outside BG1765 and belongs to its own bug; [pre-existing] the close's goal judgement ignores `review.blocking_priority` (sprint.py:10353, root-less since f30908d99 and present at the base at sprint.py:10340), so reference-config.md:235 "The close's severity floor ... blocks the goal claim" is not true at the close. No open bug or CR covers it (BG0387, which made the judge read a project's vocabulary, is Fixed); RULINGS: Round-one finding "the fix keys the carry's severity on `review.blocking_priority` alone" is CLOSED: `critic.carry_severity` on this repository at 679cbec85 returns Low with the stepped sentence, `config.py --root . show` resolves `blocking_priority` to medium, `known_issues.held_to` reads the v6.5 row (Critical, High, Medium) from the page's heading, a fixture holding this repository's config and page carried at the cap through `critic.py record` files BG0001 at Low with `known_issues.barred_open` empty, the same with the setting removed files Medium and is barred, and BG1769 and BG1770 are filed Low with the stepped sentence. So the three sentences round one ruled false are now true of this repository: changelog.d/BG1765.md:3, critic.py:2303, and the rule sentence a carry writes here. The changelog's added sentence (a project with a bar outside the setting sets it to match or keeps Medium, this repository sets `medium`) is true by the same runs. The config comment's other claims are true: the v6.5 bar bars Medium, a carry is then filed Low, and the drift test fails on drift (my mutants: page heading moved to v6.0 killed, the v6.5 row without Medium killed, the setting moved out of `review` killed, `p2` survives as an equivalent tier). `verify_ac.py run --id BG1765 --dry-run` printed ac=1 pass=1 fail=0, and the new test module, CarrySeverityTests, test\_config\_refusal\_pages, test\_author\_self\_check\_repo and test\_close\_goal\_judgement\_in\_report gave 13 passed. The author's 19 mutants replay killed. The drift test's unset control is load-bearing: without it an always-Low carry passes that module. critic.py and test\_critic.py are unchanged since round one, where test\_critic.py passed in full and my five code mutants were killed. No regression found: the only live reader of the new setting is the carry's severity.
+
+## Steps to Reproduce
+
+1. Read the round 2 REJECT of BG1765 in the verdict ledger.
+
+## Proposed Fix
+
+Fix each finding above, then deliver BG1765 again in a later run.
+
+## Acceptance Criteria
+
+- [ ] **AC1** The round 2 REJECT finding no longer holds: BLOCKING: [new] the repair's own text says the close's severity floor reads `review.blocking_priority`, and by execution it does not: sdlc-studio/.config.yaml:103-104 ("the close's severity floor and the severity a unit carried at the cap is filed at both read this"), tools/tests/test\_lean\_carry\_severity\_bar.py:3-4 ("the close's severity floor reads it") and its test docstring at :61 ("bars Low too, so every open Low would block the close"). The close's one call of the floor, `critic.judge_defects_against_goal(defects, clauses)` at sprint.py:10353, passes no repo root, so `blocking_priorities(None)` reads the shipped `high` whatever the config says. Run through `sprint.close_goal_judgement` on a fixture holding one open Medium bug and a two-clause goal, the record reads "0 BLOCKING, 1 leavable" with `blocking_priority: medium` set and unset alike, while the same judge given the root rules it blocking. The setting's only live effect here is the carry's severity, and the close refuses on neither basis in any case (critic.py:1963, sprint.py:10279), so no open Low could "block the close". D0642, outside Affects, rests on the same premise ("the close names any open Medium to the signer as one a release cannot carry"). Repair inside the unit: say only that the carry's severity reads the setting in the config comment and both test docstrings, and correct D0642's sentence beside it; making the close pass its root is a behaviour change outside BG1765 and belongs to its own bug
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+- [ ] **AC2** The round 2 REJECT finding no longer holds: [pre-existing] the close's goal judgement ignores `review.blocking_priority` (sprint.py:10353, root-less since f30908d99 and present at the base at sprint.py:10340), so reference-config.md:235 "The close's severity floor ... blocks the goal claim" is not true at the close. No open bug or CR covers it (BG0387, which made the judge read a project's vocabulary, is Fixed)
+  - **Verify:** manual - the independent review of the redelivery re-checks this finding
+- [ ] **AC3** BG1765 AC1 still passes: Given a project whose release bar bars Medium and a unit carried at the cap whose verdict names no severity, then the carry is filed at a severity the bar allows (Low), and its bug file says which rule set it. Fails on: `critic.carry_at_cap` writes `"severity": "Medium"` whatever the bar
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarrySeverityTests::test_a_carry_takes_a_severity_the_release_bar_allows
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-11-26 | sdlc-studio | Filed |

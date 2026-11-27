@@ -1,0 +1,187 @@
+{
+  "unit": "US1340",
+  "digest": "5f451f32bad00594 at ead3989803f0",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaa2d756efce26907/US1340-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "3b-all-five",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "makes two\nof these",
+      "new": "makes all five\nof these",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "3b-three",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "makes two\nof these",
+      "new": "makes three\nof these",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "3b-count-credited",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "a feature's status and a met criterion's checkbox;",
+      "new": "a feature's status, a met criterion's checkbox and a count;",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "3b-pvd-credited",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "it makes none in\nthe PVD.",
+      "new": "it makes the same in\nthe PVD.",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "3b-drops-prd",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "In the PRD, the\nreview's",
+      "new": "The\nreview's",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "3b-no-checkbox",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "and a met criterion's checkbox;",
+      "new": "and a met criterion;",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-correct-a-fact",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "lets it correct a fact in the document",
+      "new": "lets it fix the document",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "facts-drop-link",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "a count, a date or a link.",
+      "new": "a count or a date.",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "link-wrong-step",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "#3b-auto-apply-mechanical-fixes",
+      "new": "#3a-persona-consultation-default-when-personas-exist",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "authority-not-delegated",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "A seat's delegated authority lets it",
+      "new": "A seat's authority lets it",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-link-to-step",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "([step 3b](reference-review.md#3b-auto-apply-mechanical-fixes))",
+      "new": "(step 3b)",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-proposal",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "the seat proposes as a change request carrying the",
+      "new": "the seat makes as an edit carrying the",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_change_to_a_requirement_is_proposed_and_the_person_decides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-decides",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "and\nthe person decides it:",
+      "new": "and\nthe seat decides it:",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_change_to_a_requirement_is_proposed_and_the_person_decides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-writes-requirements",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "a seat never writes the requirements it signs against",
+      "new": "a seat may write the requirements it signs against",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_change_to_a_requirement_is_proposed_and_the_person_decides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drops-scope",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "reworded, a priority or the scope, the seat",
+      "new": "reworded or a priority, the seat",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_change_to_a_requirement_is_proposed_and_the_person_decides",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unsure-not-proposed",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "treats it as a proposal and asks the person.",
+      "new": "asks the person.",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_unsure_of_the_kind_proposes_and_asks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-unsure",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "A seat unsure which\nkind",
+      "new": "A seat certain which\nkind",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_unsure_of_the_kind_proposes_and_asks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sentences-never-split",
+      "file": "tools/tests/test_lean_seat_change_authority.py",
+      "old": "return re.split(r\"(?<=[.!?])\\s+\", normalise(body))",
+      "new": "return [normalise(body)]",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_unsure_of_the_kind_proposes_and_asks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unsure-or-proposal",
+      "file": "tools/tests/test_lean_seat_change_authority.py",
+      "old": "cannot tell)\\b\", s) and re.search",
+      "new": "cannot tell)\\b\", s) or re.search",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_unsure_of_the_kind_proposes_and_asks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fact-or-delegation",
+      "file": "tools/tests/test_lean_seat_change_authority.py",
+      "old": "\"delegat\" in s and re.search(r\"\\bcorrect a fact\\b\", s)",
+      "new": "\"delegat\" in s or re.search(r\"\\bcorrect a fact\\b\", s)",
+      "test": "tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

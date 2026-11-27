@@ -1,6 +1,6 @@
 # US1333: sprint plan stamps the spend appetite on the run, and raising it mid-run names a recorded decision
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1332
 > **Risk-class:** high
 > **Delivers:** CR0752
@@ -28,6 +28,7 @@ The plan resolves the spend appetite once with the other two axes (`--appetite-s
 - **When** `sprint.py plan --stories Ready --write` runs, and on a fresh fixture with `--appetite-spend 400`
 - **Then** the run state's appetite records `spend: 1000` and `standing_spend: 1000`, then `spend: 400`; the plan's capacity line names the spend appetite and its source beside minutes and units; after `.config.yaml` changes to `capacity.spend: 5`, `loop_guard budget` still judges the stamped value. Fails on: HEAD, which with `capacity.spend: 1000` set prints "the run BREAKER is wall-clock/unit-count" and names no spend, and refuses `--appetite-spend`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_the_plan_stamps_the_spend_appetite_it_resolved
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint plan --write`, which opens the run; `loop_guard.py budget` reads the stamp back between units
 
 ### AC2: a spend raise needs a decision decisions.md records
@@ -36,6 +37,7 @@ The plan resolves the spend appetite once with the other two axes (`--appetite-s
 - **When** `sprint.py appetite resize --spend 1500 --reason r` runs, then with `--decision D0002`, then with `--decision D0001`, then `--spend 800 --reason r` with no decision
 - **Then** the first two exit 2 naming the missing or unrecorded decision and leave the run state byte-identical; the third records `spend: 1500` and an `appetite_changes` entry whose `from` and `to` carry 1000 and 1500 and whose decision is D0001, and reports the run over its standing spend; the lowering is recorded on its reason alone. Fails on: HEAD, which refuses `--spend` and `--decision` as unrecognised arguments, so a spend raise cannot be recorded at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_spend_raise_needs_a_recorded_decision
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py appetite resize` (`cmd_appetite`), which the operator runs to move a ceiling mid-run
 
 ### AC3: a units or minutes resize keeps the spend appetite
@@ -44,6 +46,7 @@ The plan resolves the spend appetite once with the other two axes (`--appetite-s
 - **When** `sprint.py appetite resize --units 9 --reason r` runs
 - **Then** the appetite still records both spend values, and the change entry's `from` and `to` carry them unchanged. Fails on: HEAD, which rebuilds the appetite from units and minutes alone, so the resize drops a recorded `spend`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_units_resize_keeps_the_spend_appetite
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py appetite resize` (`cmd_appetite`), which the operator runs to move a ceiling mid-run
 
 ## Notes

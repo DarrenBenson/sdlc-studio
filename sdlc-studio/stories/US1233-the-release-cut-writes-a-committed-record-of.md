@@ -1,6 +1,6 @@
 # US1233: The release cut writes a committed record of each release, with its date and the reports it shipped
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** -
 > **Risk-class:** elevated
 > **Delivers:** CR0695
@@ -40,6 +40,7 @@ reads the record to derive change failure rate.
 - **When** `release_cut.py changelog-cut --version 1.1.0` runs
 - **Then** `sdlc-studio/reports/releases.jsonl` holds one line for 1.1.0 naming the date of the cut, the previous release `v1.0.0` and the reports RPT0002 and RPT0003 and not RPT0001, `git check-ignore` does not ignore the file, and the `[1.1.0]` section is cut as before. Fails on: HEAD, where the same cut changes only CHANGELOG.md and the consumed fragment (a fixture run on 2026-11-26 left `git status --short` listing CHANGELOG.md modified and changelog.d/US0001.md deleted, nothing else)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release
+- **Verified:** yes (2026-11-26)
 - **Caller:** `release_cut.py changelog-cut`, which US1330 runs to cut 6.5.0; the record is read by `escape.py` (US1234's failure rate)
 
 ### AC2: a second cut of one version leaves one unchanged record
@@ -48,6 +49,7 @@ reads the record to derive change failure rate.
 - **When** the cut is run again for 1.1.0 with the date a day later
 - **Then** the record file still holds exactly one 1.1.0 line, byte-identical to the first, and the cut completes; and a cut refused because CHANGELOG.md already carries `[1.1.0]` leaves the record file byte-identical. Fails on: HEAD, whose first cut writes no record at all, so there is nothing to keep; or a second line, or a moved date, either of which changes the count a failure rate divides by
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_second_cut_of_one_version_leaves_one_unchanged_record
+- **Verified:** yes (2026-11-26)
 - **Caller:** `release_cut.py changelog-cut`, re-run by an operator after an interrupted cut
 
 ### AC3: a first release with no signed report, no tag and no git is still recorded
@@ -56,6 +58,7 @@ reads the record to derive change failure rate.
 - **When** the first release, 1.0.0, is cut
 - **Then** the cut exits 0 and the record names 1.0.0 and the date, names no previous release and states that it shipped no signed report (an empty report list). Fails on: HEAD, which writes no record; or a cut that crashes or skips the record where git or the reports directory is absent, which would leave that release uncounted
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_release_with_no_signed_report_is_still_recorded
+- **Verified:** yes (2026-11-26)
 - **Caller:** `release_cut.py changelog-cut` in a consuming project's first release
 
 ---

@@ -1,6 +1,6 @@
 # US1337: The cost anatomy splits each role's cache writes into growth and re-writes after the cache lifetime
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** BG1764, US1332
 > **Risk-class:** elevated
 > **Delivers:** RFC0069
@@ -28,6 +28,7 @@ Each role row of the anatomy gains its cache writes split into growth, re-writte
 - **When** `sprint.py cost --anatomy --session --transcripts <dir> --format json` runs
 - **Then** that subagent's role carries 3,800 growth and 4,000 re-written after 5-minute expiry, and the exactly-5-minute gap counts as growth. Fails on: HEAD, whose role rows carry no split at all
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_five_minute_write_after_a_longer_gap_is_a_rewrite
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint.py cost --anatomy` (`cmd_cost`)
 
 ### AC2: the lifetime comes from the write kind
@@ -36,6 +37,7 @@ Each role row of the anatomy gains its cache writes split into growth, re-writte
 - **When** the anatomy is read
 - **Then** the orchestrator carries 2,500 growth and 9,000 re-written after 1-hour expiry: the 6-minute gap that makes a 5-minute write a re-write in AC1 is growth here. Fails on: HEAD, which has no split; one lifetime for both kinds would also fail it, by booking the 500 as a re-write
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_lifetime_comes_from_the_write_kind
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint.py cost --anatomy` (`cmd_cost`)
 
 ### AC3: a call inside the run's window measures its gap from the call before it
@@ -44,6 +46,7 @@ Each role row of the anatomy gains its cache writes split into growth, re-writte
 - **When** the anatomy is read over the open run's window
 - **Then** that write counts as re-written after expiry, measured from the minute-1 call outside the window, and the minute-1 call's own write is not counted. Fails on: HEAD, which has no split; a gap taken from the window's first call would also fail it, by booking the write as growth
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_a_window_call_measures_its_gap_from_the_call_before_it
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint.py cost --anatomy` over an open run, and `stamp_cost_roles` in `lib/run_state.py`, which reads the anatomy over the run's window at the close
 
 ### AC4: the printed split adds up, and a missing timestamp reads not available
@@ -52,6 +55,7 @@ Each role row of the anatomy gains its cache writes split into growth, re-writte
 - **When** `sprint.py cost --anatomy --session` runs in text and in JSON
 - **Then** each role's growth plus its re-writes equals its `cache_write_5m` plus `cache_write_1h` components, the text prints the three figures per role, and the role holding the untimed record reads `not available` for its split, never 0. Fails on: HEAD, which prints no split; its text table's columns end at avg context
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy_rewrites.py::CacheRewriteTests::test_the_printed_split_adds_up_and_an_untimed_record_reads_not_available
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint.py cost --anatomy` (`cmd_cost`)
 
 ## Notes

@@ -1,6 +1,6 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
 
 ## Summary
 
@@ -9,12 +9,12 @@
 | Proposed | 1 |
 | Approved | 0 |
 | In Progress | 81 |
-| Complete | 563 |
+| Complete | 565 |
 | Rejected | 36 |
 | Deferred | 8 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **755** |
+| **Total** | **757** |
 
 ## All Changes
 
@@ -163,10 +163,12 @@
 | [CR-0749](CR0749-sprint-plan-names-existing-tests-outside-a-unit.md) | sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build | In Progress | Medium | Improvement | 2026-11-20 | EP0378 |
 | [CR-0750](CR0750-prevent-or-retire-lesson-lc-004-premise-not.md) | Prevent or retire lesson LC-004 (premise not executed) | Rejected | Medium | Improvement | 2026-11-23 | -- |
 | [CR-0751](CR0751-prevent-or-retire-lesson-lc-001-mutant-never.md) | Prevent or retire lesson LC-001 (mutant never applied) | Proposed | Medium | Improvement | 2026-11-24 | -- |
-| [CR-0752](CR0752-the-run-breaker-reads-spend-as-well-as.md) | The run breaker reads spend as well as minutes and units: it warns at 75 and 95 per cent, lets the unit in flight finish, and a raise is a recorded decision | In Progress | Medium | Improvement | 2026-11-25 | EP0380 |
+| [CR-0752](CR0752-the-run-breaker-reads-spend-as-well-as.md) | The run breaker reads spend as well as minutes and units: it warns at 75 and 95 per cent, lets the unit in flight finish, and a raise is a recorded decision | Complete | Medium | Improvement | 2026-11-25 | EP0380 |
 | [CR-0753](CR0753-the-run-report-compares-each-role-s-cache.md) | The run report compares each role's cache-read share with the project's earlier runs, and the retro names a fall | In Progress | Medium | Improvement | 2026-11-25 | EP0381 |
 | [CR-0754](CR0754-routing-effort-takes-an-effort-per-kind-of.md) | routing.effort takes an effort per kind of unit, as routing.floor takes a tier, set from the bench's effort arm | In Progress | Low | Improvement | 2026-11-25 | EP0382 |
-| [CR-0755](CR0755-say-the-person-owns-the-prd-and-the.md) | Say the person owns the PRD and the PVD, and the seat holds delegated authority to check the work meets them | In Progress | Medium | Feature | 2026-11-25 | EP0384 |
+| [CR-0755](CR0755-say-the-person-owns-the-prd-and-the.md) | Say the person owns the PRD and the PVD, and the seat holds delegated authority to check the work meets them | Complete | Medium | Feature | 2026-11-25 | EP0384 |
+| [CR-0756](CR0756-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, so the first code review judges work built to an agreed plan | In Progress | High | Feature | 2026-11-26 | EP0385 |
+| [CR-0757](CR0757-a-subagent-carries-exactly-one-persona-and-a.md) | A subagent carries exactly one persona, and a unit's solution review is a panel with one agent per seat and its stakeholder | In Progress | High | Feature | 2026-11-26 | EP0386 |
 
 ## Archived Releases
 

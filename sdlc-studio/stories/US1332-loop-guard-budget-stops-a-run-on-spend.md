@@ -1,6 +1,6 @@
 # US1332: `loop_guard` budget stops a run on spend as well as minutes and units, warning at 75 and 95 per cent
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0752
 > **Created:** 2026-11-26
@@ -27,6 +27,7 @@ A spend appetite, counted in priced input-equivalent tokens, joins the minutes a
 - **When** `loop_guard.py budget --root <fixture> --format json` runs on each, and once more in text form at N
 - **Then** at N it exits 4 with `reason` naming `spend`, the verdict carries the spend read and the appetite, the text form says the units already dispatched finish and no further unit starts, and no unit's Status moves; at N - 1 it exits 0. Fails on: HEAD, which exits 0 with a verdict that has no spend field whatever the transcript priced
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests::test_spend_at_the_appetite_stops_the_run_and_marks_nothing
+- **Verified:** yes (2026-11-26)
 - **Caller:** `loop_guard.py budget --root .`, which the sprint loop runs between units (reference-sprint.md#appetite)
 
 ### AC2: the breaker warns at 75 and 95 per cent and keeps going
@@ -35,6 +36,7 @@ A spend appetite, counted in priced input-equivalent tokens, joins the minutes a
 - **When** `loop_guard.py budget` runs at each, in JSON and in text
 - **Then** each exits 0; `spend_warning` is null at 74, 75 at 75 and at 94, and 95 at 95; the text form prints one WARNING line naming the share, the spend and the appetite at 75 and above, and none below. Fails on: HEAD, which prints no spend warning at any share because it reads no spend
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests::test_spend_warns_at_75_and_95_per_cent
+- **Verified:** yes (2026-11-26)
 - **Caller:** `loop_guard.py budget --root .`, which the sprint loop runs between units (reference-sprint.md#appetite)
 
 ### AC3: a meter that cannot read is named, and the other axes still judge
@@ -43,6 +45,7 @@ A spend appetite, counted in priced input-equivalent tokens, joins the minutes a
 - **When** `loop_guard.py budget` runs on each
 - **Then** the first exits 0 with `spend_unread` carrying the meter's own reason and a text line saying the spend axis was not judged at this boundary; the second exits 4 on `minutes` and carries the same spend note. Fails on: HEAD, which says nothing about spend whatever the meter does, so a declared spend ceiling judges nothing in silence
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests::test_an_unreadable_meter_is_named_and_minutes_still_stop_the_run
+- **Verified:** yes (2026-11-26)
 - **Caller:** `loop_guard.py budget --root .`, which the sprint loop runs between units (reference-sprint.md#appetite)
 
 ### AC4: the spend appetite resolves flag, then run, then config, and ships unbounded
@@ -51,6 +54,7 @@ A spend appetite, counted in priced input-equivalent tokens, joins the minutes a
 - **When** `loop_guard.py budget --format json` runs on each
 - **Then** the appetite judged is 1000, then 500, then 300, then 200; with nothing set `appetite_spend` is 0 and no spend warning or stop can fire; `templates/config-defaults.yaml` ships both keys at 0, and `reference-config.md` documents both keys, the unit (priced input-equivalent tokens), the two warning bands, the unread behaviour, and that the reading is a lower bound, so the breaker can fire late but never early. Fails on: HEAD, which refuses `--appetite-spend` as an unrecognised argument (exit 2) and reads neither key
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests::test_the_spend_appetite_resolves_flag_then_run_then_config_and_ships_unbounded
+- **Verified:** yes (2026-11-26)
 - **Caller:** `loop_guard.py budget`, and `sprint plan`, which resolves the same keys once US1333 lands
 
 ## Notes

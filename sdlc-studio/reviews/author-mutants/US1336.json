@@ -1,0 +1,79 @@
+{
+  "unit": "US1336",
+  "digest": "ee1baf1e1d960d94 at e643e99bd1a8",
+  "report": "sdlc-studio/.local/lane/landed/agent-ac6d383b9c7a2bd3f/US1336-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "unknown-key-refused-only-as-mapping",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
+      "new": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS) and isinstance(raw[key], dict):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown-key-refused-only-as-scalar",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
+      "new": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS) and not isinstance(raw[key], dict):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "documented-decision-key-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if key not in (*EFFORT_ROLES, \"reviewer_below_builder\", *EFFORT_KINDS):",
+      "new": "        if key not in (*EFFORT_ROLES, *EFFORT_KINDS):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown-key-unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "raise EffortError(f\"routing.effort.{key} is not a key routing.effort takes: it \"",
+      "new": "raise EffortError(f\"routing.effort is not a key routing.effort takes: it \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "decision-key-unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"takes builder, reviewer, reviewer_below_builder and an entry \"",
+      "new": "f\"takes builder, reviewer and an entry \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "kinds-unnamed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "f\"for each kind of unit: {', '.join(EFFORT_KINDS)}\")",
+      "new": "f\"for each kind of unit\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-scalar-case-valid-key",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "(\"builder: medium\\n    reviwer: high\", r\"routing\\.effort\\.reviwer\\b\", KEYS),",
+      "new": "(\"builder: medium\\n    reviewer: high\", r\"routing\\.effort\\.reviwer\\b\", KEYS),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-mapping-case-a-kind",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py",
+      "old": "(\"tests: {builder: low}\", r\"routing\\.effort\\.tests\\b\", KEYS),",
+      "new": "(\"code: {builder: low}\", r\"routing\\.effort\\.tests\\b\", KEYS),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_effort_by_kind.py::EffortByKindTests::test_an_unknown_kind_role_or_value_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

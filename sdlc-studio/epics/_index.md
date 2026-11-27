@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-26
+**Last Updated:** 2026-11-27
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 66 |
+| Draft | 63 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 8 |
-| Done | 276 |
+| In Progress | 10 |
+| Done | 279 |
 | Superseded | 34 |
-| **Total** | **384** |
+| **Total** | **386** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -89,7 +89,7 @@
 | [EP0336](EP0336-the-gate-host-doctor-reports-the-release-gate.md) | The gate host doctor reports the release gate's prerequisites before the release cut | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0337](EP0337-a-project-that-lost-its-lessons-log-rebuilds.md) | A project that lost its lessons log rebuilds it from the committed digest with one command | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0338](EP0338-an-engineering-review-checks-a-change-s-failure.md) | An engineering review checks a change's failure behaviour and signals against what the TRD declares | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0339](EP0339-a-head-of-engineering-reads-change-failure-rate.md) | A head of engineering reads change failure rate per release beside escapes per 100 points | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0339](EP0339-a-head-of-engineering-reads-change-failure-rate.md) | A head of engineering reads change failure rate per release beside escapes per 100 points | In Progress | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0340](EP0340-after-a-push-the-agent-waits-on-ci.md) | After a push the agent waits on CI once and handles a red run by a recorded policy | Done | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0341](EP0341-a-project-can-require-a-reviewer-from-a.md) | A project can require a reviewer from a different model family, and reads what that buys | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0342](EP0342-the-instruction-text-every-agent-loads-is-cut.md) | The instruction text every agent loads is cut to what current models need, every gated rule kept | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
@@ -130,11 +130,13 @@
 | [EP0377](EP0377-harness-agnostic-enterprise-ready-public-surfaces.md) | Harness-agnostic, enterprise-ready public surfaces | Done | 7 | -- | 2026-11-18 | 2026-11-18 |
 | [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | In Progress | 4 | -- | 2026-11-23 | 2026-11-23 |
 | [EP0379](EP0379-v6-5-0-ships-with-paperwork-that-matches.md) | v6.5.0 ships with paperwork that matches the code | In Progress | 8 | -- | 2026-11-25 | 2026-11-25 |
-| [EP0380](EP0380-the-run-breaker-reads-spend-warnings-at-75.md) | The run breaker reads spend: warnings at 75 and 95 per cent, a clean stop at 100, and a raise on the record | Draft | 2 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0381](EP0381-the-run-report-sets-each-role-s-cache.md) | The run report sets each role's cache-read share against earlier runs, and the retro explains a fall | Draft | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0380](EP0380-the-run-breaker-reads-spend-warnings-at-75.md) | The run breaker reads spend: warnings at 75 and 95 per cent, a clean stop at 100, and a raise on the record | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0381](EP0381-the-run-report-sets-each-role-s-cache.md) | The run report sets each role's cache-read share against earlier runs, and the retro explains a fall | In Progress | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0382](EP0382-routing-effort-sets-an-effort-per-kind-of.md) | routing.effort sets an effort per kind of unit, and the plan and the lane brief carry each unit's | Draft | 1 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0383](EP0383-the-cost-anatomy-measures-cache-re-writes-after.md) | The cost anatomy measures cache re-writes after the cache lifetime, per role, on the page | Draft | 2 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0384](EP0384-the-person-owns-every-document-and-the-seats.md) | The person owns every document, and the seats check the work under delegated authority | Draft | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0383](EP0383-the-cost-anatomy-measures-cache-re-writes-after.md) | The cost anatomy measures cache re-writes after the cache lifetime, per role, on the page | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0384](EP0384-the-person-owns-every-document-and-the-seats.md) | The person owns every document, and the seats check the work under delegated authority | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0385](EP0385-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, and the code review stays independent | Draft | 5 | -- | 2026-11-26 | 2026-11-26 |
+| [EP0386](EP0386-a-subagent-carries-one-persona-and-a-unit.md) | A subagent carries one persona, and a unit's solution review is a panel of one agent per seat and its stakeholder | Draft | 5 | -- | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases
 

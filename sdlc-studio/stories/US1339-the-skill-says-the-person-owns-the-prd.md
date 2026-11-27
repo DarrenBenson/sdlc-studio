@@ -1,6 +1,6 @@
 # US1339: The skill says the person owns the PRD and the PVD, and the seat checks the work under delegated authority
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0755
 > **Created:** 2026-11-26
@@ -42,6 +42,7 @@ guides regenerated. The PVD page also stops calling the Product Manager a person
   by the Product Owner)" (reference-pvd.md:18-19, split across a line break and bold);
   "(Product Manager owns it)" (help/pvd.md:28).
 - **Verify:** pytest tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd
+- **Verified:** yes (2026-11-26)
 
 ### AC2: The review legs say the seat signs under delegated authority
 
@@ -52,6 +53,7 @@ guides regenerated. The PVD page also stops calling the Product Manager a person
   (reference-review.md:137); "The Product Owner seat owns this" (reference-review.md:153); no
   "delegat" anywhere in lines 124-157.
 - **Verify:** pytest tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority
+- **Verified:** yes (2026-11-26)
 
 ### AC3: The seats section names the person as owner and the seat as delegate
 
@@ -66,6 +68,7 @@ guides regenerated. The PVD page also stops calling the Product Manager a person
   "| Seat | Owns | Accountable for | Applies |" (line 122); a section (lines 117-132) with no
   "delegat", no "unsure" and no sentence naming the person as owner.
 - **Verify:** pytest tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate
+- **Verified:** yes (2026-11-26)
 
 ### AC4: No shipped page or template calls a seat a document owner
 
@@ -78,6 +81,7 @@ guides regenerated. The PVD page also stops calling the Product Manager a person
   reference-prd.md:204, reference-pvd.md:21, reference-persona.md:44, amigo-template.md:6, :27
   and :62, and review-seat-charter.md:5 and :18; "PO/PM owners" at reference-persona.md:39.
 - **Verify:** pytest tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner
+- **Verified:** yes (2026-11-26)
 
 ### AC5: The wording test proves it can fail
 
@@ -90,6 +94,7 @@ guides regenerated. The PVD page also stops calling the Product Manager a person
   (`ls tools/tests | grep -E "^test_lean_(ownership|document|seat_change)"` prints nothing), so
   nothing guards against a pattern that has stopped matching.
 - **Verify:** pytest tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence
+- **Verified:** yes (2026-11-26)
 
 ## Notes
 

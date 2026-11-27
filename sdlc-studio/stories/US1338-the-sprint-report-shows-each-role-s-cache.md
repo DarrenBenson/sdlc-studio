@@ -1,13 +1,13 @@
 # US1338: The sprint report shows each role's cache-write growth and re-writes after expiry
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1333, US1334, US1337
 > **Risk-class:** elevated
 > **Delivers:** RFC0069
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py, changelog.d/US1338.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py, changelog.d/US1338.md
 > **Epic:** EP0383
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -28,6 +28,7 @@ The closing reading keeps each role's split from the anatomy, and a new appendix
 - **When** the report is built
 - **Then** the `cost_cache_writes` section states the orchestrator's 2,500 growth and 9,000 re-written after 1-hour expiry, the subagent role's 3,800 growth and 4,000 re-written after 5-minute expiry, and each role's re-write share. Fails on: HEAD, whose closing stamp keeps only `run_state._ROLE_KEYS`, so any key the anatomy adds is dropped before the page can read it, and whose page has no such section
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_page_states_each_roles_split_from_the_closing_reading
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint close`, whose `_file_the_report` calls `run_state.stamp_cost_roles` and files the page
 
 ### AC2: a reading with no split reads NOT MEASURED, and an older page renders as signed
@@ -36,6 +37,7 @@ The closing reading keeps each role's split from the anatomy, and a new appendix
 - **When** the first is reported and the second rendered to Markdown and HTML
 - **Then** the first page's section reads NOT MEASURED with the reason that its reading recorded no split, and the older page renders with no placeholder refused and no such section. Fails on: HEAD, which has no section to say NOT MEASURED in
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_no_split_reads_not_measured_and_an_older_page_renders
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint close`, which files the page through `sprint_report.py`
 
 ### AC3: the section is replayed at sign and catalogued in the annex
@@ -44,6 +46,7 @@ The closing reading keeps each role's split from the anatomy, and a new appendix
 - **When** the page is re-derived at sign
 - **Then** the section and the fingerprint are unchanged (replayed from the page as `_page_readings` replays the Cost by role table), and the annex lists `cost_cache_writes` with its figure and row keys under version 1.1. Fails on: HEAD, whose annex names no such section
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_writes.py::CacheWritesReportTests::test_the_section_is_replayed_at_sign_and_catalogued
+- **Verified:** yes (2026-11-27)
 - **Caller:** `sprint.py sign` (`cmd_sign`), which re-derives the filed page and refuses a changed one
 
 ## Notes
@@ -62,3 +65,4 @@ The closing reading keeps each role's split from the anatomy, and a new appendix
 | --- | --- | --- |
 | 2026-11-26 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-26 | engineering seat | Groomed for run twenty-eight from the D0635 breakdown |
+| 2026-11-26 | orchestrator (D0545) | Affects gains `scripts/tests/test_evidence_annex_report.py`: the annex fixture asserts the section order the new cache-writes section joins (approach review, D0646 pilot). |

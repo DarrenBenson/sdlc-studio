@@ -1,6 +1,6 @@
 # EP0383: The cost anatomy measures cache re-writes after the cache lifetime, per role, on the page
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** RFC0069
 > **Created:** 2026-11-26
@@ -14,8 +14,8 @@ Decomposed from RFC0069. Delivers the work RFC0069 requested.
 
 ## Story Breakdown
 
-- [ ] [US1337: The cost anatomy splits each role's cache writes into growth and re-writes after the cache lifetime](../stories/US1337-the-cost-anatomy-splits-each-role-s-cache.md)
-- [ ] [US1338: The sprint report shows each role's cache-write growth and re-writes after expiry](../stories/US1338-the-sprint-report-shows-each-role-s-cache.md)
+- [x] [US1337: The cost anatomy splits each role's cache writes into growth and re-writes after the cache lifetime](../stories/US1337-the-cost-anatomy-splits-each-role-s-cache.md)
+- [x] [US1338: The sprint report shows each role's cache-write growth and re-writes after expiry](../stories/US1338-the-sprint-report-shows-each-role-s-cache.md)
 
 ## Revision History
 

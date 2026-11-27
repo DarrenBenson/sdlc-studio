@@ -1,0 +1,466 @@
+{
+  "unit": "US1233",
+  "digest": "fd64eaddb4bc627a at 82019da71a57",
+  "report": "sdlc-studio/.local/lane/landed/agent-af021b42c679c23e4/US1233-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "creation-order-lookup-restored",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    what = \"the tags reachable from HEAD\"\n    try:\n        listing = _git_bytes(root, [\"for-each-ref\", \"--sort=-creatordate\", \"--format=\"\n                                    \"%(objecttype) %(objectname) %(refname:strip=2)\",\n                                    \"refs/tags\"], what)\n        refs = [line.split(\" \", 2) for line in listing.decode(\"utf-8\", \"replace\").splitlines()]\n        # an annotated tag, or a tag of a tag, is peeled through every tag to its commit\n        peeled = iter(_git_bytes(root, [\"rev-parse\", *(f\"refs/tags/{name}^{{}}\" for kind, _, name\n                                                       in refs if kind == \"tag\")], what).split())\n        tagged: dict[str, str] = {}\n        for kind, obj, name in refs:\n            commit = next(peeled).decode(\"ascii\") if kind == \"tag\" else obj\n            tagged.setdefault(commit, name)      # the first is the newest on its commit\n        history = _git_bytes(root, [\"rev-list\", \"--topo-order\", \"HEAD\"], what)\n    except UnreadableRecord as exc:\n        raise ValueError(str(exc)) from exc\n    return next((tagged[sha] for sha in history.decode(\"ascii\", \"replace\").split()\n                 if sha in tagged), None)\n",
+      "new": "    try:\n        listing = _git_bytes(root, [\"for-each-ref\", \"--merged=HEAD\", \"--sort=-creatordate\",\n                                    \"--format=%(refname:strip=2)\", \"refs/tags\"],\n                             \"the tags reachable from HEAD\")\n    except UnreadableRecord as exc:\n        raise ValueError(str(exc)) from exc\n    names = listing.decode(\"utf-8\", \"replace\").splitlines()\n    return names[0] if names else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_tag_made_late_on_an_older_commit_does_not_displace_the_nearer_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "describe-lookup-restored",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    try:\n        head = subprocess.run([\"git\", \"rev-parse\", \"--verify\", \"-q\", \"HEAD\"],\n                              capture_output=True, text=True, cwd=str(root), timeout=60)\n    except (OSError, subprocess.SubprocessError):\n        return None\n    if head.returncode != 0:\n        return None\n    what = \"the tags reachable from HEAD\"\n    try:\n        listing = _git_bytes(root, [\"for-each-ref\", \"--sort=-creatordate\", \"--format=\"\n                                    \"%(objecttype) %(objectname) %(refname:strip=2)\",\n                                    \"refs/tags\"], what)\n        refs = [line.split(\" \", 2) for line in listing.decode(\"utf-8\", \"replace\").splitlines()]\n        # an annotated tag, or a tag of a tag, is peeled through every tag to its commit\n        peeled = iter(_git_bytes(root, [\"rev-parse\", *(f\"refs/tags/{name}^{{}}\" for kind, _, name\n                                                       in refs if kind == \"tag\")], what).split())\n        tagged: dict[str, str] = {}\n        for kind, obj, name in refs:\n            commit = next(peeled).decode(\"ascii\") if kind == \"tag\" else obj\n            tagged.setdefault(commit, name)      # the first is the newest on its commit\n        history = _git_bytes(root, [\"rev-list\", \"--topo-order\", \"HEAD\"], what)\n    except UnreadableRecord as exc:\n        raise ValueError(str(exc)) from exc\n    return next((tagged[sha] for sha in history.decode(\"ascii\", \"replace\").split()\n                 if sha in tagged), None)\n",
+      "new": "    try:\n        proc = subprocess.run([\"git\", \"describe\", \"--tags\", \"--abbrev=0\", \"HEAD\"],\n                              capture_output=True, text=True, cwd=str(root), timeout=60)\n    except (OSError, subprocess.SubprocessError):\n        return None\n    return proc.stdout.strip() if proc.returncode == 0 else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_renamed_tag_is_named_by_its_ref_and_its_reports_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "date-ordered-walk",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "[\"rev-list\", \"--topo-order\", \"HEAD\"]",
+      "new": "[\"rev-list\", \"HEAD\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_history_order_holds_when_commit_dates_run_backwards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tie-sort-ascending",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "\"--sort=-creatordate\"",
+      "new": "\"--sort=creatordate\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_tags_on_one_commit_fall_to_the_latest_creator_date_then_the_first_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tie-sort-taggerdate",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "\"--sort=-creatordate\"",
+      "new": "\"--sort=-taggerdate\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_tags_on_one_commit_fall_to_the_latest_creator_date_then_the_first_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tie-sort-by-name-only",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "[\"for-each-ref\", \"--sort=-creatordate\", \"--format=\"",
+      "new": "[\"for-each-ref\", \"--format=\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_tags_on_one_commit_fall_to_the_latest_creator_date_then_the_first_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tie-last-wins",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "tagged.setdefault(commit, name)",
+      "new": "tagged[commit] = name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_tags_on_one_commit_fall_to_the_latest_creator_date_then_the_first_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "peel-suffix-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "f\"refs/tags/{name}^{{}}\"",
+      "new": "f\"refs/tags/{name}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_first_record_after_an_annotated_tag_reads_the_tagged_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annotated-not-peeled",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "commit = next(peeled).decode(\"ascii\") if kind == \"tag\" else obj",
+      "new": "commit = obj",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_first_record_after_an_annotated_tag_reads_the_tagged_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lightweight-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "commit = next(peeled).decode(\"ascii\") if kind == \"tag\" else obj",
+      "new": "commit = next(peeled).decode(\"ascii\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ref-path-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "\"%(objecttype) %(objectname) %(refname:strip=2)\"",
+      "new": "\"%(objecttype) %(objectname) %(refname:strip=1)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "inner-tag-name-listed",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "\"%(objecttype) %(objectname) %(refname:strip=2)\"",
+      "new": "\"%(objecttype) %(objectname) %(tag)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_renamed_tag_is_named_by_its_ref_and_its_reports_are_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-tag-in-history-named",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "                 if sha in tagged), None)",
+      "new": "                 if sha in tagged), \"none\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_previous_tag_is_on_the_nearest_tagged_commit_in_heads_history",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "history-not-consulted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "return next((tagged[sha] for sha in history.decode(\"ascii\", \"replace\").split()\n                 if sha in tagged), None)",
+      "new": "return next(iter(tagged.values()), None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_tag_made_late_on_an_older_commit_does_not_displace_the_nearer_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "head-check-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if head.returncode != 0:\n        return None\n",
+      "new": "    if head.returncode == 0:\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "head-check-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if head.returncode != 0:\n        return None\n",
+      "new": "    if False:\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "git-missing-not-caught",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    except (OSError, subprocess.SubprocessError):\n        return None\n    if head",
+      "new": "    except subprocess.SubprocessError:\n        return None\n    if head",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_release_with_no_signed_report_is_still_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "listing-refusal-uncaught",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    except UnreadableRecord as exc:\n        raise ValueError(str(exc)) from exc\n    return next(",
+      "new": "    except ValueError:\n        raise\n    return next(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_tags_git_cannot_list_refuse_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-late-tag-on-the-same-commit",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py",
+      "old": "                _dated(root, \"2026-03-01T10:00:00Z\", *tag, \"v0.9.0\", \"HEAD~1\")\n",
+      "new": "                _dated(root, \"2026-03-01T10:00:00Z\", *tag, \"v0.9.0\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_tag_made_late_on_an_older_commit_does_not_displace_the_nearer_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "changelog-written-before-record",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if record is not None:\n        sdlc_md.atomic_write(root / RELEASES_REL, record)\n    sdlc_md.atomic_write(clog, out)\n",
+      "new": "    sdlc_md.atomic_write(clog, out)\n    if record is not None:\n        sdlc_md.atomic_write(root / RELEASES_REL, record)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_cut_stopped_after_its_first_write_leaves_the_release_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reports-sorted-by-id",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    return [rid for rid in signed if rid not in named]",
+      "new": "    return sorted(rid for rid in signed if rid not in named)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_shipped_reports_are_listed_oldest_signature_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-at-tag-uncaught",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "except (sprint_report.ReportError, UnreadableRecord) as exc:",
+      "new": "except sprint_report.ReportError as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_report_unreadable_at_the_previous_tag_refuses_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whitespace-line-not-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        if not line.strip():\n",
+      "new": "        if not line:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank-line-not-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        if not line.strip():\n            continue\n",
+      "new": "        if False:\n            continue\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-an-object-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "if not (isinstance(rec, dict) and isinstance",
+      "new": "if not (True and isinstance",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "version-type-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "isinstance(rec.get(\"version\"), str)",
+      "new": "True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reports-type-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "and isinstance(rec.get(\"reports\"), list)",
+      "new": "and True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report-ids-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "and all(isinstance(rid, str) for rid in rec[\"reports\"])",
+      "new": "and True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unparsable-line-raises-raw",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        except ValueError:\n            rec = None\n",
+      "new": "        except ValueError:\n            raise\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "line-numbered-from-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "enumerate(text.splitlines(), 1)",
+      "new": "enumerate(text.splitlines(), 0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "missing-file-read",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if not path.is_file():\n        return \"\", []\n",
+      "new": "    if False:\n        return \"\", []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_release_with_no_signed_report_is_still_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "records-ignored-for-reports",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        if records:\n            named",
+      "new": "        if False:\n            named",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag-commit-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "        elif tag:\n",
+      "new": "        elif False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unsigned-at-tag-counted-signed",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "named = {rep.get(\"report_id\") for rep in _signed_reports_at(root, sha)}",
+      "new": "named = {p.stem for p in sprint_report.report_dir(root).glob(\"RPT*.json\")}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_first_record_after_an_annotated_tag_reads_the_tagged_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "shipped-filter-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "return [rid for rid in signed if rid not in named]",
+      "new": "return [rid for rid in signed if rid in named]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable-report-uncaught",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "except (sprint_report.ReportError, UnreadableRecord) as exc:",
+      "new": "except UnreadableRecord as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_an_unreadable_signed_report_refuses_the_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "recorded-version-recomputed",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if any(rec[\"version\"] == version for rec in records):\n        return None\n",
+      "new": "    if False:\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_second_cut_of_one_version_leaves_one_unchanged_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "previous-only-the-tag",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    previous = tag or (records[-1][\"version\"] if records else None)",
+      "new": "    previous = tag",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "previous-the-oldest-record",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "records[-1][\"version\"] if records else None",
+      "new": "records[0][\"version\"] if records else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-newline-supplied",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "sep = \"\\n\" if text and not text.endswith(\"\\n\") else \"\"",
+      "new": "sep = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newline-test-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "sep = \"\\n\" if text and not text.endswith(\"\\n\") else \"\"",
+      "new": "sep = \"\\n\" if text and text.endswith(\"\\n\") else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_later_cut_appends_and_ships_only_the_reports_no_record_names",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newline-for-empty-file",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "sep = \"\\n\" if text and not text.endswith(\"\\n\") else \"\"",
+      "new": "sep = \"\\n\" if not text.endswith(\"\\n\") else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-write-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if record is not None:\n        sdlc_md.atomic_write(root / RELEASES_REL",
+      "new": "    if record is None:\n        sdlc_md.atomic_write(root / RELEASES_REL",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-write-unguarded",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    if record is not None:\n        sdlc_md.atomic_write(root / RELEASES_REL",
+      "new": "    if True:\n        sdlc_md.atomic_write(root / RELEASES_REL",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_second_cut_of_one_version_leaves_one_unchanged_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-planned-after-compose",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    record = _release_record_text(root, version, date)\n    changelog.compose(root, apply=True)",
+      "new": "    changelog.compose(root, apply=True)\n    record = _release_record_text(root, version, date)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_malformed_record_file_refuses_the_cut_before_anything_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-not-printed",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    print(f\"recorded in {RELEASES_REL}: {json.dumps(release_record(args.root, args.version))}\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "printed-record-of-another-version",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "for rec in _release_records(Path(root))[1] if rec[\"version\"] == version",
+      "new": "for rec in _release_records(Path(root))[1] if rec[\"version\"] != version",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-date-not-the-cut-date",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "line = json.dumps({\"version\": version, \"date\": date,",
+      "new": "line = json.dumps({\"version\": version, \"date\": \"2000-01-01\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-rpt0001-after-tag",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py",
+      "old": "        _sign(root, \"RPT0001\", \"2026-01-02T10:00:00Z\")\n        _commit(root, \"one\")\n        _git(root, \"tag\", \"v1.0.0\")\n",
+      "new": "        _commit(root, \"one\")\n        _git(root, \"tag\", \"v1.0.0\")\n        _sign(root, \"RPT0001\", \"2026-01-02T10:00:00Z\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-stop-pin-stops-nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py",
+      "old": "                raise OSError(\"the cut was stopped\")\n",
+      "new": "                pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_cut_stopped_after_its_first_write_leaves_the_release_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-order-pin-signs-in-id-order",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py",
+      "old": "        _sign(root, \"RPT0004\", \"2026-01-09T10:00:00Z\")\n",
+      "new": "        _sign(root, \"RPT0004\", \"2026-01-01T10:00:00Z\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_shipped_reports_are_listed_oldest_signature_first",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

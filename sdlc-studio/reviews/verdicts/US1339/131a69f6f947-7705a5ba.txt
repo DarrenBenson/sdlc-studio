@@ -1,0 +1,6 @@
+UNIT: US1339
+BRIEF: 131a69f6f947-7705a5ba
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-two finding. CLOSED: the repaired header check misses "Ownership" though its comments say it catches any wording. `OWNS_HEADER` (tools/tests/test_lean_ownership_wording.py:45) now matches any word starting with own, in any case, and applied alone in a detached worktree at e0070bd08 a seats-table column headed Ownership, Owning, OWNER or Owns (the document), or a last column headed Owner, each fails the AC3 test (1 failed, 4 passed), while the positive control Known gaps stays green. Reverting the pattern to round two's whole words, dropping its word boundary or dropping its case flag each fails the planted self-test, so the pattern is pinned. The two comments (:43-44 and :198-199) now say what the pattern does, TRUE by those probes. The round-one rulings stand: the PRD leg's gaps named shape and "(PM owns it)" in help/pvd.md still fail. Among the unit's Affects only tools/tests/test_lean_ownership_wording.py changed since ead398980 (git log ead398980..e0070bd08). Checks at e0070bd08: the module 5 passed, verify_ac run --id US1339 --dry-run printed ac=5 pass=5, tools/lint-style.sh exit 0. Mutation pass: 11 mutants, 10 killed, and the one green is the Known gaps positive control.

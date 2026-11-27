@@ -1,6 +1,6 @@
 # EP0384: The person owns every document, and the seats check the work under delegated authority
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 4
 > **Parent:** CR0755
 > **Created:** 2026-11-26
@@ -14,8 +14,8 @@ Decomposed from CR0755. Delivers the work CR0755 requested.
 
 ## Story Breakdown
 
-- [ ] [US1339: The skill says the person owns the PRD and the PVD, and the seat checks the work under delegated authority](../stories/US1339-the-skill-says-the-person-owns-the-prd.md)
-- [ ] [US1340: A seat corrects a fact in the document it reviews against and proposes any change to what it requires](../stories/US1340-a-seat-corrects-a-fact-in-the-document.md)
+- [x] [US1339: The skill says the person owns the PRD and the PVD, and the seat checks the work under delegated authority](../stories/US1339-the-skill-says-the-person-owns-the-prd.md)
+- [x] [US1340: A seat corrects a fact in the document it reviews against and proposes any change to what it requires](../stories/US1340-a-seat-corrects-a-fact-in-the-document.md)
 
 ## Acceptance Criteria (Epic Level)
 

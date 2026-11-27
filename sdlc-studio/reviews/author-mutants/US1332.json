@@ -1,0 +1,430 @@
+{
+  "unit": "US1332",
+  "digest": "372fda3ca58aae01 at 36619ea96227",
+  "report": "sdlc-studio/.local/lane/landed/agent-a4e76e805a58041bc/US1332-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "spend stop >= made >",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if read and spend >= appetite_spend:",
+      "new": "    if read and spend > appetite_spend:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend axis judged with no appetite",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    read = bool(appetite_spend) and isinstance(spend, int)",
+      "new": "    read = isinstance(spend, int)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unread spend judged (read guard dropped)",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    read = bool(appetite_spend) and isinstance(spend, int)",
+      "new": "    read = bool(appetite_spend)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warning band >= made >",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "if read and spend * 100 >= band * appetite_spend), None)",
+      "new": "if read and spend * 100 > band * appetite_spend), None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warning bands lowest first",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "SPEND_WARNINGS = (95, 75)",
+      "new": "SPEND_WARNINGS = (75, 95)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lower band at 74",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "SPEND_WARNINGS = (95, 75)",
+      "new": "SPEND_WARNINGS = (95, 74)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upper band at 96",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "SPEND_WARNINGS = (95, 75)",
+      "new": "SPEND_WARNINGS = (96, 75)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "flag 0 falls through",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    flag = getattr(args, \"appetite_spend\", None)\n    if flag is not None:",
+      "new": "    flag = getattr(args, \"appetite_spend\", None)\n    if flag:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "run's 0 falls through to config",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if declared is not None:",
+      "new": "    if declared:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend text printed for unread spend",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend\"] is None:\n        return \"\"",
+      "new": "    if False:\n        return \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unread note never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend_unread\"]:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warning printed on a stop",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend_warning\"] and not v[\"exhausted\"]:",
+      "new": "    if v[\"spend_warning\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warning never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend_warning\"] and not v[\"exhausted\"]:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "main-thread note on None",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend_includes_subagents\"] is False:",
+      "new": "    if not v[\"spend_includes_subagents\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "main-thread note never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if v[\"spend_includes_subagents\"] is False:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "meter read with no spend appetite",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    got = (run_state.spend_now(root, state) if spend_cap else",
+      "new": "    got = (run_state.spend_now(root, state) if True else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subagent flag kept on an unread meter",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "spend_includes_subagents=None if got[\"reason\"] else\n                       got[\"includes_subagents\"])",
+      "new": "spend_includes_subagents=got[\"includes_subagents\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend-only appetite read as none",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if not minutes and not units and not spend_cap and not unreadable:",
+      "new": "    if not minutes and not units and not unreadable:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stop line names no spend",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "{f'/{units} budget' if units else ''}{_spend_text(v)} -> stop cleanly",
+      "new": "{f'/{units} budget' if units else ''} -> stop cleanly",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stop prints no spend notes",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "        _spend_notes(v)\n        return BUDGET_EXIT",
+      "new": "        return BUDGET_EXIT",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "continue prints no spend notes",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    _spend_notes(v)\n    return 0",
+      "new": "    return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stop names no dispatched-unit rule",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "units already dispatched finish and no further unit starts; close",
+      "new": "close",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "flag read under another destination",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    b.add_argument(\"--appetite-spend\", type=int, default=None, dest=\"appetite_spend\",",
+      "new": "    b.add_argument(\"--appetite-spend\", type=int, default=None, dest=\"appetite_spend_x\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_now raise let through",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "        except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:\n            # By its type alone",
+      "new": "        except (ArithmeticError,) as exc:\n            # By its type alone",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_now raise named by its message",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "            why = f\"the meter raised {type(exc).__name__}, so no reading is taken\"",
+      "new": "            why = f\"the meter raised {exc}, so no reading is taken\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "meter's reason replaced",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "            why = cap.get(\"reason\") or \"the meter returned no reading\"",
+      "new": "            why = \"the meter returned no reading\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fallback reason dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "            why = cap.get(\"reason\") or \"the meter returned no reading\"",
+      "new": "            why = cap.get(\"reason\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "probe mutates the caller's state",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    probe = dict(state or {})",
+      "new": "    probe = state",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "probe stamp dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    _append_stamp(probe, stamp, _rederivations(state, stamp))\n    total = run_token_total(probe)",
+      "new": "    total = run_token_total(probe)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unpriced total judged",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    if not isinstance(total.get(\"priced\"), int):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "total's reason dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "                \"reason\": total.get(\"priced_reason\") or total.get(\"reason\")}",
+      "new": "                \"reason\": \"x\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "priced_reason fallback to reason only",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "                \"reason\": total.get(\"priced_reason\") or total.get(\"reason\")}",
+      "new": "                \"reason\": total.get(\"reason\")}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "subagent flag inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    return {\"priced\": total[\"priced\"], \"includes_subagents\": bool(total[\"includes_subagents\"]),",
+      "new": "    return {\"priced\": total[\"priced\"], \"includes_subagents\": not total[\"includes_subagents\"],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend read as raw tokens, not priced (reviewer)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    return {\"priced\": total[\"priced\"], \"includes_subagents\": bool(total[\"includes_subagents\"]),",
+      "new": "    return {\"priced\": total[\"tokens\"], \"includes_subagents\": bool(total[\"includes_subagents\"]),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_value lets a negative through",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "        return max(0, int(raw))\n",
+      "new": "        return int(raw)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_value raises on inf",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    except (TypeError, ValueError, OverflowError):\n        return None\n\n\ndef spend_now",
+      "new": "    except (TypeError, ValueError):\n        return None\n\n\ndef spend_now",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_value raises on a list",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    except (TypeError, ValueError, OverflowError):\n        return None\n\n\ndef spend_now",
+      "new": "    except (ValueError, OverflowError):\n        return None\n\n\ndef spend_now",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend_value raises on 5e6",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "    except (TypeError, ValueError, OverflowError):\n        return None\n\n\ndef spend_now",
+      "new": "    except (TypeError, OverflowError):\n        return None\n\n\ndef spend_now",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config key parsed with a bare int (reviewer)",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "            return _spend_ceiling(raw, f\"config {key}\")",
+      "new": "            return int(raw), None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "run's spend parsed with a bare int",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "        return _spend_ceiling(declared, \"the run's appetite.spend\")",
+      "new": "        return int(declared), None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config order swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    for key in (\"appetite.spend\", \"capacity.spend\"):",
+      "new": "    for key in (\"capacity.spend\", \"appetite.spend\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "capacity.spend not read",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    for key in (\"appetite.spend\", \"capacity.spend\"):",
+      "new": "    for key in (\"appetite.spend\",):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a config 0 stops the fall-through",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "        if raw:\n            return _spend_ceiling",
+      "new": "        if raw is not None:\n            return _spend_ceiling",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable value taken as a ceiling",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if value is None:\n        return 0, (",
+      "new": "    if False:\n        return 0, (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable note names no source",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "        return 0, (f\"{where} is {raw!r}, not a whole number",
+      "new": "        return 0, (f\"a key is {raw!r}, not a whole number",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable note dropped from the verdict",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "           {\"priced\": None, \"includes_subagents\": None, \"reason\": unreadable})",
+      "new": "           {\"priced\": None, \"includes_subagents\": None, \"reason\": None})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unbounded line printed over the unread note",
+      "file": ".claude/skills/sdlc-studio/scripts/loop_guard.py",
+      "old": "    if not minutes and not units and not spend_cap and not unreadable:",
+      "new": "    if not minutes and not units and not spend_cap:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_loop_guard_spend.py::LoopGuardSpendTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

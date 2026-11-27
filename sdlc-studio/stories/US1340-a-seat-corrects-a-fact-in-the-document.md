@@ -1,6 +1,6 @@
 # US1340: A seat corrects a fact in the document it reviews against and proposes any change to what it requires
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1339
 > **Risk-class:** standard
 > **Delivers:** CR0755
@@ -43,6 +43,7 @@ a change is treats it as a proposal and asks the person.
   or "change" near PRD or PVD: 0 hits), and the seats section (lines 117-132) has no link to
   reference-review.md.
 - **Verify:** pytest tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_may_correct_a_fact_in_its_document
+- **Verified:** yes (2026-11-26)
 
 ### AC2: A change to a requirement is proposed and the person decides
 
@@ -54,6 +55,7 @@ a change is treats it as a proposal and asks the person.
   passage in those four pages says a seat proposes a change to the PRD or the PVD ("propos"
   followed by "change": 0 hits).
 - **Verify:** pytest tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_change_to_a_requirement_is_proposed_and_the_person_decides
+- **Verified:** yes (2026-11-26)
 
 ### AC3: A seat unsure of the kind of change proposes it and asks
 
@@ -65,6 +67,7 @@ a change is treats it as a proposal and asks the person.
   the person when unsure" alone does not satisfy it. Fails on: at HEAD the four pages carry no
   "unsure" at all; after US1339, only a sentence that does not tie being unsure to proposing.
 - **Verify:** pytest tools/tests/test_lean_seat_change_authority.py::SeatChangeAuthorityTests::test_a_seat_unsure_of_the_kind_proposes_and_asks
+- **Verified:** yes (2026-11-26)
 
 ## Notes
 

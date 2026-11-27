@@ -1,6 +1,6 @@
 # BG1764: The cost anatomy reads no reviewer recorded with its seat, so the report's reviewer row shows 0 agents and review spend lands under other
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py, changelog.d/BG1764.md
@@ -26,6 +26,7 @@
 
 - [ ] **AC1** `cost_anatomy.agent_key` returns the agent id for `agent-<id> (<seat>)` as it does for `agent-<id>` and a bare id, `agent_roles` classes such a recorded reviewer as a reviewer, and a seat name alone still returns None
   - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py
+  - **Verified:** yes (2026-11-26)
 
 ## Revision History
 

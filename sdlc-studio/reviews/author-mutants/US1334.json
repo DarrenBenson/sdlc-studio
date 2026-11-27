@@ -1,0 +1,412 @@
+{
+  "unit": "US1334",
+  "digest": "166cfa50304a606d at 21b66aedb48f",
+  "report": "sdlc-studio/.local/lane/landed/agent-adf8ef69f34925fb0/US1334-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "own run averaged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if rep.get(\"run_id\") == run_id or _at(rep[\"signature\"][\"signed_at\"]) >= bound:",
+      "new": "if _at(rep[\"signature\"][\"signed_at\"]) >= bound:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "page signed at the bound averaged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if rep.get(\"run_id\") == run_id or _at(rep[\"signature\"][\"signed_at\"]) >= bound:",
+      "new": "if rep.get(\"run_id\") == run_id or _at(rep[\"signature\"][\"signed_at\"]) > bound:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pages signed after the page averaged",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if rep.get(\"run_id\") == run_id or _at(rep[\"signature\"][\"signed_at\"]) >= bound:",
+      "new": "if rep.get(\"run_id\") == run_id:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "oldest five not newest",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for rep in reversed(_signed_reports(root)):",
+      "new": "for rep in _signed_reports(root):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "six pages not five",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "len(got.setdefault(role, [])) < CACHE_TREND_RUNS",
+      "new": "len(got.setdefault(role, [])) <= CACHE_TREND_RUNS",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "four runs",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "CACHE_TREND_RUNS = 5",
+      "new": "CACHE_TREND_RUNS = 4",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reports newest first",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"reports\": [r for r, _s in reversed(seen)]",
+      "new": "\"reports\": [r for r, _s in seen]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mean unrounded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "round(sum(s for _r, s in seen) / len(seen), 1)",
+      "new": "sum(s for _r, s in seen) / len(seen)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bad moment not refused",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if bound is None:\n        raise ReportError(f\"the cache-read",
+      "new": "    if False:\n        raise ReportError(f\"the cache-read",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nameless role kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if role and share is not None and",
+      "new": "if share is not None and",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "row with no cache cell breaks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "share = _cell_pct((row.get(\"role_cache_read\") or {}).get(\"value\"))",
+      "new": "share = _cell_pct(row[\"role_cache_read\"][\"value\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "row with no role breaks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "role = (row.get(\"role_name\") or {}).get(\"value\")",
+      "new": "role = row[\"role_name\"][\"value\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not available read as 0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "return float(text[:-1]) if text.endswith(\"%\") else None",
+      "new": "return float(text[:-1]) if text.endswith(\"%\") else 0.0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "malformed percent raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    except ValueError:\n        return None\n\n\ndef cache_read_baseline",
+      "new": "    except ZeroDivisionError:\n        return None\n\n\ndef cache_read_baseline",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unmeasured table trended",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if roles.get(\"not_measured\") is not None:",
+      "new": "if roles.get(\"not_measured\") is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unmeasured reason unprefixed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "f\"the Cost by role table is not measured: {nm.get('reason')}\"",
+      "new": "f\"{nm.get('reason')}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "change over an unstated share",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        if share is None:\n            change = _NO_SHARE",
+      "new": "        if False:\n            change = _NO_SHARE",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "change with no baseline",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        elif got is None:\n            change = _NO_EARLIER",
+      "new": "        elif False:\n            change = _NO_EARLIER",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "change sign inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "d = round(share - got[\"mean\"], 1)",
+      "new": "d = round(got[\"mean\"] - share, 1)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "zero change signed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "change = f\"{d:+.1f} points\" if d else \"0.0 points\"",
+      "new": "change = f\"{d:+.1f} points\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rise unsigned",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "change = f\"{d:+.1f} points\" if d else",
+      "new": "change = f\"{d:.1f} points\" if d else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no baseline reads 0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "f\"{got['mean']:.1f}%\" if got else _NO_EARLIER",
+      "new": "f\"{got['mean']:.1f}%\" if got else \"0.0%\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "runs count constant",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "fig(\"trend_runs\", len(got[\"reports\"]) if got else 0, pages)",
+      "new": "fig(\"trend_runs\", CACHE_TREND_RUNS if got else 0, pages)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no pages reads blank",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\", \".join(got[\"reports\"]) if got else \"none\"",
+      "new": "\", \".join(got[\"reports\"]) if got else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mean source not a path",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "f\"{REPORTS_REL}/{rid}.json\" for rid in got[\"reports\"]",
+      "new": "f\"{rid}.json\" for rid in got[\"reports\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-mean source moved",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for rid in got[\"reports\"]) if got \\\n            else REPORTS_REL",
+      "new": "for rid in got[\"reports\"]) if got \\\n            else \"x\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule ignored in build",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if roles is not None and cache_trend_rule else None,",
+      "new": "if roles is not None else None,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no Cost by role still trended",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "if roles is not None and cache_trend_rule else None,",
+      "new": "if cache_trend_rule else None,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "revalidate hard-wires the rule",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "cache_trend_rule=bool(_section_of(basis, \"cache_read_trend\")),",
+      "new": "cache_trend_rule=True,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "constant left at 1.0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "EVIDENCE_SCHEMA_VERSION = \"1.1\"",
+      "new": "EVIDENCE_SCHEMA_VERSION = \"1.0\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md columns swapped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "| {{trend_role}} | {{trend_share}} | {{trend_mean}} |",
+      "new": "| {{trend_role}} | {{trend_mean}} | {{trend_share}} |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md basis dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "beside its mean over {{trend_basis}}.",
+      "new": "beside its mean.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md reason dropped",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "**Cache-read trend: NOT MEASURED** - {{cache_read_trend_reason}}",
+      "new": "**Cache-read trend: NOT MEASURED**",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "md block shown on an older page",
+      "file": ".claude/skills/sdlc-studio/templates/core/sprint-report.md",
+      "old": "<!-- when: cache_read_trend_present -->",
+      "new": "<!-- when: cost_roles_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html pages cell dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<td class=\"num\">{{trend_runs}}</td><td>{{trend_pages}}</td>",
+      "new": "<td class=\"num\">{{trend_runs}}</td>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html reason dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<b>Cache-read trend: NOT MEASURED</b> - {{cache_read_trend_reason}}",
+      "new": "<b>Cache-read trend: NOT MEASURED</b>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html block shown on an older page",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<!-- when: cache_read_trend_present -->",
+      "new": "<!-- when: cost_roles_present -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex masthead 1.0",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "> **Annex version 1.1.**",
+      "new": "> **Annex version 1.0.**",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex row key dropped",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `cache_read_trend` | `rows` | `trend_pages` | Their report ids, oldest signature first, or `none`. |\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex section conditional",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "| `cache_read_trend` | Cache-read trend | appendix | always | - |",
+      "new": "| `cache_read_trend` | Cache-read trend | appendix | conditional | the page was filed before the section |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex filed-before note dropped",
+      "file": ".claude/skills/sdlc-studio/reference-evidence-schema.md",
+      "old": "one filed before the\nbuilder wrote a `cache_read_trend` section carries none, ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "baseline ordered by report id",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for rep in reversed(_signed_reports(root)):",
+      "new": "for rep in sorted(_signed_reports(root), key=lambda r: str(r.get(\"report_id\")), reverse=True):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "html basis dropped",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "beside its mean over {{trend_basis}}.",
+      "new": "beside its earlier mean.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "share sourced to the pages",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"trend_share\": fig(\"trend_share\", cell[\"value\"], cell[\"source\"]),",
+      "new": "\"trend_share\": fig(\"trend_share\", cell[\"value\"], pages),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not measured sourced to the pages",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "\"cache_read_trend\", nm[\"source\"],",
+      "new": "\"cache_read_trend\", REPORTS_REL,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # US1334: The report sets each role's cache-read share against its mean over the last five signed runs
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0753
 > **Created:** 2026-11-26
@@ -27,6 +27,7 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 - **When** the report is built
 - **Then** the `cache_read_trend` builder row states 40.0%, a mean of 64.1% over the five newest pages (the 70.0% page left out), a change of -24.1 points, and the five report ids. Fails on: HEAD, which builds no such section
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_each_role_share_stands_beside_its_five_run_mean
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint close`, which files the page through `sprint_report.py`, and `sprint sign`, which re-derives it
 
 ### AC2: a role no earlier page measures reads not available, never 0
@@ -35,6 +36,7 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 - **When** the report is built
 - **Then** the reviewer row's mean and change read not available with the reason that no earlier signed page states its share, and repair's mean is over the two pages it has and says two. Fails on: HEAD, which has no section, so an unmeasured role cannot be told from a measured 0
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_a_role_with_no_earlier_figure_reads_not_available
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint close`, which files the page through `sprint_report.py`, and `sprint sign`, which re-derives it
 
 ### AC3: the section holds at sign, and an older page renders as signed
@@ -43,6 +45,7 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 - **When** the first page is re-derived at sign, and the older page is rendered to Markdown and HTML
 - **Then** the section and the fingerprint are unchanged, because the run's own page and any page signed after this page was generated are never in its baseline, and the older page renders with no placeholder refused and no trend section. Fails on: HEAD, which has no section to hold
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_section_holds_at_sign_and_an_older_page_renders
+- **Verified:** yes (2026-11-26)
 - **Caller:** `sprint.py sign` (`cmd_sign`), which re-derives the filed page and refuses a changed one
 
 ### AC4: the evidence annex catalogues the section
@@ -51,6 +54,7 @@ A new appendix section, `cache_read_trend`, after Cost by role, states per role 
 - **When** the annex's Report sections, figure keys and row keys tables are read
 - **Then** `cache_read_trend` is listed as always, with a note under the table that a page filed before it carries none (as `cost_roles` has), each of its figure and row keys is catalogued, and the annex version and the constant both read 1.1. Fails on: HEAD, whose annex names no such section and where both read 1.0
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cache_read_trend.py::CacheReadTrendTests::test_the_annex_catalogues_the_section_at_version_1_1
+- **Verified:** yes (2026-11-26)
 - **Caller:** `tests/test_evidence_annex_report.py`, which holds the annex to every section a filed page carries
 
 ## Notes

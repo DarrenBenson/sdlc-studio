@@ -1,0 +1,304 @@
+{
+  "unit": "US1333",
+  "digest": "deb9b3a1897091b7 at d17922d89d77",
+  "report": "sdlc-studio/.local/lane/landed/agent-a82d37b2051fa6a0d/US1333-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "resize-negative-boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if spend is not None and int(spend) < 0:",
+      "new": "if spend is not None and int(spend) < -1:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_resize",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resize-negative-takes-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if spend is not None and int(spend) < 0:",
+      "new": "if spend is not None and int(spend) <= 0:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_resize",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resize-negative-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "        raise RunStateError(negative_spend_text(\"--spend\", spend))\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_resize",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-names-no-value",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "return (f\"{where} is {raw}, a negative spend ceiling",
+      "new": "return (f\"{where} is a negative spend ceiling",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_resize",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-kept-or",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if _is_spent(state) or (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "new": "if _is_spent(state) or (state.get(\"appetite_changes\") or state.get(\"appetite\")):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-spent-and",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if _is_spent(state) or (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "new": "if _is_spent(state) and (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-spent-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if _is_spent(state) or (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "new": "if (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-kept-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "if _is_spent(state) or (state.get(\"appetite_changes\") and state.get(\"appetite\")):",
+      "new": "if _is_spent(state):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-unstamped-unbounded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "before = int(spend_default or 0) if held is None else int(held)",
+      "new": "before = 0 if held is None else int(held)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-held-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "before = int(spend_default or 0) if held is None else int(held)",
+      "new": "before = int(spend_default or 0)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-over-swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "return (before, int(spend)) if _spend_over(int(spend), before) else None",
+      "new": "return (before, int(spend)) if _spend_over(before, int(spend)) else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-never-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "return (before, int(spend)) if _spend_over(int(spend), before) else None",
+      "new": "return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-takes-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if int(raw) < 0:\n",
+      "new": "            if int(raw) <= 0:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if int(raw) < 0:\n",
+      "new": "            if int(raw) < -5:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-stops-at-absent-flag",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        except (TypeError, ValueError, OverflowError):\n            continue\n    return None",
+      "new": "        except (TypeError, ValueError, OverflowError):\n            return None\n    return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-overflow-uncaught",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        except (TypeError, ValueError, OverflowError):\n            continue\n    return None",
+      "new": "        except (TypeError, ValueError):\n            continue\n    return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-capacity-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                       (\"config capacity.spend\", config.get(repo_root, \"capacity.spend\", 0))):",
+      "new": "                       ):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-appetite-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                       (\"config appetite.spend\", config.get(repo_root, \"appetite.spend\", 0)),\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-flag-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if refusal := negative_spend(args.root, getattr(args, \"appetite_spend\", None)):",
+      "new": "if refusal := negative_spend(args.root, None):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan-negative-not-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        print(f\"plan refused: {refusal}\", file=sys.stderr)\n        return 2\n    # ONE RUN AT A TIME, ACROSS CHECKOUTS.",
+      "new": "        print(f\"plan refused: {refusal}\", file=sys.stderr)\n    # ONE RUN AT A TIME, ACROSS CHECKOUTS.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_is_refused_at_the_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-refusal-unstamped-default-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                                                  resolve_appetite(args.root)[\"spend\"]):",
+      "new": "                                                  0):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-refusal-not-returned",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                  f\"the re-plan then keeps, or re-plan within the run's spend\", file=sys.stderr)\n            return 2\n",
+      "new": "                  f\"the re-plan then keeps, or re-plan within the run's spend\", file=sys.stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-refusal-wrong-after",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "appetite resize --spend {raised[1]} --decision",
+      "new": "appetite resize --spend {raised[0]} --decision",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "kept-line-no-spend",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "units{kept_spend}) - a \"",
+      "new": "units) - a \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "kept-line-zero-as-number",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if appetite[\"spend\"] else \"/spend unbounded\")",
+      "new": "if appetite[\"spend\"] is not None else \"/spend unbounded\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_keeps_a_recorded_spend_raise_and_measures_an_unstamped_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-standing-from-config",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "standing_spend=std[\"spend\"] if held is None else int(held))",
+      "new": "standing_spend=std[\"spend\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replan-standing-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "standing_spend=std[\"spend\"] if held is None else int(held))",
+      "new": "standing_spend=std[\"spend\"] if held is not None else int(held))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_replan_that_raises_the_spend_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cycle-stamps-no-spend",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        \"appetite\": {\"minutes\": cap[\"minutes\"], \"units\": cap[\"units\"],\n                     **run_state.spend_record(cap[\"spend\"], capacity(root)[\"spend\"])},",
+      "new": "        \"appetite\": {\"minutes\": cap[\"minutes\"], \"units\": cap[\"units\"]},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_cycle_boundary_stamps_the_spend_it_resolved",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cycle-standing-from-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "**run_state.spend_record(cap[\"spend\"], capacity(root)[\"spend\"])},",
+      "new": "**run_state.spend_record(cap[\"spend\"], cap[\"spend\"])},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_cycle_boundary_stamps_the_spend_it_resolved",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "policy-carries-no-spend",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        \"capacity\": {\"minutes\": resolved[\"minutes\"], \"units\": resolved[\"units\"],\n                     \"spend\": resolved[\"spend\"]},",
+      "new": "        \"capacity\": {\"minutes\": resolved[\"minutes\"], \"units\": resolved[\"units\"]},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_cycle_boundary_stamps_the_spend_it_resolved",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "regenerate-ignores-policy-spend",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                      appetite_spend=cap.get(\"spend\"))",
+      "new": "                      appetite_spend=None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_cycle_boundary_stamps_the_spend_it_resolved",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "boundary-negative-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if refusal := negative_spend(root):\n",
+      "new": "    if refusal := None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_negative_spend_in_config_stops_the_boundary",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend-record-over-swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/run_state.py",
+      "old": "return {\"spend\": acc_s, \"standing_spend\": std_s, \"over_spend\": _spend_over(acc_s, std_s)}",
+      "new": "return {\"spend\": acc_s, \"standing_spend\": std_s, \"over_spend\": _spend_over(std_s, acc_s)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_appetite_spend_raise.py::AppetiteSpendTests::test_a_spend_raise_needs_a_recorded_decision",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

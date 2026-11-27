@@ -1,6 +1,6 @@
 # CR-0755: Say the person owns the PRD and the PVD, and the seat holds delegated authority to check the work meets them
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0384
 > **Priority:** Medium
 > **Type:** Feature

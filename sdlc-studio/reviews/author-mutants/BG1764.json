@@ -1,0 +1,223 @@
+{
+  "unit": "BG1764",
+  "digest": "eabe774a6cc09584 at 90865ade21ef",
+  "report": "sdlc-studio/.local/lane/landed/agent-a709fe56c8cdc51ed/BG1764-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "suffix-not-stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        s = s[:m.start()]",
+      "new": "        s = s",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "suffix-not-stripped-roles",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        s = s[:m.start()]",
+      "new": "        s = s",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_reviewer_recorded_with_its_seat_is_a_reviewer",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "suffix-cut-at-end",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        s = s[:m.start()]",
+      "new": "        s = s[:m.end()]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "group-seat-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    if m and m.group(1).lower() in seats:",
+      "new": "    if m:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "group-case-sensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "m.group(1).lower() in",
+      "new": "m.group(1) in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-alone-accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    if s.lower() in seats:\n        return None",
+      "new": "    if False:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-alone-case-sensitive",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    if s.lower() in seats:",
+      "new": "    if s in seats:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-space-needed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "re.compile(r\"\\s+\\(\\s*(",
+      "new": "re.compile(r\"\\s*\\(\\s*(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-trailing",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\\s*\\)\\Z\", re.I)",
+      "new": "\\s*\\)\", re.I)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-seat-word",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "(?:\\s+seat)?\\s*\\)",
+      "new": "\\s*\\)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "case-sensitive-group",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "\\)\\Z\", re.I)",
+      "new": "\\)\\Z\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-inner-space",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "re.compile(r\"\\s+\\(\\s*(",
+      "new": "re.compile(r\"\\s+\\((",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any-group-content",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "(?:\\s+seat)?\\s*\\)\\Z",
+      "new": "(?:\\s+[^)]*)?\\s*\\)\\Z",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default-seats-empty",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        seats = persona_resolve.SEATS",
+      "new": "        seats = ()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "project-seats-shipped-only",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    return frozenset((*persona_resolve.seat_roster(repo_root), *declared))",
+      "new": "    return frozenset(persona_resolve.SEATS)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "project-seats-declared-only",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    return frozenset((*persona_resolve.seat_roster(repo_root), *declared))",
+      "new": "    return frozenset(declared)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "anatomy-shipped-seats",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "critic.read_verdicts(repo_root), project_seats(repo_root))",
+      "new": "critic.read_verdicts(repo_root))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "author-shipped-seats",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "agent_key(v.get(\"author\"), seats))",
+      "new": "agent_key(v.get(\"author\")))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer-shipped-seats",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "agent_key(v.get(\"reviewer\"), seats)",
+      "new": "agent_key(v.get(\"reviewer\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "default-not-shipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    if seats is None:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_agent_key_reads_the_id_before_a_seat_suffix",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bad-card-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "        declared = []\n",
+      "new": "        raise\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_seat_card_that_is_not_utf8_leaves_the_anatomy_readable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bad-card-oserror-only",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    except ValueError:  # UnicodeDecodeError",
+      "new": "    except OSError:  # UnicodeDecodeError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_seat_card_that_is_not_utf8_leaves_the_anatomy_readable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "bad-card-shipped-only",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    return frozenset((*persona_resolve.seat_roster(repo_root), *declared))",
+      "new": "    return frozenset((*persona_resolve.SEATS, *declared))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_seat_card_that_is_not_utf8_leaves_the_anatomy_readable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "roster-without-declared",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/cost_anatomy.py",
+      "old": "    return frozenset((*persona_resolve.seat_roster(repo_root), *declared))",
+      "new": "    return frozenset(persona_resolve.seat_roster(repo_root))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

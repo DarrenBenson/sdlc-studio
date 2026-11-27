@@ -1,0 +1,520 @@
+{
+  "unit": "US1339",
+  "digest": "82f7327fb89523e5 at e0070bd0806a",
+  "report": "sdlc-studio/.local/lane/landed/agent-aaa2d756efce26907/US1339-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "prd-seat-owned",
+      "file": ".claude/skills/sdlc-studio/reference-prd.md",
+      "old": "> **The person owns the PRD.** The Product Owner seat checks",
+      "new": "> **The PRD is owned by the Product Owner seat.** It checks",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-person-not-owner",
+      "file": ".claude/skills/sdlc-studio/reference-prd.md",
+      "old": "**The person owns the PRD.**",
+      "new": "**The person reads the PRD.**",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pvd-owned-split-bold",
+      "file": ".claude/skills/sdlc-studio/reference-pvd.md",
+      "old": "The **Product Manager** seat checks the work against it",
+      "new": "The PVD is owned by\n  the **Product Manager** seat, which checks the work against it",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pvd-person-not-owner",
+      "file": ".claude/skills/sdlc-studio/reference-pvd.md",
+      "old": "The person owns\n  the PVD",
+      "new": "The person reads\n  the PVD",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "help-pm-owns",
+      "file": ".claude/skills/sdlc-studio/help/pvd.md",
+      "old": "(the person owns it; the Product Manager",
+      "new": "(Product Manager owns it; the Product Manager",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pvd-leg-no-delegation",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "under authority\n> the person delegates; it is the review's",
+      "new": "under authority\n> the person holds; it is the review's",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-leg-seat-owns",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "The Product Owner seat signs it, under authority",
+      "new": "The Product Owner seat owns it, under authority",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-leg-no-delegation",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "the person delegates;\n> a review is not complete",
+      "new": "the person grants;\n> a review is not complete",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-heading-owner",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "### Seats for the requirements documents",
+      "new": "### Document-owner seats",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "table-owns-column",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "| Seat | Checks the work against |",
+      "new": "| Seat | Owns |",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-owns-every-document",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "The person owns every document the skill keeps",
+      "new": "The seat owns every document the skill keeps",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owner-sentence-drops-tsd",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "the PRD, the PVD, the TRD, the TSD and the\npersonas.",
+      "new": "the PRD, the PVD, the TRD and the\npersonas.",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-no-delegation",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "with authority the person delegates, for checking",
+      "new": "with authority the person holds, for checking",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-no-ask",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "and\nasks the person when unsure. Each carries",
+      "new": "and\nreports when unsure. Each carries",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-no-sign",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "it signs that document's review leg",
+      "new": "it reads that document's review leg",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-no-check",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "for checking\nthe work satisfies one",
+      "new": "for\nthe work that satisfies one",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-link-old-anchor",
+      "file": ".claude/skills/sdlc-studio/reference-prd.md",
+      "old": "See `reference-workflow-personas.md#seats-for-the-requirements-documents`.",
+      "new": "See `reference-workflow-personas.md#document-owner-seats`.",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-po-pm-owners",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "(Three Amigos, the Product Owner and Product Manager seats)",
+      "new": "(Three Amigos, PO/PM owners)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-dangling-anchor",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`reference-workflow-personas.md#seats-for-the-requirements-documents`",
+      "new": "`reference-workflow-personas.md#seats-for-requirements`",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "amigo-document-owner",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigo-template.md",
+      "old": "> **review-only** seat (one that checks work against a document and does not build) carries",
+      "new": "> **review-only** seat (a document owner that does not build) carries",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "charter-document-owner",
+      "file": ".claude/skills/sdlc-studio/templates/personas/review-seat-charter.md",
+      "old": "a review-only seat (one that checks work against\na document",
+      "new": "a review-only document-owner seat (one that checks work against\na document",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pattern-seat-dropped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)\"",
+      "new": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|persona)\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pattern-persona-dropped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)\"",
+      "new": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat)\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pattern-roles-dropped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)\"",
+      "new": "_SEAT = r\"(?:PO|PM|seat|persona)\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pattern-po-dropped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)\"",
+      "new": "_SEAT = r\"(?:Product (?:Owner|Manager)|PM|seat|persona)\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pattern-pm-dropped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|PM|seat|persona)\"",
+      "new": "_SEAT = r\"(?:Product (?:Owner|Manager)|PO|seat|persona)\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owns-header-exact",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "OWNS_HEADER = re.compile(r\"\\bown\\w*\", re.I)",
+      "new": "OWNS_HEADER = re.compile(r\"^Owns$\", re.I)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owns-header-case",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "OWNS_HEADER = re.compile(r\"\\bown\\w*\", re.I)",
+      "new": "OWNS_HEADER = re.compile(r\"\\bown\\w*\")",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owns-header-whole-words",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "OWNS_HEADER = re.compile(r\"\\bown\\w*\", re.I)",
+      "new": "OWNS_HEADER = re.compile(r\"\\bown(?:s|ed|ers?)?\\b\", re.I)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owns-header-no-boundary",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "OWNS_HEADER = re.compile(r\"\\bown\\w*\", re.I)",
+      "new": "OWNS_HEADER = re.compile(r\"own\\w*\", re.I)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ownership-column",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "| Seat | Checks the work against |",
+      "new": "| Seat | Ownership |",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owning-column",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "| Seat | Checks the work against |",
+      "new": "| Seat | Owning |",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "help-pm-abbrev-owns",
+      "file": ".claude/skills/sdlc-studio/help/pvd.md",
+      "old": "(the person owns it; the Product Manager",
+      "new": "(PM owns it; the Product Manager",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pvd-owned-by-pm",
+      "file": ".claude/skills/sdlc-studio/reference-pvd.md",
+      "old": "the PVD, as they own each PRD.",
+      "new": "the PVD, as they own each PRD. It is owned by the PM.",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-po-owns",
+      "file": ".claude/skills/sdlc-studio/reference-prd.md",
+      "old": "**The person owns the PRD.**",
+      "new": "**The person owns the PRD.** In practice the PO owns the PRD.",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_page_says_a_seat_owns_the_prd_or_the_pvd",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owns-column-variant",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "| Seat | Checks the work against |",
+      "new": "| Seat | Owns (the document) |",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owner-column-variant",
+      "file": ".claude/skills/sdlc-studio/reference-workflow-personas.md",
+      "old": "| Seat | Checks the work against |",
+      "new": "| Seat | Owner |",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_seats_section_names_the_person_as_owner_and_the_seat_as_delegate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-leg-drops-tracked",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "(or the gaps are named and tracked)",
+      "new": "(or the gaps are named)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-leg-drops-confirmed",
+      "file": ".claude/skills/sdlc-studio/reference-review.md",
+      "old": "until the PRD requirements are confirmed met",
+      "new": "until the PRD requirements are met",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-page-drops-tracked",
+      "file": ".claude/skills/sdlc-studio/reference-prd.md",
+      "old": "or the gaps are named and tracked. See",
+      "new": "or the gaps are named. See",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-owns-case-sensitive",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "(?: (?:seat|persona))?\\s+owns\\b\", re.I),",
+      "new": "(?: (?:seat|persona))?\\s+owns\\b\"),",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owned-by-case-sensitive",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "rf\"\\bowned by (?:the |a )?{_SEAT}\\b\", re.I),",
+      "new": "rf\"\\bowned by (?:the |a )?{_SEAT}\\b\"),",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doc-owner-case-sensitive",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "r\"\\bdocument[- ]owners?\\b\", re.I),",
+      "new": "r\"\\bdocument[- ]owners?\\b\"),",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doc-owner-hyphen-only",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "r\"\\bdocument[- ]owners?\\b\"",
+      "new": "r\"\\bdocument-owners?\\b\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "po-pm-pattern-dead",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "r\"\\bPO/PM owners?\\b\"",
+      "new": "r\"\\bPO/PM ownerz\\b\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "normalise-keeps-bold",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": ".replace(\"**\", \"\")",
+      "new": ".replace(\"**\", \"**\")",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "normalise-keeps-quote",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "re.sub(r\"^\\s*(?:>\\s?)+\", \"\", line)",
+      "new": "re.sub(r\"^\\s*(?:>\\s?)+\", \"> \", line)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "normalise-no-join-space",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "\" \".join(lines)",
+      "new": "\"\".join(lines)",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "corpus-top-level-only",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "SKILL.rglob(\"*.md\")",
+      "new": "SKILL.glob(\"*.md\")",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "sentences-never-split",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "return re.split(r\"(?<=[.!?])\\s+\", normalise(text))",
+      "new": "return [normalise(text)]",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "signed-or-delegation",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "seat signs\\b\", s) and \"delegat\" in s]",
+      "new": "seat signs\\b\", s) or \"delegat\" in s]",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "signed-drops-signs",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "rf\"\\b{seat} seat signs\\b\"",
+      "new": "rf\"\\b{seat} seat\\b\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delegate-drops-unsure",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "\"asks the person\",\n                  \"unsure\")",
+      "new": "\"asks the person\")",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delegate-drops-signs",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "\"check\", \"signs\", \"review leg\"",
+      "new": "\"check\", \"review leg\"",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "delegate-drops-accountable",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "DELEGATE_WORDS = (\"accountable\", \"delegat\",",
+      "new": "DELEGATE_WORDS = (\"delegat\",",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_patterns_fail_on_a_planted_owner_sentence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "legs-seat-swapped",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "(\"#### PVD Review\", \"Product Manager\"),",
+      "new": "(\"#### PVD Review\", \"Product Owner\"),",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_the_review_legs_say_the_seat_signs_under_delegated_authority",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "anchors-no-slugs",
+      "file": "tools/tests/test_lean_ownership_wording.py",
+      "old": "out.add(check_links.slug(m.group(1)))",
+      "new": "pass",
+      "test": "tools/tests/test_lean_ownership_wording.py::OwnershipWordingTests::test_no_shipped_page_calls_a_seat_a_document_owner",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
