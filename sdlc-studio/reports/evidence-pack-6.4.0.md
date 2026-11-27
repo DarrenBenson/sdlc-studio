@@ -1,6 +1,6 @@
 # Evidence pack: release 6.4.0
 
-Built by `release_cut.py evidence-pack` from the records committed at `e356db805d0a`, over the signed reports RPT0028, RPT0029, RPT0030, RPT0031, RPT0032, RPT0033, RPT0034. Uncommitted edits and the tool's local state are not read.
+Built by `release_cut.py evidence-pack` from the records committed at `f946c5460e8d`, over the signed reports RPT0028, RPT0029, RPT0030, RPT0031, RPT0032, RPT0033, RPT0034. Uncommitted edits and the tool's local state are not read.
 
 Passed criteria are each unit's ticked criteria and their Verify lines, as its committed file holds them. A verify run is recorded only in local state, which is not a committed record, so this pack does not read one.
 
@@ -20,7 +20,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Criteria not ticked: AC1, AC2, AC3, AC4, AC5, AC6.
 - Independent review: qa-seat-BG1205-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### BG1264: US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned
@@ -33,7 +33,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1264-r1 APPROVE (2026-11-09).
 - Known issues:
   - BG1323 (Low): The commit-msg hook misses git's scissors line under a non-default `core.commentChar`, the multi-id rule still reads trailers below it, and `_ledger_rows` and BG1264's fragment say an edited ledger row owns nothing - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US0986: The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two
@@ -47,7 +47,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC5: Given a fixture repository with an open run and `SDLC_STUDIO_HARNESS=opencode` where only a Claude transcript exists, when `retro.py accuracy --id <retro> --tokens-from-harness` runs, then no token figure is recorded and the output names opencode and the reason. Fails on: the library honouring the selection while the CLI path still reads the Claude transcript through the `harness_tokens` alias Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessLaneTests::test_accuracy_names_the_harness_it_could_not_read`
 - Independent review: qa-seat-US0986-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1130: Trim the shipped agent-instructions template to 5,000 chars and name the start context a delivery session pays
@@ -60,7 +60,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a session transcript whose first main-thread call carries a known input and cache, when `sprint.py cost --anatomy` renders, then its header names the main thread's start context as that first call's input plus cache. Fails on: the header omitting it, or reading the largest call's context instead of the first. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_the_main_thread_start_context_is_named`
 - Independent review: qa-seat-US1130-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1133: Write the Refs and Mentions trailers the commit-msg hook now refuses for
@@ -73,7 +73,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a consuming project's commit message file, when `engagement_floor.py check-commit-msg --write-trailers <file>` runs, then it appends the derived trailers by the same rule, and `AGENTS.md`'s refusals table and `tools/enable-hooks.sh` describe the hook as writing them. Fails on: the derivation living only in this repository's hook. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_write_trailers_appends_from_ownership`
 - Independent review: qa-seat-US1133-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1140: The run's next action and a resume brief of at most 8k tokens are derived from disk alone
@@ -87,7 +87,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC5: Given a built brief, then `resume_brief.parse(text)` returns the run id and next action it was built with, and a schema-3 unit spelt `US-01M6XQJF` in one place and `US01M6XQJF` in another is read as one unit under `sdlc_md.norm_id`. Fails on: a round trip that changes the next action, or the two spellings read as two units (the BG1302 shape). Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::ResumeBriefTests::test_the_brief_round_trips_and_a_schema3_id_is_one_unit`
 - Independent review: qa-seat-US1140-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1141: The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action
@@ -100,7 +100,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given the shipped docs, then help/sprint.md shows `sprint.py handoff` and `sprint.py resume` as fenced invocations the sprint parser accepts, and the generated command surface (`docgen.py surface`) lists both verbs. Fails on: either verb missing from either page, or a documented flag the parser does not own. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::HelpTests::test_help_and_the_command_surface_list_handoff_and_resume`
 - Independent review: qa-seat-US1141-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1142: The sprint reference defines a wave boundary and runs the close in its own fresh session
@@ -112,7 +112,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given the reference's "The handoff and the run object" section and reference-sprint-toolchain.md, then the section tells the resume brief (run-local under `sdlc-studio/.local/`, read by `sprint.py resume`) apart from the retired handoff record the signed report replaced, and the runbook carries one row for `sprint.py handoff` and one for `sprint.py resume`. Fails on: the section still saying no command writes a handoff with no word on the resume brief, or either runbook row missing. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py::WaveBoundaryDocTests::test_the_resume_brief_is_told_apart_from_the_retired_handoff_and_the_runbook_names_both`
 - Independent review: qa-seat-US1142-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1143: A run on an xAI Grok or Cursor Composer model reads a dollar cost from dated provider prices, not "not priced"
@@ -125,7 +125,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given `reference-config.md#pricing` and the table's `about` text, then each names xAI's and Cursor's own pricing pages among those a non-Claude model is listed from, and the id form each harness's reading carries for them (the Cursor `--model` slug, the OpenCode `<provider>/<model>` id). Fails on: either still naming only OpenAI and OpenCode as the non-Claude sources. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_the_configuration_reference_names_the_grok_and_composer_sources`
 - Independent review: qa-seat-US1143-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1144: A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit
@@ -138,7 +138,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a Copilot reading naming a dotted id the Copilot block does not hold, then `prices.cost` returns `usd` None with `unpriced` naming the id, never priced at the provider-API entry of a similar name (`claude-sonnet-5-5`) or at $0; beside it, in the same test, a listed Copilot id is priced (the positive control). Fails on: dot-to-hyphen or nearest-name matching onto the API table. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::CopilotTokenPriceTests::test_an_unlisted_copilot_id_is_not_priced_beside_a_listed_one`
 - Independent review: qa-seat-US1144-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1145: A project on Copilot request billing says so in its config, and only then are its premium requests priced in dollars
@@ -153,7 +153,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1145-r1 APPROVE (2026-11-09).
 - Known issues:
   - BG1324 (Low): No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1146: Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary
@@ -170,7 +170,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1146-r1 APPROVE (2026-11-09).
 - Known issues:
   - BG1314 (Low): Two US1146 persona checks cannot catch a swapped Primary, and `validate.py personas` compares the whole Interface cell, so a card reverted to Primary passes AC2's own Verify - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### US1148: The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle
@@ -185,7 +185,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC6: Given the changed registry and PRD, then `tools/tests/test_persona_coherence.py` and `tools/tests/test_lean_prd_refresh.py` pass in full. Fails on: any test in either module red. Verify: `shell python3 -m pytest -q tools/tests/test_persona_coherence.py tools/tests/test_lean_prd_refresh.py`
 - Independent review: qa-seat-US1148-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### BG1302: `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units
@@ -197,7 +197,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: No brief reports a seam between a unit and itself: `_batch_seams` drops a seam whose units name one unit under `sdlc_md.norm_id`, so the text brief prints no `Seam with` line for it, while a two-unit schema-3 batch whose stories share a file still names its seam with the other unit by id. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeamBriefTests::test_a_schema3_unit_has_no_seam_with_itself_and_a_real_seam_is_still_named`
 - Independent review: qa-seat-BG1302-r1 APPROVE (2026-11-09).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### BG1303: `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing
@@ -210,7 +210,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1303-r1 APPROVE (2026-11-09).
 - Known issues:
   - BG1315 (Low): `help/sprint.md` still names a lane hand-in `<unit>-claims.json` under the id as typed, which BG1303's landing now keys by the normalised id, and `refine seams` still pairs a schema-3 unit with itself - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-10.
+- Accountable: Darren Benson, who signed its report on 2026-11-10 over fingerprint 15154fd97f127085.
 - Report: RPT0028.
 
 ### BG1300: conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author
@@ -222,7 +222,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: `_move_home` writes the identity to `Path(private, PRIVATE_HOME["HOME"], ".gitconfig")`, built from `private` and never from the environment, and refuses to replace a file already there: a private home already holding a `.gitconfig` keeps it byte-identical and the session stops naming the path; the positive control, a fresh private home, is seeded with `TEST_IDENTITY` and a fixture commit takes it. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_the_seed_refuses_to_replace_an_existing_gitconfig .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_a_fixture_commit_has_an_identity`
 - Independent review: qa-seat-BG1300-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US0997: A report the close files cites the committed run record, never .local/run-state.json
@@ -236,7 +236,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US0997-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1358 (Low): US0997's changelog and reference-scripts.md say the close commits the run record, but it files it - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US0998: The committed run record names its sprint plan by digest, not by a .local path
@@ -248,7 +248,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a rolling run whose next cycle is opened by `sprint boundary`, when that cycle's run record is filed, then its `plan_digest` is the digest of that cycle's own plan, not the previous cycle's and not a path. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_run_record_plan_digest.py::PlanDigestTests::test_the_next_cycle_records_its_own_plan_digest`
 - Independent review: qa-seat-US0998-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1000: The cost section states the run's cost in money from a pricing snapshot frozen at the close
@@ -263,7 +263,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1356 (Low): US1000's AC2 test holds one read record per model, so replacing components across records survives - not-stop-ship, ruled by orchestrator.
   - BG1363 (Low): The US1000 report's price rows cite the config while their values come from the page's own price table - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1134: Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown
@@ -277,7 +277,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1134-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1378 (Low): US1134's AC3 skips markdownlint without saying so when the binary is missing - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1147: Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines
@@ -294,7 +294,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1147-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1321 (Low): Trevor Hale's Scenario check misses a capitalised offer and a negation outside its word list, so changelog.d/US1147.md claims more than the AC7 test holds - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1149: The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call
@@ -310,7 +310,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1351 (Low): US1149's tests have no fixture with two synthetic records in a row - not-stop-ship, ruled by orchestrator.
   - BG1364 (Low): fresh_session: no or false reads as off, though the help and US1149's AC2 say any other value reads as warn - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### BG1010: sprint_report.py build --run resolves the named run and then builds the page from the default run
@@ -320,7 +320,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Criteria not ticked: AC1.
 - Independent review: qa-seat-BG1010-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1001: The lane-yield appendix is read from the committed run record, as the close froze it
@@ -332,7 +332,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1001-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1361 (Low): US1001's note says 'this clone's refusal log', which misleads in a fresh clone - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### BG1030: Prose after `BLOCKING: none`, or a trailing `RULINGS:` line, is folded into BLOCKING and refused, so an APPROVE carrying rulings cannot be recorded unedited
@@ -344,7 +344,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a rejoinder brief, its return contract names the RULINGS line, and a round-2 verdict that rules each earlier finding CLOSED, OVER-CLAIMED or MOVED there is recorded without re-emitting, with the rulings stored as rulings and not as a [new] finding Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py::TrailingProseTests::test_the_rejoinder_contract_names_rulings_and_they_record_as_rulings`
 - Independent review: qa-seat-BG1030-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1011: A review brief names the file the reviewer writes its verdict to
@@ -356,7 +356,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a round-1 REJECT recorded from the file its brief named, when the rejoinder brief for round 2 is printed, then it names a new path and never the round-1 file. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_verdict_path.py::BriefVerdictPathTests::test_a_rejoinder_never_names_an_earlier_rounds_file`
 - Independent review: qa-seat-US1011-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1012: A recorded verdict is bound to the bytes of the file its brief issued
@@ -369,7 +369,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given one row recorded from an issued file and one transcribed row, when `critic.py show` runs, then the first row's line reads 'from the brief's verdict file (writer unread)' and names the file, the second reads 'transcribed', and `--format json` carries the same as a field. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::VerdictFileBindingTests::test_show_says_where_each_verdict_came_from_and_claims_no_writer`
 - Independent review: qa-seat-US1012-r1 APPROVE (2026-11-12).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1013: A verdict that differs from its issued file, or was recorded before, is named
@@ -382,7 +382,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1013-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1352 (Low): US1013's in-order comparison of a verdict and its issued file has no pinning test - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript
@@ -395,7 +395,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1014-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1355 (Low): Four branches US1014's claims name have no test - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1015: A verdict written by the context that edited the unit is a self-review, whatever seat it names
@@ -410,7 +410,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1375 (Low): US1015's run-state floor and its Write, MultiEdit, NotebookEdit, Read and Bash evidence cases have no tests - not-stop-ship, ruled by orchestrator.
   - BG1376 (Low): US1015's brief bound counts any round's issued path, not the round being recorded - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger
@@ -423,7 +423,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1016-r1 APPROVE (2026-11-12).
 - Known issues:
   - BG1353 (Low): Two branches of US1016's rejoinder selection have no test - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-12.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0467, on 2026-11-12 over fingerprint 92ed4ae3b01b2bf2.
 - Report: RPT0029.
 
 ### BG1190: A verifier that times out is killed alone, so its children run on and load every verifier after it
@@ -435,7 +435,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1401 (Low): BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1190: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1190 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1228: BG1190 did not converge in review: round 2 REJECT findings
@@ -447,7 +447,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1228-r1 APPROVE (2026-11-12).
 - Known issues:
   - unpriced (close gap): BG1228: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1228 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1112: verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace
@@ -459,7 +459,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1384 (Low): The changelog's 6.3.0 text and the BG1112 fragment still over-state what the group kill does - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1112: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1112 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1005: A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case
@@ -472,7 +472,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1395 (Medium): BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1005: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1005 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1009: revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted
@@ -486,7 +486,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1009-r1 APPROVE (2026-11-13).
 - Known issues:
   - unpriced (close gap): BG1009: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1009 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG0991: verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading
@@ -498,7 +498,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG0991-r1 APPROVE (2026-11-13).
 - Known issues:
   - unpriced (close gap): BG0991: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0991 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1336: The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe
@@ -510,7 +510,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1336 (Medium): The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1336: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1336 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1337: sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed
@@ -522,7 +522,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1337 (Medium): sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1337: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1337 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1339: sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand
@@ -535,7 +535,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - BG1339 (Medium): sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand - not-stop-ship, ruled by orchestrator.
   - BG1405 (Low): Nothing pins critic's 'live rows' filter, the carried-refusal wording or the stacked-criterion naming, and the BG1339 rejoinder path guards are untested - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1339: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1339 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1344: A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path
@@ -547,7 +547,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1344 (Medium): A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1344: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1344 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1330: 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap
@@ -560,7 +560,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1410 (Low): BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1330: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1330 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1279: A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost
@@ -571,7 +571,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1279-r1 APPROVE (2026-11-13).
 - Known issues:
   - unpriced (close gap): BG1279: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1279 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1331: A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most
@@ -583,7 +583,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1331-r1 APPROVE (2026-11-13).
 - Known issues:
   - unpriced (close gap): BG1331: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1331 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1305: The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings
@@ -594,7 +594,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1305-r1 APPROVE (2026-11-12).
 - Known issues:
   - unpriced (close gap): BG1305: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1305 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1371: The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run
@@ -606,7 +606,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1371 (Medium): The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1371: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1371 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG0965: retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read
@@ -618,7 +618,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG0965-r1 APPROVE (2026-11-12).
 - Known issues:
   - unpriced (close gap): BG0965: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0965 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1340: critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder
@@ -630,7 +630,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1340 (Medium): critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1340: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1340 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1341: reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history
@@ -642,7 +642,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1341 (Medium): reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1341: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1341 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG0990: reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields
@@ -654,7 +654,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG0990-r1 APPROVE (2026-11-12).
 - Known issues:
   - unpriced (close gap): BG0990: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0990 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1343: Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests
@@ -666,7 +666,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1343 (Medium): Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1343: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1343 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1333: A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices
@@ -679,7 +679,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1402 (Low): The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1333: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1333 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1261: After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it
@@ -692,7 +692,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - BG1401 (Low): BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test - not-stop-ship, ruled by orchestrator.
   - BG1414 (Low): The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1261: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1261 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1262: `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned
@@ -707,7 +707,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - BG1401 (Low): BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test - not-stop-ship, ruled by orchestrator.
   - BG1414 (Low): The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1262: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1262 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1372: GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low)
@@ -719,7 +719,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1372 (Medium): GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) - not-stop-ship, ruled by orchestrator.
   - unpriced (close gap): BG1372: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1372 --agent A`.
-- Accountable: Darren Benson, who signed its report on 2026-11-14.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0472, on 2026-11-14 over fingerprint 82ced251b004932d.
 - Report: RPT0030.
 
 ### BG1019: artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither
@@ -729,7 +729,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC1: retitle succeeds in a consuming project with the installed skill layout and no tools/`check_links.py`, still rewriting inbound references Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py::RetitleInstalledLayoutTests::test_retitle_rewrites_inbound_links_without_tools_check_links`
 - Independent review: qa-seat-BG1019-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1268: No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs
@@ -741,7 +741,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given `help/lessons.md` and `reference-scripts.md`, when a reader looks for how to record a class outside a retro, then both name `class-add` beside `retro.py extract` (which records a `[new: class]` Try item at the close) and say the lane brief reads the store, not the `lessons/` registry. Fails on: either page silent on the store, or `class-add` documented with flags the parser does not take. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py::ClassAddDocsTests`
 - Independent review: qa-seat-BG1268-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1391: The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact
@@ -753,7 +753,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1391 (Medium): The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact - not-stop-ship, ruled by orchestrator.
   - BG1428 (Low): The per-unit dollars cell prices a unit's Grok agent read from a session total with no lower-bound label, and BG1391's changelog says the label holds wherever models are summed - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1393: A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading
@@ -764,7 +764,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1393-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1393 (Medium): A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1394: A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page
@@ -775,7 +775,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1394-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1394 (Medium): A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1397: sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit
@@ -786,7 +786,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1397-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1397 (Medium): sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### BG1425: BG1420 did not converge in review: round 2 REJECT findings
@@ -799,7 +799,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1425 (Medium): BG1420 did not converge in review: round 2 REJECT findings - not-stop-ship, ruled by orchestrator.
   - BG1431 (Low): Two release-notes tests take 120 s to over 300 s under load, past verify_ac's default per-verifier timeout, so BG1420's and BG1425's recorded runs fail on time unless given --timeout - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0992: A consumer parses the report of record against a published, versioned annex
@@ -811,7 +811,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given the four schema-1 pages this repository holds (RPT0002-RPT0005), copied into a fixture, when the test reads their section and envelope keys and runs `sprint_report.py check` on each, then the union of their sections equals the annex's schema-1 catalogue with `waivers` marked optional and `window_end` an optional envelope key, and each check answers that the page stands as filed, as the annex says. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py::ReportAnnexTests::test_schema_one_is_documented_as_it_stands`
 - Independent review: qa-seat-US0992-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0993: A consumer recomputes a report's fingerprint from the annex alone
@@ -822,7 +822,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given the annex's lists of figures and sections left out of the digest, when they are compared with OUTSIDE_THE_DIGEST and SECTIONS_OUTSIDE_THE_DIGEST, then they are equal, and both the annex and reference-sprint.md state that the signature block, the generation time and each figure's source are not signed. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_fingerprint.py::FingerprintAnnexTests::test_the_annex_exclusions_match_the_code`
 - Independent review: qa-seat-US0993-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0994: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex
@@ -830,10 +830,10 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - What changed: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex (3 points).
 - Criteria passed:
   - AC1: Given a run closed with `sprint close` and signed with `sprint sign` in a fixture, when the conformance test reads the tracked record after each command, then every key the annex contracts for that state is present with its documented type, and a key the annex does not contract is tolerated rather than failed. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_tracked_record_holds_its_contracted_keys`
-  - AC2: Given three tracked records from fixture runs, one closed, one closed and signed, and one closed and then ended with `sprint stop`, when the test evaluates the annex's own awaiting-signature predicate, extracted from the annex, on each record, then it agrees with `sprint plan --write` in a fresh clone, which is refused for the first and not refused for the other two. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_annex_awaiting_rule_matches_the_plan_guard`
+  - AC2: Given three tracked records from fixture runs, one closed, one closed and signed, and one closed and then ended with `sprint stop`, when the test evaluates the annex's own awaiting-signature predicate, extracted from the annex, on each record, then it reads only the first as awaiting, and `sprint plan --write` in a fresh clone opens the next run over all three (D0503, US1290; restated in run sixteen, when the plan stopped refusing over an awaiting record). Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_annex_awaiting_rule_reads_only_the_signable_record`
 - Independent review: qa-seat-US0994-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0995: A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex
@@ -844,7 +844,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given the critic, velocity, decisions and deploy ledgers as `critic.py record`, `retro.py accuracy --write`, `decisions.py add` and `deploy.py record` create them in a fixture, when their header rows are compared with the annex's table layouts, then each column list is equal, in order, the critic table's with nine columns. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_ledgers.py::LedgerAnnexTests::test_ledger_headers_match_the_annex`
 - Independent review: qa-seat-US0995-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0996: Each committed report and run record states the evidence-schema version it was written under
@@ -857,7 +857,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given the annex's compatibility policy, when the test reads it, then the masthead version parses as major.minor and the policy states that an added field is a minor bump, a removed or renamed field is a major bump carrying a migration note in the annex, and a consumer must tolerate unknown keys. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_the_annex_states_its_compatibility_policy`
 - Independent review: qa-seat-US0996-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US0999: A delegated agent's token total records the model that spent it
@@ -868,7 +868,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given a delegated total returned with no `--model`, when the entry is recorded, then it carries no model and nothing is filled in for it, and a page filed for that run reads exactly as it would before this change. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_delegated_tokens_model.py::DelegatedModelTests::test_a_missing_model_is_never_guessed`
 - Independent review: qa-seat-US0999-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1150: The plan records a priced, dollar and wall-clock forecast beside tokens and minutes
@@ -881,7 +881,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a project with no measured rate for a row, when `sprint plan` runs (preview or --write), then it prints one line per unforecast row reading 'not forecast: <reason>' and exits 0. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_cost_forecast.py::PlanUnforecastRowTests::test_plan_names_each_row_it_cannot_forecast`
 - Independent review: qa-seat-US1150-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1151: The report's Estimates table shows forecast, actual and ratio for every cost row
@@ -895,7 +895,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1151-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1443 (Low): Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1152: A declared component map gives each story a risk and compliance class at refine
@@ -907,7 +907,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a map entry naming an unknown class, when `refine apply` runs, then it reports the entry in one line, treats it as standard, and still mints the stories. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_risk_class_map.py::BadMapTests::test_unknown_class_is_reported_not_refused`
 - Independent review: qa-seat-US1152-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1153: sprint plan shows each unit's class and flags a unit that touches a higher class than its tag
@@ -919,7 +919,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given no component map, when `sprint plan` runs, then it prints exactly one line saying every unit is standard, and nothing refuses. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py::PlanNoMapTests::test_no_map_prints_one_line`
 - Independent review: qa-seat-US1153-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1154: A high-class unit gets a second independent review seat, and the retro reports what that seat found
@@ -931,7 +931,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a high-class unit with no second-seat verdict, or a run whose second seats caught nothing, when the retro is composed, then it says so in one line each and nothing refuses. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::RetroSecondSeatNothingTests::test_missing_and_empty_yield_are_stated_not_refused`
 - Independent review: qa-seat-US1154-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1155: One command writes a release's evidence pack from committed records
@@ -944,7 +944,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a delivered unit, when the pack is built, then its entry states what changed (title and points), which criteria passed (its ticked criteria and their Verify lines) and who reviewed it independently (the latest verdict per seat whose reviewer differs from the author). Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::UnitEntryTests::test_entry_has_change_criteria_and_independent_reviewer`
 - Independent review: qa-seat-US1155-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1156: Each change in the pack states what is known wrong and names the accountable person, never the agent
@@ -956,7 +956,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a report whose signature principal is blank or reads as an agent (for example 'the agent' or 'agent-<id>'), when the pack is built, then the command exits non-zero and no pack names the agent as accountable. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_agent_or_blank_principal_is_refused`
 - Independent review: qa-seat-US1156-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0475, on 2026-11-15 over fingerprint 41f6af509193a323.
 - Report: RPT0031.
 
 ### US1059: A persona's brief carries its own live learnings, capped and ranked, and never another persona's
@@ -969,7 +969,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a qa memory file that cannot be parsed, and a project with no qa memory file, when `critic.py brief --seat qa` runs on each, then the first brief says qa's learnings could not be read, naming the file, and the second says none are recorded. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py::PersonaMemoryBriefTests::test_unreadable_and_absent_memory_are_told_apart`
 - Independent review: qa-seat-US1059-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1061: A unit's review record names the seat that built it, so an author's repairs can be scored
@@ -981,7 +981,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a brief for `--seat qa` on a project where qa's card is held by Sam Eriksson, when `critic.py brief --unit US0001 --seat qa` runs, then the footer's record command carries `--reviewer "Sam Eriksson (qa)"` (the US1030 AC3 shape), and with an explicit `--seat engineering` it carries the engineering holder, so a recorded Reviewer cell always names its seat in the form `critic.recorded_seat` reads. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_review_author_seat.py::ReviewAuthorSeatTests::test_the_footer_names_the_seat_as_reviewer`
 - Independent review: qa-seat-US1061-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1062: retro.py seats scores each seat on its own verdicts and authored units from the ledger
@@ -994,7 +994,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given US0001 whose Author cell is `Dani Okafor (engineering)`, rejected twice and then approved, when `retro.py seats` runs, then engineering's record lists US0001 as a unit it built, converging in three rounds, with each round's blocking findings. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::SeatEvidenceTests::test_an_authoring_seat_is_scored_on_the_rounds_its_units_took`
 - Independent review: qa-seat-US1062-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1064: The seat record charges a later bug to the approval that missed it, by the narrow rule
@@ -1006,7 +1006,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given US0003 approved by qa in an earlier run and BG0009, in this retro's window, charged to it by the narrow rule, when `retro.py seats --id RETRO0002` runs on a batch qa did not review, then qa appears in the record with BG0009. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_seat_outside_the_batch_is_charged_its_misses`
 - Independent review: qa-seat-US1064-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1065: Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed
@@ -1018,7 +1018,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a seat with no record in the retro (no verdict, no unit built, no adverse item), or a second proposal while qa's first for that run is still proposed, when `persona_memory.py propose` runs, then it exits 2 and memory is unchanged, and once the first is rejected a new proposal is accepted. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py::ProposeLearningTests::test_one_open_proposal_per_seat_and_run`
 - Independent review: qa-seat-US1065-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1066: Another seat approves or rejects each proposed learning against its evidence and its card
@@ -1031,7 +1031,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given a proposed qa learning, when `approve --id M-0001 --reviewer "Lena Marsh (product)" --reject --reason ...` runs, then it reads rejected with the reviewer and reason, and `critic.py brief --seat qa` does not carry it. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py::ApproveLearningTests::test_a_rejected_learning_never_reaches_the_brief`
 - Independent review: qa-seat-US1066-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1067: The close lists every learning about to go live on the retro, with what it addresses and who approved it
@@ -1043,7 +1043,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given that block and prose the author wrote around it, when the close runs again after another learning is approved, then the block is replaced in place, lists all three, and the author's prose is byte-identical. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_a_reclose_refreshes_the_block_in_place`
 - Independent review: qa-seat-US1067-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1068: A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does
@@ -1056,7 +1056,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given `--strike` naming a learning another run listed and an id no memory file holds, when `sprint.py sign` runs, then it exits 2 naming both, nothing is sealed and no memory file changes. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_bad_strike_refuses_the_seal_and_writes_nothing`
 - Independent review: qa-seat-US1068-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1157: A bug records that it escaped to production, the release it shipped in and the unit that let it through
@@ -1069,7 +1069,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-US1157-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1486 (Low): US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1158: escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches
@@ -1081,7 +1081,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given a bug with no `Shipped-in`, or a release that tags no unit, when `escape.py trace` runs, then it exits 2 naming what is missing and proposes nothing. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_with_no_release_or_an_empty_release_proposes_nothing`
 - Independent review: qa-seat-US1158-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### US1159: An escape's root cause becomes a failure class that carries the files it applies to
@@ -1092,7 +1092,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given a bug that is not escaped, one whose Root Cause is the scaffold, and a class name already in the store, when `escape.py to-class` runs, then each exits 2 naming its reason and the store is unchanged. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_class.py::EscapeClassTests::test_an_unescaped_empty_or_duplicate_class_is_refused`
 - Independent review: qa-seat-US1159-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-15.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0479, on 2026-11-15 over fingerprint dfa4679614cfeb00.
 - Report: RPT0032.
 
 ### BG0947: reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS
@@ -1103,7 +1103,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given a copy of the corrected table with one terminal status removed from one row, when the same comparison runs on it, then it fails naming that type and that status. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_a_divergence_names_the_type_and_status`
 - Independent review: qa-seat-BG0947-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG0998: The story template ships Verified no, which verify_ac treats as an authored miss
@@ -1115,7 +1115,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given an existing criterion carrying a hand-written bare `Verified: no` and a passing selector, when `verify_ac.py run` runs, then it still reports fail=1 and leaves the line as written (BG0733's sticky rule holds). Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_story_template_verified.py::StoryTemplateVerifiedTests::test_a_hand_written_bare_no_stays_sticky`
 - Independent review: qa-seat-BG0998-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG1260: `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly
@@ -1127,7 +1127,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given an agent definition at `.claude/agents/sdlc-builder.md` that cannot be read and an AGENTS.md without the doctrine, when the agents stage runs, then it prints no 'so the doctrine check can read it' directive for the definition and still offers the doctrine. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_an_unreadable_definition_neither_misdirects_nor_hides_the_doctrine_offer`
 - Independent review: qa-seat-BG1260-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG1395: BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured
@@ -1139,7 +1139,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1395-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1395 (Medium): BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG1396: A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases
@@ -1152,7 +1152,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1396-r1 APPROVE (2026-11-15).
 - Known issues:
   - BG1396 (Medium): A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1160: `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them
@@ -1165,7 +1165,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given the new verb and its flags, when the command registries are read, then `docgen.py surface --check` is clean, `sprint_report.NON_CEREMONY_VERBS` lists `evidence`, command-audit.md judges `--out` and `--check`, and the `### sprint_report.py` section of reference-scripts-domain.md names the verb. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_the_verb_is_in_every_registry_a_new_verb_implies`
 - Independent review: qa-seat-US1160-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1161: docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it
@@ -1176,7 +1176,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC2: Given docs/evidence.md, when its hand-written part is read, then it has a section on what 'Judged partial' means and where its reason comes from, one on how the wait for a signature is measured (report built to report signed), and one naming the command that regenerates the page, and every link in them resolves to an existing file and heading. Verify: `pytest tools/tests/test_evidence_page_committed.py::CommittedEvidencePageTests::test_the_page_explains_partial_verdicts_waiting_and_regeneration`
 - Independent review: qa-seat-US1161-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1162: docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it
@@ -1188,7 +1188,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given the cost section, when it states a dollar figure, then the same paragraph links the committed report that holds it. Verify: `pytest tools/tests/test_engineering_leaders_page.py::EngineeringLeadersPageTests::test_every_dollar_figure_cites_its_report`
 - Independent review: qa-seat-US1162-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1163: SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has
@@ -1200,7 +1200,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given tools/check_links.py, when it scans the root docs, then SUPPORT.md is among them and a SUPPORT.md link to a missing file is reported. Verify: `pytest tools/tests/test_check_links.py::RootDocsTests::test_support_md_is_a_root_doc`
 - Independent review: qa-seat-US1163-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1165: A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision
@@ -1213,7 +1213,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given an effort value outside inherit, low, medium, high, xhigh and max, when `sprint.py plan` runs, then it refuses naming the key and the allowed values. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_setting.py::EffortSettingTests::test_an_unknown_effort_value_is_refused`
 - Independent review: qa-seat-US1165-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1166: Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record
@@ -1225,7 +1225,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given reference-evidence-schema.md, when its report-of-record figure table is read, then it lists the new figure key with its section and meaning, and a run whose units carried two effort values reports each value with its unit count. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_the_annex_documents_the_figure_and_mixed_effort_is_counted`
 - Independent review: qa-seat-US1166-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1167: A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget
@@ -1237,7 +1237,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given this repository's markers, when they are read, then test_doc_claims, test_precommit_floor_pending, test_root_census, the test_skill_tests_env scrub sweep, the test_gitutil raw-git sweep (UnconfinedRawGitCallSweepTests) and the commit-hook hermeticity tests (HookInvocationHermeticityTests) are marked, tools/tests/test_test_census.py is not, and the marked set's recorded run times total at most 30 seconds, an unrecorded time being named rather than counted as zero. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py::SweepSelectionTests::test_the_repositorys_sweeps_are_marked_and_fit_the_budget`
 - Independent review: qa-seat-US1167-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1169: sprint plan reports, per unit, every registry file its new script, verb or flag implies, and every page threshold it nears, that its Affects omits
@@ -1250,7 +1250,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given the same units with the implied files in their Affects, and a consuming project whose tree has none of these registries, when the plan runs, then it reports nothing for them and never refuses the plan. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_registry_advisory.py::PlanRegistryAdvisoryTests::test_a_unit_naming_its_registries_or_a_consuming_project_is_clean`
 - Independent review: qa-seat-US1169-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG1177: README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check
@@ -1262,7 +1262,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC3: Given the renamed theme, when the 6.2 notes' lead test runs, then it passes with THEMES keyed on the new heading and the same four units. Verify: `pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you`
 - Independent review: qa-seat-BG1177-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### US1164: README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade
@@ -1275,7 +1275,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given text cut from the README, when the tests that pin it run, then each passes where the text now lives, and none has had an assertion removed: the 6.3 cost paragraph, the coverage sentence, the Copilot row, the release-notes list and the bolded version declaration. Verify: `pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_the_public_pages_name_what_63_adds`
 - Independent review: qa-seat-US1164-r1 APPROVE (2026-11-15).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 47fd8b167ed17112.
 - Report: RPT0033.
 
 ### BG1493: The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red
@@ -1288,7 +1288,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Independent review: qa-seat-BG1493-r1 APPROVE (2026-11-16).
 - Known issues:
   - BG1493 (High): The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### BG1487: The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md
@@ -1301,7 +1301,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Known issues:
   - BG1487 (Medium): The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md - not-stop-ship, ruled by orchestrator.
   - BG1496 (Low): BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would - not-stop-ship, ruled by orchestrator.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### BG1494: test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently
@@ -1311,7 +1311,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC1: Given the watchdog test, when the trap creates its marker before writing to it, then the test waits for the written content and passes. Fails on: a read of an empty marker failing the assertion. Verify: `pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py -k watchdog`
 - Independent review: qa-seat-BG1494-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### US1170: The v6.4 release notes lead with what changed for the person answering for the release
@@ -1325,7 +1325,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC5: Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes carry exactly one `**v6.4.0 discloses N open defects: N Medium, N Low.**` line for `known_issues.py write --release 6.4.0` to fill. Fails on: a broken CHANGELOG anchor, an em dash, or a missing count line. Verify: `shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.4\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.4.0.md)" = 1`
 - Independent review: qa-seat-US1170-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### US1171: The help, reference and public pages describe what 6.4 ships
@@ -1339,7 +1339,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC5: Given the changed pages, then `tools/check_links.py`, `tools/lint-style.sh` and `python3 tools/check_budgets.py` pass. Fails on: a broken anchor, an em dash, or a page over its budget. Verify: `shell python3 tools/check_links.py && bash tools/lint-style.sh && python3 tools/check_budgets.py`
 - Independent review: qa-seat-US1171-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### US1172: The PRD, TRD and TSD describe what 6.4 ships
@@ -1352,7 +1352,7 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
   - AC4: Given the three specs after this change, then the refresh tests and the 6.3 specs test still pass. Fails on: a refresh pin broken by the edit. Verify: `shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py tools/tests/test_lean_specs_v63.py`
 - Independent review: qa-seat-US1172-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ### US1173: v6.4.0 is cut: version, changelog, known issues, install pins and the specs' baseline
@@ -1361,12 +1361,12 @@ An independent review is the latest verdict of each reviewing seat whose reviewe
 - Criteria passed:
   - AC1: Given the release commit, then every version home carries 6.4.0: package.json, package-lock.json, templates/version.yaml, the SKILL.md frontmatter, README, and the Version fields of prd.md, trd.md and tsd.md. `check_versions.py --strict` exits 0, and the CHANGELOG holds a `## [6.4.0] - <date>` section composed by `release_cut.py changelog-cut` from every fragment present at the cut. Fails on: package.json left at 6.3.0, or a section merged by hand. Verify: `shell python3 -c 'import json,sys; core=json.load(open("package.json"))["version"].split("-"); sys.exit(tuple(map(int, core[0].split("."))) < (6, 4, 0))' && python3 tools/check_versions.py --strict && sed -n '/^## \[6\.4\.0\] - /,/^## \[6\.3\.0\] - /p' CHANGELOG.md | grep -q 'US1164'`
   - AC2: Given `known_issues.py write --release 6.4.0` run at the cut, then `known_issues.py check` exits 0 when judged at the commit that cut 6.4.0. The 6.4.0 notes carry exactly one filled `**v6.4.0 discloses N open defects: N Medium, N Low.**` line whose figures equal the page's, and the page no longer states the 6.3.0 release. Fails on: the 6.3.0 page left in place, or a count line that disagrees with the page. Verify: `pytest tools/tests/test_lean_release_cut_v64.py::ReleaseCutTests::test_the_known_issues_page_is_cut_for_640`
-  - AC3: Given the bug corpus at the cut, then `python3 tools/known_issues.py bar` exits 0: no finding at a barred severity is open, BG1493 (High) having been Fixed before the cut. Fails on: a cut made while BG1493, or any other finding at a barred severity, is open. Verify: `shell python3 tools/known_issues.py bar`
+  - AC3: Given the bug corpus at the cut, then `python3 tools/known_issues.py bar --at v6.4.0` exits 0: no finding at a barred severity is open, BG1493 (High) having been Fixed before the cut. Fails on: a cut made while BG1493, or any other finding at a barred severity, is open. Verify: `shell python3 tools/known_issues.py bar --at v6.4.0`
   - AC4: Given README and docs/INSTALL.md, then every verified install and version example pins `--version v6.4.0`. README links the 6.4.0 notes, and its release-notes list calls 6.4.0, and only 6.4.0, the current release. The 6.4.0 notes' CHANGELOG link is re-pointed from `#unreleased` to the 6.4.0 section. Fails on: a pin left at v6.3.0, or two releases called current. Verify: `shell grep -qE '[]][(]docs/release-notes-v6[.]4[.]0[.]md[)]' README.md && python3 -m pytest -q tools/tests/test_lean_public_docs_retired.py tools/tests/test_lean_release_cut_v64.py`
   - AC5: Given the PRD, TRD and TSD after the cut, then each names v6.4.0 as the release it covers (no Coverage line reads `v6.3.0 as cut`), and the refresh tests read that baseline from the release the documents name and package.json, so they pass at 6.4.0. Fails on: a refresh test that passes with the Coverage line removed. Verify: `shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py`
 - Independent review: qa-seat-US1173-r1 APPROVE (2026-11-16).
 - Known issues: none recorded.
-- Accountable: Darren Benson, who signed its report on 2026-11-16.
+- Accountable: Darren Benson, whose signature on its report was entered under delegation, authorised by decision D0493, on 2026-11-16 over fingerprint 2c27b3912b625cf6.
 - Report: RPT0034.
 
 ## Known issues not tied to one change
@@ -1506,4 +1506,4 @@ The reports' known issues whose id and detail name none of the changes above.
 
 ## Accountability
 
-Each change names the principal recorded on its report's signature, with the signing date. No record names an accountable person per unit, so every change of a report names that report's signer; a blank principal, one that reads as an agent or one the review ledgers record as an author of that report's own units refuses the pack.
+Each change names the principal recorded on its report's signature, with the signing date and the fingerprint signed. The signature is the one the run's committed record holds, and the report's figures re-derive that fingerprint; a report they no longer re-derive, or whose own signature the run record does not hold, refuses the pack. A signature entered under delegation says so and names the decision that authorised it. No record names an accountable person per unit, so every change of a report names that report's signer; a blank principal, one that reads as an agent or one the review ledgers record as an author of that report's own units refuses the pack.
