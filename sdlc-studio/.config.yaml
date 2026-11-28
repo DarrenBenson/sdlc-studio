@@ -109,10 +109,14 @@ review:
   blocking_priority: medium
   #
   # On here, off as shipped (D0647): a unit of 3 points or more, or of high risk, takes a
-  # solution review, and `sprint lane land` refuses it without a GO bound to its approach note.
+  # solution review, and `sprint lane land` refuses it until the qa seat, the product seat and,
+  # when its story names a Persona, that persona each have a GO on one approach note digest.
+  # The building seat, and the persona of a unit that names none, are skipped; a one-seat GO
+  # recorded earlier no longer agrees a unit.
   solution_review:
     min_points: 3
     risk_classes: [high]
+    panel: [qa, product, persona]
 
 # The component map (D0520, US1313): a path prefix to its risk class, standard < elevated < high.
 # The gates are high: a defect in one passes work it never judged. The rest of the skill's

@@ -3605,15 +3605,128 @@ def _solution_review_state(root: Path, uid: str) -> dict | None:
     rows = critic.read_solution_reviews(root, uid)
     latest = ({k: rows[-1][k] for k in ("round", "verdict", "digest", "changes")}
               if rows else None)
-    return {"reason": reason, "note": f"{LANE_HAND_IN}/{lanes.approach_hand_in_name(uid)}",
-            "latest": latest}
+    state = {"reason": reason, "note": f"{LANE_HAND_IN}/{lanes.approach_hand_in_name(uid)}",
+             "latest": latest}
+    # An unset panel is never read further, so its one-seat brief stands as it was.
+    if critic.solution_review_panel(root):
+        state["panel"] = _panel_relay_state(root, uid, rows)
+    return state
+
+
+_ROW_KEYS = ("round", "verdict", "digest", "changes")
+
+
+def _panel_relay_state(root: Path, uid: str, rows: list[dict]) -> dict:
+    """The unit's approach panel as its lane brief relays it: each seated seat in panel order
+    with its latest row (None before any), the skipped seats and why, whether the approach is
+    agreed (`critic.panel_state`) and the digest standing for the note's latest text. That is
+    the digest of the note file the latest seated row's Note cell names, when it is on disk, and
+    agreement is then judged against it, as `sprint lane land` judges it; otherwise the seated
+    digest whose first row in the unit's ledger comes last, so a late verdict on an older text
+    never makes that text current (`read` says which)."""
+    import critic  # noqa: PLC0415 - deferred sibling; the panel's own reader
+    state = critic.panel_state(root, uid)
+    seated = [row for seat in state["seats"] if (row := state["latest"].get(seat))]
+    note = None
+    if seated:
+        named = Path(root) / max(seated, key=rows.index)["note"]
+        note = named if named.is_file() else None
+    first: dict[str, int] = {}
+    for i, row in enumerate(rows):
+        first.setdefault(row["digest"], i)
+    if note is not None:
+        state = critic.panel_state(root, uid, note)
+        digest, read = critic.note_digest(note), "note"
+    else:
+        digest = max({r["digest"] for r in seated}, key=first.__getitem__) if seated else None
+        read = "ledger"
+    persona = critic._unit_persona(root, uid) if "persona" in state["seats"] else ""
+    seats = [{"seat": seat, "name": persona if seat == "persona" else seat,
+              "row": ({k: row[k] for k in _ROW_KEYS}
+                      if (row := state["latest"].get(seat)) else None)}
+             for seat in state["seats"]]
+    return {"seats": seats, "skipped": dict(state["skipped"]), "agreed": state["agreed"],
+            "why": state["why"], "digest": digest, "read": read}
+
+
+def _panel_relay_lines(uid: str, review: dict) -> list[str]:
+    """The solution review section under `review.solution_review.panel`: each seat's latest
+    reply by seat and round, a CHANGES seat's items quoted as `> ` lines, then one instruction:
+    build to the note once every seat has a GO on one digest; revise it to answer each item of a
+    CHANGES on the current digest; otherwise wait for the seats it awaits. Until then it holds
+    every build step below it."""
+    import critic  # noqa: PLC0415 - deferred sibling; one splitter for a CHANGES cell
+    note, panel = review["note"], review["panel"]
+    digest = panel["digest"]
+    out = ["--- SOLUTION REVIEW ---", f"{uid} takes a solution review: {review['reason']}.",
+           "Its panel, `review.solution_review.panel`, in panel order, each seat its own agent "
+           "and its own review:"]
+    revise: list[str] = []
+    waits: list[str] = []
+    rounds: list[str] = []
+    for entry in panel["seats"]:
+        seat, row = entry["seat"], entry["row"]
+        who = f"{entry['name']} (persona)" if seat == "persona" else seat
+        if row is None:
+            out.append(f"- {who}: awaiting a review")
+            waits.append(who)
+            continue
+        rounds.append(f"{who} at round {row['round']}")
+        current = row["digest"] == digest
+        where = (f"on note digest {digest}" if current
+                 else f"against an earlier note digest, {row['digest']}")
+        if row["verdict"] == "GO":
+            out.append(f"- {who}: GO at round {row['round']} {where}"
+                       + ("" if current else f"; asked for again on {digest}"))
+            if not current:
+                waits.append(who)
+            continue
+        quoted = critic._quoted_changes(row["changes"])
+        out.append(f"- {who}: CHANGES at round {row['round']} {where}"
+                   + (":" if current else f"; its review of the note at {digest} is awaited:"))
+        out += quoted
+        if not current:
+            waits.append(who)
+            continue
+        items = [m.group(1) for q in quoted if (m := re.match(r"> (\d+)[.)] ", q))]
+        revise += [f"{seat} {n}" for n in items] or [who]
+    out += [f"- {seat}: skipped, {why}" for seat, why in panel["skipped"].items()]
+    if digest and panel["read"] == "note":
+        out.append(f"The note's digest now is {digest}, read from the note the ledger names.")
+    elif digest:
+        out.append(f"No note the ledger names is on disk, so the note's latest text is read "
+                   f"from the ledger alone as digest {digest}, which cannot see a revision no "
+                   f"seat has reviewed.")
+    if panel["agreed"]:
+        return [*out, f"The approach is agreed: every seat on the panel has a GO against note "
+                      f"digest {digest} ({', '.join(rounds)}). Build to {note} as agreed.",
+                f"Editing the note voids every GO: each is bound to {digest}, and `sprint lane "
+                f"land` refuses a note whose digest is not {digest}."]
+    hold = (f"Do none of the steps below this section (running the criteria, the self-check "
+            f"passes, the hand-in files, staging) until every seat on the panel has a GO on the "
+            f"note as it stands. Instead write {LANE_HAND_IN}/{LANE_HAND_OFF} saying the "
+            f"approach awaits review, stage nothing, and hand back HANDOFF.")
+    if not panel["seats"]:
+        return [*out, f"{panel['why']}: no GO can settle its approach, so `sprint lane land` "
+                      f"refuses it.", hold]
+    if revise:
+        return [*out, f"Revise {note} to answer, under the heading each changes, "
+                      f"{', '.join(revise)}, naming the seat and the item; editing the note "
+                      f"voids every GO on it, so each seat reviews the revised note.", hold]
+    if not rounds:
+        write = _solution_review_lines(uid, {**review, "panel": None, "latest": None})[2]
+        return [*out, write, hold]
+    return [*out, f"The note at digest {digest} awaits the review of: {', '.join(waits)}.",
+            hold]
 
 
 def _solution_review_lines(uid: str, review: dict) -> list[str]:
     """The brief's solution review section: with no verdict, write the approach note under its
     five headings and hand back; after CHANGES, the changes quoted as a `> ` line and a revised
     note asked for; after a GO, the round and digest agreed and the note to build to. Until a GO
-    it holds every build step below it."""
+    it holds every build step below it. Under a panel, `_panel_relay_lines` writes it."""
+    if review.get("panel"):
+        return _panel_relay_lines(uid, review)
     import critic  # noqa: PLC0415 - deferred sibling; the note's headings are critic's own
     note, latest = review["note"], review.get("latest")
     head = ["--- SOLUTION REVIEW ---", f"{uid} takes a solution review: {review['reason']}."]

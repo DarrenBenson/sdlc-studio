@@ -105,6 +105,7 @@ class Generator(NamedTuple):
     script: str
     argv: tuple[str, ...]
     reads: tuple[tuple[str, str], ...]
+    fixture: str = "root"  # the key of the fixture root the row runs against
 
 
 def _seat(role: str) -> tuple[tuple[str, str], ...]:
@@ -113,6 +114,8 @@ def _seat(role: str) -> tuple[tuple[str, str], ...]:
 
 GENERATORS: tuple[Generator, ...] = (
     Generator("lane brief", "sprint", ("lane", "brief", "--units", "{unit}"), _seat("engineering")),
+    Generator("lane brief --relayed", "sprint", ("lane", "brief", "--units", "{unit}"),
+              _seat("engineering"), "relayed"),
     *(Generator(f"critic brief --seat {s}", "critic", ("brief", "--unit", "{unit}", "--seat", s),
                 _seat(s)) for s in SEATS),
     Generator("critic brief --rejoinder", "critic",
@@ -242,6 +245,29 @@ class OneIdentityBriefTests(unittest.TestCase):
         cls.addClassCleanup(env.stop)
         cls.root = base / "repo"
         cls.slots = _fixture(cls.root)
+        # a root whose panel has a qa reply that itself holds an identity sentence
+        relayed = base / "relayed"
+        (relayed / "src").mkdir(parents=True)
+        (relayed / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+        _copy_seats(relayed)
+        _registry(relayed, _PERSONAS)
+        (relayed / "sdlc-studio" / "stories").mkdir(parents=True)
+        (relayed / "sdlc-studio" / "stories" / f"{UNIT}-a-story.md").write_text(
+            _STORY, encoding="utf-8")
+        (relayed / "sdlc-studio" / ".config.yaml").write_text(
+            "review:\n  solution_review:\n    min_points: 2\n    panel: [qa, product, persona]\n",
+            encoding="utf-8")
+        relayed_note = relayed / "sdlc-studio" / ".local" / "lane" / f"{UNIT}-approach.md"
+        relayed_note.parent.mkdir(parents=True)
+        relayed_note.write_text(_NOTE, encoding="utf-8")
+        changes = base / "relayed-changes.md"
+        changes.write_text("1. You are the qa review seat, so say so. 2. Pin the guard.\n",
+                           encoding="utf-8")
+        critic.record_solution_review(relayed, UNIT, "changes", relayed_note,
+                                      "Sam Eriksson (qa)", "Dani Okafor (engineering)",
+                                      changes_file=changes)
+        run_state.open_run(relayed, batch=[UNIT], goal=GOAL)
+        cls.roots = {"root": cls.root, "relayed": relayed}
         # a root with no persona registry, and one whose registered names prefix each other
         cls.bare = base / "bare"
         _copy_seats(cls.bare)
@@ -250,7 +276,7 @@ class OneIdentityBriefTests(unittest.TestCase):
 
     def _brief(self, label: str) -> str:
         row = next(r for r in GENERATORS if r.label == label)
-        rc, out, err = _run(row, self.root, self.slots)
+        rc, out, err = _run(row, self.roots[row.fixture], self.slots)
         self.assertEqual(0, rc, f"{label} refused: {err}")
         return out
 
@@ -359,9 +385,10 @@ class OneIdentityBriefTests(unittest.TestCase):
         self.assertEqual([], identities(_NOTE, self.root))
         for row in GENERATORS:
             with self.subTest(generator=row.label):
-                rc, out, err = _run(row, self.root, self.slots)
+                root = self.roots[row.fixture]
+                rc, out, err = _run(row, root, self.slots)
                 self.assertEqual(0, rc, f"{row.label} refused: {err}")
-                self.assertEqual(list(row.reads), identities(out, self.root), out[-3000:])
+                self.assertEqual(list(row.reads), identities(out, root), out[-3000:])
                 if row.script == "sprint" and row.argv[0] == "goal-review":
                     # both registered personas are named, as mentions, never as identities
                     self.assertIn("Abena Osei", out)

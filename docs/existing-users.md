@@ -90,8 +90,12 @@ what 6.5 changes in how you work.
      solution_review:
        min_points: 3
        risk_classes: [high]
+       panel: [qa, product, persona]
    ```
 
+   `panel` names the seats that review a note: `sprint lane land` takes a unit only when qa,
+   product and, if its story names a Persona, that persona each hold a GO on one digest of the
+   note; leave it out and one seat's GO is enough.
    A unit's risk class is read through `risk.components`. `sprint lane land` refuses a unit the
    settings name until a seat's GO stands on its approach note: `critic.py approach brief` briefs
    the seat on the note and `critic.py approach record` records its verdict. The rest is under

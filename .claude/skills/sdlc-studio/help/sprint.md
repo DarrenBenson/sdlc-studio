@@ -779,8 +779,9 @@ twice.
 A unit `review.solution_review` names (its `min_points` or `risk_classes`; off by default)
 takes a solution review before code, and `lane land` refuses it, exit 2 before anything moves,
 unless the worktree's hand-in holds its approach note, `sdlc-studio/.local/lane/<unit>-approach.md`,
-and the unit's latest row in `sdlc-studio/reviews/solution-reviews.md` is a GO recorded against
-the note's digest as it stands. A missing note is refused with its path and
+and, with no panel set, the unit's latest row in `sdlc-studio/reviews/solution-reviews.md` is a
+GO recorded against the
+note's digest as it stands. A missing note is refused with its path and
 `sprint.py lane brief --units <id>`, which tells the builder to write it; no verdict, a CHANGES
 round, or a GO bound to an earlier text of the note (any edit, whitespace included, voids it;
 the path is not compared) is refused naming which, with `critic.py approach brief` to brief a
@@ -795,6 +796,13 @@ begins, so `--resume` does not repeat it. Only `lane land` checks this: `sprint 
 their land step; take it through `lane brief`, its note, `critic.py approach brief` and
 `critic.py approach record`, or leave `min_points` at 0 and `risk_classes` empty. A unit
 committed in the orchestrator's own tree is not checked.
+
+With `review.solution_review.panel` set, each seat it names is its own agent and its own review,
+and the land needs a GO from every seat the panel names, not only the latest row: the approach is
+agreed only when every seat has a GO on the note as it stands, so a product GO alone under
+`[product, qa]` is refused naming "qa seat: no verdict recorded". The lane brief relays each
+seat's reply by seat and round, quoting a CHANGES item by item, and says the approach is agreed
+only then.
 
 Once the reviewer answers that brief, one command finishes the unit:
 
