@@ -32,8 +32,12 @@ quotes, the last lines of the step's output, where the whole output is kept
 
 Units whose Affects are disjoint build at once. A unit sharing a file with an earlier unit of the
 wave starts once that unit has landed, so its worktree is made from the landing. Landings, accepts
-and paperwork commits take the root one at a time. A WARNING naming another unit of the same wave
-as briefed and never returned is that unit's own lane in flight beside it, so it stops nothing.
+and paperwork commits take the root one at a time; the build's session, the reviewer and drive's
+own status read run beside them with git's optional locks off (`GIT_OPTIONAL_LOCKS=0` for the two
+sessions, `--no-optional-locks` for the read), so a `git status` there never holds the root's
+`index.lock` while one of them commits. A WARNING naming
+another unit of the same wave as briefed and never returned is that unit's own lane in flight
+beside it, so it stops nothing.
 Re-running `walk` resumes each unit: one whose worktree holds a hand-in commit message starts at
 its landing, one whose landing stopped after its commit has it finished by `lane land --resume`,
 one whose landing completed starts at its brief, and a review whose verdict file is already
@@ -75,6 +79,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import os
 import re
 import shlex
 import shutil
@@ -104,6 +109,10 @@ QUOTED = 8
 #: The steps after an APPROVE moved the unit: a stopped wave still finishes them.
 _FINISHING = ("return", "paperwork")
 STEP_TIMEOUT = 3600
+#: The environment a step run outside the wave's root lock adds: git then takes no optional
+#: lock, so a read in the root whose index lock is optional, as `git status`'s is, never holds
+#: `.git/index.lock` while another unit's land, accept or paperwork commits there under the lock.
+NO_OPTIONAL_LOCKS = {"GIT_OPTIONAL_LOCKS": "0"}
 
 _WARNING = re.compile(r"^\s*WARNING\b")
 _IN_FLIGHT = re.compile(r"^\s*WARNING (\S+) was briefed at \S+ and never returned")
@@ -128,14 +137,15 @@ class _Refused(Exception):
 
 # -- shared ---------------------------------------------------------------------------------
 
-def run_script(root: Path, script: str, *args: str,
-               timeout: int = STEP_TIMEOUT) -> subprocess.CompletedProcess:
-    """A sibling script through its own entry point, as an operator runs it by hand. Every step
-    drive takes runs through here. A run past `timeout` answers exit 124 with what it said."""
+def run_script(root: Path, script: str, *args: str, timeout: int = STEP_TIMEOUT,
+               env: dict | None = None) -> subprocess.CompletedProcess:
+    """A sibling script through its own entry point, as an operator runs it by hand, in `env`
+    or, when None, this process's environment. Every step drive takes runs through here. A run
+    past `timeout` answers exit 124 with what it said."""
     cmd = [sys.executable, str(SCRIPTS / script), *args, "--root", str(root)]
     try:
         return subprocess.run(cmd, cwd=str(root), capture_output=True, text=True,
-                              timeout=timeout, check=False)
+                              timeout=timeout, check=False, env=env)
     except subprocess.TimeoutExpired as exc:
         return subprocess.CompletedProcess(cmd, 124, lanes._text(exc.stdout),  # noqa: SLF001
                                            lanes._text(exc.stderr)  # noqa: SLF001
@@ -266,9 +276,10 @@ def _written(path) -> bool:
 
 
 def _paperwork_paths(root: Path, unit: str) -> tuple[list[str], list[str]]:
-    """The paths `paperwork` commits for `unit`, and those of them git does not track yet."""
-    status = lanes._git(root, "status", "--porcelain", "-z", "--untracked-files=all",  # noqa: SLF001
-                        "--", "sdlc-studio").stdout.split("\0")
+    """The paths `paperwork` commits for `unit`, and those of them git does not track yet. The
+    read takes no optional lock: a resume a walk names outside the root lock reads it too."""
+    status = lanes._git(root, "--no-optional-locks", "status", "--porcelain", "-z",  # noqa: SLF001
+                        "--untracked-files=all", "--", "sdlc-studio").stdout.split("\0")
     paths, new, skip = [], set(), False
     for entry in status:
         if skip or len(entry) < 4:
@@ -460,8 +471,10 @@ def _walk_steps(w: _Wave, unit: str) -> None:
             args = ["lane", "run", "--units", unit, "--harness", w.harness]
             args += ["--model", w.model] if w.model else []
             args += ["--timeout", str(w.timeout)] if w.timeout else []
+            # outside the root lock for the whole session, so its git takes no optional lock
             done = run_script(root, "sprint.py", *args,
-                              timeout=(w.timeout or lanes.RUN_TIMEOUT) + 600)
+                              timeout=(w.timeout or lanes.RUN_TIMEOUT) + 600,
+                              env={**os.environ, **NO_OPTIONAL_LOCKS})
             _stop_for(root, unit, step, done, f"sprint.py lane run --units {unit} --harness "
                                               f"{w.harness}, or {w.again}", w.own)
             staged = next((ln.split(":", 1)[1].strip() for ln in done.stdout.splitlines()
@@ -530,9 +543,11 @@ def _review(w: _Wave, unit: str, ctx: dict) -> str:
     cmd = lanes.headless_command(w.harness, brief, w.model, w.root)
     cmd[0] = binary
     shown = ["<brief>" if a == brief else a for a in cmd]
+    # the reviewer reads the root outside the root lock, so its git takes no optional lock
     try:
         done = lanes._run_in_group(cmd, timeout=w.timeout or lanes.RUN_TIMEOUT,  # noqa: SLF001
-                                   cwd=w.root, env=lanes._child_env())  # noqa: SLF001
+                                   cwd=w.root,
+                                   env={**lanes._child_env(), **NO_OPTIONAL_LOCKS})  # noqa: SLF001
     except subprocess.TimeoutExpired as exc:
         done = subprocess.CompletedProcess(cmd, 124, lanes._text(exc.stdout),  # noqa: SLF001
                                            lanes._text(exc.stderr)  # noqa: SLF001

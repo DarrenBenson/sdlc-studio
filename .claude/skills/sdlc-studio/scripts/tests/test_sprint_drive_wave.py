@@ -3,15 +3,23 @@ or the wave end.
 
 The fixture is `test_sprint_drive`'s: a throwaway repository with an open run, a stub pre-commit
 hook and a stub `claude` that builds and reviews, logging when each session starts and ends. The
-plan's waves are written where `sprint plan --write` keeps them. Two cases wrap the step runner,
+plan's waves are written where `sprint plan --write` keeps them. Three cases wrap the step runner,
 `drive.run_script`, to add a WARNING line to one unit's green `lane accept`.
+
+Two cases ask real git whether a root read takes `.git/index.lock`: git rewrites the index after
+a read such as `git status` only while it holds that lock, so a read made after a tracked file's
+mtime moved rewrites the index exactly when it took the lock.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/drive.py
 from __future__ import annotations
 
+import json
+import os
 import re
 import subprocess
 import sys
+import threading
+import time
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -22,6 +30,44 @@ from lib import drive, lanes
 
 A, B, C = walk.A, walk.B, walk.C
 SKILL = walk.SKILL
+#: a tracked file under `sdlc-studio/`, in no unit's Affects, whose mtime a lock probe moves
+TOUCH = "sdlc-studio/personas/seats/qa.md"
+#: seconds a parked step waits for the other unit before it goes on regardless
+WAIT = 60
+#: a `claude` in front of the fixture's stub: each session first reads the root with the git
+#: environment it was given and logs whether that read rewrote the root's index
+PROBE = """#!__PYTHON__
+import json, os, re, subprocess, sys, time
+from pathlib import Path
+root, log, stub = Path(__ROOT__), Path(__LOG__), __STUB__
+genv = {k: v for k, v in os.environ.items() if k not in __LOCATING__}
+prompt = sys.argv[sys.argv.index("-p") + 1]
+role = "control" if prompt == "control" else "review" \\
+    if re.search(r"^/.*/sdlc-studio/reviews/verdicts/.+[.]txt$", prompt, re.M) else "build"
+index, at = root / ".git" / "index", time.time_ns() + 5_000_000_000
+os.utime(root / __TOUCH__, ns=(at, at))
+before = index.stat()
+subprocess.run(["git", "-C", str(root), "status", "--porcelain"], env=genv, check=True,
+               capture_output=True)
+after = index.stat()
+with log.open("a") as fh:
+    fh.write(json.dumps({"role": role, "rewrote_index": (before.st_ino, before.st_mtime_ns)
+                         != (after.st_ino, after.st_mtime_ns)}) + "\\n")
+if role == "control":
+    sys.exit(0)
+os.execv(stub, [stub, *sys.argv[1:]])
+"""
+
+
+def _rewrites_index(root: Path, run):
+    """(what `run` returned, whether it rewrote `root`'s index): `TOUCH`'s mtime is moved first,
+    so a git read that takes the index's optional lock refreshes it and writes the index back."""
+    index, at = root / ".git" / "index", time.time_ns() + 5_000_000_000
+    os.utime(root / TOUCH, ns=(at, at))
+    before = index.stat()
+    said = run()
+    after = index.stat()
+    return said, (before.st_ino, before.st_mtime_ns) != (after.st_ino, after.st_mtime_ns)
 
 
 def _sessions(case, unit: str, event: str) -> list[dict]:
@@ -103,6 +149,95 @@ class SprintDriveWaveTests(walk._DriveFixture):  # noqa: SLF001
         self.assertIn(f"{A} paperwork: committed", out)
         self.assertEqual("Done", case.status_at(A))
         self.assertTrue([s for s in subjects if s.startswith(f"docs({A})")], subjects)
+
+    def test_a_root_read_beside_a_paperwork_commit_holds_no_index_lock(self) -> None:
+        """B's green accept warns, so B's walk reads the root's status for the resume it names,
+        outside the root lock, while A walks on to its paperwork commit. A read that took the
+        index's lock is made to hold it until A's walk ends, as one under load can; a read that
+        took none holds nothing, and A's commit must land."""
+        case = self._case(_Pair, "run")
+        warning = "WARNING the verdict was taken against an earlier Affects scope"
+        lock = case.root / ".git" / "index.lock"
+        read, ended, seen = threading.Event(), threading.Event(), []
+        real_git, real_review, real_walk = lanes._git, drive._review, drive._walk  # noqa: SLF001
+
+        def warn(real, root, script, *args, **kw):
+            done = real(root, script, *args, **kw)
+            if args[:2] == ("lane", "accept") and B in args and done.returncode == 0:
+                done = subprocess.CompletedProcess(done.args, 0, done.stdout,
+                                                   done.stderr + warning + "\n")
+            return done
+
+        def git(cwd, *args, **kw):
+            if (threading.current_thread().name != f"drive-{B}" or "status" not in args
+                    or read.is_set()):
+                return real_git(cwd, *args, **kw)
+            said, locked = _rewrites_index(case.root, lambda: real_git(cwd, *args, **kw))
+            seen.append(locked)
+            held = False
+            if locked:
+                os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+                held = True
+            read.set()
+            try:
+                ended.wait(WAIT)
+            finally:
+                if held:
+                    lock.unlink()
+            return said
+
+        def review(w, unit, ctx):
+            if unit == A:  # A's review waits for B's read, so A commits while B reads
+                read.wait(WAIT)
+            return real_review(w, unit, ctx)
+
+        def walked(w, unit):
+            try:
+                real_walk(w, unit)
+            finally:
+                if unit == A:
+                    ended.set()
+
+        with unittest.mock.patch.object(lanes, "_git", git), \
+                unittest.mock.patch.object(drive, "_review", review), \
+                unittest.mock.patch.object(drive, "_walk", walked):
+            rc, out, err = case.drive(wrap=warn)
+        self.assertIn(f"{A} paperwork: committed", out, out + err)
+        self.assertEqual([False], seen, "B's root read took the index lock")
+        self.assertNotEqual(0, rc, out + err)
+        self.assertIn(f"DRIVE STOPPED: {B} at accept, {drive.WARNED}", out)
+        self.assertEqual("Done", case.status_at(A))
+        self.assertFalse(lock.exists())
+        # the control: the same read with git's optional locks on rewrites the index
+        env = {k: v for k, v in case.env.items() if k != "GIT_OPTIONAL_LOCKS"}
+        _, locked = _rewrites_index(case.root, lambda: subprocess.run(
+            ["git", "status", "--porcelain", "--", "sdlc-studio"], cwd=case.root, env=env,
+            check=True, capture_output=True))
+        self.assertTrue(locked, "the probe cannot see a read that takes the index lock")
+
+    def test_the_build_and_review_sessions_read_the_root_without_its_index_lock(self) -> None:
+        stub = self.base / "bin" / "claude-stub"
+        (self.base / "bin" / "claude").rename(stub)
+        log = self.base / "locks.log"
+        probe = PROBE
+        for key, value in (("__PYTHON__", sys.executable), ("__ROOT__", repr(str(self.root))),
+                           ("__LOG__", repr(str(log))), ("__STUB__", repr(str(stub))),
+                           ("__LOCATING__", repr(walk.gitutil.REPO_LOCATING_GIT_VARS)),
+                           ("__TOUCH__", repr(TOUCH))):
+            probe = probe.replace(key, value)
+        walk._write(self.base, "bin/claude", probe).chmod(0o755)  # noqa: SLF001
+        rc, out, err = self.drive()
+        self.assertEqual(0, rc, out + err)
+        said = [json.loads(ln) for ln in log.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual([{"role": "build", "rewrote_index": False},
+                          {"role": "review", "rewrote_index": False}], said)
+        # the control: the probe's own read, with git's optional locks on, rewrites the index
+        env = {k: v for k, v in self.env.items() if k != "GIT_OPTIONAL_LOCKS"}
+        subprocess.run([str(self.base / "bin" / "claude"), "-p", "control"], env=env,
+                       check=True, capture_output=True)
+        self.assertEqual({"role": "control", "rewrote_index": True},
+                         json.loads(log.read_text(encoding="utf-8").splitlines()[-1]),
+                         "the probe cannot see a read that takes the index lock")
 
     def test_a_warning_at_accept_holds_the_drive_until_it_is_answered(self) -> None:
         warning = "WARNING the verdict was taken against an earlier Affects scope"
