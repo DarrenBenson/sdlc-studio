@@ -222,8 +222,10 @@ class SolutionReviewSpendTests(meter._Case):
         self.assertNotIn("approach spend", out)
         [para] = [p for p in CATALOGUE.read_text(encoding="utf-8").split("\n\n")
                   if p.startswith("`approach spend --unit <id> --seat <role> --agent <id>`")]
-        for phrase in ("reads that seat agent's own transcript", "no verdict row", "not checked against the panel",
-                       "refuses the builder's own transcript", "no run is open"):
+        for phrase in ("reads that seat agent's own transcript", "no verdict row",
+                       "not checked against the panel", "refuses the builder's own transcript",
+                       "no run is open", "stripped of surrounding whitespace",
+                       "already recorded against another unit", "off the batch"):
             self.assertIn(phrase, para)
         p = subprocess.run([sys.executable, str(meter.SCRIPTS / "docgen.py"), "surface",
                             "--check", "--root", str(REPO)], capture_output=True, text=True,
@@ -258,9 +260,10 @@ class SolutionReviewSpendTests(meter._Case):
             self.assertEqual([SEAT_NOTE.format(noted)], [r["note"] for r in self.seat_records(ws)])
 
     def test_the_builder_s_own_agent_is_refused(self) -> None:
-        """The builder's transcript, already the unit's, is refused and its record kept; a seat
-        record of the same transcript is still replaced. MUTANTS: the guard removed; its note
-        test inverted."""
+        """The builder's transcript, already the unit's, is refused and its record kept, against
+        the unit and against another unit; a seat record of the same transcript is still
+        replaced. MUTANTS: the guard removed; its note test inverted; the other-unit guard
+        removed (the builder's transcript recorded again as a seat's on another unit)."""
         ws = self.panel_ws()
         [builder] = self.records(ws)
         self.assertTrue(builder["note"].startswith("sprint lane return ("), builder)
@@ -273,12 +276,81 @@ class SolutionReviewSpendTests(meter._Case):
             rc, out, err = self.spend(ws, "qa", "q1")
             self.assertEqual(0, rc, err)
         self.assertEqual([builder["agent"], "agent-q1"], [r["agent"] for r in self.records(ws)])
-        rc, out, err = self.spend(ws, "qa", "builder1", unit=OTHER)
-        self.assertEqual(0, rc, err)
-        self.assertEqual([(UNIT, builder["note"]), (UNIT, SEAT_NOTE.format("qa")),
-                          (OTHER, SEAT_NOTE.format("qa"))],
+        self.assert_nothing(self.spend(ws, "qa", "builder1", unit=OTHER), 2,
+                            "approach spend refused", "agent-builder1", f"against {UNIT}",
+                            builder["note"], "once in the run")
+        self.assertEqual([(UNIT, builder["note"]), (UNIT, SEAT_NOTE.format("qa"))],
                          [(r["unit"], r["note"]) for r in self.records(ws)],
-                         "only a record against the unit itself is kept from replacement")
+                         "the builder's transcript counts once in the run")
+
+    def test_a_transcript_counts_once_in_the_run(self) -> None:
+        """A seat agent's transcript recorded against one unit is refused against another,
+        naming the unit it is recorded against, so the run's delegated total counts it once; a
+        record of it with no unit is refused the same way, and the unit it is on still replaces
+        it. MUTANTS: the other-unit guard removed (two records, the transcript counted twice);
+        the guard narrowed to records that name a unit; the refusal read as a record."""
+        ws = self.panel_ws()
+        [builder] = self.records(ws)
+        ws.tx.agent_says("q1", "msg_q1_1", QA_1)
+        rc, out, err = self.spend(ws, "qa", "q1", unit=OTHER)
+        self.assertEqual(0, rc, err)
+        once = self.records(ws)
+        [stray] = [r for r in once if r["agent"] == "agent-q1"]
+        self.assertEqual(OTHER, stray["unit"])
+        total = self.rs.delegated_total(ws.state())
+        self.assertEqual(builder["tokens"] + stray["tokens"], total)
+        for agent in ("q1", "agent-q1"):
+            self.assert_nothing(self.spend(ws, "qa", agent), 2, "approach spend refused",
+                                "agent-q1", f"against {OTHER}", SEAT_NOTE.format("qa"),
+                                "once in the run", UNIT)
+        self.assertEqual(once, self.records(ws))
+        self.assertEqual(total, self.rs.delegated_total(ws.state()))
+        self.assertNotIn(UNIT, [r["unit"] for r in self.records(ws) if r["agent"] == "agent-q1"])
+        ws.tx.agent_says("p1", "msg_p1_1", PRODUCT_1)
+        rc, out, err = self.spend(ws, "product", "p1")
+        self.assertEqual(0, rc, err)
+        ws.tx.agent_says("q1", "msg_q1_2", QA_2)
+        rc, out, err = self.spend(ws, "qa", "q1", unit=OTHER)
+        self.assertEqual(0, rc, err)
+        [stray] = [r for r in self.records(ws) if r["agent"] == "agent-q1"]
+        self.assertEqual((OTHER, meter._tokens(meter._sum(QA_1, QA_2))),
+                         (stray["unit"], stray["tokens"]), "its own unit still replaces it")
+        unitless = {k: v for k, v in stray.items() if k != "unit"}
+        recs = [unitless if r["agent"] == "agent-q1" else r for r in self.records(ws)]
+        self.write_state(ws, **{self.rs.DELEGATED: recs})
+        for unit in (UNIT, OTHER):
+            self.assert_nothing(self.spend(ws, "qa", "q1", unit=unit), 2,
+                                "approach spend refused", "agent-q1", "with no unit",
+                                "once in the run")
+        self.assertEqual(recs, self.records(ws))
+
+    def test_a_unit_off_the_batch_is_recorded_with_a_warning(self) -> None:
+        """A real unit outside the open run's batch is recorded, with a stderr WARNING that no
+        per-unit row shows it, as `sprint lane return` warns; a unit on the batch, planned
+        under a Persona or not, or added to it since, is recorded with nothing on stderr.
+        MUTANTS: the warning dropped; its check inverted; the planned units read for the page's
+        (an added unit warned about)."""
+        ws = self.panel_ws()
+        (ws.root / "sdlc-studio" / "stories" / "US0103-x.md").write_text(
+            STORY.format(uid="US0103", persona=""), encoding="utf-8")
+        for agent, usage in (("q1", QA_1), ("p1", PRODUCT_1), ("s1", PERSONA_1)):
+            ws.tx.agent_says(agent, f"msg_{agent}_1", usage)
+        rc, out, err = self.spend(ws, "qa", "q1", unit="us0103")
+        self.assertEqual(0, rc, err)
+        self.assertIn("recorded US0103's qa seat agent agent-q1 against run ", out)
+        self.assertIn("WARNING the seat agent's spend was recorded off the batch: US0103 was "
+                      "never in the open run's batch, so it counts in the run's total but no "
+                      "per-unit row shows it", err)
+        self.assertEqual(["US0103"], [r["unit"] for r in self.records(ws)
+                                      if r["agent"] == "agent-q1"])
+        for unit, agent in ((UNIT, "p1"), (OTHER, "s1")):
+            rc, out, err = self.spend(ws, "product", agent, unit=unit)
+            self.assertEqual((0, ""), (rc, err), out)
+            self.assertIn(f"recorded {unit}'s product seat agent agent-{agent} ", out)
+        self.write_state(ws, batch=[*meter.UNITS, "US0103"])
+        rc, out, err = self.spend(ws, "qa", "q1", unit="US0103")
+        self.assertEqual((0, ""), (rc, err), out)
+        self.assertIn("recorded US0103's qa seat agent agent-q1 ", out)
 
     def test_refused_and_unreadable_inputs_record_nothing(self) -> None:
         """A blank seat and an unknown unit exit 2; a reading the record refuses and an

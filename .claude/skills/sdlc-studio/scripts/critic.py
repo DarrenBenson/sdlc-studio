@@ -7287,12 +7287,15 @@ def approach_spend(repo_root: Path | str, unit: str, seat: str,
     `solution review (<seat>)`, against the unit and untagged by harness, as a builder's is. A
     later reading of the same transcript for the unit replaces the earlier record (the record's
     own rule), which is how a mistyped seat is corrected: the seat word is recorded as given,
-    stripped, and not checked against the panel. Nothing is recorded, `(None, why)`, when the
-    run state cannot be read, no run is open (said before any transcript is read), the agent
-    has no readable transcript, the run is sealed or its page filed, or the record refuses the
-    reading. Refused with ValueError, nothing recorded: an unknown unit, a blank seat, and the
-    transcript of a record against the unit not written by this verb, the builder's own. Writes
-    no ledger row, checks no verdict and records no minutes."""
+    stripped, and not checked against the panel. A unit outside the open run's batch is
+    recorded with a stderr WARNING that no per-unit row shows it. Nothing is recorded,
+    `(None, why)`, when the run state cannot be read, no run is open (said before any
+    transcript is read), the agent has no readable transcript, the run is sealed or its page
+    filed, or the record refuses the reading. Refused with ValueError, nothing recorded: an
+    unknown unit, a blank seat, the transcript of a record against the unit not written by this
+    verb, the builder's own, and a transcript the run already records against another unit or
+    against none, so each transcript counts once in the run. Writes no ledger row, checks no
+    verdict and records no minutes."""
     root = Path(repo_root)
     found = sdlc_md.find_by_id(root, unit)
     if not found:
@@ -7315,9 +7318,14 @@ def approach_spend(repo_root: Path | str, unit: str, seat: str,
         return None, f"{shown}'s {seat} seat agent's spend was not recorded: {reading['reason']}"
     uid = sdlc_md.norm_id(shown)
     for rec in state.get(run_state.DELEGATED) or []:
-        if (isinstance(rec, dict) and rec.get("unit") == uid
-                and rec.get("transcript") == reading["source"]
-                and not str(rec.get("note")).startswith(_SPEND_OPENS)):
+        if not isinstance(rec, dict) or rec.get("transcript") != reading["source"]:
+            continue
+        if rec.get("unit") != uid:
+            where = f"against {rec['unit']}" if rec.get("unit") else "with no unit"
+            raise ValueError(f"agent-{bare}'s transcript is already recorded in the run {where} "
+                             f"as {rec.get('note')!r}, and a transcript counts once in the run, "
+                             f"so it is not recorded against {shown} as well")
+        if not str(rec.get("note")).startswith(_SPEND_OPENS):
             raise ValueError(f"agent-{bare}'s transcript is already recorded against {shown} "
                              f"as {rec.get('note')!r}, not as a seat agent's, so a seat "
                              f"record would replace it - the builder's own agent is not a "
@@ -7330,6 +7338,11 @@ def approach_spend(repo_root: Path | str, unit: str, seat: str,
         return None, f"{shown}'s {seat} seat agent's spend was not recorded: {exc}"
     if rec is None:
         return None, f"{shown}'s {seat} seat agent's spend was not recorded"
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as `sprint lane return` reads it
+    if uid not in sprint_report._unit_order(state)[4]:  # the page's units: planned, added, dropped
+        print(f"WARNING the seat agent's spend was recorded off the batch: {shown} was never in "
+              f"the open run's batch, so it counts in the run's total but no per-unit row shows "
+              f"it", file=sys.stderr)
     return rec, (f"recorded {shown}'s {seat} seat agent agent-{bare} against run "
                  f"{state['run_id']}: {reading['priced']:,} priced tokens "
                  f"({reading['tokens']:,} tokens), read from {reading['source']}")
@@ -7600,14 +7613,16 @@ def build_parser() -> argparse.ArgumentParser:
     aps_ = aps.add_parser("spend",
                           help="Add a seat agent's priced spend on a unit's solution review to "
                                "the unit's delegated spend in the open run, read from that "
-                               "agent's own transcript; a later reading of it replaces the "
-                               "earlier. Writes no verdict row, checks no verdict and records "
-                               "no minutes; exits 1 recording nothing when no run is open or "
-                               "the agent has no readable transcript.")
+                               "agent's own transcript; a later reading of it for the same "
+                               "unit replaces the earlier, and one the run already records "
+                               "against another unit is refused. Writes no verdict row, checks "
+                               "no verdict and records no minutes; exits 1 recording nothing "
+                               "when no run is open or the agent has no readable transcript.")
     aps_.add_argument("--unit", required=True)
     aps_.add_argument("--seat", required=True,
-                      help="the seat the agent sat in, recorded as given in the record's note "
-                           "and not checked against the panel")
+                      help="the seat the agent sat in, recorded as given, stripped of "
+                           "surrounding whitespace, in the record's note and not checked "
+                           "against the panel")
     aps_.add_argument("--agent", required=True,
                       help="the seat agent's id, with or without its `agent-` prefix; the "
                            "builder's own agent is refused")
