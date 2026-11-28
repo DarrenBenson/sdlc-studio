@@ -1,0 +1,6 @@
+UNIT: BG1778
+BRIEF: 8ae8e7c966eb-e4acfe95
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 met (RPT0028 JSON/twin/evidence page disclose delegation, D0654 committed at HEAD, sprint_report check VALID, evidence --check clean); AC2 met (D0654 decision row exists; test_lean_delegated_reports_disclosed.py passes 2/2 and covers RPT0028 in report, pack and page).

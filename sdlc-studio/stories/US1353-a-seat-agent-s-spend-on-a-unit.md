@@ -6,7 +6,7 @@
 > **Created:** 2026-11-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py, changelog.d/US1353.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py, changelog.d/US1353.md
 > **Epic:** EP0386
 > **Points:** 1
 > **Depends on:** US1351

@@ -1,0 +1,21 @@
+UNIT: US1344
+BRIEF: 0eac43e39f0e-5afe8509
+VERDICT: APPROVE
+ISSUES: [new] an unreadable note is still refused (exit 2, nothing written) with the raw OSError text at 6ef4cac4e, "approach record refused: [Errno 13] Permission denied: '<path>'. Nothing was written.", where every other refusal says in words what was wrong, such as "the note <path> names no file". The fragment's "or cannot be read" is true. No open unit owns it: no bug or CR naming `approach record` mentions Errno or Permission denied, and BG1777's criteria name only the qa seat's round-2 findings. Non-blocking;
+[pre-existing] `review.severity_levels` is read by no script (`git grep` finds only reference-config.md and this unit's test). The row at reference-config.md:226 repeats what the removed base block said, and no open bug or CR names it. It does not hold the gate
+BLOCKING: none
+RULINGS: My two earlier REJECTs (b848e52ae344 and 2ff4aa54a058) were held in scratch and never recorded. The two findings the carry message calls blocking were not: the `solution_review_settings` docstring finding and the raw OSError text were both non-blocking. My blocking findings were the per-unit round and the norm_id Unit cell. Each is ruled here against 6ef4cac4e.
+"the per-unit round count is pinned by no test" CLOSED (since 517e83e14, still true): with no panel set, one unit's rows number 1, 2 and 3 across two seats, and a second unit starts at round 1.
+"the repair writes the ledger's Unit cell through `sdlc_md.norm_id`" CLOSED by c290d42ef: in a `schema_version: 3` fixture, `--unit us-01jqk3f8` and `--unit US01JQK3F8` both write `US-01JQK3F8`, as the artefact file spells it. Putting `norm_id` back fails test_the_ledger_spells_a_schema_v3_id_with_its_dash.
+"the `solution_review_settings` docstring" CLOSED (since 517e83e14, still true): `review.solution_review: true` exits 2 with "`review.solution_review` is True, which is not a mapping - refused rather than read as off".
+The raw OSError text is STILL TRUE, owned by no open unit, and non-blocking, as above.
+"changelog.d/US1344.md:8-9 gives the command" and "reference-scripts-review.md:115 says" CLOSED and still closed.
+Nothing since 517e83e14 broke the unit:
+- 24 tests pass: test_solution_review_record.py plus the sprint_report stage-set test.
+- `verify_ac.py run --id US1344 --dry-run` passes 4/4.
+- With no config, a 6.4 upgrader gets the same exit-2 refusal naming both keys as off.
+- AC1's two reasons, and the refusal naming both settings, are exact.
+- reference-config.md is 725 lines, within AC4's 732.
+- lint-style, markdownlint and check_budgets are clean, and docgen surface and reading-guides show no drift.
+US1350 has since widened the page's round sentence for `review.solution_review.panel`. This fragment's "the unit's own rows so far plus one" still holds with the panel unset.
+docs/known-issues.md comes from 105c02fcb, the paperwork commit that adds BG1777's row when the carry was filed. It is not US1344's work, so its Affects is right.

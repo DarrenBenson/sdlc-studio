@@ -1,0 +1,250 @@
+{
+  "unit": "US1342",
+  "digest": "2f62b3f6dea803ba at 243a7f370364",
+  "report": "sdlc-studio/.local/lane/landed/agent-a88951f13f7d7f8ca/US1342-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the 95 per cent warning dropped from the Appetite section",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "warns at 75 and 95 per cent of it",
+      "new": "warns at 75 per cent of it",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page's budget exit code made 3",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "exits 4: units already",
+      "new": "exits 3: units already",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the per-kind entries said to ship set",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "default; they ship empty.",
+      "new": "default; they ship set.",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the 1-hour re-write dropped from the anatomy paragraph",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "after 5-minute and 1-hour expiry, reading",
+      "new": "after 5-minute expiry, reading",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_cache_measures_and_the_retro_they_demand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cache-read fall threshold made five points",
+      "file": ".claude/skills/sdlc-studio/help/retro.md",
+      "old": "more than ten points below",
+      "new": "more than five points below",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_cache_measures_and_the_retro_they_demand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the trend window made three signed runs",
+      "file": ".claude/skills/sdlc-studio/help/retro.md",
+      "old": "up to the last five signed runs",
+      "new": "up to the last three signed runs",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_cache_measures_and_the_retro_they_demand",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the second cut said to rewrite the record",
+      "file": ".claude/skills/sdlc-studio/help/gate.md",
+      "old": "A second cut of the same version leaves the record unchanged",
+      "new": "A second cut of the same version rewrites the record",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "never 0% dropped from the scorecard paragraph",
+      "file": ".claude/skills/sdlc-studio/help/retro.md",
+      "old": "with the command's reason, never 0%, and",
+      "new": "with the command's reason, and",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "writing nothing dropped from the disclose refusals",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "are refused, writing nothing;",
+      "new": "are refused;",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "README's spend sentence dropped",
+      "file": "README.md",
+      "old": "authorising it. A run can\n  also stop on spend.\n",
+      "new": "authorising it.\n",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bug kind's default given as inherit",
+      "file": "docs/existing-users.md",
+      "old": "`routing.effort.bug` (`{}`)",
+      "new": "`routing.effort.bug` (`inherit`)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no dollar budget sentence dropped from the leaders page",
+      "file": "docs/engineering-leaders.md",
+      "old": "There is no dollar budget setting. A run is capped",
+      "new": "A run is capped",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the change failure rate paragraph's escape.py link dropped",
+      "file": "docs/engineering-leaders.md",
+      "old": "never 0%\n([escape.py](../.claude/skills/sdlc-studio/scripts/escape.py)).",
+      "new": "never 0%.",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the enterprise page's --appetite-spend dropped",
+      "file": "docs/enterprise.md",
+      "old": "`--appetite-units` and `--appetite-spend`",
+      "new": "`--appetite-units`",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the per-kind default reader returning a role row's inherit",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "            return cells[-1].strip(\"`\")\n    return \"\"\n\n\ndef _verbs",
+      "new": "            return \"inherit\"\n    return \"\"\n\n\ndef _verbs",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the fence's min_points made 4",
+      "file": "docs/existing-users.md",
+      "old": "min_points: 3\n",
+      "new": "min_points: 4\n",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Lanes link anchor broken",
+      "file": "docs/existing-users.md",
+      "old": "#lanes-dispatching-work-and-accepting-it-back",
+      "new": "#lanes",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "min_points' default given as 3",
+      "file": "docs/existing-users.md",
+      "old": "`review.solution_review.min_points` (0)",
+      "new": "`review.solution_review.min_points` (3)",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the two solution review keys dropped from NEW_KEYS",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "\"review.rendered_paths\", *SOLUTION_KEYS)",
+      "new": "\"review.rendered_paths\")",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the parser walk not recursing into sub-verbs",
+      "file": "tools/tests/test_lean_docs_v65.py",
+      "old": "out |= {at + (name,)} | _verbs(sub, at + (name,))",
+      "new": "out |= {at + (name,)}",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "appetite.spend and capacity.spend swapped in the order sentence",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "`appetite.spend`, else `capacity.spend`, sets",
+      "new": "`capacity.spend`, else `appetite.spend`, sets",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the left-out role takes inherit",
+      "file": ".claude/skills/sdlc-studio/help/sprint.md",
+      "old": "leaves out taking the\ndefault; they ship",
+      "new": "leaves out taking the\ninherit; they ship",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the release record's previous read as the release after",
+      "file": ".claude/skills/sdlc-studio/help/gate.md",
+      "old": "the release before it",
+      "new": "the release after it",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a pending release counted as a failure",
+      "file": ".claude/skills/sdlc-studio/help/retro.md",
+      "old": "counted neither way",
+      "new": "counted as a failure",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the leaders page drops the no-incident case",
+      "file": "docs/engineering-leaders.md",
+      "old": "With no release record or no incident it reads",
+      "new": "With no release record it reads",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the upgrade fence min_points made 2",
+      "file": "docs/existing-users.md",
+      "old": "min_points: 3",
+      "new": "min_points: 2",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the upgrade fence risk class made elevated",
+      "file": "docs/existing-users.md",
+      "old": "risk_classes: [high]",
+      "new": "risk_classes: [elevated]",
+      "test": "tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+UNIT: BG1782
+BRIEF: f8851d5bfcf6-df915d79
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: The control now takes Accepted or Delivered, still checks every Decision field, and adds a forced Accepted-with-pending (1 finding) versus Delivered (0 findings) copy that discriminates, so AC2 is exercised beyond AC1 despite the shared selector. The test passes here.

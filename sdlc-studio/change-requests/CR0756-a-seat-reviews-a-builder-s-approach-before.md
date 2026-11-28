@@ -1,6 +1,6 @@
 # CR-0756: A seat reviews a builder's approach before it writes code, so the first code review judges work built to an agreed plan
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0385
 > **Priority:** High
 > **Type:** Feature

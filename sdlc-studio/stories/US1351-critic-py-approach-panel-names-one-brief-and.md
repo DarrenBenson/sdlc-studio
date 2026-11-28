@@ -1,6 +1,6 @@
 # US1351: critic.py approach panel names one brief and one reply file per seat, and approach brief frames the unit's stakeholder persona
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0757
 > **Created:** 2026-11-27
@@ -36,6 +36,7 @@ As an engineering lead whose team turns on the solution review, I want the tool 
   panel unset it says one seat's GO agrees the approach and names the one-seat brief form
 - **Fails on:** HEAD plus US1344, where `critic.py approach panel` is an invalid choice (E5)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat
+- **Verified:** yes (2026-11-28)
 
 ### AC2: the stakeholder brief frames the persona from its card and no seat
 
@@ -58,6 +59,7 @@ As an engineering lead whose team turns on the solution review, I want the tool 
   US1344, where `approach brief` is an invalid choice (E5); and no brief generator reads a story's
   Persona field (E19)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_stakeholder_brief_frames_the_persona_and_no_seat
+- **Verified:** yes (2026-11-28)
 
 ### AC3: a later round quotes that seat's own changes and no other seat's
 
@@ -74,6 +76,7 @@ As an engineering lead whose team turns on the solution review, I want the tool 
   brief as its approach note composes it reads the unit, its criteria, the decisions and the note,
   and no ledger row (E6), so a round 2 brief carries none of the seat's changes
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes
+- **Verified:** yes (2026-11-28)
 
 ### AC4: a persona that cannot be framed is refused with a remedy, and a unit with none sits no stakeholder
 
@@ -98,6 +101,7 @@ As an engineering lead whose team turns on the solution review, I want the tool 
   (E5). The fixture's held card is held at HEAD: `persona_review.blocking` returned
   `['persona-registry-role']` for it and `[]` for the unchanged card (E9)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused
+- **Verified:** yes (2026-11-28)
 
 ### AC5: the code review stays independent of the panel, and the runbook and catalogue name it
 
@@ -122,6 +126,7 @@ As an engineering lead whose team turns on the solution review, I want the tool 
   has 0 matches for `approach panel`, `--seat persona` or `solution-review/`, and says only "the
   unit's rows so far plus one" (E17)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_code_review_stays_independent_and_the_runbook_names_the_panel
+- **Verified:** yes (2026-11-28)
 
 ## Notes
 

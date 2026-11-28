@@ -1,0 +1,205 @@
+{
+  "unit": "US1347",
+  "digest": "f5e7e760f74e1daf at e40ca1fcef31",
+  "report": "sdlc-studio/.local/lane/landed/agent-ab47d6eae54665ffc/US1347-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the default short-circuit never taken",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if critic.solution_review_settings(root_top) == (0, []):",
+      "new": "if critic.solution_review_settings(root_top) == None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_setting_reads_no_unit_and_a_setting_reads_each",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a malformed setting read as off",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "raise LandError(f\"{exc}. Nothing was landed.\", 2) from None",
+      "new": "return",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_malformed_setting_is_refused_naming_its_key",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit the rule cannot judge skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                refused.append(f\"{unit}: {exc}, so whether it takes a solution review is not \"",
+      "new": "                (f\"{unit}: {exc}, so whether it takes a solution review is not \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_named_unit_with_no_story_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the named test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if reason is None:\n                continue\n            note",
+      "new": "            if reason is not None:\n                continue\n            note",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the note test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if not note.is_file():",
+      "new": "            if note.is_file():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the note read from the root, not the worktree",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "note = lane.top / HAND_IN / approach_hand_in_name(unit)",
+      "new": "note = root_top / HAND_IN / approach_hand_in_name(unit)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the kept-copy hint dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                if kept.is_file():",
+      "new": "                if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_missing_note_names_the_kept_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the kept copy looked for outside the worktree's own folder",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "kept = root_top / LANDED / lane.name / note.name",
+      "new": "kept = root_top / LANDED / note.name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_missing_note_names_the_kept_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the agreed test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if ok:\n                lane.agreed",
+      "new": "            if not ok:\n                lane.agreed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_land_without_a_current_go_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the agreed line never kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "lane.agreed.append(f\"{unit} solution review agreed: {why}\")",
+      "new": "pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_an_agreed_approach_lands_and_an_unnamed_unit_lands_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal never raised",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if refused:\n        lines",
+      "new": "    if False:\n        lines",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the critic's why dropped from the refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "refused.append(f\"{unit} ({reason}): {why}. With the note at {note}, {brief}.\")",
+      "new": "refused.append(f\"{unit} ({reason}): With the note at {note}, {brief}.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_land_without_a_current_go_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief and record commands dropped from a not-agreed line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "): {why}. With the note at {note}, {brief}.\")",
+      "new": "): {why}.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_land_without_a_current_go_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the next steps dropped from the missing-note line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "directs, {brief}.\")",
+      "new": "directs.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the lane brief command dropped from the missing-note line",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "it as `sprint.py lane brief --units {unit}` directs",
+      "new": "it as the lane brief directs",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the whitespace sentence dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "any edit, whitespace \"\n            f\"included, voids it",
+      "new": "any edit \"\n            f\"voids it",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_land_without_a_current_go_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only the first unit of a lane judged",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        for unit in lane.units:\n            try:\n                reason = critic",
+      "new": "        for unit in lane.units[:1]:\n            try:\n                reason = critic",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_every_unit_of_one_worktree_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the check left out of the single-worktree branch",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        _refuse_unagreed_approaches(root_top, lanes_)\n        _refuse_leftovers(lanes_, 2)",
+      "new": "        _refuse_leftovers(lanes_, 2)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the check left out of the several-worktree branch",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _refuse_unagreed_approaches(root_top, lanes_)\n    _refuse_overlap(lanes_, 2)",
+      "new": "    _refuse_overlap(lanes_, 2)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_landing_of_several_worktrees_refuses_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the agreed line never printed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "for line in lane.agreed):\n        _say(line)",
+      "new": "for line in lane.agreed):\n        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_an_agreed_approach_lands_and_an_unnamed_unit_lands_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the agreed line printed on stderr",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "for line in lane.agreed):\n        _say(line)",
+      "new": "for line in lane.agreed):\n        _say(line, err=True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_an_agreed_approach_lands_and_an_unnamed_unit_lands_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the agreed line printed before the markdown check",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _refuse_markdown(root_top, lanes_)\n    for line in (line for lane in lanes_ for line in lane.agreed):\n        _say(line)\n",
+      "new": "    for line in (line for lane in lanes_ for line in lane.agreed):\n        _say(line)\n    _refuse_markdown(root_top, lanes_)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_the_agreed_line_waits_for_the_markdown_check",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

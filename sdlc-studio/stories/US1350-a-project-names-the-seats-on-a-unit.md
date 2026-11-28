@@ -1,6 +1,6 @@
 # US1350: A project names the seats on a unit's approach panel, each records its own verdict in its own rounds, and the approach is agreed only when every one has a GO
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0757
 > **Created:** 2026-11-27
@@ -38,6 +38,7 @@ As an engineering lead, I want to name which seats review a builder's approach, 
   panel set in the project config, "Ola Ade (engineering)", "Sam Eriksson" and "Maya Okafor
   (persona)" were each recorded against one note, exit 0, at rounds 4, 5 and 6 (E2)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_panel_names_who_may_record
+- **Verified:** yes (2026-11-28)
 
 ### AC2: with a panel set each seat numbers its own rounds, and unset the unit's rows number them
 
@@ -53,6 +54,7 @@ As an engineering lead, I want to name which seats review a builder's approach, 
   and 3 (E1), and under a set panel the next three records took rounds 4, 5 and 6 (E2). The unset
   control holds there now (rounds 1 and 2, E1) and must still hold
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_each_seat_numbers_its_own_rounds
+- **Verified:** yes (2026-11-28)
 
 ### AC3: the approach is agreed only when every seat on the unit's panel has a GO on the note as it stands
 
@@ -76,6 +78,7 @@ As an engineering lead, I want to name which seats review a builder's approach, 
   recorded at round 1 and `approach_agreed` returned `(True, 'GO at round 1 against note digest
   575ed7e198c5')` (E2)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_approach_is_agreed_only_when_every_seat_has_a_go
+- **Verified:** yes (2026-11-28)
 
 ### AC4: the config reference says what the panel does
 
@@ -91,6 +94,7 @@ As an engineering lead, I want to name which seats review a builder's approach, 
   `review.solution_review.panel` (E4), and reference-config.md and config-defaults.yaml have 0
   matches for `solution_review.panel` (E17)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_reference_says_what_the_panel_does
+- **Verified:** yes (2026-11-28)
 
 ## Notes
 

@@ -1,0 +1,6 @@
+UNIT: BG1781
+BRIEF: 501977429816-6e4c9575
+VERDICT: APPROVE
+ISSUES: [pre-existing] a non-UTF-8 bug refuses with "records no Shipped-in release", the wrong cause: that message comes from trace()'s tolerant read before confirm() reaches its own read, a path this diff does not touch (escape.py trace, introduced in ef4d25e2c US1157), and the diff only marks line 224 and the refusal still exits 2 with nothing written
+BLOCKING: none
+RULINGS: AC1 and AC2 run green here (BareArtefactReadSweepTests, test_escape_trace_confirm_unreadable.py, 19 passed with the corpus suite); the change is a one-line marker plus a test and fragment, nothing else.

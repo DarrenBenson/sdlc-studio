@@ -6,7 +6,7 @@
 > **Created:** 2026-11-27
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py, .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py, changelog.d/US1352.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py, .claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py, changelog.d/US1352.md, docs/existing-users.md
 > **Epic:** EP0386
 > **Points:** 2
 > **Depends on:** US1294, US1342, US1346, US1347, US1348, US1350, US1351

@@ -1,6 +1,6 @@
 # BG1778: RPT0028 was signed under the operator's delegation, and nothing discloses it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/reports/RPT0028-sprint-report-run-01m7061x.md, sdlc-studio/reports/RPT0028.json, sdlc-studio/reports/evidence-pack-6.4.0.md, docs/evidence.md, tools/tests/test_lean_delegated_reports_disclosed.py, changelog.d/BG1778.md
@@ -26,7 +26,11 @@ Record the delegation behind RPT0028 as a decision row (as D0640 did for RPT0029
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: RPT0028 (run nine, RUN-01M7061X) was signed by the delegate: its seal commit 45db061c3 quotes the operator's "I authorise you to sign for me".
+  - **Verify:** pytest tools/tests/test_lean_delegated_reports_disclosed.py::DelegatedReportsDisclosedTests::test_each_delegated_report_names_its_decision_and_checks_valid
+  - **Verified:** yes (2026-11-28)
 - [ ] **AC2** The proposed fix lands, pinned by a test: Record the delegation behind RPT0028 as a decision row (as D0640 did for RPT0029 to RPT0034).
+  - **Verify:** pytest tools/tests/test_lean_delegated_reports_disclosed.py::DelegatedReportsDisclosedTests::test_the_evidence_pack_and_page_name_the_delegated_signatures
+  - **Verified:** yes (2026-11-28)
 
 ## Impact
 

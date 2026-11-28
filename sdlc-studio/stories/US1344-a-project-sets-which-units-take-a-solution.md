@@ -1,6 +1,6 @@
 # US1344: A project sets which units take a solution review, and critic.py records a seat's go or changes against the approach note
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0756
 > **Created:** 2026-11-26
@@ -31,6 +31,7 @@ it judged, **so that** a builder builds to an agreed plan and the record proves 
   `review.solution_review.risk_classes`), and the third is refused with exit 2, naming both
   settings and writing nothing. Fails on: HEAD, where `critic.py approach` is an invalid choice.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_setting_decides_which_units_take_the_step
+- **Verified:** yes (2026-11-28)
 
 ### AC2: a verdict is recorded against the note's digest, round by round
 
@@ -42,6 +43,7 @@ it judged, **so that** a builder builds to an agreed plan and the record proves 
   with the revised note's digest, each naming reviewer, author and date. Fails on: HEAD, which
   has no such verb and no such ledger.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_is_bound_to_the_note_digest_round_by_round
+- **Verified:** yes (2026-11-28)
 
 ### AC3: a verdict that cannot stand is refused
 
@@ -52,6 +54,7 @@ it judged, **so that** a builder builds to an agreed plan and the record proves 
 - **Then** each exits 2 with its reason and leaves the ledger unchanged, while a well-formed
   record beside them exits 0 (the positive control). Fails on: HEAD, which has no such verb.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_verdict_that_cannot_stand_is_refused
+- **Verified:** yes (2026-11-28)
 
 ### AC4: the step ships off, and the reference says so
 
@@ -64,6 +67,7 @@ it judged, **so that** a builder builds to an agreed plan and the record proves 
   reference-config.md is no longer than 732 lines. Fails on: HEAD, where `config.py show --key
   review.solution_review.min_points` prints `no key` and exits 1.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_the_step_ships_off_and_the_reference_says_so
+- **Verified:** yes (2026-11-28)
 
 ## Notes
 

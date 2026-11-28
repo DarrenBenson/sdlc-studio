@@ -1,0 +1,61 @@
+{
+  "unit": "BG1781",
+  "digest": "19bc53f3929151be at 823c6a02a3b3",
+  "report": "sdlc-studio/.local/lane/landed/agent-a539a8a5f2f628d92/BG1781-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "confirm read becomes the tolerant reader",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    text = path.read_text(encoding=\"utf-8\")  # bare-read-ok",
+      "new": "    text = sdlc_md.read_text_safe(path) or \"\"  # bare-read-ok",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_the_confirm_read_itself_stays_loud_when_the_trace_read_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "confirm read ignores decode errors",
+      "file": ".claude/skills/sdlc-studio/scripts/escape.py",
+      "old": "    text = path.read_text(encoding=\"utf-8\")  # bare-read-ok",
+      "new": "    text = path.read_text(encoding=\"utf-8\", errors=\"replace\")  # bare-read-ok",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_the_confirm_read_itself_stays_loud_when_the_trace_read_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the stray byte is not written",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py",
+      "old": "bug.write_bytes(bug.read_bytes() + b\"\\nstray byte \\xff\\xfe in the summary\\n\")",
+      "new": "bug.write_bytes(bug.read_bytes() + b\"\\nstray byte in the summary\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_confirm_on_a_non_utf8_bug_refuses_and_writes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: refusal exit code not 2",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py",
+      "old": "            self.assertEqual(2, rc, err)\n            self.assertIn(\"refused\", err)",
+      "new": "            self.assertEqual(0, rc, err)\n            self.assertIn(\"refused\", err)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_confirm_on_a_non_utf8_bug_refuses_and_writes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: loud read test expects another error",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py",
+      "old": "with self.assertRaises(UnicodeDecodeError):",
+      "new": "with self.assertRaises(KeyError):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_the_confirm_read_itself_stays_loud_when_the_trace_read_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: positive control confirms an unproposed unit",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py",
+      "old": "\"--confirm\", \"US0001\",\n                                       \"--root\"",
+      "new": "\"--confirm\", \"US0002\",\n                                       \"--root\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_escape_trace_confirm_unreadable.py::ConfirmOnAnUnreadableBugTests::test_positive_control_a_utf8_bug_is_confirmed",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

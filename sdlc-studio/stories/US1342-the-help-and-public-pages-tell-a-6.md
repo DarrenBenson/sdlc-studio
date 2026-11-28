@@ -1,6 +1,6 @@
 # US1342: The help and public pages tell a 6.4 team how to cap a run's spend, answer a cache-read fall and read a release's change failure rate
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -54,6 +54,7 @@ pages.
   nothing), and whose Reasoning effort paragraph says the plan "stamps both on every unit"
   (line 327) and names no kind.
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_sprint_help_names_the_spend_ceiling_and_effort_by_kind
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the help page `/sdlc-studio sprint help` loads
 
 ### AC2: the help names the cache measures and what a retro then owes
@@ -74,6 +75,7 @@ pages.
   is about an epic's priced set); and help/retro.md at HEAD, which holds no `## Cost` and no
   `cache-read` (`grep -c` prints 0).
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_cache_measures_and_the_retro_they_demand
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the help pages `/sdlc-studio sprint help` and
   `/sdlc-studio retro help` load
 
@@ -100,6 +102,7 @@ pages.
   HEAD, where `escape.py` has only `trace` and `to-class` and `sprint_report.py` has no
   disclosure verb.
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_help_names_the_release_record_failure_rate_and_disclosure
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the help pages `/sdlc-studio gate help`,
   `/sdlc-studio retro help` and `/sdlc-studio sprint help` load
 
@@ -134,6 +137,7 @@ pages.
   at HEAD, whose line 125 bounds a run by `capacity.minutes` and `capacity.units` alone and whose
   line 24 names only the builder's and reviewer's effort.
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_public_pages_name_what_the_widened_65_adds
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the public pages
 
 ### AC5: the upgrade page says how to turn on the solution review
@@ -151,6 +155,7 @@ pages.
   a reason for a 3-point story where the shipped defaults give None. Fails on: existing-users.md
   at HEAD `f946c5460`, which names no solution review and no `solution_review` key.
 - **Verify:** pytest tools/tests/test_lean_docs_v65.py::DocsV65Tests::test_the_upgrade_page_says_how_to_turn_on_the_solution_review
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the upgrade page
 
 ## Notes

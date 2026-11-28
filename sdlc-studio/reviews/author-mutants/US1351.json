@@ -1,0 +1,394 @@
+{
+  "unit": "US1351",
+  "digest": "50db89cbd58815af at 6ef4cac4ef2a",
+  "report": "sdlc-studio/.local/lane/landed/agent-afe55bdc754f63dd7/US1351-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "item-mark-lookbehind",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "r\"(?:(?<=\\s)|^)(\\d+)[.)](?=\\s)\"",
+      "new": "r\"(\\d+)[.)](?=\\s)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_panel_that_seats_nobody_says_the_approach_cannot_be_agreed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item-mark-lookahead",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "r\"(?:(?<=\\s)|^)(\\d+)[.)](?=\\s)\"",
+      "new": "r\"(?:(?<=\\s)|^)(\\d+)[.)]\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_panel_that_seats_nobody_says_the_approach_cannot_be_agreed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item-mark-no-paren",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "r\"(?:(?<=\\s)|^)(\\d+)[.)](?=\\s)\"",
+      "new": "r\"(?:(?<=\\s)|^)(\\d+)[.](?=\\s)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item-sequence-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if int(m.group(1)) == want:\n",
+      "new": "        if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "item-want-frozen",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            want += 1\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "quote-no-unescape",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    text = _unescape(cell or \"\").strip()\n    cuts, want",
+      "new": "    text = (cell or \"\").strip()\n    cuts, want",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-intercept-removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    persona = seat.strip().lower() == _PERSONA and _PERSONA not in _seat_cards(root)\n",
+      "new": "    persona = False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_stakeholder_brief_frames_the_persona_and_no_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-intercept-ignores-card",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    persona = seat.strip().lower() == _PERSONA and _PERSONA not in _seat_cards(root)\n",
+      "new": "    persona = seat.strip().lower() == _PERSONA\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_project_persona_seat_card_keeps_the_seat_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-intercept-identity-row",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    persona = seat.strip().lower() == _PERSONA and _PERSONA not in _seat_cards(root)\n",
+      "new": "    persona = False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_one_identity_brief.py::OneIdentityBriefTests::test_every_brief_the_skill_prints_carries_one_identity",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "brief-held-warn-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if held:\n        warns.append(held)\n    affects",
+      "new": "    affects",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seated-any-seat",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seated = seating is not None and role in seating[\"seats\"]\n",
+      "new": "    seated = seating is not None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_off_the_panel_gets_the_one_seat_brief_and_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "off-panel-warn-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if seating is not None and not seated:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_off_the_panel_gets_the_one_seat_brief_and_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "quote-on-go",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if last is not None and last[\"verdict\"] == \"CHANGES\":\n",
+      "new": "        if last is not None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_s_go_after_its_changes_quotes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "go-digest-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"(digest {now}).\\n\" if last[\"digest\"] == now else",
+      "new": "\"(digest {now}).\\n\" if last[\"digest\"] != now else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_s_go_after_its_changes_quotes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "others-include-self",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "                   else seat_signature(root, s)) for s in seating[\"seats\"] if s != role]",
+      "new": "                   else seat_signature(root, s)) for s in seating[\"seats\"]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_stakeholder_brief_frames_the_persona_and_no_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-footer-reviewer",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    reviewer = f\"{name} (persona)\" if persona else seat_signature(root, seat)\n",
+      "new": "    reviewer = seat_signature(root, seat)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_stakeholder_brief_frames_the_persona_and_no_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seated-rules-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        rules = (f\"Rules: read-only on the repository, except your reply file, creating\\n\"",
+      "new": "        rules = rules or (f\"Rules: read-only on the repository, except your reply file, creating\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_persona_brief_without_a_panel_is_the_one_seat_shape",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-persona-check-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if seat == _PERSONA:\n            name, _card, held = _stakeholder(root, text, shown)\n",
+      "new": "        if False:\n            name, _card, held = _stakeholder(root, text, shown)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-held-warn-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            if held:\n                warns.append(held)\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-latest-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    latest = f\"latest {last['verdict']} at round {last['round']}\" if last else \"no verdict yet\"",
+      "new": "    latest = \"no verdict yet\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-skips-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    lines += [f\"- {seat} is skipped: {why}\" for seat, why in seating[\"skipped\"].items()]",
+      "new": "    lines += [f\"- {seat} is skipped: {why}\" for seat, why in {}.items()]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-nobody-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if seating[\"seats\"] else\n",
+      "new": "        if True else\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_panel_that_seats_nobody_says_the_approach_cannot_be_agreed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-agreed-sentence-lost",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if seating[\"seats\"] else\n",
+      "new": "        if False else\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-unset-branch-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not panel:\n        return (f\"`{_PANEL_KEY}` is unset",
+      "new": "    if panel:\n        return (f\"`{_PANEL_KEY}` is unset",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-reply-round-off",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return f\"{_REPLY_DIR}/{sdlc_md.norm_id(unit)}-{seat}-r{rnd}.md\"",
+      "new": "    return f\"{_REPLY_DIR}/{sdlc_md.norm_id(unit)}-{seat}-r{rnd + 1}.md\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-round-first-row",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            own[-1] if own else None)",
+      "new": "            own[0] if own else None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_s_go_after_its_changes_quotes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-round-all-rows",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    own = [r for r in seating[\"rows\"] if seating[\"seat_of\"](r[\"reviewer\"]) == seat]",
+      "new": "    own = list(seating[\"rows\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_later_round_quotes_the_seat_s_own_changes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-round-unit-count",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return (_solution_round(seating[\"rows\"], reviewer, seating[\"seat_of\"]),",
+      "new": "    return (len(seating[\"rows\"]) + 1,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_names_one_brief_and_one_reply_file_per_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seating-unset-kept",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        panel = solution_review_panel(root)\n        if not panel:\n            return None\n",
+      "new": "        panel = solution_review_panel(root)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_persona_brief_without_a_panel_is_the_one_seat_shape",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seating-malformed-raises",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        seats, skipped = effective_panel(root, unit)\n    except ValueError:\n        return None\n",
+      "new": "        seats, skipped = effective_panel(root, unit)\n    except KeyError:\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_refuses_what_every_brief_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-no-persona",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not _persona_key(name):\n        raise ValueError(f\"{shown} names no Persona",
+      "new": "    if False:\n        raise ValueError(f\"{shown} names no Persona",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-no-registry",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not registry.available:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-missing-card",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if card is None or not card.is_file():\n",
+      "new": "    if card is None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-block-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if persona_review.standard_mode(root) != \"report\":\n",
+      "new": "    if persona_review.standard_mode(root) == \"report\":\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_persona_that_cannot_be_framed_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-typo-reads-report",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if persona_review.standard_mode(root) != \"report\":\n",
+      "new": "    if persona_review.standard_mode(root) == \"block\" and False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_mistyped_persona_standard_refuses_the_held_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-roster-read-unset",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not raw:\n        return []\n    roster",
+      "new": "    if False:\n        return []\n    roster",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_an_unset_panel_reads_no_seat_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-resolves-a-card",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        else:\n            who = seat_signature(root, seat)\n",
+      "new": "        else:\n            who = seat_signature(root, seat) + __import__(\"persona_resolve\").review_card(root, seat).name[:0]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_resolves_no_seat_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-no-review-warn-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    whole = shlex.quote(str(note_path.resolve()))\n\n    def brief",
+      "new": "    whole = shlex.quote(str(note_path.resolve()))\n    warns = []\n\n    def brief",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_panel_warns_on_a_unit_that_takes_no_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-without-persona-checks-it",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    for seat in seating[\"seats\"]:\n        if seat == _PERSONA:\n",
+      "new": "    for seat in seating[\"seats\"]:\n        if seat == _PERSONA or _stakeholder(root, text, shown):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_panel_without_the_persona_prints_whatever_the_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel-unset-returns-none",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not raw:\n        return []\n    roster",
+      "new": "    if not raw:\n        return None\n    roster",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_an_unset_panel_reads_no_seat_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "registry-path-blank",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    reg = \"sdlc-studio/personas/index.md\"\n",
+      "new": "    reg = \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_persona_brief_without_a_panel_is_the_one_seat_shape",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "brief-author-blank",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    author = seat_signature(root, built_by)\n",
+      "new": "    author = \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_persona_brief_without_a_panel_is_the_one_seat_shape",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat-questions-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        questions = _APPROACH_SEAT_QUESTIONS\n",
+      "new": "        questions = \"\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_seat_off_the_panel_gets_the_one_seat_brief_and_a_warning",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

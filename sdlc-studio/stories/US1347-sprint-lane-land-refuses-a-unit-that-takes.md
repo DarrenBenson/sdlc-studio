@@ -1,6 +1,6 @@
 # US1347: sprint lane land refuses a unit that takes a solution review without an agreed approach
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0756
 > **Created:** 2026-11-26
@@ -29,6 +29,7 @@ orchestrator in a hurry.
   <id>`, main does not move, nothing is committed and the worktree stays. Fails on: HEAD, which
   landed two 3-point units with no notes under that setting, exit 0, main fast-forwarded.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_no_note_refuses_the_land_before_anything_moves
+- **Verified:** yes (2026-11-27)
 
 ### AC2: a land without a current GO is refused, naming why
 
@@ -39,6 +40,7 @@ orchestrator in a hurry.
   recorded (with `critic.py approach brief`), the CHANGES round, and the GO's digest beside the
   note's digest now. Fails on: HEAD, where lib/lanes.py reads no solution review.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_land_without_a_current_go_is_refused
+- **Verified:** yes (2026-11-27)
 
 ### AC3: an agreed approach lands, and an unnamed unit lands as before
 
@@ -49,6 +51,7 @@ orchestrator in a hurry.
   digest, and the 1-point unit's output carries no solution review line. Fails on: HEAD, whose
   land output names no solution review for any unit.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_an_agreed_approach_lands_and_an_unnamed_unit_lands_as_before
+- **Verified:** yes (2026-11-27)
 
 ### AC4: the runbook and the sprint help say what land refuses
 
@@ -59,6 +62,7 @@ orchestrator in a hurry.
   the setting, the note, `critic.py approach brief`, `critic.py approach record` and the
   refusal. Fails on: HEAD, where both pages have 0 mentions of a solution review.
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_the_runbook_and_the_sprint_help_say_what_land_refuses
+- **Verified:** yes (2026-11-27)
 
 ## Notes
 

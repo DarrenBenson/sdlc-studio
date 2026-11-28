@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-27
+**Last Updated:** 2026-11-28
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 48 |
+| Open | 49 |
 | In Progress | 0 |
-| Fixed | 1260 |
+| Fixed | 1264 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1778** |
+| **Total** | **1783** |
 
 ## All Bugs
 
@@ -852,8 +852,13 @@
 | [BG1775](BG1775-us1336-did-not-converge-in-review-round-2.md) | US1336 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
 | [BG1772](BG1772-critic-py-raises-on-a-declared-seat-card.md) | critic.py raises on a declared seat card that is not valid UTF-8, so recording a verdict fails with a traceback | Fixed | Low | 2026-11-26 | -- |
 | [BG1776](BG1776-bg1768-did-not-converge-in-review-round-2.md) | BG1768 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
-| [BG1777](BG1777-us1344-did-not-converge-in-review-round-2.md) | US1344 did not converge in review: round 2 REJECT findings | Open | Low | 2026-11-27 | 2026-11-27 |
-| [BG1778](BG1778-rpt0028-was-signed-under-the-operator-s-delegation.md) | RPT0028 was signed under the operator's delegation, and nothing discloses it | Open | Low | 2026-11-27 | 2026-11-27 |
+| [BG1777](BG1777-us1344-did-not-converge-in-review-round-2.md) | US1344 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
+| [BG1778](BG1778-rpt0028-was-signed-under-the-operator-s-delegation.md) | RPT0028 was signed under the operator's delegation, and nothing discloses it | Fixed | Low | 2026-11-27 | 2026-11-27 |
+| [BG1779](BG1779-a-repair-s-recreated-worktree-holds-no-approach.md) | A repair's recreated worktree holds no approach note, so the solution review gate refuses its land | Open | Low | 2026-11-27 | 2026-11-27 |
+| [BG1780](BG1780-critic-recorded-seat-reads-a-reviewer-s-first.md) | `critic.recorded_seat` reads a reviewer's first role group, so a persona named with a parenthetical can be recorded as another seat | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1781](BG1781-escape-py-became-a-tree-walking-scanner-in.md) | escape.py became a tree-walking scanner in US1234, and its bare bug-file read at line 224 now fails the repository's bare-read sweep | Fixed | Low | 2026-11-28 | 2026-11-28 |
+| [BG1782](BG1782-test-lint-corpus-pins-rfc0064-at-accepted-but.md) | `test_lint_corpus` pins RFC0064 at Accepted, but its status is derived from its children and reconcile moved it to Delivered | Fixed | Low | 2026-11-28 | 2026-11-28 |
+| [BG1783](BG1783-critic-py-approach-panel-reports-a-seat-s.md) | `critic.py approach panel` reports a seat's latest GO without saying it is on an older note, and its roster tells seats to record while their brief forbids it | Open | Low | 2026-11-28 | 2026-11-28 |
 
 ## Archived Releases
 

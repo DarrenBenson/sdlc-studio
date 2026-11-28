@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 2 |
 | Approved | 0 |
-| In Progress | 77 |
-| Complete | 569 |
+| In Progress | 76 |
+| Complete | 570 |
 | Rejected | 36 |
 | Deferred | 8 |
 | Superseded | 66 |
@@ -167,7 +167,7 @@
 | [CR-0753](CR0753-the-run-report-compares-each-role-s-cache.md) | The run report compares each role's cache-read share with the project's earlier runs, and the retro names a fall | Complete | Medium | Improvement | 2026-11-25 | EP0381 |
 | [CR-0754](CR0754-routing-effort-takes-an-effort-per-kind-of.md) | routing.effort takes an effort per kind of unit, as routing.floor takes a tier, set from the bench's effort arm | Complete | Low | Improvement | 2026-11-25 | EP0382 |
 | [CR-0755](CR0755-say-the-person-owns-the-prd-and-the.md) | Say the person owns the PRD and the PVD, and the seat holds delegated authority to check the work meets them | Complete | Medium | Feature | 2026-11-25 | EP0384 |
-| [CR-0756](CR0756-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, so the first code review judges work built to an agreed plan | In Progress | High | Feature | 2026-11-26 | EP0385 |
+| [CR-0756](CR0756-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, so the first code review judges work built to an agreed plan | Complete | High | Feature | 2026-11-26 | EP0385 |
 | [CR-0757](CR0757-a-subagent-carries-exactly-one-persona-and-a.md) | A subagent carries exactly one persona, and a unit's solution review is a panel with one agent per seat and its stakeholder | In Progress | High | Feature | 2026-11-26 | EP0386 |
 | [CR-0758](CR0758-an-irreversible-action-waits-for-the-operator-on.md) | An irreversible action waits for the operator on its own, and the rest of an autonomous run keeps going | Proposed | medium | Feature | 2026-11-27 | -- |
 
