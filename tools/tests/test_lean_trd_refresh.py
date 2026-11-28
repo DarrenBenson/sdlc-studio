@@ -51,6 +51,7 @@ import file_finding  # noqa: E402
 import gate  # noqa: E402
 import gitutil  # noqa: E402 - confined git for the scratch and fixture repositories
 import ledger  # noqa: E402
+import release_cut  # noqa: E402 - the writer of the release records
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
 import persona_memory  # noqa: E402
@@ -411,9 +412,19 @@ AUTHOR_MUTANTS = (Path("sdlc-studio") / "reviews" / critic.AUTHOR_MUTANTS_DIR
 def pending_records() -> set[str]:
     """The records the code writes that this repository need not track yet, each held to its
     row and not to a tracked file: a persona's learnings, a release's evidence pack and the
-    persona review ledger, each read from its writer's code."""
+    persona review ledger, and, only while git tracks no file at its path, the release records
+    and the solution review ledger, each read from its writer's code. Once git tracks one of
+    those two, it is no longer pending, so its listed path must track that file."""
     return {persona_memory.memory_path("", "<persona>").as_posix(),
-            evidence_pack.pack_rel("<version>"), persona_review.LEDGER_REL.as_posix()}
+            evidence_pack.pack_rel("<version>"), persona_review.LEDGER_REL.as_posix(),
+            *(p for p in until_tracked_records() if not _tracked(p))}
+
+
+def until_tracked_records() -> tuple[str, ...]:
+    """The records pending only until git tracks a file at the path: the release records
+    `release_cut.py changelog-cut` writes and the solution review ledger `critic.py approach
+    record` appends to."""
+    return (release_cut.RELEASES_REL, critic.solution_reviews_path("").as_posix())
 
 
 def unlisted(files: list[str], listed: set[str]) -> list[str]:
@@ -561,8 +572,9 @@ class TrdStorageTests(unittest.TestCase):
         is read from the writers' code: the actuals and forecast shards, the lessons store, the
         verdict log of each `critic.PHASES` phase, the verdict files a brief issues, the
         self-check log, the author mutant lists, the reports, the run records, and the persona
-        memory files, a release's evidence pack and the persona review ledger. A listed path's
-        `<placeholder>` matches any name."""
+        memory files, a release's evidence pack and the persona review ledger, and the release
+        records and the solution review ledger, each while git tracks no file at its path. A
+        listed path's `<placeholder>` matches any name."""
         section = _section(_trd_body(), "Committed evidence and records")
         table = _one_table(section, "Record")
         col = table[0].index("Path")
@@ -575,8 +587,8 @@ class TrdStorageTests(unittest.TestCase):
             critic.VERDICTS_DIR_REL / "<unit>" / "<fp>-<token>.txt",
             report_dir / f"{sdlc_md.META_TYPES['report'][1]}*.json",
             run_state.tracked_path("", "*"))} | {AUTHOR_MUTANTS}
-        # Records the code writes that need not be tracked yet: no learning, release pack or
-        # persona review has been recorded here, so each is held to its row, not a tracked file.
+        # Records the code writes that need not be tracked yet, each held to its row, not a
+        # tracked file: `pending_records()` names them, two only while git tracks neither.
         pending = pending_records()
         self.assertIn("sdlc-studio/lessons.jsonl", expected)
         self.assertEqual(sdlc_md.META_TYPES["report"][0], report_dir.as_posix())

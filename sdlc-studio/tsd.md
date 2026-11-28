@@ -441,7 +441,7 @@ adjoins either end of it.
 | **Security** - "The skill stores no secret"; "sent only in the Cursor usage request's header"; "secret handling is the consuming project's concern" | `test_meter_cursor.py::CursorCloudTests`: the key goes out only in the request's header and no reading carries it. No secret scanner runs; the rest is by design (no GitHub token handling; `gh` owns auth) and by code review. | Partial (the Cursor key) | [MEDIUM] |
 | **Scalability** - "Progressive disclosure keeps always-loaded context minimal" | `check_budgets.py`: `SKILL.md` must be under 500 lines, and a long `reference-*.md` within the ceiling `check_budgets.py` records for it. Hard gate via `lint:budgets`; new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
 | **Scalability** - "Agentic waves bound concurrency" | Not gated. `sprint.py` computes the waves as dependency levels (`_topo_waves`, held by `test_sprint.py::WaveTests`), and `_topo_waves` caps no wave's size: the bound on concurrency is the instruction in `reference-agentic-lessons.md`. | No | [MEDIUM] |
-| **Scalability** - "the appetite breaker bounds an unattended run" | `test_loop_guard.py::BudgetVerdictTests` trips the breaker when the appetite's minutes or units are spent, `test_loop_guard.py::BudgetExitCodeTests` gives it an exit code distinct from quarantine's, and `test_loop_guard.py::BudgetCliTests` drives `loop_guard.py budget` from a recorded run state. | Yes (the suite) | [HIGH] |
+| **Scalability** - "the appetite breaker bounds an unattended run" | `test_loop_guard.py::BudgetVerdictTests` trips the breaker on the minutes and units axes, `test_loop_guard.py::BudgetExitCodeTests` gives it an exit code distinct from quarantine's, and `test_loop_guard.py::BudgetCliTests` drives `loop_guard.py budget` from a recorded run state. `test_loop_guard_spend.py::LoopGuardSpendTests` holds the spend axis: `test_spend_at_the_appetite_stops_the_run_and_marks_nothing` stops the run at the appetite, `test_spend_warns_at_75_and_95_per_cent` warns at each share `loop_guard.SPEND_WARNINGS` names, `test_an_unreadable_meter_is_named_and_minutes_still_stop_the_run` and `test_a_meter_with_no_usage_yet_is_unread_with_its_own_reason` leave an unread meter unjudged, and `test_the_spend_appetite_resolves_flag_then_run_then_config_and_ships_unbounded` holds the resolution order. | Yes (the suite) | [HIGH] |
 | **Scalability** - "Schema-v3 ULID identity" | `test_sdlc_md.py::UlidIdentityTests`: a new ULID sorts by time and carries randomness, and the id pattern, the cell search and `norm_id` read both eras; `test_lean_next_id_v3.py::NextIdV3Tests`: a schema-v3 project is allocated no sequential id. No test runs uncoordinated writers on separate machines. | Partial (unit) | [MEDIUM] |
 | **Availability** - "the core pipeline needs no network"; "Sync FAILS LOUD rather than degrading"; "Callers must handle that non-zero exit"; "Graceful degradation is deliberately NOT implemented" | `test_lean_prd_refresh.py::PrdRulesTests` holds each shipped script whose source makes a `gh`, `fetch origin` or HTTP call to the PRD's Security list, so a call outside the core pipeline's named paths fails the suite. `github_sync.py` does not degrade gracefully: with `gh` absent it aborts with a clear error (exit 127), asserted by `test_github_sync.py`, so callers must handle the non-zero exit (D0071). | Partial (unit) | [MEDIUM] |
 
@@ -767,6 +767,16 @@ rerun, and the operator is asked. Otherwise it answers `regression` and files a 
 `main` is green; a regression none of whose failing tests names a file in the tree is refused,
 with the instruction to file it by hand. No answer skips or deselects a test, and the command exits 0 only on `rerun`.
 
+### Change failure rate
+
+`escape.py failure-rate` derives change failure rate from the release records
+`release_cut.py changelog-cut` writes: the releases with a linked incident over the releases
+counted, in a 90-day window. A release inside the 14-day settling period is named as pending
+and counted neither way. With no release record in the window, every release pending or no
+incident recorded, the rate reads not measured, never zero. It differs from the change failure
+figure `deploy.py metrics` counts from the deploy ledger, its failed and rolled-back rows over
+all its rows, and from the sprint report's DORA row, which counts push-triggered CI runs.
+
 ---
 
 ## Tools and Infrastructure
@@ -878,6 +888,7 @@ one is set (see Pipeline Stages), whose `full-suite` lane runs both suites once,
 | 2026-11-16 | US1172 | The 6.4 work on `main`: the commit stage says a module or class marked `# test-selection: sweep` joins every commit's selection, held to a 30-second budget; the push stage, the test-noise paragraph and the hooks note say the push gate runs inside `tools/run-suite.sh --noise-gate`, CI's green-run noise budget; and the integration level says the evidence annex's tests hold every committed report to `reference-evidence-schema.md` |
 | 2026-11-16 | US1173 | The release cut: the header's Coverage baseline moves to v6.4.0, and the work on `main` beside it to 6.5 |
 | 2026-11-18 | BG1518 | The weekly `corpus-verify` run has a reader: the push stage and Pipeline Stages item 6 say the pre-push red-main read also reads the latest scheduled Lint run on main, and a quality-gate row names it |
+| 2026-11-27 | US1343 | The Scalability row names the spend axis and the `test_loop_guard_spend.py` tests that hold it, and Defect Management gains the change failure rate passage |
 
 ---
 

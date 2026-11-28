@@ -616,6 +616,8 @@ for any name.
 | Persona memory | `sdlc-studio/personas/memory/<persona>.md` | `persona_memory.py`, and through it `sprint.py close` and `sprint.py sign` | Each persona's evidenced learnings, one file per seat role or user persona card: `persona_memory.py` records a learning as proposed and another seat's approval or rejection of it, the close stamps each approved learning it lists, and `sprint.py sign --strike` strikes one. A brief carries a learning only once a signed close has listed it. |
 | Persona reviews | `sdlc-studio/reviews/persona-reviews.md` | `persona_review.py record` | The append-only ledger of persona and seat card reviews against the persona standard, one row per review: the card, its body hash, the outcome, the reviewer and seat, who ran it, the date and the rules a FAIL names. A PASS is refused while a blocking rule fails, and a card's latest review is read from it. This repository has recorded no review yet. |
 | Release evidence pack | `sdlc-studio/reports/evidence-pack-<version>.md` | `release_cut.py evidence-pack`, through `evidence_pack.py` | A release's evidence, built from the signed reports it names as committed: each delivered unit's criteria with their Verify lines, each independent seat's latest verdict, the known issues that name it and its report's signing principal. An unsigned or unknown report refuses the build, and nothing is written. |
+| Release records | `sdlc-studio/reports/releases.jsonl` | `release_cut.py changelog-cut` | One JSON line per version the cut writes, naming its date, the previous release and the signed reports it shipped; `escape.py failure-rate` reads it. |
+| Solution reviews | `sdlc-studio/reviews/solution-reviews.md` | `critic.py approach record` | The append-only ledger of solution reviews, one row per seat's GO or CHANGES on a unit's approach note, bound to the note's digest. |
 
 A flaky bug's `## CI Red Runs` section is written by `gate.py --red-run`, which appends one line
 per red of a run to each open flaky bug naming one of its failing tests, the red's number in the
@@ -660,7 +662,7 @@ closing a record still running `blocked`; `sprint.py boundary --strict` adds ori
 | File | Writer | Purpose |
 | --- | --- | --- |
 | `project-state.json` | the agent running `project implement` (`reference-project.md`) | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
-| `run-state.json` | `lib/run_state.py`, called by `sprint.py`, `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` | The live run record (Run state, above): the run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
+| `run-state.json` | `lib/run_state.py`, called by `sprint.py`, `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` | The live run record (Run state, above): the run's identity, batch, resolved appetite and outcome, written under a lock. The appetite carries the spend axis (`spend`, `standing_spend`, `over_spend`) once a spend ceiling is resolved, and a resize records the decision behind each spend raise. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
 | `sprint-plan.json` | `sprint.py` | The plan `sprint.py plan` derived, its batch and recorded test strategy, which `handoff.py` reads. [HIGH] |
 | `goal-review.json` | `sprint.py` | The review seats' verdicts on the run's goal, written by `sprint.py goal-review record`. [HIGH] |
 | `briefs.jsonl` | `critic.py` | A note of each brief `critic.py brief` prints, so `critic.py record` can tell a verdict taken against a scope the unit has since outgrown. [HIGH] |
@@ -914,7 +916,7 @@ one harness the environment signals, else the one store on disk), and each readi
 with `includes_subagents` whether delegated agents' spend is in it. A reading that holds it
 is the whole figure and one that leaves it out is a lower bound, because that spend is then
 supplied by each agent's reported total, when one is, rather than observed in the store, so
-tokens warn while minutes and units stop a run. See §12.
+the spend appetite (ADR-015) can stop a run late but never early. See §12.
 
 ---
 
@@ -1448,8 +1450,9 @@ key.
   decision behind it, so a change board can see who authorised it.
 - Negative: several runs can wait for signatures at once, and a later run builds on work no one
   has signed yet; `status.py` lists each waiting run so none is forgotten.
-- RFC0060's D6 is closed by this ruling. D0504 keeps the signatures already on RPT0030 to
-  RPT0034, each with a line naming the decision that authorised it (CR0730).
+- RFC0060's D6 is closed by this ruling. D0504 keeps the signatures already on RPT0028 to
+  RPT0034, and `sprint_report.py disclose` gave each a line naming the decision that authorised
+  it, each report still reading VALID (CR0730, D0640).
 
 ---
 
@@ -1485,6 +1488,38 @@ command that installs it.
   installed, a breaking change for that machine; the scripts now need a third-party
   package, so the supply chain carries one (§9).
 - `lizard` and `coverage` stay soft dependencies, which a feature degrades without.
+
+### ADR-015: The spend appetite stops a run, counted in priced input-equivalent tokens
+
+**Status:** Accepted (D0637, 2026-11-26)
+
+**Context:** The appetite breaker stopped an unattended run on minutes and units alone, and §13
+ruled out a token figure that stops a run, because the session total is a lower bound. A run
+could spend far past what its operator meant while both axes stayed under their ceilings.
+
+**Alternatives considered:**
+
+- *A ceiling in dollars.* A person reads it directly, but a dollar figure rests on each
+  harness's price table, and the reports and `capacity.*` already count priced
+  input-equivalent tokens.
+- *Failing closed:* stop the run whenever the meter cannot read. Not taken: a harness with no
+  readable meter would be halted at every boundary.
+- *Reusing `capacity.tokens`* as the ceiling. Not taken: it is the plan's forecast, which warns,
+  and making it stop a run would change every project that set it.
+
+**Decision:** `capacity.spend` and `appetite.spend` set a spend appetite, counted in priced
+input-equivalent tokens, not dollars, which `loop_guard.py budget` judges at each unit boundary:
+it warns at 75 and 95 per cent and stops the run with exit 4 at the appetite. The reading is a
+lower bound, so the breaker can fire late but never early. A meter that cannot read leaves spend
+unjudged at that boundary and says why, while minutes and units still judge. Both keys ship at
+0, so no project's run changes until it sets a value, and a raise mid-run
+(`sprint.py appetite resize --spend`) needs a recorded decision, named with `--decision`.
+
+**Consequences:**
+
+- Positive: an unattended run stops on what it has spent, not only on time and units.
+- Negative: a reading that leaves delegated agents' spend out lets a run pass its appetite
+  before the breaker sees it.
 
 ## 12. Open Technical Questions
 
@@ -1542,10 +1577,11 @@ touches the component. The constraints below span components.
 - Executable conformance tests for the markdown command flows (the eval scenarios are a
   partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
-- A token budget that gates. The session total is read from the running harness's store,
-  and a reading that leaves delegated agents' spend out is a lower bound, because that spend
-  is then supplied by each agent's reported total, when one is, rather than observed, so a
-  number could never be a breaker; tokens warn, minutes and units stop the run.
+- A spend ceiling counted in dollars. The spend appetite (ADR-015) is counted in priced
+  input-equivalent tokens, read from the running harness's store, and a reading that leaves
+  delegated agents' spend out is a lower bound, because that spend is then supplied by
+  each agent's reported total, when one is, rather than observed, so the breaker can fire
+  late but never early.
 - Auto-refitting of the estimator's fitted constants from the velocity history. Curve-
   fitting a handful of sprints fits noise and dresses it as evidence; a human reads the
   trend and decides. (This is distinct from what the shipped loop DOES do: once a project
@@ -1587,6 +1623,7 @@ touches the component. The constraints below span components.
 | 2026-11-19 | 6.4.0 | BG1516: the lane runner's network row says a timed-out lane is recorded unmetered, and Headless lane runner and its threat row say nothing in the runner stops a lane committing, pushing or writing outside its worktree. BG1531: rule 5 names every meta index `review_prep.py close` backfills through `reconcile.apply_meta`. BG1096: the coverage clause gives the run's exit 2 and names the Done gate as the block/report split. BG1556: §6 lists the decision log and the per-tranche ledgers, and rule 5 names `decisions.py` and `ledger.py` each with its own store. BG1557: System Context names every external service, the C4 note and the install table give paths that exist, and §10 and §12 cite 21 units with 19 measured and the build-only condition. BG1565: ADR-012's Built so far names US1065 beside US1058, US1059 and US1066 to US1068, as 6.4.0 ships them. BG1621: §6 lists the author mutant lists. US1299: ADR-014 records D0505, §9 gains the PyYAML threat row, and no section calls the scripts standard library only |
 | 2026-11-20 | 6.4.0 | US1052: ADR-012's Built so far names `persona_review.py` and the persona standard it reports cards against, and Not yet built keeps the memory directory and names the refusal of a card that breaks a blocking rule (US1055) |
 | 2026-11-20 | 6.4.0 | US1055: ADR-012's Built so far names the refusal of a project card that breaks a blocking rule or whose latest review failed, at every entry point that resolves it, and Not yet built keeps only the memory directory |
+| 2026-11-27 | 6.4.0 | The widened 6.5 (US1343): §10 and §13 no longer say tokens only warn, ADR-015 records the spend appetite (D0637), §6's committed records gain the release records and the solution review ledger, the `run-state.json` row names the spend axis and the decision behind each spend raise, and ADR-013's closing bullet names `sprint_report.py disclose` |
 
 ---
 

@@ -1,4 +1,4 @@
-"""US1329 (EP0379): the PRD, TRD and TSD describe what 6.5 ships.
+"""US1329 and US1343 (EP0379): the PRD, TRD and TSD describe what 6.5 ships.
 
 Each fact a row states is read from the code that makes it true wherever the code holds it: the
 verbs and options from each script's `build_parser()`, the flag defaults from
@@ -8,6 +8,10 @@ runner's verdicts from `mutation.EDIT_RESULTS`, and the red-run answers from `ga
 on a fixture project. Whether `ci.wait_timeout_minutes` has a reader is judged by the status
 BG1613's own file records, so a later fix does not turn this test red. Typed here are the units,
 since no code enumerates which units built a feature, and the phrases each row must say.
+The widened release's facts (US1343) are read the same way: the spend appetite's exit code,
+warnings and options from `loop_guard` and `sprint`, the cache measures from `retro`,
+`cost_anatomy` and `sprint_report`, the release record from a fixture cut, the rate's window
+and settling period from `escape`, and the solution review ledger from `critic`.
 
 Run from the repo root:
     python3 -m pytest tools/tests/test_lean_specs_v65.py
@@ -16,6 +20,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import argparse
+import ast
 import fnmatch
 import importlib.util
 import inspect
@@ -37,19 +42,28 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SCRIPTS / "tests"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
+import deploy  # noqa: E402
+import escape  # noqa: E402
 import file_finding  # noqa: E402
 import gate  # noqa: E402
 import gitutil  # noqa: E402 - git with the confined environment
+import loop_guard  # noqa: E402
 import mutation  # noqa: E402
 import persona_review  # noqa: E402
 import reconcile  # noqa: E402
+import release_cut  # noqa: E402
+import retro  # noqa: E402
+import sprint  # noqa: E402
+import sprint_report  # noqa: E402
 
 import test_lean_trd_refresh as trd_refresh  # noqa: E402 - the committed-records scanner
 import test_lean_v61_review_residue as residue  # noqa: E402 - the `.local` writer pin
-from lib import drive, lanes, sdlc_md  # noqa: E402
+from lib import cost_anatomy, drive, lanes, run_state, sdlc_md  # noqa: E402
+from test_lean_delegated_reports_disclosed import DISCLOSED  # noqa: E402 - the six disclosed
 from test_lean_prd_refresh import location_problems, unknown_commands  # noqa: E402
 from test_lean_specs_v64 import (  # noqa: E402 - the 6.4 test's readers of the same pages
-    CONFIG_REF, SPECS, STORIES, _body, _flat, _read, _rows, _section, _spans, _unquote,
+    CONFIG_REF, SPECS, STORIES, _body, _flat, _read, _rows, _section, _spans, _tables,
+    _unquote,
     config_defaults, handler, reaches, verbs, writer_problems)
 
 #: Each 6.5 feature: the marks its inventory row must name (a location the skill or repo holds,
@@ -83,6 +97,13 @@ FEATURES = {
     "harness and enterprise pages": (
         ("docs/harnesses.md", "docs/enterprise.md", "harness-agnostic"),
         ("US1315", "US1316", "US1317", "US1318", "US1319", "US1320", "US1321")),
+    "solution review": (
+        ("scripts/critic.py", "reference-scripts-review.md", "critic.py approach brief",
+         "critic.py approach record", f"sdlc-studio/reviews/{critic.SOLUTION_REVIEW_FILE}",
+         "review.solution_review.min_points", "review.solution_review.risk_classes",
+         "critic.py approach panel", "critic.py approach spend", "review.solution_review.panel",
+         "sprint.py lane brief", "first-round approval and rounds per unit"),
+        tuple(f"US{n}" for n in range(1344, 1354))),
 }
 #: A Location mark: a path the skill or the repository root holds, with an optional anchor.
 _LOCATION = re.compile(r"^(?:scripts/|templates/|reference-|help/|docs/|best-practices/)")
@@ -96,7 +117,9 @@ OPTIONS = (("mutation", "run", ("--edits", "--scope", "--report")),
            ("sprint", "drive", ("--after",)))
 #: The 6.5 keys the flags table must list at the defaults `reference-config.md` states.
 FLAGS = ("personas.standard", "ci.wait_timeout_minutes", "ci.rerun_limit",
-         "review.rendered_paths")
+         "review.rendered_paths", "review.solution_review.min_points",
+         "review.solution_review.risk_classes",
+         "review.solution_review.panel")
 #: The bug that records `ci.wait_timeout_minutes` has no reader.
 NO_READER_BUG = "BG1613"
 
@@ -163,6 +186,81 @@ def harness_claim_problems(cell: str) -> list[str]:
         out.append("the row quotes nothing SKILL.md says")
     out += [f"SKILL.md's front matter does not say {q!r}" for q in quoted if q not in front]
     return out
+
+
+def subverbs(script: str, verb: str) -> dict[str, argparse.ArgumentParser]:
+    """The sub-verbs `script`'s `verb` subparser takes, by name, read from its parser."""
+    parser = verbs(script)[verb]
+    return next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
+
+
+def inventory(prd: str, table: str = "3. Feature Inventory") -> list[list[str]]:
+    """The Feature Inventory's rows, or those of one of its tables by heading."""
+    return _rows(_section(prd, table), "Feature")
+
+
+def flag_rows(prd: str) -> dict[str, tuple[str, str]]:
+    """Each key the PRD's Feature Flags table lists: (its default, its Effect, flattened)."""
+    return {key: (_unquote(row[1]), _flat(row[2]))
+            for row in _rows(_section(prd, "Feature Flags"), "Key") for key in _spans(row[0])}
+
+
+def row_problems(rows: list[list[str]], marks: tuple[str, ...], units: tuple[str, ...]) -> list[str]:
+    """Why no one inventory row names every mark, is Complete, names a Location that resolves
+    and no `<script>.py <verb>` its script lacks, and names each unit as a whole word."""
+    hits = [r for r in rows if all(m in " | ".join(r) for m in marks)]
+    if len(hits) != 1:
+        return [f"{len(hits)} rows name {marks}"]
+    row = hits[0]
+    return ([] if row[2] == "Complete" else [f"{row[0]} is {row[2]}, not Complete"]) \
+        + location_problems(row[4]) + unknown_commands(row[1]) \
+        + [f"{row[0]} does not name {u}" for u in units if not re.search(rf"\b{u}\b", row[5])]
+
+
+def one_row(rows: list[list[str]], marks: tuple[str, ...]) -> list[str]:
+    """The one inventory row naming every mark."""
+    return next(r for r in rows if all(m in " | ".join(r) for m in marks))
+
+
+def disclosed_range() -> str:
+    """The reports `sprint_report.py disclose` gave a disclosure line, as `RPTa to RPTb`, each
+    checked to carry a delegated signature in its own JSON."""
+    ids = sorted(DISCLOSED)
+    for rid in ids:
+        sig = sprint_report.read_report(REPO, rid).get("signature") or {}
+        if not sig.get("delegated"):
+            raise AssertionError(f"premise: {rid}'s signature records no delegation")
+    return f"{ids[0]} to {ids[-1]}"
+
+
+def cut_fixture(root: Path) -> dict:
+    """The record `release_cut.py changelog-cut`'s cut writes in a fixture project at `root`,
+    read back from the path it wrote, which must be `release_cut.RELEASES_REL`."""
+    (root / "CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n\n### Added\n\n- probe\n",
+                                       encoding="utf-8")
+    release_cut.cut_changelog(root, "9.9.9")
+    written = [p.relative_to(root).as_posix() for p in root.rglob("*.jsonl")]
+    if written != [release_cut.RELEASES_REL]:
+        raise AssertionError(f"premise: the cut wrote {written}")
+    lines = (root / release_cut.RELEASES_REL).read_text(encoding="utf-8").splitlines()
+    return json.loads(lines[0]) if len(lines) == 1 else {"lines": lines}
+
+
+def pending_when_tracked(path: str) -> set[str]:
+    """`pending_records()` with git tracking a file at `path` alone."""
+    with mock.patch.object(trd_refresh, "_tracked",
+                           side_effect=lambda *spec: [path] if spec == (path,) else []):
+        return trd_refresh.pending_records()
+
+
+#: The tests that hold the spend axis, each named on the TSD's Scalability row.
+SPEND_TESTS = ("test_spend_at_the_appetite_stops_the_run_and_marks_nothing",
+               "test_spend_warns_at_75_and_95_per_cent",
+               "test_an_unreadable_meter_is_named_and_minutes_still_stop_the_run",
+               "test_a_meter_with_no_usage_yet_is_unread_with_its_own_reason",
+               "test_the_spend_appetite_resolves_flag_then_run_then_config_and_ships_unbounded")
+_WORDS = {5: "five", 10: "ten"}
+
 
 
 class SpecsV65Tests(unittest.TestCase):
@@ -461,6 +559,326 @@ class SpecsV65Tests(unittest.TestCase):
         finally:
             sys.modules["file_finding"] = before
         self.assertIs(before, sys.modules["file_finding"], "the fresh copy is taken out again")
+
+
+    def test_the_prd_names_the_widened_cost_controls(self) -> None:
+        """US1343 AC1. Mutants: the PRD at its base, where no row names `--appetite-spend`,
+        `capacity.spend`, `cache_read_trend`, `cost_cache_writes` or a `docs` effort entry; any
+        mark below dropped from its row, or a unit, or the row not Complete; "Over-budget WARNS,
+        never gates" or "The plan stamps both on every unit" put back; the annex row at a
+        version other than `sprint_report.EVIDENCE_SCHEMA_VERSION`."""
+        prd = _body(_read(SPECS["prd"]))
+        rows = inventory(prd)
+        self.assertIn("--appetite-spend", options("sprint", "plan"))
+        self.assertIn("--appetite-spend", options("loop_guard", "budget"))
+        self.assertIn("resize", next(a.choices for a in verbs("sprint")["appetite"]._actions
+                                     if a.dest == "action"))
+        self.assertLessEqual({"--spend", "--decision"}, options("sprint", "appetite"))
+        self.assertIn("validate", verbs("retro"))
+        self.assertIn("--anatomy", options("sprint", "cost"))
+        source = _read(SCRIPTS / "sprint_report.py")
+        for key in ("cache_read_trend", "cost_cache_writes"):
+            self.assertIn(f'_section("{key}"', source, f"premise: no {key} section")
+        warn = sorted(loop_guard.SPEND_WARNINGS)
+        lives = sorted(life for life, _key in cost_anatomy.CACHE_LIFETIMES.values())
+        self.assertEqual([300, 3600], lives, "premise: the cache lifetimes moved")
+        kinds = sprint.EFFORT_KINDS
+        rows_wanted = {
+            "sprint capacity": (("Sprint capacity", "`capacity.spend`",
+                                 "counted in priced input-equivalent tokens",
+                                 "feed the breaker that stops the run"), ("US1332", "US1333")),
+            "run appetite": (("Run appetite / breaker", "`--appetite-spend`",
+                              f"at a unit boundary with exit {loop_guard.BUDGET_EXIT}",
+                              "counted in priced input-equivalent tokens",
+                              f"warns at {warn[0]} and {warn[1]} per cent",
+                              "A meter that cannot read leaves it unjudged at that boundary while "
+                              "minutes and units still stop the run",
+                              "`sprint.py appetite resize --spend` raises it only with "
+                              "`--decision`"), ("US1332", "US1333")),
+            "dispatch effort": (("Cost forecast and dispatch effort",
+                                 f"`{kinds[0]}`, `{kinds[1]}` and `{kinds[2]}` entries set it for "
+                                 "each kind of unit",
+                                 "the plan stamps each unit's resolved effort, and its kind"),
+                                ("US1336",)),
+            "cost anatomy": (("Cost anatomy", "split into growth and re-writes after the "
+                              f"{lives[0] // 60}-minute and {lives[1] // 3600}-hour cache "
+                              "lifetimes expire", "a reviewer recorded with its seat is counted"),
+                             ("US1337", "BG1764")),
+            "cache measures": (("`cache_read_trend`", "`cost_cache_writes`",
+                                f"over the last {_WORDS[sprint_report.CACHE_TREND_RUNS]} signed "
+                                "runs", f"a `{retro.CACHE_READ_ISSUE}` known issue",
+                                f"more than {_WORDS[retro.CACHE_READ_FALL_POINTS]} points",
+                                "`retro.py validate` demands a bullet of the retro's "
+                                f"`## {retro.COST_SECTION}` section naming that role"),
+                               ("US1334", "US1335", "US1338")),
+            "evidence annex": (("Evidence annex and committed run record",
+                                f"at annex version {sprint_report.EVIDENCE_SCHEMA_VERSION}"),
+                               ("US0992",)),
+        }
+        for name, (marks, units) in rows_wanted.items():
+            with self.subTest(row=name):
+                self.assertEqual([], row_problems(rows, marks, units))
+        self.assertNotRegex(" | ".join(one_row(rows, ("Sprint capacity",))), r"(?i)never gates")
+        self.assertNotIn("stamps on every unit", " | ".join(one_row(rows, ("dispatch effort",))))
+        self.assertNotIn("The plan stamps both on every unit", prd)
+        self.assertEqual({sprint_report.EVIDENCE_SCHEMA_VERSION},
+                         set(re.findall(r"annex version (\d+\.\d+)", " ".join(map(str, rows)))))
+        # Controls: a unit missing, a mark missing and a row not Complete are each refused.
+        row = one_row(rows, ("Run appetite / breaker",))
+        marks, units = rows_wanted["run appetite"]
+        self.assertEqual(["Run appetite / breaker does not name US1333"], row_problems(
+            [[*row[:5], row[5].replace("US1333", "US9999")]], marks, units))
+        self.assertEqual([f"0 rows name {marks}"], row_problems(
+            [[row[0], row[1].replace("exit 4", "exit 3"), *row[2:]]], marks, units))
+        self.assertEqual(["Run appetite / breaker is Partial, not Complete"], row_problems(
+            [[*row[:2], "Partial", *row[3:]]], marks, units))
+
+    def test_the_prd_names_the_release_record_disclosure_and_ownership(self) -> None:
+        """US1343 AC2. Mutants: the PRD at its base, with no "release record", "change failure",
+        "person owns", "authority the person" or "settling"; a mark below dropped, a unit, or a
+        Location given an anchor the page lacks; the release row naming `deploy.py metrics`'s
+        ledger figure for the report's CI-run rate; the disclosed range not the reports'."""
+        prd = _body(_read(SPECS["prd"]))
+        rows = inventory(prd)
+        self.assertIn("changelog-cut", verbs("release_cut"))
+        self.assertIn("failure-rate", verbs("escape"))
+        self.assertLessEqual({"disclose", "check"}, set(verbs("sprint_report")))
+        self.assertIn("seats", verbs("retro"))
+        self.assertTrue(reaches("retro", handler("retro", "seats"), "release_rate"))
+        self.assertLessEqual({"dora", "release_cfr"}, set(sprint_report.APPENDIX))
+        self.assertIn("PUSH-TRIGGERED runs alone", inspect.getdoc(sprint_report._dora_rows))  # noqa: SLF001
+        with tempfile.TemporaryDirectory() as d:
+            record = cut_fixture(Path(d))
+            pending = escape.failure_rate(d)
+            (Path(d) / release_cut.RELEASES_REL).unlink()
+            empty = escape.failure_rate(d)
+        self.assertEqual({"version", "date", "previous", "reports"}, set(record))
+        self.assertEqual((["9.9.9"], None), (pending["pending"], pending["rate_percent"]))
+        self.assertIsNone(empty["rate_percent"])
+        self.assertTrue(empty["not_measured"])
+        disclosed = disclosed_range()
+        self.assertEqual("RPT0028 to RPT0034", disclosed, "premise: the disclosed reports moved")
+        section = _flat(_section(_read(SKILL / "reference-workflow-personas.md"),
+                                 "Seats for the requirements documents"))
+        for phrase in ("The person owns every document the skill keeps",
+                       "with authority the person delegates", "signs that document's review leg",
+                       "proposes as a change request", "the person decides it", "asks the person"):
+            self.assertIn(phrase, section, "premise: the seats section moved")
+        rows_wanted = {
+            "release record": (("Release record and change failure rate",
+                                "`release_cut.py changelog-cut` writes one record per version to "
+                                f"`{release_cut.RELEASES_REL}`, naming its date and the reports "
+                                "signed since the previous release",
+                                "`escape.py failure-rate` counts the releases with a linked "
+                                "incident over the releases counted",
+                                f"in a {escape.WINDOW_DAYS}-day window",
+                                f"names a release inside the {escape.SETTLE_DAYS}-day settling "
+                                "period as pending", "reads not measured, never 0%, with no "
+                                "release or incident record", "in its `release_cfr` section",
+                                "beside the change failure rate its `dora` section counts from "
+                                "push-triggered CI runs", "`retro.py seats` shows it"),
+                               ("US1233", "US1234", "US1235")),
+            "disclosure": (("Delegated and waiting signatures", "`sprint_report.py disclose` puts "
+                            "that disclosure line on a report already signed",
+                            "which `sprint_report.py check` still reads VALID",
+                            f"gave {disclosed} theirs"), ("US1294", "US1295")),
+            "ownership": (("Document ownership", "The person owns the PRD and the PVD and every "
+                           "other document the skill keeps", "The Product Owner or Product Manager "
+                           "seat checks the work against its document under authority the person "
+                           "delegates and signs its review leg", "it corrects a fact itself",
+                           "proposes any change to a requirement, a priority or the scope as a "
+                           "change request the person decides", "asks when unsure",
+                           "as the personas reference's Seats for the requirements documents "
+                           "section says", "| reference-workflow-personas.md |"),
+                          ("US1339", "US1340")),
+        }
+        for name, (marks, units) in rows_wanted.items():
+            with self.subTest(row=name):
+                self.assertEqual([], row_problems(rows, marks, units))
+        release = " | ".join(one_row(rows, ("Release record and change failure rate",)))
+        self.assertNotIn("deploy.py metrics", release, "the report's CI-run rate is not the ledger's")
+        # Control: the ownership row's Location given an anchor the page lacks is refused.
+        owner = one_row(rows, ("Document ownership",))
+        self.assertEqual("reference-workflow-personas.md", owner[4])
+        moved = [[*owner[:4], owner[4] + "#seats-for-no-requirements-documents", owner[5]]]
+        self.assertNotEqual([], row_problems(moved, *rows_wanted["ownership"][:1],
+                                             rows_wanted["ownership"][1]))
+        self.assertNotEqual([], location_problems(
+            "reference-workflow-personas.md#seats-for-no-requirements-documents"))
+
+    def test_the_prd_flags_list_the_widened_keys(self) -> None:
+        """US1343 AC3. Mutants: the flags table at its base, listing none of the five keys; a key
+        dropped or given another default than `reference-config.md` states; the spend Effect not
+        saying a set value stops the run at a unit boundary, the unit or that 0 sets no ceiling;
+        the kind Effect not saying it maps a role to an effort for that kind and ships empty; the
+        capacity row saying tokens warn only with no word of spend stopping a run."""
+        prd = _body(_read(SPECS["prd"]))
+        flags = flag_rows(prd)
+        stated = config_defaults(_read(CONFIG_REF))
+        for key in ("capacity.spend", "appetite.spend"):
+            with self.subTest(flag=key):
+                self.assertEqual(stated[key], flags[key][0])
+                for phrase in ("counted in priced input-equivalent tokens",
+                               "a set value stops the run at a unit boundary",
+                               "`capacity.spend` 0 sets no ceiling"):
+                    self.assertIn(phrase, flags[key][1])
+        reference = [r for t in _tables(_read(CONFIG_REF)) if "Default" in t[0] for r in t[1:]]
+        for kind in sprint.EFFORT_KINDS:
+            key = f"routing.effort.{kind}"
+            with self.subTest(flag=key):
+                cells = [r for r in reference if {"routing.effort", kind} <= set(_spans(r[0]))]
+                self.assertEqual(1, len(cells), f"premise: the reference states {key} once")
+                self.assertEqual(_unquote(cells[0][-1]), flags[key][0])
+                for phrase in ("Each maps a role", "to an effort for units of that kind",
+                               "Each ships empty"):
+                    self.assertIn(phrase, flags[key][1])
+        capacity = flags["capacity.tokens"][1]
+        self.assertNotIn("minutes and units feed the run breaker", capacity)
+        self.assertIn("`capacity.spend` feed the run breaker, so spend can stop a run", capacity)
+
+    def test_the_trd_records_the_spend_breaker_and_the_release_record(self) -> None:
+        """US1343 AC4. Mutants: the TRD at its base, with "A token budget that gates." in Won't
+        Have, "tokens warn while minutes and units stop a run" in section 10, no ADR-015 and no
+        release record row; ADR-015 numbered out of turn, citing D0503 or not D0637, or dropping
+        an alternative, the unit, the late-never-early sentence, the unjudged meter sentence,
+        the 0 default or the decision; the release row at another path than the fixture cut
+        writes, naming another writer, or held pending while git tracks the file; the
+        `run-state.json` row not naming a spend key `run_state.appetite_record` writes;
+        ADR-013's closing bullet not naming `sprint_report.py disclose` or the range."""
+        body = _body(_read(SPECS["trd"]))
+        self.assertNotIn("A token budget that gates", _section(body, "Won't Have (This Version)"))
+        self.assertNotIn("tokens warn while minutes and units stop a run",
+                         _flat(_section(body, "10. Performance Requirements")))
+        numbers = re.findall(r"^###\s+ADR-(\d+):", body, re.M)
+        self.assertEqual(list(range(1, len(numbers) + 1)), [int(n) for n in numbers])
+        self.assertEqual("015", numbers[-1])
+        adr = _flat(trd_refresh._adr(body, "015"))  # noqa: SLF001
+        self.assertRegex(adr, r"\*\*Status:\*\* Accepted \(D0637\b")
+        self.assertTrue(trd_refresh._accepted("D0637"))  # noqa: SLF001
+        self.assertEqual(["013"], [n for n in numbers if re.search(
+            r"\bD0503\b", trd_refresh._adr(body, n))])  # noqa: SLF001
+        stated = config_defaults(_read(CONFIG_REF))
+        self.assertEqual(("0", "0"), (stated["capacity.spend"], stated["appetite.spend"]))
+        unread = loop_guard.budget_verdict(5, 0, 10.0, 0, appetite_spend=100, spend=None,
+                                           spend_unread="no meter")
+        self.assertEqual((True, "minutes", "no meter"),
+                         (unread["exhausted"], unread["reason"], unread["spend_unread"]))
+        self.assertFalse(loop_guard.budget_verdict(0, 0, 10.0, 0, appetite_spend=100, spend=None,
+                                                   spend_unread="no meter")["exhausted"])
+        for phrase in ("*A ceiling in dollars.*", "*Failing closed:*",
+                       "*Reusing `capacity.tokens`* as the ceiling",
+                       "counted in priced input-equivalent tokens, not dollars",
+                       "The reading is a lower bound, so the breaker can fire late but never early.",
+                       "A meter that cannot read leaves spend unjudged at that boundary and says "
+                       "why, while minutes and units still judge.", "Both keys ship at 0",
+                       "a raise mid-run (`sprint.py appetite resize --spend`) needs a recorded "
+                       "decision", f"stops the run with exit {loop_guard.BUDGET_EXIT}"):
+            with self.subTest(adr=phrase):
+                self.assertIn(phrase, adr)
+        table = _rows(_section(body, "Committed evidence and records"), "Record")
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIn("reports", cut_fixture(Path(d)))
+        found = [r for r in table if release_cut.RELEASES_REL in _spans(r[1])]
+        self.assertEqual(1, len(found), f"{len(found)} rows list {release_cut.RELEASES_REL}")
+        self.assertEqual([], writer_problems(found[0][2], (("release_cut", "changelog-cut"),)))
+        self.assertIn(sprint_report.report_dir("").as_posix(), trd_refresh.committed_trees(),
+                      "premise: the release records sit in a swept tree")
+        ledger = trd_refresh.until_tracked_records()[1]
+        for tracked, pending in ((release_cut.RELEASES_REL, ledger), (ledger, release_cut.RELEASES_REL)):
+            with self.subTest(tracked=tracked):
+                held = pending_when_tracked(tracked)
+                self.assertNotIn(tracked, held)
+                self.assertIn(pending, held)
+        state = _rows(_section(body, "JSON state files (under `.local/`)"), "File")
+        row = _flat(next(r for r in state if "run-state.json" in _spans(r[0]))[2])
+        kw = {"accepted_units": 1, "accepted_minutes": 1, "standing_units": 1,
+              "standing_minutes": 1}
+        spend = set(run_state.appetite_record(**kw, accepted_spend=2, standing_spend=1)) \
+            - set(run_state.appetite_record(**kw))
+        self.assertEqual({"spend", "standing_spend", "over_spend"}, spend)
+        for key in sorted(spend):
+            self.assertIn(f"`{key}`", row)
+        self.assertIn('entry["decision"] = decision', _read(SCRIPTS / "lib" / "run_state.py"))
+        self.assertIn("a resize records the decision behind each spend raise", row)
+        closing = _flat(trd_refresh._adr(body, "013").rstrip().rsplit("\n- ", 1)[1])  # noqa: SLF001
+        self.assertIn(f"{disclosed_range()}, and `sprint_report.py disclose` gave each a line", closing)
+        self.assertIn("each report still reading VALID", closing)
+
+    def test_the_tsd_names_the_spend_breaker_and_change_failure_rate(self) -> None:
+        """US1343 AC5. Mutants: the TSD at its base, with no "spend", "change failure" or
+        "settling", and its Scalability row tripping the breaker only "when the appetite's
+        minutes or units are spent"; a named spend test renamed or dropped; the passage not
+        naming `escape.py failure-rate`, the ratio, the window, the settling period, the not
+        measured reading, or the ledger figure `deploy.py metrics` counts."""
+        tsd = _body(_read(SPECS["tsd"]))
+        row = _flat(next(line for line in tsd.splitlines()
+                         if "the appetite breaker bounds an unattended run" in line))
+        self.assertNotIn("minutes or units are spent", row)
+        module = SCRIPTS / "tests" / "test_loop_guard_spend.py"
+        tree = ast.parse(_read(module))
+        held = {c.name: {f.name for f in c.body if isinstance(f, ast.FunctionDef)}
+                for c in tree.body if isinstance(c, ast.ClassDef)}
+        self.assertIn("`test_loop_guard_spend.py::LoopGuardSpendTests` holds the spend axis", row)
+        named = re.findall(r"`(test_\w+)`", row)
+        self.assertEqual(list(SPEND_TESTS), [n for n in named if n in SPEND_TESTS])
+        for name in SPEND_TESTS:
+            self.assertIn(name, held["LoopGuardSpendTests"], f"{name} is not in {module.name}")
+        for phrase in ("stops the run at the appetite", "warns at each share `loop_guard.SPEND_WARNINGS` names",
+                       "leave an unread meter unjudged", "holds the resolution order"):
+            self.assertIn(phrase, row)
+        self.assertEqual((95, 75), loop_guard.SPEND_WARNINGS)
+        self.assertIn("metrics", verbs("deploy"))
+        self.assertIn("change failures = `failed` + `rolled-back` rows over ALL rows",
+                      _flat(inspect.getdoc(deploy.metrics)))
+        passage = _flat(_section(_section(tsd, "Defect Management"), "Change failure rate"))
+        for phrase in ("`escape.py failure-rate` derives change failure rate from the release "
+                       "records `release_cut.py changelog-cut` writes",
+                       "the releases with a linked incident over the releases counted",
+                       f"in a {escape.WINDOW_DAYS}-day window",
+                       f"A release inside the {escape.SETTLE_DAYS}-day settling period is named "
+                       "as pending", "the rate reads not measured, never zero",
+                       "the change failure figure `deploy.py metrics` counts from the deploy "
+                       "ledger, its failed and rolled-back rows over all its rows",
+                       "the sprint report's DORA row, which counts push-triggered CI runs"):
+            with self.subTest(passage=phrase):
+                self.assertIn(phrase, passage)
+
+    def test_the_prd_and_the_trd_name_the_solution_review(self) -> None:
+        """US1343 AC6, the part on `main`: the solution review row and keys for US1344 to US1346
+        and US1348, and the ledger's TRD row. Mutants: the PRD and the TRD at its base, naming
+        no solution review and no `solution-reviews.md`; the row out of the v5 and v6 table, or
+        naming an `approach` sub-verb critic lacks; a key's default not `reference-config.md`'s;
+        the ledger row at another path or writer, or pending while git tracks the ledger."""
+        self.assertIn("solution review", FEATURES)
+        self.assertLessEqual({"review.solution_review.min_points",
+                              "review.solution_review.risk_classes",
+                              "review.solution_review.panel"}, set(FLAGS))
+        prd = _body(_read(SPECS["prd"]))
+        marks, units = FEATURES["solution review"]
+        self.assertEqual([], row_problems(inventory(prd, "v5 and v6 capabilities"), marks, units))
+        row = " | ".join(one_row(inventory(prd), marks))
+        subs = re.findall(r"`critic\.py approach ([a-z-]+)`", row)
+        self.assertLessEqual({"record", "brief", "panel", "spend"}, set(subs))
+        self.assertLessEqual(set(subs), set(subverbs("critic", "approach")))
+        stated, flags = config_defaults(_read(CONFIG_REF)), flag_rows(prd)
+        for key in ("review.solution_review.min_points", "review.solution_review.risk_classes",
+                    "review.solution_review.panel"):
+            self.assertEqual(stated[key], flags[key][0])
+        self.assertIn("`[qa, product, persona]`", flags["review.solution_review.panel"][1])
+        self.assertRegex(_read(REPO / "sdlc-studio" / ".config.yaml"),
+                         r"(?m)^  solution_review:\n(?:.*\n)*?    panel: \[qa, product, persona\]$")
+        ledger = critic.solution_reviews_path("").as_posix()
+        self.assertEqual(f"sdlc-studio/reviews/{critic.SOLUTION_REVIEW_FILE}", ledger)
+        self.assertEqual(ledger, trd_refresh.until_tracked_records()[1])
+        table = _rows(_section(_body(_read(SPECS["trd"])), "Committed evidence and records"),
+                      "Record")
+        found = [r for r in table if ledger in _spans(r[1])]
+        self.assertEqual(1, len(found), f"{len(found)} rows list {ledger}")
+        self.assertIn("`critic.py approach record`", found[0][2])
+        self.assertIn("record", subverbs("critic", "approach"))
+        with mock.patch.object(trd_refresh, "_tracked", return_value=[]):
+            self.assertLessEqual({ledger, release_cut.RELEASES_REL}, trd_refresh.pending_records())
+        self.assertNotIn(ledger, pending_when_tracked(ledger))
 
 
 if __name__ == "__main__":
