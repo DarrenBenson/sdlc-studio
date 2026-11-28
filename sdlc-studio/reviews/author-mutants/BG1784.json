@@ -1,0 +1,70 @@
+{
+  "unit": "BG1784",
+  "digest": "d46b902aa3137927 at 642bdc517410",
+  "report": "sdlc-studio/.local/lane/landed/agent-a187db330154ce69f/BG1784-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 drive's own status read of the paperwork paths takes its optional lock",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "lanes._git(root, \"--no-optional-locks\", \"status\", \"--porcelain\", \"-z\",",
+      "new": "lanes._git(root, \"status\", \"--porcelain\", \"-z\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_a_root_read_beside_a_paperwork_commit_holds_no_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 the environment added outside the root lock turns optional locks on",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "NO_OPTIONAL_LOCKS = {\"GIT_OPTIONAL_LOCKS\": \"0\"}",
+      "new": "NO_OPTIONAL_LOCKS = {\"GIT_OPTIONAL_LOCKS\": \"1\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_build_and_review_sessions_read_the_root_without_its_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 the build step runs in this process's own environment",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "env={**os.environ, **NO_OPTIONAL_LOCKS})",
+      "new": "env=None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_build_and_review_sessions_read_the_root_without_its_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 the headless reviewer runs in the plain child environment",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "env={**lanes._child_env(), **NO_OPTIONAL_LOCKS})",
+      "new": "env=lanes._child_env())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_build_and_review_sessions_read_the_root_without_its_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 run_script drops the env it is given",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/drive.py",
+      "old": "timeout=timeout, check=False, env=env)",
+      "new": "timeout=timeout, check=False)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_build_and_review_sessions_read_the_root_without_its_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 the in-test lock probe moves no mtime, so it can see no lock taken",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py",
+      "old": "    os.utime(root / TOUCH, ns=(at, at))\n    before = index.stat()\n    said = run()",
+      "new": "    before = index.stat()\n    said = run()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_a_root_read_beside_a_paperwork_commit_holds_no_index_lock",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 the session probe moves no mtime, so it can see no lock taken",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py",
+      "old": "os.utime(root / __TOUCH__, ns=(at, at))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_build_and_review_sessions_read_the_root_without_its_index_lock",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

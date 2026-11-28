@@ -28,7 +28,9 @@
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: `sprint lane` recreates a refused unit's worktree for its repair with `restore_for_repair` (lib/lanes.py), which restores the staged diff and the hand-in but...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note
 - [ ] **AC2** The proposed fix lands, pinned by a test: `restore_for_repair` copies the unit's approach note back into the recreated worktree's sdlc-studio/.local/lane/, so the recorded GO still binds to the same...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note
 
 ## Revision History
 

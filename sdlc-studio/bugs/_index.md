@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 49 |
 | In Progress | 0 |
-| Fixed | 1264 |
+| Fixed | 1266 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1783** |
+| **Total** | **1785** |
 
 ## All Bugs
 
@@ -859,6 +859,8 @@
 | [BG1781](BG1781-escape-py-became-a-tree-walking-scanner-in.md) | escape.py became a tree-walking scanner in US1234, and its bare bug-file read at line 224 now fails the repository's bare-read sweep | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1782](BG1782-test-lint-corpus-pins-rfc0064-at-accepted-but.md) | `test_lint_corpus` pins RFC0064 at Accepted, but its status is derived from its children and reconcile moved it to Delivered | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1783](BG1783-critic-py-approach-panel-reports-a-seat-s.md) | `critic.py approach panel` reports a seat's latest GO without saying it is on an older note, and its roster tells seats to record while their brief forbids it | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1784](BG1784-a-parallel-sprint-drive-wave-can-run-one.md) | A parallel `sprint drive` wave can run one unit's paperwork commit while another unit's step runs git in the root, and the commit dies on index.lock | Fixed | Low | 2026-11-28 | 2026-11-28 |
+| [BG1785](BG1785-two-test-modules-print-a-diagnostic-on-a.md) | Two test modules print a diagnostic on a green run, so main's full suite is over its noise budget and the push gate refuses it | Fixed | Low | 2026-11-28 | 2026-11-28 |
 
 ## Archived Releases
 

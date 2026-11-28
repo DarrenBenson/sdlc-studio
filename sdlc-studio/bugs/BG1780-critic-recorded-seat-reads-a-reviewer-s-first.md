@@ -27,8 +27,11 @@ Read the seat from the last `(<role>)` group, or refuse a reviewer cell with mor
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: `critic.recorded_seat` takes the first `(<role>)` group in a reviewer cell.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_persona_with_a_parenthetical_sits_as_the_persona
 - [ ] **AC2** The proposed fix lands, pinned by a test: Read the seat from the last `(<role>)` group, or refuse a reviewer cell with more than one role group, keeping the existing "+"-joined three-seat cells in...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group
 - [ ] **AC3** `critic.py approach record` refuses an unreadable note (a permission error or a non-UTF-8 file) in words naming the note and saying it cannot be read, as its other refusals do, not with the raw OSError text ("approach record refused: [Errno 13] Permission denied: '<path>'"); exit 2 and nothing written still hold. Folded in from US1344's product review (verdict 0eac43e39f0e-5afe8509), which found it owned by no open unit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words
 
 ## Revision History
 

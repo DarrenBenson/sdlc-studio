@@ -1,0 +1,6 @@
+UNIT: BG1785
+BRIEF: 23f90a07b627-eafe1669
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Both modules ran green with no stderr and test_noise.py --budget --select reported within budget 0 (rc 0)\; --budget-check rc 0, no entry raised, _total unchanged at 104\; assertions pin the warning text (could not load .config.yaml, using built-in defaults, and the lacks-the-holder-role-form message) and the silent cases assert empty stderr, and the four recorded mutants replayed killed.

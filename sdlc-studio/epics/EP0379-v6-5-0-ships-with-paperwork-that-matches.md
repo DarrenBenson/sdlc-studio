@@ -51,9 +51,9 @@ publish and the site stay with the operator (D0545's exclusions).
 - [x] [US1329: The PRD, TRD and TSD describe what 6.5 ships](../stories/US1329-the-prd-trd-and-tsd-describe-what-6.md)
 - [ ] [US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline](../stories/US1330-v6-5-0-is-cut-version-changelog-known.md)
 - [x] [US1331: v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run](../stories/US1331-v6-5-0-discloses-what-it-ships-with.md)
-- [ ] [US1341: The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record](../stories/US1341-the-v6-5-release-notes-describe-the-whole.md)
+- [x] [US1341: The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record](../stories/US1341-the-v6-5-release-notes-describe-the-whole.md)
 - [x] [US1342: The help and public pages tell a 6.4 team how to cap a run's spend, answer a cache-read fall and read a release's change failure rate](../stories/US1342-the-help-and-public-pages-tell-a-6.md)
-- [ ] [US1343: The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run](../stories/US1343-the-prd-trd-and-tsd-describe-the-widened.md)
+- [x] [US1343: The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run](../stories/US1343-the-prd-trd-and-tsd-describe-the-widened.md)
 
 ## Revision History
 

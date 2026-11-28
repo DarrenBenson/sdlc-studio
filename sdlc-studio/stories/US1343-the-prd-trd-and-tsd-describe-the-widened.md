@@ -1,6 +1,6 @@
 # US1343: The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -51,6 +51,7 @@ Non-Goals hold, so it rewrites no section.
   every unit" (line 742); and an annex version other than the constant's, as the PRD's "at
   annex version 1.0" (line 333) will be once US1334 moves the constant to 1.1.
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the specification
 
 ### AC2: the PRD's inventory names the release record, the disclosure line and the person's ownership
@@ -76,6 +77,7 @@ Non-Goals hold, so it rewrites no section.
   "person owns", "authority the person" or "settling" (`grep -ciE` prints 0), and whose
   Delegated and waiting signatures row names only `sprint.py sign --delegated --decision`.
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_release_record_disclosure_and_ownership
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the specification
 
 ### AC3: the PRD's flags table lists the keys the widened release adds
@@ -93,6 +95,7 @@ Non-Goals hold, so it rewrites no section.
   and whose capacity row says "Tokens are a forecast and warn only; minutes and units feed the
   run breaker" (line 732).
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_flags_list_the_widened_keys
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the specification
 
 ### AC4: the TRD records the spend breaker as a decision and names the release record
@@ -120,6 +123,7 @@ Non-Goals hold, so it rewrites no section.
   `test_every_committed_record_is_listed`, which refuses a listed path that tracks no file
   unless `pending_records()` holds it.
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record
+- **Verified:** yes (2026-11-28)
 - **Caller:** `tools/tests/test_lean_trd_refresh.py`'s records sweep, which the cut's tree must
   pass once `release_cut.py` writes a record into it
 
@@ -139,6 +143,7 @@ Non-Goals hold, so it rewrites no section.
   "spend", "change failure" or "settling" (`grep -ciE` prints 0), and whose Scalability row
   (line 444) trips the breaker only "when the appetite's minutes or units are spent".
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_spend_breaker_and_change_failure_rate
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the specification
 
 ### AC6: the PRD and the TRD name the solution review, its keys and its ledger
@@ -157,6 +162,7 @@ Non-Goals hold, so it rewrites no section.
   and `FLAGS` gain the row and the keys. Fails on: the PRD and the TRD at HEAD `f946c5460`, which
   name no solution review and no `solution-reviews.md`.
 - **Verify:** pytest tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review
+- **Verified:** yes (2026-11-28)
 - **Caller:** `tools/tests/test_lean_trd_refresh.py`'s records sweep
 
 ## Notes

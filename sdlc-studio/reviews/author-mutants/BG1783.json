@@ -1,0 +1,115 @@
+{
+  "unit": "BG1783",
+  "digest": "4ca5d6dd26307dbc at b2767c2b24af",
+  "report": "sdlc-studio/.local/lane/landed/agent-a52d1e14219ddf05f/BG1783-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the digest comparison dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if last and last[\"verdict\"] == \"GO\" and last[\"digest\"] != now:",
+      "new": "if last and last[\"verdict\"] == \"GO\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_go_on_an_older_note_is_marked_on_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the digest comparison inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if last and last[\"verdict\"] == \"GO\" and last[\"digest\"] != now:",
+      "new": "if last and last[\"verdict\"] == \"GO\" and last[\"digest\"] == now:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_go_on_an_older_note_is_marked_on_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the mark put on a CHANGES too",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if last and last[\"verdict\"] == \"GO\" and last[\"digest\"] != now:",
+      "new": "if last and last[\"digest\"] != now:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_go_on_an_older_note_is_marked_on_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the roster's recording sentence reverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"Each seat writes only its reply file; the orchestrator records each reply with \"\n        f\"`critic.py approach record`, and a reply reaches the builder through \"\n",
+      "new": "f\"Each seat writes its reply file and records it with `critic.py approach record`; a \"\n        f\"reply reaches the builder through \"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_roster_and_the_seated_brief_say_the_orchestrator_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the seated Rules sentence dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"{_REPLY_DIR}/ if it is absent.\\nYou write only the reply file: the \"\n                 f\"orchestrator records it with the commands under RECORD.\")",
+      "new": "f\"{_REPLY_DIR}/ if it is absent.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_roster_and_the_seated_brief_say_the_orchestrator_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Rules sentence put on the one-seat brief",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "panel_part, rules = \"\", \"Rules: read-only on the repository.\"",
+      "new": "panel_part, rules = \"\", (\"Rules: read-only on the repository.\\nYou write only the reply file: the orchestrator records it with the commands under RECORD.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_roster_and_the_seated_brief_say_the_orchestrator_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the settings read raising the panel's refusal again",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    _warn_malformed_panel(repo_root)\n    return low, names\n",
+      "new": "    solution_review_panel(repo_root)\n    return low, names\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the warning dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            print(f\"warning: {exc}; only a unit that takes the solution review is refused\",\n                  file=sys.stderr)\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the once-only record dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if key not in _PANEL_WARNED:\n",
+      "new": "        if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: two older-note marks expected as three",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py",
+      "old": "        self.assertEqual(out.count(\"on an older note\"), 2)\n",
+      "new": "        self.assertEqual(out.count(\"on an older note\"), 3)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_go_on_an_older_note_is_marked_on_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the old sentence expected",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py",
+      "old": "        self.assertNotIn(\"records it with\", out)\n",
+      "new": "        self.assertIn(\"records it with\", out)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_roster_and_the_seated_brief_say_the_orchestrator_records",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the warning expected twice",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py",
+      "old": "        self.assertEqual(err.getvalue().count(words), 1, err.getvalue())\n",
+      "new": "        self.assertEqual(err.getvalue().count(words), 2, err.getvalue())\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

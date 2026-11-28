@@ -1,0 +1,241 @@
+{
+  "unit": "US1343",
+  "digest": "6a68f83705ccd49c at 47a177c2cd0c",
+  "report": "sdlc-studio/.local/lane/landed/agent-afc088c70a3a25a7e/US1343-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "pending condition dropped",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "*(p for p in until_tracked_records() if not _tracked(p))}",
+      "new": "*until_tracked_records()}",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release records not pending",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "    return (release_cut.RELEASES_REL, critic.solution_reviews_path(\"\").as_posix())",
+      "new": "    return (\"sdlc-studio/reports/x.jsonl\", critic.solution_reviews_path(\"\").as_posix())",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ledger not pending",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "    return (release_cut.RELEASES_REL, critic.solution_reviews_path(\"\").as_posix())",
+      "new": "    return (release_cut.RELEASES_REL, \"sdlc-studio/reviews/x.md\")",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Complete check inverted",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "return ([] if row[2] == \"Complete\" else",
+      "new": "return ([] if row[2] != \"Complete\" else",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unit check inverted",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "does not name {u}\" for u in units if not re.search",
+      "new": "does not name {u}\" for u in units if re.search",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "one-row check weakened",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "    if len(hits) != 1:\n        return [f\"{len(hits)} rows name {marks}\"]",
+      "new": "    if len(hits) > 1:\n        return [f\"{len(hits)} rows name {marks}\"]",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "disclosure premise inverted",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "        if not sig.get(\"delegated\"):",
+      "new": "        if sig.get(\"delegated\"):",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_release_record_disclosure_and_ownership",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cut path premise inverted",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "    if written != [release_cut.RELEASES_REL]:",
+      "new": "    if written == [release_cut.RELEASES_REL]:",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tracked mock inverted",
+      "file": "tools/tests/test_lean_specs_v65.py",
+      "old": "[path] if spec == (path,) else []",
+      "new": "[path] if spec != (path,) else []",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ADR-015 late-never-early dropped",
+      "file": "sdlc-studio/trd.md",
+      "old": "so the breaker can fire late but never early. A meter",
+      "new": "so the breaker can fire at any time. A meter",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ADR-015 minutes-still-judge dropped",
+      "file": "sdlc-studio/trd.md",
+      "old": "and says why, while minutes and units still judge.",
+      "new": "and says why.",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "capacity never gates restored",
+      "file": "sdlc-studio/prd.md",
+      "old": "batch is flagged at plan time and still plans;",
+      "new": "batch WARNS, never gates;",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamps both restored",
+      "file": "sdlc-studio/prd.md",
+      "old": "The plan stamps each unit's resolved builder and reviewer effort, a kind entry (below) before these,",
+      "new": "The plan stamps both on every unit,",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "annex version 1.0",
+      "file": "sdlc-studio/prd.md",
+      "old": "at annex version 1.1 and versioned apart",
+      "new": "at annex version 1.0 and versioned apart",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ownership Location given a missing anchor",
+      "file": "sdlc-studio/prd.md",
+      "old": "section says | Complete | Medium | reference-workflow-personas.md | EP0384",
+      "new": "section says | Complete | Medium | reference-workflow-personas.md#seats | EP0384",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_release_record_disclosure_and_ownership",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "release row names the ledger rate",
+      "file": "sdlc-studio/prd.md",
+      "old": "shows it too | Complete | High |",
+      "new": "shows it too, as `deploy.py metrics` does | Complete | High |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_names_the_release_record_disclosure_and_ownership",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend default changed",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `capacity.spend`, `appetite.spend` | `0` |",
+      "new": "| `capacity.spend`, `appetite.spend` | `1` |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_flags_list_the_widened_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "named spend test renamed",
+      "file": "sdlc-studio/tsd.md",
+      "old": "`test_a_meter_with_no_usage_yet_is_unread_with_its_own_reason` leave",
+      "new": "`test_a_meter_with_no_usage_is_unread` leave",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_spend_breaker_and_change_failure_rate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-measured reading dropped",
+      "file": "sdlc-studio/tsd.md",
+      "old": "the rate reads not measured, never zero.",
+      "new": "the rate reads 0.",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_tsd_names_the_spend_breaker_and_change_failure_rate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ledger writer changed",
+      "file": "sdlc-studio/trd.md",
+      "old": "| `critic.py approach record` |",
+      "new": "| `critic.py record` |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ADR-013 bullet loses disclose",
+      "file": "sdlc-studio/trd.md",
+      "old": "`sprint_report.py disclose` gave each",
+      "new": "a script gave each",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_trd_records_the_spend_breaker_and_the_release_record",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel default changed",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `review.solution_review.panel` | `[]` |",
+      "new": "| `review.solution_review.panel` | `[qa]` |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel repo setting misstated",
+      "file": "sdlc-studio/prd.md",
+      "old": "This repository sets it to `[qa, product, persona]`",
+      "new": "This repository sets it to `[qa, product]`",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "spend verb dropped from row",
+      "file": "sdlc-studio/prd.md",
+      "old": "`critic.py approach spend`",
+      "new": "`critic.py approach spend-gone`",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel verb dropped from row",
+      "file": "sdlc-studio/prd.md",
+      "old": "`critic.py approach panel`",
+      "new": "`critic.py approach roster`",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_and_the_trd_name_the_solution_review",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "last unit dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "US1352, US1353) |",
+      "new": "US1352) |",
+      "test": "tools/tests/test_lean_specs_v65.py::SpecsV65Tests::test_the_prd_inventory_and_flags_name_65s_features",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

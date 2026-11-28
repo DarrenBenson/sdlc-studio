@@ -1,0 +1,6 @@
+UNIT: BG1784
+BRIEF: 023181dc94f4-cf7de2b0
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Builder's git 2.56 remark checked by execution of the code paths. No wave step runs a work-tree `git diff` in the root outside the root lock: drive.py's own root git calls are show (224), status with --no-optional-locks (281), rev-parse (347) and worktree list (707), with add/commit/reset (327-333) inside the paperwork lock; the build step is `sprint lane run`, whose diffs (lanes.py:286,408,425,464,480) run in the lane worktree (wt_top), not the root; sprint.py:11806 `diff HEAD` belongs to batch_repair_in_tree (close), not a wave step; the reviewer is a headless agent given GIT_OPTIONAL_LOCKS=0. So the diff-lock caveat is out of scope and the claims (optional-lock reads only) are TRUE. verify_ac dry-run: ac=2 pass=2 fail=0. Wave test module run was still in progress at hand-back (not awaited); the author's seven mutants replayed killed per the brief.

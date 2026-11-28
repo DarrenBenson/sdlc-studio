@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 153 |
-| Ready | 5 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 1005 |
+| Done | 1008 |
 | Won't Implement | 96 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -378,9 +378,9 @@
 | [US1338](US1338-the-sprint-report-shows-each-role-s-cache.md) | The sprint report shows each role's cache-write growth and re-writes after expiry | Done | EP0383 | 2026-11-26 | 2026-11-26 |
 | [US1339](US1339-the-skill-says-the-person-owns-the-prd.md) | The skill says the person owns the PRD and the PVD, and the seat checks the work under delegated authority | Done | EP0384 | 2026-11-26 | 2026-11-26 |
 | [US1340](US1340-a-seat-corrects-a-fact-in-the-document.md) | A seat corrects a fact in the document it reviews against and proposes any change to what it requires | Done | EP0384 | 2026-11-26 | 2026-11-26 |
-| [US1341](US1341-the-v6-5-release-notes-describe-the-whole.md) | The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
+| [US1341](US1341-the-v6-5-release-notes-describe-the-whole.md) | The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record | Done | EP0379 | 2026-11-26 | 2026-11-26 |
 | [US1342](US1342-the-help-and-public-pages-tell-a-6.md) | The help and public pages tell a 6.4 team how to cap a run's spend, answer a cache-read fall and read a release's change failure rate | Done | EP0379 | 2026-11-26 | 2026-11-26 |
-| [US1343](US1343-the-prd-trd-and-tsd-describe-the-widened.md) | The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run | Ready | EP0379 | 2026-11-26 | 2026-11-26 |
+| [US1343](US1343-the-prd-trd-and-tsd-describe-the-widened.md) | The PRD, TRD and TSD describe the widened 6.5 and no longer say a token figure never stops a run | Done | EP0379 | 2026-11-26 | 2026-11-26 |
 | [US1344](US1344-a-project-sets-which-units-take-a-solution.md) | A project sets which units take a solution review, and critic.py records a seat's go or changes against the approach note | Done | EP0385 | 2026-11-26 | 2026-11-26 |
 | [US1345](US1345-critic-py-approach-brief-prints-a-seat-s.md) | critic.py approach brief prints a seat's review of the approach note, and the code review brief carries none of it | Done | EP0385 | 2026-11-26 | 2026-11-26 |
 | [US1346](US1346-sprint-lane-brief-tells-a-builder-whose-unit.md) | sprint lane brief tells a builder whose unit takes a solution review to write its approach note first and stop | Done | EP0385 | 2026-11-26 | 2026-11-26 |
@@ -389,7 +389,7 @@
 | [US1349](US1349-the-framing-rules-say-a-brief-carries-one.md) | The framing rules say a brief carries one identity, and a test holds every brief the skill prints to it | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1350](US1350-a-project-names-the-seats-on-a-unit.md) | A project names the seats on a unit's approach panel, each records its own verdict in its own rounds, and the approach is agreed only when every one has a GO | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1351](US1351-critic-py-approach-panel-names-one-brief-and.md) | critic.py approach panel names one brief and one reply file per seat, and approach brief frames the unit's stakeholder persona | Done | EP0386 | 2026-11-27 | 2026-11-27 |
-| [US1352](US1352-sprint-lane-brief-relays-each-seat-s-reply.md) | sprint lane brief relays each seat's reply to the builder, and this repository seats a three-member approach panel | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
+| [US1352](US1352-sprint-lane-brief-relays-each-seat-s-reply.md) | sprint lane brief relays each seat's reply to the builder, and this repository seats a three-member approach panel | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1353](US1353-a-seat-agent-s-spend-on-a-unit.md) | A seat agent's spend on a unit's solution review is recorded against the unit, so its tokens per unit count every seat | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases

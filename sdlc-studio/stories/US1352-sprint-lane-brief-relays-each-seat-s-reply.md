@@ -1,6 +1,6 @@
 # US1352: sprint lane brief relays each seat's reply to the builder, and this repository seats a three-member approach panel
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0757
 > **Created:** 2026-11-27
@@ -35,6 +35,7 @@ As an engineering lead, I want the builder's brief to show every seat's reply by
   (`critic.read_solution_reviews(root, uid)[-1]`, E16), under which product's GO after qa's CHANGES
   would read as agreed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py::SolutionReviewPanelRelayTests::test_a_mixed_round_is_relayed_seat_by_seat
+- **Verified:** yes (2026-11-28)
 
 ### AC2: the brief says agreed only when every seat has a GO on one note text
 
@@ -47,6 +48,7 @@ As an engineering lead, I want the builder's brief to show every seat's reply by
   that editing the note voids every GO
 - **Fails on:** HEAD plus US1344, whose lane brief has 0 lines naming a solution review (E7)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py::SolutionReviewPanelRelayTests::test_the_brief_says_agreed_only_on_one_note_text
+- **Verified:** yes (2026-11-28)
 
 ### AC3: an unset panel keeps the one-seat brief, this repository seats the panel, and help says what it does
 
@@ -64,6 +66,7 @@ As an engineering lead, I want the builder's brief to show every seat's reply by
   printed "config: no key ..." and exited 1 (E4), and help/sprint.md has 0 matches for
   `solution_review.panel` or "solution review" (E11)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py::SolutionReviewPanelRelayTests::test_an_unset_panel_keeps_the_one_seat_brief_and_this_repository_seats_the_panel
+- **Verified:** yes (2026-11-28)
 
 ### AC4: the run report counts a unit's solution review rounds as its highest round
 
@@ -79,6 +82,7 @@ As an engineering lead, I want the builder's brief to show every seat's reply by
   sections, E15); and US1348 as its approach note plans it: "Solution review rounds per unit count
   its rows (one seat a round)" (E16), which reads 4.0 here (3.0 and 5.0 alone)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_relay.py::SolutionReviewPanelRelayTests::test_the_report_counts_a_unit_s_highest_round
+- **Verified:** yes (2026-11-28)
 
 ## Notes
 

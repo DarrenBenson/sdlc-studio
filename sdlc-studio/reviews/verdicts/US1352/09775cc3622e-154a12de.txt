@@ -1,0 +1,6 @@
+UNIT: US1352
+BRIEF: 09775cc3622e-154a12de
+VERDICT: APPROVE
+ISSUES: [pre-existing] BG1780 and BG1783 are owned and not re-raised; [new] docs/existing-users.md says qa, product and the persona "each hold a GO" without saying the building seat and a persona-less unit's persona are skipped (the config comment and critic.effective_panel say so), a wording gap only, no test reads it
+BLOCKING: none
+RULINGS: Executed: the two named test modules pass (13 tests, 40 subtests); config.py show --key review.solution_review.panel on this repository prints qa, product, persona; the help sentence "a product GO alone under [product, qa] is refused naming qa seat: no verdict recorded" is true by execution (critic.panel_state in a scratch fixture returned agreed False with that exact reason); the changelog and help claims on the brief shape (seat order, CHANGES quoted, agreed only on one digest, unset panel unchanged) match the pinned tests AC1 to AC4. No blocking regression or new defect found in US1352's own diff.

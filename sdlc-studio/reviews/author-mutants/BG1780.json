@@ -1,0 +1,124 @@
+{
+  "unit": "BG1780",
+  "digest": "3a03e6aa3b3708c5 at b2767c2b24af",
+  "report": "sdlc-studio/.local/lane/landed/agent-a52d1e14219ddf05f/BG1780-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the first group of a reviewer read, not its last",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            return found[-1]\n",
+      "new": "            return found[0]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the join read as any +",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "_REVIEWER_JOIN = re.compile(r\"\\s\\+\\s\")",
+      "new": "_REVIEWER_JOIN = re.compile(r\"\\+\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the first part read even when it holds no group",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if found:\n            return found[-1]\n        pos = sep.end() if sep else end\n",
+      "new": "        return found[-1] if found else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the join ignored, the whole cell's last group read",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    for sep in [*_REVIEWER_JOIN.finditer(text), None]:\n",
+      "new": "    for sep in [None]:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the first group read, through the persona test",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            return found[-1]\n",
+      "new": "            return found[0]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_persona_with_a_parenthetical_sits_as_the_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the persona's name sliced at the cell's first group",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    name = text[:_seat_match(text).start()]\n",
+      "new": "    name = text[:_RECORDED_SEAT.search(text).start()]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_persona_with_a_parenthetical_sits_as_the_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the UTF-8 check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        data.decode(\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal's wrapper dropped, the note read bare",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    data = _note_bytes(note)\n",
+      "new": "    data = Path(note).read_bytes()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the OS's reason lower-cased",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "f\"{exc.strerror or type(exc).__name__}\"",
+      "new": "f\"{(exc.strerror or type(exc).__name__).lower()}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the persona row expects qa",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py",
+      "old": "            \"Sam Eriksson (QA) (persona)\": \"persona\",\n",
+      "new": "            \"Sam Eriksson (QA) (persona)\": \"qa\",\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_the_seat_is_the_first_reviewer_s_last_role_group",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the panel expected agreed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py",
+      "old": "        self.assertFalse(ok)\n        self.assertIn(\"qa seat: no verdict recorded\", why)\n",
+      "new": "        self.assertTrue(ok)\n        self.assertIn(\"qa seat: no verdict recorded\", why)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_a_persona_with_a_parenthetical_sits_as_the_persona",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the UTF-8 reason misspelt",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py",
+      "old": "        cases = [(bad, \"it is not UTF-8 text\")]\n",
+      "new": "        cases = [(bad, \"it is not text\")]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the positive control expects a refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py",
+      "old": "        self._ok(self._record(self.root, \"US0001\", QA, note=bad), 1)\n",
+      "new": "        self._refused(self._record(self.root, \"US0001\", QA, note=bad))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel.py::SolutionReviewPanelTests::test_an_unreadable_note_is_refused_in_words",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

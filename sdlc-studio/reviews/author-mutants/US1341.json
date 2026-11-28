@@ -1,0 +1,178 @@
+{
+  "unit": "US1341",
+  "digest": "d5a75c6c019e311b at 154ee1590aa8",
+  "report": "sdlc-studio/.local/lane/landed/agent-ad825d50277d866a4/US1341-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 a usage with no verb group is read as one",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if len(groups) != 1:",
+      "new": "    if len(groups) > 1:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_ownership_the_release_record_and_the_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 a parser adding two verbs since 6.4.0 passes",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if before is not None and len(want) != 1:",
+      "new": "    if before is not None and len(want) > 2:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_ownership_the_release_record_and_the_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 the Sources rows are never judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "            for theme in CLAIMS if THEMES[theme] not in rows]",
+      "new": "            for theme in CLAIMS if False]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_ownership_the_release_record_and_the_disclosure",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 notes with no count line pass",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if len(lines) != 1:",
+      "new": "    if len(lines) > 1:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_cost_section_names_every_run_that_built_65",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 the cost table's rows are never judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if sorted(rows) != sorted(RUNS_65):",
+      "new": "    if False:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_cost_section_names_every_run_that_built_65",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 a missing per-kind row reads as an empty mapping",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "(kind.group(1) if kind else None)",
+      "new": "(kind.group(1) if kind else \"{}\")",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_upgrade_path_names_the_widened_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 an annex version unchanged since 6.4.0 passes",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    if now == before:",
+      "new": "    if False:",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_widened_release_names_its_new_refusals",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 the annex's Instead need not say conditional",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        r\"read both as conditional\"),",
+      "new": "        r\"read both as\"),",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_widened_release_names_its_new_refusals",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 the upgrade path's widened sentences are never judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "    problems += [f\"the path does not say {rx!r}\" for rx in UPGRADE_SAYS if not re.search(rx, flat)]",
+      "new": "    problems += []",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_upgrade_path_names_the_widened_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 a theme's sentences are never judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "            if not re.search(rx, bullet)]",
+      "new": "            if False]",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_widened_cost_controls",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 the routing kinds read the per-key default",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "if key.startswith(\"routing.effort.\")",
+      "new": "if key.startswith(\"routing.effortX\")",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_upgrade_path_names_the_widened_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 the annex version is never judged",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "        return [f\"the annex bullet does not name version {now}\"]",
+      "new": "        return []",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_widened_release_names_its_new_refusals",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M13 the panel key left out of the closed list of new keys",
+      "file": "tools/tests/test_lean_release_notes_v65.py",
+      "old": "\"review.solution_review.risk_classes\", \"review.solution_review.panel\")",
+      "new": "\"review.solution_review.risk_classes\")",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M14 the notes give the panel key a default reference-config.md does not state",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "- `review.solution_review.panel`, default `[]`: the seats that review a unit's approach note,",
+      "new": "- `review.solution_review.panel`, default `[qa]`: the seats that review a unit's approach note,",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M15 the notes name no approach spend verb",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "  `critic.py approach spend` adds a seat agent's priced spend",
+      "new": "  `critic.py approach` adds a seat agent's priced spend",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M16 the notes name no approach panel verb",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "digest, `critic.py approach panel`",
+      "new": "digest, `critic.py approach`",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M17 the land refusal no longer says every seat under a panel",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "  from every seat when a panel is set. The code review brief carries none of the note.",
+      "new": "  The code review brief carries none of the note.",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M18 the skipped persona seat is cut",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "  builds a unit is skipped for it, as is `persona` for a unit whose story names no Persona.",
+      "new": "  builds a unit is skipped for it.",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M19 the panel line is cut from the lines under review.solution_review",
+      "file": "docs/release-notes-v6.5.0.md",
+      "old": "line there, `panel: [qa, product, persona]`, seats each named seat as its own review, and the",
+      "new": "line there seats each named seat as its own review, and the",
+      "test": "tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

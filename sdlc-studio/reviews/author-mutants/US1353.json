@@ -1,0 +1,412 @@
+{
+  "unit": "US1353",
+  "digest": "ffde7959bee47e70 at 41fed6f031b3",
+  "report": "sdlc-studio/.local/lane/landed/agent-a74bafbc19f890838/US1353-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "reading dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "unit=uid, reading=reading, provenance",
+      "new": "unit=uid, provenance",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "provenance supplied",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "provenance=run_state.READ_FROM_TRANSCRIPT)",
+      "new": "provenance=run_state.SUPPLIED)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "harness set",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "provenance=run_state.READ_FROM_TRANSCRIPT)",
+      "new": "provenance=run_state.READ_FROM_TRANSCRIPT, harness=\"claude-code\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unit dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "unit=uid, reading=reading",
+      "new": "reading=reading",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "note seat dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "note=_SPEND_NOTE.format(seat)",
+      "new": "note=_SPEND_NOTE.format(\"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prefix strip removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "bare = agent[len(\"agent-\"):] if agent.startswith(\"agent-\") else agent",
+      "new": "bare = agent",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prefix dash dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if agent.startswith(\"agent-\") else agent",
+      "new": "if agent.startswith(\"agent\") else agent",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_refused_and_unreadable_inputs_record_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stdout line dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    print(said)\n    return 0",
+      "new": "    return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stdout priced figure",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "{reading['priced']:,} priced tokens",
+      "new": "{reading['tokens']:,} priced tokens",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "priced-None guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if reading.get(\"priced\") is None:",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_agent_with_no_readable_transcript_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-run check removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not state.get(\"run_id\"):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_agent_with_no_readable_transcript_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "transcript read before no-run",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not state.get(\"run_id\"):\n        return None, (f\"no run is open, so {shown}'s {seat} seat agent's spend was not recorded \"\n                      f\"- nothing was recorded\")\n    bare = agent[len(\"agent-\"):] if agent.startswith(\"agent-\") else agent\n    reading = run_state.agent_transcript_tokens(root, bare)\n",
+      "new": "    bare = agent[len(\"agent-\"):] if agent.startswith(\"agent-\") else agent\n    reading = run_state.agent_transcript_tokens(root, bare)\n    if reading.get(\"priced\") is None:\n        return None, reading[\"reason\"]\n    if not state.get(\"run_id\"):\n        return None, (f\"no run is open, so {shown}'s {seat} seat agent's spend was not recorded \"\n                      f\"- nothing was recorded\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_agent_with_no_readable_transcript_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "exit 1 read as 0",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        print(said, file=sys.stderr)\n        return 1",
+      "new": "        print(said, file=sys.stderr)\n        return 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_agent_with_no_readable_transcript_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "None return dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if rec is None:\n        return None, f\"{shown}'s {seat} seat agent's spend was not recorded\"\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_sealed_run_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat lower-cased",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seat = seat.strip()\n",
+      "new": "    seat = seat.strip().lower()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_off_panel_seat_is_recorded_as_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    seat = seat.strip()\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_off_panel_seat_is_recorded_as_given",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank seat let through",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not seat:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_refused_and_unreadable_inputs_record_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown unit let through",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not found:\n        raise ValueError(f\"no artefact with id {unit!r} - a seat agent's",
+      "new": "    if False:\n        raise ValueError(f\"no artefact with id {unit!r} - a seat agent's",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_refused_and_unreadable_inputs_record_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unreadable state let through",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except run_state.RunStateError as exc:\n        return None, f\"{shown}'s",
+      "new": "    except KeyError as exc:\n        return None, f\"{shown}'s",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_refused_and_unreadable_inputs_record_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "builder guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not str(rec.get(\"note\")).startswith(_SPEND_OPENS):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_builder_s_own_agent_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "builder note test inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not str(rec.get(\"note\")).startswith(_SPEND_OPENS):",
+      "new": "if str(rec.get(\"note\")).startswith(_SPEND_OPENS):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_builder_s_own_agent_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "builder guard any unit",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if rec.get(\"unit\") != uid:\n            where",
+      "new": "if False:\n            where",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_builder_s_own_agent_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "builder guard any transcript",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not isinstance(rec, dict) or rec.get(\"transcript\") != reading[\"source\"]:",
+      "new": "if not isinstance(rec, dict):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_builder_s_own_agent_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "junk record read",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if not isinstance(rec, dict) or rec.get(\"transcript\") != reading[\"source\"]:",
+      "new": "if rec.get(\"transcript\") != reading[\"source\"]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_refused_and_unreadable_inputs_record_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused exit 2 read as 1",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        print(f\"approach spend refused: {exc}\", file=sys.stderr)\n        return 2",
+      "new": "        print(f\"approach spend refused: {exc}\", file=sys.stderr)\n        return 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_builder_s_own_agent_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record refusal let through",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except ValueError as exc:\n        return None, f\"{shown}'s {seat} seat agent's spend was not recorded: {exc}\"",
+      "new": "    except KeyError as exc:\n        return None, f\"{shown}'s {seat} seat agent's spend was not recorded: {exc}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_reading_the_record_refuses_records_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel clause dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "; when its agent returns: critic.py \"\n                     f\"approach spend --unit {shown} --seat {seat} --agent <agent id>\")",
+      "new": "\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel clause seat fixed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "approach spend --unit {shown} --seat {seat} --agent <agent id>",
+      "new": "approach spend --unit {shown} --seat qa --agent <agent id>",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "panel clause on skipped lines",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "lines += [f\"- {seat} is skipped: {why}\" for",
+      "new": "lines += [f\"- {seat} is skipped: {why}; critic.py approach spend\" for",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue no verdict row cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": "it writes no verdict row, checks no verdict",
+      "new": "it checks no verdict",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue own transcript cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": "reads that seat agent's own transcript and adds",
+      "new": "reads that seat agent's transcript and adds",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue panel clause cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": "the seat word is recorded as given, stripped of surrounding whitespace, and not checked against the panel; ",
+      "new": "the seat word is recorded as given, stripped of surrounding whitespace; ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other-unit guard removed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if rec.get(\"unit\") != uid:\n            where",
+      "new": "if False:\n            where",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other-unit guard narrowed to named units",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if rec.get(\"unit\") != uid:",
+      "new": "if rec.get(\"unit\") and rec.get(\"unit\") != uid:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other-unit guard on every record",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if rec.get(\"unit\") != uid:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "other-unit refusal read as a record",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            raise ValueError(f\"agent-{bare}'s transcript is already recorded in the run {where} \"",
+      "new": "            return None, (f\"agent-{bare}'s transcript is already recorded in the run {where} \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "where names no unit always",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "where = f\"against {rec['unit']}\" if rec.get(\"unit\") else \"with no unit\"",
+      "new": "where = \"with no unit\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "where names the unit always",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "where = f\"against {rec['unit']}\" if rec.get(\"unit\") else \"with no unit\"",
+      "new": "where = f\"against {rec.get('unit')}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_transcript_counts_once_in_the_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "off-batch warning dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if uid not in sprint_report._unit_order(state)[4]:",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_unit_off_the_batch_is_recorded_with_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "off-batch check inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if uid not in sprint_report._unit_order(state)[4]:",
+      "new": "if uid in sprint_report._unit_order(state)[4]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_unit_off_the_batch_is_recorded_with_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "off-batch reads the planned units",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if uid not in sprint_report._unit_order(state)[4]:",
+      "new": "if uid not in sprint_report._unit_order(state)[2]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_unit_off_the_batch_is_recorded_with_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "off-batch warning on stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "              f\"it\", file=sys.stderr)\n    return rec, (",
+      "new": "              f\"it\")\n    return rec, (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_a_unit_off_the_batch_is_recorded_with_a_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue stripped cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": "recorded as given, stripped of surrounding whitespace, and",
+      "new": "recorded as given and",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue another unit cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": ", and a transcript already recorded against another unit, naming that unit,",
+      "new": ",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "catalogue off batch cut",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-review.md",
+      "old": "it records a unit outside the open run's batch with a WARNING that it is off the batch and no per-unit row shows it; ",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

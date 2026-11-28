@@ -1,0 +1,6 @@
+UNIT: US1343
+BRIEF: e98fde13be18-0bbe981b
+VERDICT: APPROVE
+ISSUES: [pre-existing] the PRD's Document ownership row can swap its epic id EP0384 for EP0385 and the suite stays green (a 9th own mutant survived\; only the unit ids US1339 and US1340 are pinned), cosmetic and not an AC claim; [pre-existing] the brief lists docs/known-issues.md as changed outside Affects but commit 47a177c2c does not touch it (git show --stat), so Affects needs no correction for this commit
+BLOCKING: none
+RULINGS: verify_ac run --id US1343 --dry-run gave 6/6 pass. Both test modules pass at HEAD in a detached worktree (54 passed). Claims run against the code and true: SETTLE_DAYS 14 and WINDOW_DAYS 90 (escape.py:57-59), BUDGET_EXIT 4 and SPEND_WARNINGS 95/75 (loop_guard.py:49-51), the `appetite resize --spend ... --decision` path (sprint.py:13576), the run_state appetite keys spend, standing_spend and over_spend, the cache-read known issue with CACHE_READ_FALL_POINTS, the dora section counting push events, the release record path and writer, `sprint_report.py disclose` (RPT0028 to RPT0034 all carry a delegation line), the solution_review defaults (0, [], []) and this repo's [qa, product, persona]. My own text mutants (14-day, 90-day, ten points, five runs, 75 and 95, exit 4, push-triggered, the run-state keys) were each killed by the two test modules.

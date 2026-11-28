@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py, changelog.d/BG1783.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** US1351's product review in run twenty-eight (2026-11-28), verdict ffd69e96f956-a2fee8c4, by execution; non-blocking, and US1351 has landed.
 > **Created:** 2026-11-28
@@ -27,7 +27,11 @@ Print each seat's GO with its digest, or mark a GO on another digest as on an ol
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: Two sentences US1351 added mislead a team running a panel.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_go_on_an_older_note_is_marked_on_the_roster
 - [ ] **AC2** The proposed fix lands, pinned by a test: Print each seat's GO with its digest, or mark a GO on another digest as on an older note; make the roster say the orchestrator records each reply (or let the...
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_the_roster_and_the_seated_brief_say_the_orchestrator_records
+- [ ] **AC3** A malformed `review.solution_review.panel` (a seat no roster names, such as `panel: [qa, nobody]`) refuses only a unit that takes the solution review, not every unit's `sprint lane brief`; with `min_points: 0` and `risk_classes: []` a unit's lane brief prints with a warning naming the bad seat. Today `critic.solution_review_settings` raises before any unit is read (found by US1350's product review, verdict eb0a963578e3-25de1cc2, and confirmed by US1352's builder).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_panel_brief.py::SolutionReviewPanelBriefTests::test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review
 
 ## Revision History
 

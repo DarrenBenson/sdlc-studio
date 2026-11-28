@@ -1,6 +1,6 @@
 # US1341: The v6.5 release notes describe the whole widened release, from the spend ceiling to the release record
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-11-26
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -58,6 +58,7 @@ carry.
   existing lead check, which refuses a ninth theme as "not one of the eight" (run at grooming on
   a planted bullet).
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_widened_cost_controls
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the page, the notes README links as the current release
   from the cut on
 
@@ -88,6 +89,7 @@ carry.
   rate, release record or disclosure for a report already signed (`grep -ciE` prints 0); and the
   delegated theme at HEAD, which names only US1290 to US1293.
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_ownership_the_release_record_and_the_disclosure
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the page
 
 ### AC3: the new refusals a 6.4 habit meets are named beside what to do instead
@@ -110,6 +112,7 @@ carry.
   prints 0); and the existing check, which refuses a bullet no listed change names (run at
   grooming on a planted `routing.effort` bullet).
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_widened_release_names_its_new_refusals
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the page
 
 ### AC4: the upgrade path names the keys the widened release adds
@@ -128,6 +131,7 @@ carry.
   the five keys (`grep -cE` prints 0); and the existing check, which refuses `appetite.spend` as
   "a key 6.5 does not add" (run at grooming on a planted bullet).
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_upgrade_path_names_the_widened_keys
+- **Verified:** yes (2026-11-28)
 - **Caller:** `migrate.py`, whose dry run and `--apply` the section's steps run, unchanged by
   run twenty-eight's units
 
@@ -146,6 +150,7 @@ carry.
   twenty-seven nor run twenty-eight; and a figure cited from a report outside RPT0035 to
   RPT0045, which the existing figure check refuses.
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_cost_section_names_every_run_that_built_65
+- **Verified:** yes (2026-11-28)
 - **Caller:** `tools/known_issues.py write --release 6.5.0`, which fills the count line at the
   cut (`NOTES_TEMPLATE`)
 
@@ -166,6 +171,7 @@ carry.
   solution review (`grep -ciE 'solution.review|approach (brief|record|panel|spend)'` prints 0),
   and the existing lead and upgrade checks, which refuse a planted solution review bullet and key.
 - **Verify:** pytest tools/tests/test_lean_release_notes_v65.py::ReleaseNotesTests::test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys
+- **Verified:** yes (2026-11-28)
 - **Caller:** n/a: the subject is the page
 
 ## Notes

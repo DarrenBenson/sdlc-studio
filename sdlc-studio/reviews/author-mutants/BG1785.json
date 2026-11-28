@@ -1,0 +1,43 @@
+{
+  "unit": "BG1785",
+  "digest": "72c79058023d7591 at 0e46dcf8a13b",
+  "report": "sdlc-studio/.local/lane/landed/agent-a841a55fa0e879951/BG1785-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "record: required warning text changed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py",
+      "old": "self.assertIn(\"could not load .config.yaml\", warned.getvalue())",
+      "new": "self.assertIn(\"could not load .config.yaml NOPE\", warned.getvalue())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record: defaults clause text changed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py",
+      "old": "self.assertIn(\"using built-in defaults\", warned.getvalue())",
+      "new": "self.assertIn(\"using built-in defaults NOPE\", warned.getvalue())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record: unclosed config treated as a silent case",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py",
+      "old": "if empty.startswith(\"review: [unclosed\"):",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_record.py::SolutionReviewRecordTests::test_a_malformed_setting_is_refused_by_name",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "cost: warning text changed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py",
+      "old": "self.assertIn(\"author 'agent-zz' lacks the",
+      "new": "self.assertIn(\"author 'agent-yy' lacks the",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_project_declared_seat_is_read_as_a_seat",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
