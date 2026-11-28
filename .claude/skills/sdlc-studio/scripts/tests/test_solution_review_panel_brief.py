@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -483,6 +485,84 @@ class SolutionReviewPanelBriefTests(unittest.TestCase):
         rc, _out, err = self.record_as("abena osei (persona)")
         self.assertEqual(rc, 0, err)
         self.assertIn(f"- {PERSONA} at round 2 (latest GO at round 1): ", self.panel()[1])
+
+    def test_a_go_on_an_older_note_is_marked_on_the_roster(self) -> None:
+        """BG1783 AC1: a seat's latest GO on a note since revised is marked as on an older
+        note, with that GO's digest and the note's digest now, while a GO on the note as it
+        stands, and a CHANGES on any note, read as before. MUTANTS: the digest comparison
+        dropped or inverted; the mark put on a CHANGES too."""
+        note = self.root / "note.md"
+        self.record(QA, "changes", "VERDICT: CHANGES\n1. name the guard")
+        self.record(PRODUCT, "go")
+        self.record(PERSONA, "go")
+        then = critic.note_digest(note)
+        note.write_text(_NOTE + "\nRevised.\n", encoding="utf-8")
+        now = critic.note_digest(note)
+        rc, out, err = self.panel()
+        self.assertEqual(rc, 0, err)
+        self.assertIn(f"- {QA} at round 2 (latest CHANGES at round 1): ", out)
+        self.record(QA, "go")
+        rc, out, err = self.panel()
+        self.assertEqual(rc, 0, err)
+        self.assertIn(f"- {QA} at round 3 (latest GO at round 2): ", out)
+        for who in (PRODUCT, PERSONA):
+            self.assertIn(f"- {who} at round 2 (latest GO at round 1 on an older note, digest "
+                          f"{then}; the note's digest now is {now}): ", out)
+        self.assertEqual(out.count("on an older note"), 2)
+        self.assertFalse(critic.approach_agreed(self.root, UNIT, note)[0])
+
+    def test_the_roster_and_the_seated_brief_say_the_orchestrator_records(self) -> None:
+        """BG1783 AC2: the roster and a seated seat's Rules agree that a seat writes only its
+        reply file and the orchestrator records it; the one-seat brief's Rules are as before.
+        MUTANTS: either sentence reverted; the Rules sentence put on the one-seat brief."""
+        rc, out, err = self.panel()
+        self.assertEqual(rc, 0, err)
+        self.assertIn("Each seat writes only its reply file; the orchestrator records each reply "
+                      "with `critic.py approach record`, and a reply reaches the builder through "
+                      f"`sprint.py lane brief --units {UNIT}`.", out)
+        self.assertNotIn("records it with", out)
+        _rc, qa, _err = self.brief("qa")
+        self.assertIn("if it is absent.\nYou write only the reply file: the orchestrator records "
+                      "it with the commands under RECORD.\n", qa)
+        unset = self.project("unset", config=_config(None))
+        _rc, one, _err = self.brief("qa", root=unset)
+        self.assertIn("Rules: read-only on the repository.\nSpot-check", one)
+        self.assertNotIn("orchestrator records", one)
+
+    def test_a_malformed_panel_refuses_only_a_unit_that_takes_the_review(self) -> None:
+        """BG1783 AC3: through the shipped `sprint.py lane brief`, a malformed panel refuses a
+        unit that takes the solution review and lets every other unit's brief print, with one
+        warning naming the bad entry. MUTANTS: the settings read raising the panel's refusal
+        again; the warning dropped; the once-only record of it dropped."""
+        bad = ("review:\n  solution_review:\n    min_points: {low}\n    risk_classes: []\n"
+               "    panel: [qa, nobody]\n")
+        words = ("warning: `review.solution_review.panel` is ['qa', 'nobody'], and 'nobody' is "
+                 "not a seat the project has a card for")
+        env = dict(os.environ, HOME=str(self.tmp / "home"), TMPDIR=str(self.tmp),
+                   XDG_CONFIG_HOME=str(self.tmp / "xdg"), PYTHONDONTWRITEBYTECODE="1")
+        for low in (0, 4, 3):  # 0: the step off; 4: US0001's 3 points take none; 3: it takes it
+            with self.subTest(min_points=low):
+                root = self.project(f"bad{low}", config=bad.format(low=low))
+                proc = subprocess.run(
+                    [sys.executable, "-B", str(SCRIPTS / "sprint.py"), "lane", "brief",
+                     "--units", UNIT, "--root", str(root)],
+                    capture_output=True, text=True, env=env, timeout=120)
+                if low == 3:
+                    self.assertEqual(proc.returncode, 2, proc.stderr)
+                    self.assertRegex(proc.stderr, rf"REFUSED {UNIT} .*'nobody' is not a seat")
+                    self.assertNotIn(f"Unit: {UNIT}", proc.stdout)
+                    continue
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertIn(f"Unit: {UNIT}", proc.stdout)
+                self.assertEqual(proc.stderr.count(words), 1, proc.stderr)
+                self.assertIn("only a unit that takes the solution review is refused",
+                              proc.stderr)
+        root = self.project("once", config=bad.format(low=0))
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(critic.solution_review_settings(root), (0, []))
+            self.assertEqual(critic.solution_review_settings(root), (0, []))
+        self.assertEqual(err.getvalue().count(words), 1, err.getvalue())
 
 def _docgen_check() -> tuple[int, str, str]:
     import docgen  # noqa: PLC0415 - sibling; the surface page's own check

@@ -298,11 +298,82 @@ class SolutionReviewPanelTests(unittest.TestCase):
         self.assertEqual(row.count("skipped"), 1)
         self.assertLessEqual(len(rows), 732)
 
+    # -- a reviewer cell's seat ---------------------------------------------------------------
+
+    def test_a_persona_with_a_parenthetical_sits_as_the_persona(self) -> None:
+        """BG1780 AC1: a stakeholder whose Persona carries a parenthetical, written
+        `Sam Eriksson (QA) (persona)`, sits as the persona, so no qa GO is read where no qa
+        seat reviewed. MUTANTS: the first group of a reviewer read rather than its last; the
+        persona's name sliced at the cell's first group."""
+        (self.root / "sdlc-studio" / "stories" / "US0006-a-unit.md").write_text(
+            _unit_text("US0006", 3, "Sam Eriksson (QA)"), encoding="utf-8")
+        self._config(self.root, "[qa, persona]")
+        for reviewer, rnd in (("Sam Eriksson (QA) (persona)", 1),
+                              ("Sam Eriksson QA (persona)", 2)):
+            self._ok(self._record(self.root, "US0006", reviewer), rnd)
+        state = critic.panel_state(self.root, "US0006", self.note)
+        self.assertIsNone(state["latest"]["qa"])
+        self.assertEqual(state["latest"]["persona"]["reviewer"], "Sam Eriksson QA (persona)")
+        ok, why = critic.approach_agreed(self.root, "US0006", self.note)
+        self.assertFalse(ok)
+        self.assertIn("qa seat: no verdict recorded", why)
+
+    def test_the_seat_is_the_first_reviewer_s_last_role_group(self) -> None:
+        """BG1780 AC2: the last `(<role>)` group of the cell's first reviewer, reviewers joined
+        by a `+` with a space each side, so the ledger's three-seat cells (CR0227's and
+        EP0030's in critic-verdicts.md) read as they did. MUTANTS: the join read as any `+`;
+        the first part read even when it holds no group; the first group read; the join
+        ignored."""
+        cases = {
+            "Sam Eriksson (QA) (persona)": "persona",
+            "Lena Marsh (Product) + Dani Okafor (Engineering) + Sam Eriksson (QA)": "product",
+            "Sam Eriksson (QA) + Lena Marsh (Product) + Dani Okafor (Engineering)": "qa",
+            "Bo (qa) + Ann (Product) (persona)": "qa",
+            "Ann + Bo (qa)": "qa",
+            "Pat (QA)+Ops (persona)": "persona",
+            "subagents:aab20a54+ae6208e8 (builders)": "builders",
+            "Claude (engineering seat)": "engineering",
+            "Claude (run thirteen grooming, D0479)": None,
+            "": None,
+        }
+        for cell, role in cases.items():
+            self.assertEqual(critic.recorded_seat(cell), role, cell)
+        self.assertIsNone(critic.recorded_seat(None))
+
+    def test_an_unreadable_note_is_refused_in_words(self) -> None:
+        """BG1780 AC3: a note that cannot be read is refused naming it, the OS's reason in its
+        own words or `it is not UTF-8 text`, exit 2 and nothing written; the digest the other
+        readers take of the same note is unchanged. MUTANTS: the UTF-8 check dropped; the
+        refusal's wrapper dropped; the reason lower-cased."""
+        self._config(self.root, None)
+        bad = self.tmp / "bad.md"
+        bad.write_bytes(b"# approach\n\xff\xfe\n")
+        cases = [(bad, "it is not UTF-8 text")]
+        if os.geteuid() != 0:  # root reads a file of mode 000
+            locked = self.tmp / "locked.md"
+            locked.write_text("# approach\n", encoding="utf-8")
+            locked.chmod(0)
+            self.addCleanup(locked.chmod, 0o600)
+            cases.append((locked, "Permission denied"))
+        for note, why in cases:
+            with self.subTest(note.name):
+                proc = self._record(self.root, "US0001", QA, note=note)
+                self._refused(proc, f"approach record refused: the note {note} cannot be "
+                                    f"read: {why}. Nothing was written.")
+                self.assertNotIn("Errno", proc.stderr)
+                self.assertIsNone(self._ledger(self.root))
+        self.assertRegex(critic.note_digest(bad), r"\A[0-9a-f]{12}\Z")
+        bad.write_text("# approach\n", encoding="utf-8")
+        self._ok(self._record(self.root, "US0001", QA, note=bad), 1)
+
     # -- the guards beside them --------------------------------------------------------------
 
     def test_a_malformed_panel_is_refused_by_name_before_the_rule_and_the_seat(self) -> None:
-        """MUTANTS: the list check, the string-entry check or the roster check dropped; the
-        panel validated after the rule; a seat refusal put before the rule's."""
+        """A unit that takes the review is refused naming the panel, before its seat is read; a
+        unit that takes none is refused for that, the bad panel named on a warning line.
+        MUTANTS: the list check, the string-entry check or the roster check dropped; the
+        panel's refusal raised by the settings read again, so every unit is refused for it; a
+        seat refusal put before the rule's."""
         for panel, words in (
                 ("qa", f"{KEY} is 'qa', which is not a list of seats, each a seat the project "
                        f"has a card for, or `persona`"),
@@ -316,8 +387,10 @@ class SolutionReviewPanelTests(unittest.TestCase):
                 self.assertIn(words, why)
         self._config(self.root, "[qa, nobody]")
         proc = self._record(self.root, "US0005", QA)
-        self._refused(proc, f"{KEY} is ['qa', 'nobody']")
-        self.assertNotIn("takes no solution review", proc.stderr)
+        self._refused(proc, "US0005 takes no solution review")
+        self.assertIn(f"warning: {KEY} is ['qa', 'nobody']", proc.stderr)
+        self._refused(self._record(self.root, "US0001", QA),
+                      f"approach record refused: {KEY} is ['qa', 'nobody']")
         self._config(self.root, "[qa, product, persona]")
         proc = self._record(self.root, "US0005", "Ola Ade (engineering)")
         self._refused(proc, "US0005 takes no solution review")

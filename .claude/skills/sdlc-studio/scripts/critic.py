@@ -2965,22 +2965,41 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
             f"reference-workflow-personas.md")
 
 
-#: A recorded seat: the first `(<role>)` or `(<role> seat)` group in a Reviewer or Author cell.
+#: A `(<role>)` or `(<role> seat)` group in a Reviewer or Author cell; the seat a cell records is
+#: the last such group of its first reviewer (`_seat_match`).
 _RECORDED_SEAT = re.compile(r"\(\s*([a-z][a-z0-9-]*)(?:\s+seat)?\s*\)", re.I)
+#: The join between reviewers named in one cell: a `+` with whitespace on each side.
+_REVIEWER_JOIN = re.compile(r"\s\+\s")
 
 #: The default building seat, when no lane brief recorded which seat built a unit.
 BUILD_SEAT = "engineering"
 
 
+def _seat_match(text: str) -> re.Match | None:
+    """The `(<role>)` group a cell's seat is read from: the last group of the cell's first
+    reviewer, reviewers joined by ` + `, the first being the first that holds any group. Its
+    offsets are the whole text's. None when no reviewer holds one."""
+    pos = 0
+    for sep in [*_REVIEWER_JOIN.finditer(text), None]:
+        end = sep.start() if sep else len(text)
+        found = list(_RECORDED_SEAT.finditer(text, pos, end))
+        if found:
+            return found[-1]
+        pos = sep.end() if sep else end
+    return None
+
+
 def recorded_seat(cell: str) -> str | None:
     """The seat role a recorded Reviewer or Author cell names, lower-cased, or None.
 
-    Read from the first `(<role>)` or `(<role> seat)` group only, never from the words around
-    it: `seat_for`'s name heuristic reads `engineering-seat build worker` as the engineering
-    seat, so a cell naming no seat would pass as naming one, and a seat's verdicts could not be
-    told from anyone else's.
+    Read from the last `(<role>)` or `(<role> seat)` group of the cell's first reviewer only
+    (`_seat_match`), never from the words around it: `seat_for`'s name heuristic reads
+    `engineering-seat build worker` as the engineering seat, so a cell naming no seat would pass
+    as naming one, and a seat's verdicts could not be told from anyone else's. The last group,
+    because a name can carry a parenthetical of its own: `Sam Eriksson (QA) (persona)` is the
+    persona. The first reviewer, so a cell joining several with ` + ` reads as its first.
     """
-    m = _RECORDED_SEAT.search(_unescape(cell or ""))
+    m = _seat_match(_unescape(cell or ""))
     return m.group(1).lower() if m else None
 
 
@@ -6466,16 +6485,36 @@ def solution_reviews_path(repo_root: Path | str) -> Path:
 
 def note_digest(path: Path | str) -> str:
     """The first 12 hex digits of the sha256 of the note's bytes."""
+    return _bytes_digest(Path(path).read_bytes())
+
+
+def _bytes_digest(data: bytes) -> str:
     import hashlib  # noqa: PLC0415 - local; only this path needs it
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+    return hashlib.sha256(data).hexdigest()[:12]
+
+
+def _note_bytes(note: Path | str) -> bytes:
+    """The note's bytes, refused with ValueError naming the note when they cannot be read: the
+    OS's reason in its own words, or that the note is not UTF-8 text."""
+    try:
+        data = Path(note).read_bytes()
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise ValueError(f"the note {note} cannot be read: it is not UTF-8 text") from None
+    except OSError as exc:
+        raise ValueError(f"the note {note} cannot be read: "
+                         f"{exc.strerror or type(exc).__name__}") from None
+    return data
 
 
 def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
     """`(min_points, risk_classes)` in force. A value of the wrong shape, either key's or that of
     the `review` or `review.solution_review` block above them, raises ValueError naming its key,
     never read as off, so a mistyped value cannot switch the step off silently. An empty block
-    reads as the defaults. A malformed `review.solution_review.panel` raises here too, as
-    `solution_review_panel` refuses it, so it refuses every reader before any unit is read."""
+    reads as the defaults. A malformed `review.solution_review.panel` does not raise here: it
+    is warned of on stderr, once per project per process (`_warn_malformed_panel`), and refused
+    by the panel's own readers (`solution_review_panel`), which `sprint.py lane brief` reaches
+    only for a unit that takes the solution review."""
     import config  # noqa: PLC0415 - deferred sibling: only the solution review reads it
     from lib import risk_class  # noqa: PLC0415
     try:
@@ -6502,8 +6541,26 @@ def solution_review_settings(repo_root: Path | str) -> tuple[int, list[str]]:
         raise ValueError(f"`{_CLASSES_KEY}` is {classes!r}, which is not a list of risk "
                          f"classes ({', '.join(risk_class.CLASSES)}) - refused rather than "
                          f"read as off")
-    solution_review_panel(repo_root)
+    _warn_malformed_panel(repo_root)
     return low, names
+
+
+#: The projects whose malformed panel this process has warned of, by resolved root and text.
+_PANEL_WARNED: set[tuple[str, str]] = set()
+
+
+def _warn_malformed_panel(repo_root: Path | str) -> None:
+    """One stderr line naming a malformed `review.solution_review.panel` and what it refuses,
+    once per project and refusal in a process; silent for a panel `solution_review_panel`
+    reads."""
+    try:
+        solution_review_panel(repo_root)
+    except ValueError as exc:
+        key = (str(Path(repo_root).resolve()), str(exc))
+        if key not in _PANEL_WARNED:
+            _PANEL_WARNED.add(key)
+            print(f"warning: {exc}; only a unit that takes the solution review is refused",
+                  file=sys.stderr)
 
 
 def _solution_review_rule(repo_root: Path | str, unit: str) -> tuple[str | None, str]:
@@ -6646,7 +6703,7 @@ def _panel_seat(cell: str, persona: str) -> str | None:
     if seat != _PERSONA:
         return seat
     text = _unescape(cell or "")
-    name = text[:_RECORDED_SEAT.search(text).start()]
+    name = text[:_seat_match(text).start()]
     return seat if _persona_key(name) == persona else None
 
 
@@ -6789,9 +6846,10 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
                            changes_file: Path | str | None = None) -> tuple[Path, dict, str]:
     """Append one round of a seat's verdict on the unit's approach note to the ledger, bound to
     the note's digest; `(path, row, reason)`. Refused with ValueError, nothing written: a GO
-    with changes, a CHANGES without them, a note that names no file, a reviewer not independent
-    of the author, a value no cell can hold, a unit `review.solution_review` does not name, or a
-    reviewer the unit's panel does not seat (`_panel_recorder`).
+    with changes, a CHANGES without them, a note that names no file or cannot be read
+    (`_note_bytes`), a reviewer not independent of the author, a value no cell can hold, a unit
+    `review.solution_review` does not name, or a reviewer the unit's panel does not seat
+    (`_panel_recorder`).
     The round is counted, the row appended and read back under the ledger lock, so the row
     returned is this call's own. The Unit cell holds the id as its artefact file spells it
     (`display_id`, so a schema v3 id keeps its dash), the Note cell the note's path relative to
@@ -6815,6 +6873,7 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
             raise ValueError(f"the changes file {changes_file} is empty")
     if not Path(note).is_file():
         raise ValueError(f"the note {note} names no file")
+    data = _note_bytes(note)
     ok, why = independence(reviewer, author)
     if not ok:
         raise ValueError(f"the reviewer must be independent of the author: {why}")
@@ -6823,7 +6882,7 @@ def record_solution_review(repo_root: Path | str, unit: str, verdict: str, note:
         raise ValueError(f"{unit} takes no solution review: {why_not}")
     seat_of = _panel_recorder(repo_root, unit, reviewer)
     shown = Path(os.path.relpath(Path(note).resolve(), Path(repo_root).resolve())).as_posix()
-    digest = note_digest(note)
+    digest = _bytes_digest(data)
     cells = [_solution_cell(v) for v in (sdlc_md.display_id(repo_root, unit), shown, reviewer,
                                          author, changes or "-")]
     path = solution_reviews_path(repo_root)
@@ -7119,7 +7178,8 @@ def approach_brief(repo_root: Path | str, unit: str, seat: str,
                            f"{now}), so judge it again.\n")
         panel_part += "\n"
         rules = (f"Rules: read-only on the repository, except your reply file, creating\n"
-                 f"{_REPLY_DIR}/ if it is absent.")
+                 f"{_REPLY_DIR}/ if it is absent.\nYou write only the reply file: the "
+                 f"orchestrator records it with the commands under RECORD.")
         target, changes_arg = f"your reply file\n{reply}", shlex.quote(str(reply))
     notes = ""
     if not recorded:
@@ -7209,10 +7269,12 @@ def approach_panel(repo_root: Path | str, unit: str,
                    note: Path | str) -> tuple[str, str | None]:
     """The roster of the unit's solution review, and the stderr lines its verb prints. Under
     `review.solution_review.panel`: one line per seat it seats, in the panel's order (the
-    reviewer, the round its brief is at, its latest verdict, its `approach brief` command, its
-    reply file and the `approach spend` command to run when its agent returns), one per seat it
-    skips and why, and how the briefs and replies travel; unset,
-    that one seat's GO agrees the approach and the one-seat brief form. Refused with ValueError,
+    reviewer, the round its brief is at, its latest verdict, a GO on a note since revised
+    marked as on an older note with its digest and the note's now, its `approach brief`
+    command, its reply file and the `approach spend` command to run when its agent returns),
+    one per seat it skips and why, and how the briefs and replies travel, the orchestrator
+    recording each reply; unset, that one seat's GO agrees the approach and the one-seat brief
+    form. Refused with ValueError,
     nothing printed: what `approach brief` refuses for the unit and note, a malformed panel, and
     a seated persona `_stakeholder` cannot frame. Resolves no seat card. Writes nothing."""
     root = Path(repo_root)
@@ -7222,6 +7284,7 @@ def approach_panel(repo_root: Path | str, unit: str,
     warns = [] if reason else [f"note: `critic.py approach record` will refuse a verdict on "
                                f"{shown}: it takes no solution review ({why_not})"]
     whole = shlex.quote(str(note_path.resolve()))
+    now = note_digest(note_path)
 
     def brief(seat: str) -> str:
         return f"critic.py approach brief --unit {shown} --seat {seat} --note {whole}"
@@ -7241,6 +7304,8 @@ def approach_panel(repo_root: Path | str, unit: str,
             who = seat_signature(root, seat)
         rnd, last = _seat_round(seating, seat, who)
         latest = f"latest {last['verdict']} at round {last['round']}" if last else "no verdict yet"
+        if last and last["verdict"] == "GO" and last["digest"] != now:
+            latest += f" on an older note, digest {last['digest']}; the note's digest now is {now}"
         lines.append(f"- {who} at round {rnd} ({latest}): {brief(seat)}; reply file "
                      f"{_reply_file(unit, seat, rnd)}; when its agent returns: critic.py "
                      f"approach spend --unit {shown} --seat {seat} --agent <agent id>")
@@ -7249,8 +7314,9 @@ def approach_panel(repo_root: Path | str, unit: str,
         "Each brief goes to its own agent, never two in one brief.",
         "A seat's next round resumes that seat's own agent where the host can, and otherwise "
         "briefs a fresh agent for that seat.",
-        f"Each seat writes its reply file and records it with `critic.py approach record`; a "
-        f"reply reaches the builder through `sprint.py lane brief --units {shown}`.",
+        f"Each seat writes only its reply file; the orchestrator records each reply with "
+        f"`critic.py approach record`, and a reply reaches the builder through "
+        f"`sprint.py lane brief --units {shown}`.",
         "The approach is agreed when every seat has a GO on the note's digest now."
         if seating["seats"] else
         f"`{_PANEL_KEY}` seats nobody on {shown}, so its approach cannot be agreed until the "
