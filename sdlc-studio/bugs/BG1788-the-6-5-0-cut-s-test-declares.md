@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_lean_release_cut_v65.py
+> **Affects:** tools/tests/test_lean_release_cut_v65.py, tools/tests/test_precommit_selection.py
 > **Evidence:** Run twenty-eight's fifth push of main (2026-11-28, about 06:46Z): devserver1 refused b5fd073af at the push boundary, full-suite 1 red: `tools/tests/test_precommit_selection.py`::SkipTests::`test_changelog_skips`; reproduced locally at the same commit.
 > **Created:** 2026-11-28
 > **Created-by:** sdlc-studio file
