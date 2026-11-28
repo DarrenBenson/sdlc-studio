@@ -221,7 +221,8 @@ def confirm(root: Path | str, bug: str, unit: str) -> dict:
         raise TraceRefused(f"{unit} {why}, so it cannot have let {result['bug']} through - "
                            f"refused, nothing written")
     path = Path(result["path"])
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")  # bare-read-ok: the confirm rewrites this one bug,
+    # so an unreadable file must refuse, not skip; a lossy decode is never written back
     lines = _set_line(text.splitlines(), "Escaped-via", pick["unit"], "Shipped-in")
     lines = _set_line(lines, "Escaped-verdict", describe_verdict(pick["verdict"]), "Escaped-via")
     sdlc_md.atomic_write(path, "\n".join(lines) + ("\n" if text.endswith("\n") else ""))

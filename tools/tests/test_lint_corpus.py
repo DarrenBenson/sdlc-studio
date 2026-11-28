@@ -380,11 +380,28 @@ class CorpusLaneRunsOnThisRepo(unittest.TestCase):
         for number in ("0063", "0064"):
             path = next(p for p in rfcs if f"/RFC{number}-" in p)
             text = (REPO / path).read_text(encoding="utf-8")
-            self.assertIn("> **Status:** Accepted", text)
+            # An RFC's status is derived from its children, so one decided RFC moves from
+            # Accepted to Delivered when its CRs are Done; the Decision block stays filled.
+            self.assertRegex(text, r"(?m)^> \*\*Status:\*\* (Accepted|Delivered)$", number)
             decision = text.split("\n## Decision\n", 1)[1].split("\n## ", 1)[0]
             for field in ("Outcome", "Date", "Rationale", "Decisions", "Spawned CRs"):
                 self.assertRegex(decision, rf"\*\*{field}:\*\*\s*\S", f"{number} {field}")
             self.assertNotRegex(decision, r"(?i):\*\*\s*pending")
+            # The rule judges only an Accepted RFC, so prove it reads this RFC's Decision block
+            # on a copy forced to Accepted with a pending Outcome, and passes the same copy at
+            # Delivered, whatever status the real RFC holds now.
+            outcome = re.search(r"(?m)^(.*\*\*Outcome:\*\*).*$", decision).group(1)
+            pending = text.replace(re.search(r"(?m)^.*\*\*Outcome:\*\*.*$", decision).group(0),
+                                   f"{outcome} pending")
+            for status, expected in (("Accepted", 1), ("Delivered", 0)):
+                forced = re.sub(r"(?m)^> \*\*Status:\*\* \w+$", f"> **Status:** {status}",
+                                pending, count=1)
+                with tempfile.TemporaryDirectory() as tmp:
+                    target = Path(tmp) / path
+                    target.parent.mkdir(parents=True)
+                    target.write_text(forced, encoding="utf-8")
+                    found = lint_corpus.accepted_rfc_decision_findings(Path(tmp), files=[path])
+                self.assertEqual(expected, len(found), f"{number} at {status}")
 
     def test_rfc0063_deferred_workstreams_name_a_request_or_ruling(self) -> None:
         text = next((REPO / p).read_text(encoding="utf-8")
