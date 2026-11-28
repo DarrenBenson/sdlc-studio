@@ -10,7 +10,6 @@ package.json has moved past 6.5.0 skips that check, naming why.
 Run from the repo root:
     python3 -m pytest tools/tests/test_lean_release_cut_v65.py
 """
-# test-census-subject: CHANGELOG.md
 from __future__ import annotations
 
 import importlib.util
