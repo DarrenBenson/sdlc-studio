@@ -18,6 +18,12 @@ version read as 6.5.0, so the checks judge 6.5.0's own CLI before the cut and af
 CHANGELOG link is judged against the layout the CHANGELOG has at the time: `[Unreleased]` before
 the cut, `[6.5.0]` after it. The BG1613 clause is judged on that bug's status at the commit that
 cut 6.5.0, so a later fix of it leaves the clause true.
+
+US1341 widens the notes to the release the operator widened: four more themes and the
+delegated one grown, three more refusals, more keys and a cost section naming every run that
+built 6.5. Each theme's sentences are closed lists checked on its bullet; the verbs a theme
+names are read from the 6.5.0 skill's own parsers, a verb a release adds being one the v6.4.0
+skill's parser lacks, and the annex version from the 6.5.0 `sprint_report.py`.
 """
 # test-census-subject: docs/release-notes-v6.5.0.md
 from __future__ import annotations
@@ -26,6 +32,7 @@ import json
 import re
 import shlex
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -43,6 +50,9 @@ from test_lean_release_notes_v61 import _norm, _run  # noqa: E402
 from test_lean_release_notes_v62 import _blocks, _cli, _extract, _tree  # noqa: E402
 from test_lean_release_notes_v64 import (  # noqa: E402
     COST, REPORT_ID, _flat, report_figures, shipped)
+from test_lean_specs_v64 import config_defaults  # noqa: E402
+sys.path.insert(0, str(REPO / "tools"))
+import check_links  # noqa: E402
 
 NOTES = REPO / "docs" / "release-notes-v6.5.0.md"
 NOTES_64_REL = "docs/release-notes-v6.4.0.md"
@@ -71,14 +81,111 @@ THEMES = {
         {"US1192", "US1193", "US1195", "US1196", "US1197", "US1198", "US1200", "US1201",
          "US1202"},
     "a delegated signature names the decision that authorised it, and a run awaiting its "
-    "signature no longer holds up the next": {"US1290", "US1291", "US1292", "US1293"},
+    "signature no longer holds up the next":
+        {"US1290", "US1291", "US1292", "US1293", "US1294", "US1295"},
     "a configuration a project switched on is never read as off, because pyyaml is required":
         {"US1296", "US1297", "US1298", "US1299"},
     "a red ci run on main is answered by a written policy": {"US1236", "US1237", "US1238"},
     "sdlc studio is documented as a harness-agnostic agent skill":
         {"US1315", "US1316", "US1317", "US1318", "US1319", "US1320", "US1321"},
     "filing and planning catch overlap before a run pays for it": {"US1314", "US1324", "US1326"},
+    "a run stops on spend as well as minutes and units, and effort can be set by kind of unit":
+        {"US1332", "US1333", "US1336"},
+    "the run report shows where each role's cache spend went, against its earlier runs and the "
+    "cache's lifetime": {"US1334", "US1335", "US1337", "US1338", "BG1764"},
+    "the person owns the prd and the pvd, and a seat checks the work against each under "
+    "authority the person delegates": {"US1339", "US1340"},
+    "each release leaves a committed record, and change failure rate is counted from those "
+    "records": {"US1233", "US1234", "US1235"},
+    "a builder's approach can be reviewed before any code is written":
+        {"US1344", "US1345", "US1346", "US1347", "US1348", "US1349", "US1350", "US1351",
+         "US1352", "US1353", "BG1768"},
 }
+SPEND, CACHE, OWNERSHIP, RECORD, SOLUTION = list(THEMES)[-5:]
+DELEGATED = list(THEMES)[3]
+#: Each theme the widened release adds or grows -> (what it must say, the pattern), each
+#: matched on the theme's bullet with its lines joined.
+CLAIMS = {
+    SPEND: (
+        ("the spend unit", r"counted in priced input-equivalent tokens"),
+        ("the three ways to set it",
+         r"set by `appetite\.spend`, `capacity\.spend` or `--appetite-spend`"),
+        ("both keys at 0", r"both keys shipping at 0, so no run has a spend ceiling until one is "
+                           r"set"),
+        ("the warnings", r"warns at 75 and 95 per cent"),
+        ("the stop", r"at the appetite, starts no further unit while the units already "
+                     r"dispatched finish"),
+        ("the unreadable meter", r"meter that cannot read leaves spend unjudged at that "
+                                 r"boundary and says so, while minutes and units still stop"),
+        ("the raise", r"`sprint appetite resize --spend` raises the ceiling only with "
+                      r"`--decision` naming a decision `sdlc-studio/decisions\.md` records"),
+        ("effort by kind", r"`routing\.effort` takes `docs`, `bug` and `code` entries, shipped "
+                           r"empty"),
+        ("the stamp and the brief", r"`sprint plan` stamps on each unit by its kind and "
+                                    r"`sprint lane brief` names")),
+    CACHE: (
+        ("the trend", r"cache-read share against its mean over the last five signed runs, "
+                      r"reading not available where no earlier run measured it"),
+        ("the fall", r"names a role whose share fell more than ten points below that mean"),
+        ("the retro", r"`retro\.py validate` then needs the retro's `## Cost` section to name it"),
+        ("the write split", r"`sprint cost --anatomy` and the report split each role's cache "
+                            r"writes into growth and re-writes after the 5-minute and 1-hour "
+                            r"lifetimes"),
+        ("the reviewer row", r"reviewer recorded with its seat counts in the reviewer row, not "
+                             r"under other")),
+    OWNERSHIP: (
+        ("every document", r"the person owns every document"),
+        ("the review leg", r"the Product Owner or Product Manager seat signs its document's "
+                           r"review leg"),
+        ("a fact", r"corrects a fact itself"),
+        ("a change request", r"proposes any change to a requirement, a priority or the scope as "
+                             r"a change request the person decides"),
+        ("asking", r"asks the person when unsure")),
+    RECORD: (
+        ("one record per version", r"writes one record per version"),
+        ("its date and reports", r"naming its date and the reports signed since the previous "
+                                 r"release"),
+        ("the rate", r"counts the releases with a linked incident over the releases counted in a "
+                     r"window"),
+        ("pending", r"release inside the settling period is pending"),
+        ("not measured", r"no release or no incident record reads not measured, never 0%"),
+        ("the report and the scorecard", r"sprint report and `retro\.py seats` show the same "
+                                         r"figure beside the CI-run rate, which is unchanged")),
+    DELEGATED: (
+        ("the disclosure", r"puts a disclosure line naming an accepted decision on a report "
+                           r"already signed, after which the report still checks VALID"),
+        ("the six reports and the pack", r"RPT0029 to RPT0034 and the 6\.4\.0 evidence pack "
+                                         r"now name the decision behind each delegated "
+                                         r"signature")),
+    SOLUTION: (
+        ("the note before code", r"approach note before any code is written"),
+        ("the step ships off", r"`review\.solution_review\.min_points` at 0 and "
+                               r"`review\.solution_review\.risk_classes` empty"),
+        ("the lines that turn it on", r"`min_points: [1-9]\d*` or `risk_classes: \[high\]` "
+                                      r"under `review\.solution_review` turns it on"),
+        ("the panel", r"A third line there, `panel: \[qa, product, persona\]`, seats each "
+                      r"named seat as its own review, and the approach is then agreed only "
+                      r"when every seat has a GO on the note as it stands"),
+        ("the skipped seats", r"the seat that builds a unit is skipped for it, as is `persona` "
+                              r"for a unit whose story names no Persona"),
+        ("the land refusal", r"`sprint lane land` refuses a (?:named )?unit until a GO stands "
+                             r"on the note as it is, from every seat when a panel is set"),
+        ("the code review", r"code review brief carries none of the note")),
+}
+#: Each theme that names a script's verbs -> (the script and its sub-command path, whether
+#: only the verbs added since 6.4.0 are named).
+VERBS = {RECORD: (("escape.py",), True), DELEGATED: (("sprint_report.py",), True),
+         SOLUTION: (("critic.py", "approach"), False)}
+#: A figure a theme would state as measured: a cost, a per cent or a percentage.
+MEASURED = re.compile(rf"{COST.pattern}|\d[\d.,]* ?(?:%|per cent\b)")
+LEAD = r"^What changed for you$"
+COST_SECTION = r"^What the 6\.5 runs cost$"
+#: What the cost section's opening must say of the runs that built 6.5.
+COST_SAYS = (r"Runs sixteen to twenty-eight built 6\.5\b",
+             r"The table holds the reports of runs sixteen to twenty-six\b",
+             r"Runs twenty-seven and twenty-eight are reported in their own signed reports",
+             r"no figure for them is given here")
+SCHEMA = re.compile(r'^EVIDENCE_SCHEMA_VERSION = "([^"]+)"$', re.M)
 #: Contributor tooling, named only under the contributors heading.
 CONTRIBUTORS = {"US1190", "US1191", "US1313"}
 #: A unit id a section outside the themes may name: the open bug the upgrade path discloses.
@@ -126,6 +233,19 @@ CHANGES = {
                              (r"never lowered",), r"component map"),
     "the second review seat": (r"second review seat is product on the shipped seats",
                                (r"building seat",), r"`critic\.py brief --seat <seat>`"),
+    "the effort refusal": (
+        r"`sprint plan` refuses an unknown `routing\.effort` entry",
+        (r"kind, role or effort", r"exits 2 naming the key", r"nothing selected or written",
+         r"6\.4 planned and ignored the entry"),
+        r"a kind of `docs`, `bug` or `code` holding `builder` or `reviewer`, or remove"),
+    "the cache-read retro": (
+        r"`retro\.py validate` refuses a retro that leaves a cache-read fall unnamed",
+        (r"`## Cost` section does not name each role",),
+        r"`## Cost` section naming each role the close named and the cause"),
+    "the annex version": (
+        r"report of record's annex moves to version",
+        (r"`cache_read_trend`", r"`cost_cache_writes`", r"\bconditional sections\b"),
+        r"read both as conditional"),
 }
 #: A claim that a copied 6.4 card naming "the Primary persona, Sam" is refused.
 SAM = re.compile(r"\bSam\b")
@@ -135,13 +255,20 @@ STAMP = "sdlc-studio/.version stale (skill 6.4.0 -> 6.5.0)"
 #: Each kind of change the dry run lists for a 6.4 project -> what the notes quote for it.
 QUOTES = {"stale-version": STAMP, "persona-standard": "set personas.standard: report",
           "retired-config-key": "require_ac_verification removed"}
-#: The keys 6.5 adds -> what reads the default `reference-config.md` states for each.
-NEW_KEYS = {
-    "personas.standard": r"^\| `personas\.standard` \| `([^`]+)` \|",
-    "ci.wait_timeout_minutes": r"^\| `ci\.wait_timeout_minutes` \|.*\| `([^`]+)` \|\s*$",
-    "ci.rerun_limit": r"^\| `ci\.rerun_limit` \|.*\| `([^`]+)` \|\s*$",
-    "review.rendered_paths": r"^\| `review\.rendered_paths` \| `([^`]+)` \|",
-}
+#: The keys 6.5 adds, each read where `reference-config.md` states its default.
+NEW_KEYS = ("personas.standard", "ci.wait_timeout_minutes", "ci.rerun_limit",
+            "review.rendered_paths", "appetite.spend", "capacity.spend", "routing.effort.docs",
+            "routing.effort.bug", "routing.effort.code", "review.solution_review.min_points",
+            "review.solution_review.risk_classes", "review.solution_review.panel")
+SOLUTION_KEYS = ("review.solution_review.min_points", "review.solution_review.risk_classes",
+                 "review.solution_review.panel")
+#: The one row stating the default of every kind `routing.effort` takes, its Default last.
+PER_KIND = re.compile(r"^\| `routing\.effort` per kind: `docs`, `bug`, `code` \|.*"
+                      r"\| `([^`]+)` \|\s*$", re.M)
+#: What the upgrade path must also say of the widened keys.
+UPGRADE_SAYS = (r"priced input-equivalent tokens",
+                r"a run with neither spend key set has no spend ceiling",
+                r"an empty kind entry leaves every unit at its role's effort")
 WAIT_KEY = "`ci.wait_timeout_minutes`"
 BOUNDS = re.compile(r"(?i)\b(?:bounds|gives up|times out|stops waiting|caps)\b")
 CLOSED = {"Fixed", "Verified", "Closed", "Won't Fix", "Superseded", "Duplicate", "Done"}
@@ -206,7 +333,7 @@ def entries_65(changelog: str, fragments: Path = FRAGMENTS) -> list[tuple[str, f
 
 
 def lead_problems(text: str, changelog: str) -> list[str]:
-    """AC1: a one-sentence headline naming 6.5.0 as current, a first section holding the eight
+    """AC1: a one-sentence headline naming 6.5.0 as current, a first section holding the
     themes and nothing else, each naming exactly its units or decisions, no unit id outside a
     theme bullet but in the known-issues, sources and contributors passages, the Breaking
     sentence and the bug the upgrade path names, the contributor tooling named under the
@@ -225,7 +352,7 @@ def lead_problems(text: str, changelog: str) -> list[str]:
     bullets, paras = _blocks(first)
     problems += [f"the first section holds text outside its theme bullets: "
                  f"{' '.join(p.split())[:80]!r}" for p in paras]
-    problems += [f"the first section lists a theme that is not one of the eight: "
+    problems += [f"the first section lists a theme that is not one of its themes: "
                  f"{' '.join(b.split())[:80]!r}" for b in bullets
                  if not any(theme in _norm(b) for theme in THEMES)]
     rest = blank
@@ -514,6 +641,7 @@ def upgrade_problems(text: str) -> list[str]:
             r"changes nothing else", apply):
         problems.append("the path does not say `migrate --apply` writes what the dry run listed "
                         "and nothing else")
+    problems += [f"the path does not say {rx!r}" for rx in UPGRADE_SAYS if not re.search(rx, flat)]
     return problems
 
 
@@ -521,11 +649,9 @@ def stated_defaults(reference: str | None = None) -> dict:
     """The default 6.5's `reference-config.md` states for each key 6.5 adds, or None where it
     states none."""
     reference = at_cut(f"{SKILL_REL}/reference-config.md") if reference is None else reference
-    out = {}
-    for key, rx in NEW_KEYS.items():
-        m = re.search(rx, reference, re.M)
-        out[key] = m.group(1) if m else None
-    return out
+    defaults, kind = config_defaults(reference), PER_KIND.search(reference)
+    return {key: (kind.group(1) if kind else None) if key.startswith("routing.effort.")
+            else defaults.get(key) for key in NEW_KEYS}
 
 
 def config_problems(old: str, stated: dict) -> list[str]:
@@ -679,6 +805,119 @@ def cost_problems(text: str, reports: Path = REPORTS) -> list[str]:
     return problems
 
 
+def theme_bullet(text: str, theme: str) -> str | None:
+    """The first section's bullet holding `theme`, its lines joined, or None."""
+    hits = [b for b in _blocks(section(text, LEAD) or "")[0] if theme in _norm(b)]
+    return " ".join(hits[0].split()) if hits else None
+
+
+def claim_problems(text: str, theme: str) -> list[str]:
+    """AC1, AC2, AC6: each sentence `CLAIMS` lists for `theme`, said in its bullet."""
+    bullet = theme_bullet(text, theme)
+    if bullet is None:
+        return [f"the first section lists no theme {theme[:60]!r}"]
+    return [f"the theme {theme[:40]!r} does not say {label}" for label, rx in CLAIMS[theme]
+            if not re.search(rx, bullet)]
+
+
+def help_verbs(usage: str) -> list[str]:
+    """The verbs an argparse `--help` lists: the one `{a,b}` group of its usage paragraph."""
+    groups = re.findall(r"\{([\w,-]+)\}", usage.split("\n\n", 1)[0])
+    if len(groups) != 1:
+        raise AssertionError(f"premise: the usage lists {len(groups)} verb groups, not one: "
+                             f"{usage[:120]!r}")
+    return groups[0].split(",")
+
+
+def cli_verbs(scripts: Path, argv: tuple[str, ...]) -> list[str]:
+    """The verbs `argv` (a script of `scripts`, then its sub-command path) lists in its help."""
+    proc = subprocess.run([sys.executable, "-B", str(scripts / argv[0]), *argv[1:], "--help"],
+                          capture_output=True, text=True, check=False, timeout=120,
+                          env=gitutil.git_env(PYTHONDONTWRITEBYTECODE="1"))
+    if proc.returncode != 0:
+        raise AssertionError(f"{' '.join(argv)} --help exited {proc.returncode}: {proc.stderr}")
+    return help_verbs(proc.stdout)
+
+
+def verb_problems(text: str, theme: str, argv: tuple[str, ...], now: list[str],
+                  before: list[str] | None) -> list[str]:
+    """AC2, AC6: the theme names, as `<script> <verb>`, each verb the 6.5.0 parser lists
+    (`now`), or, given the v6.4.0 parser's (`before`), the one verb 6.5 adds."""
+    want = [v for v in now if before is None or v not in before]
+    if before is not None and len(want) != 1:
+        return [f"{argv[0]} adds {len(want)} verbs since 6.4.0, where the theme names one: {want}"]
+    bullet = theme_bullet(text, theme) or ""
+    return [f"the theme {theme[:40]!r} does not name `{' '.join(argv)} {v}`" for v in want
+            if f"`{' '.join(argv)} {v}`" not in bullet]
+
+
+def measured_problems(text: str, theme: str) -> list[str]:
+    """AC6: the theme states no measured figure."""
+    return [f"the theme {theme[:40]!r} states a measured figure: {m.group()!r}"
+            for m in MEASURED.finditer(theme_bullet(text, theme) or "")]
+
+
+def sources_problems(text: str) -> list[str]:
+    """AC2, AC6: a Sources row naming exactly the units of each theme the release added or
+    grew."""
+    rows = [set(ID.findall(cells[2])) for cells in
+            (ln.split("|") for ln in (section(text, r"^Sources$") or "").splitlines()
+             if ln.startswith("| ")) if len(cells) > 3]
+    return [f"the Sources table has no row naming exactly the units of {theme[:60]!r}"
+            for theme in CLAIMS if THEMES[theme] not in rows]
+
+
+def schema_problems(text: str, now: str, before: str | None) -> list[str]:
+    """AC3: the annex bullet names the version the 6.5.0 `sprint_report.py` holds (`now`), one
+    the v6.4.0 one (`before`) did not."""
+    if now == before:
+        return [f"premise: the annex version {now} is 6.4.0's own"]
+    flat = " ".join((section(text, r"^Changed defaults and new refusals$") or "").split())
+    if not re.search(rf"annex moves to version {re.escape(now)}(?![\d])", flat):
+        return [f"the annex bullet does not name version {now}"]
+    return []
+
+
+def cost_section_problems(text: str) -> list[str]:
+    """AC5: the cost section names runs sixteen to twenty-eight as 6.5's, its table one row per
+    report of runs sixteen to twenty-six, and the later two as reported elsewhere with no figure;
+    the notes keep exactly one disclosure count line."""
+    body = section(text, COST_SECTION)
+    if body is None:
+        return ["no 'What the 6.5 runs cost' section"]
+    flat = " ".join(body.split())
+    problems = [f"the cost section does not say {rx!r}" for rx in COST_SAYS
+                if not re.search(rx, flat)]
+    rows = re.findall(r"^\| (RPT\d{4}) \|", body, re.M)
+    if sorted(rows) != sorted(RUNS_65):
+        problems.append(f"the cost table holds {rows}, not one row for each of {sorted(RUNS_65)}")
+    lines = [ln for ln in text.splitlines() if COUNT_LINE.match(ln.strip())]
+    if len(lines) != 1:
+        problems.append(f"the notes hold {len(lines)} disclosure count lines, not one")
+    return problems
+
+
+def tree_problems(text: str) -> list[str]:
+    """AC5: `tools/check_links.py` and `tools/lint-style.sh` pass on a tree holding the notes,
+    the links judged beside the pages they name and the style on the notes alone."""
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        shutil.copytree(REPO / "docs", root / "docs")
+        shutil.copy(CHANGELOG, root / CHANGELOG.name)
+        (root / "docs" / NOTES.name).write_text(text, encoding="utf-8")
+        problems = [m for m in check_links.check(root, set()) if NOTES.name in m]
+        alone = root / "alone" / "docs"
+        alone.mkdir(parents=True)
+        (alone / NOTES.name).write_text(text, encoding="utf-8")
+        proc = subprocess.run(["bash", str(REPO / "tools" / "lint-style.sh"), str(alone.parent)],
+                              capture_output=True, text=True, check=False, timeout=120,
+                              cwd=str(REPO), env=gitutil.git_env())
+        if proc.returncode != 0:
+            problems.append(f"tools/lint-style.sh refuses the notes: "
+                            f"{(proc.stdout + proc.stderr).strip()[:300]}")
+    return problems
+
+
 def setUpModule() -> None:
     """Three 6.4 projects made by v6.4.0's own `init.py` (bare, holding the 6.4.0 amigo cards as
     its own seat cards, and carrying `require_ac_verification`), and the 6.5.0 skill: the v6.5.0
@@ -723,7 +962,7 @@ def setUpModule() -> None:
         md = skill65 / "SKILL.md"
         md.write_text(re.sub(r'(?m)^(  version: )"[^"]+"$', r'\1"6.5.0"',
                              md.read_text(encoding="utf-8"), count=1), encoding="utf-8")
-    _FIX.update(projects=projects, scripts=skill65 / "scripts")
+    _FIX.update(projects=projects, scripts=skill65 / "scripts", scripts64=skill64 / "scripts")
 
 
 def tearDownModule() -> None:
@@ -799,7 +1038,7 @@ class ReleaseNotesTests(unittest.TestCase):
                          "unit id BG1497 outside a theme, under 'Upgrading from 6.4'")
         ninth = "- **Installs are faster.** Install is quicker.\n"
         self.assertFlags(lead(self.mutant("\n## Changed defaults",
-                                          f"{ninth}\n## Changed defaults")), "not one of the eight")
+                                          f"{ninth}\n## Changed defaults")), "not one of its themes")
         self.assertFlags(lead(self.mutant("\n## Changed defaults",
                                           f"\n{ninth[2:]}\n## Changed defaults")),
                          "outside its theme bullets")
@@ -1030,7 +1269,8 @@ class ReleaseNotesTests(unittest.TestCase):
 
         stated = stated_defaults()
         self.assertEqual({"personas.standard": "block", "ci.wait_timeout_minutes": "30",
-                          "ci.rerun_limit": "1", "review.rendered_paths": "[]"}, stated,
+                          "ci.rerun_limit": "1", "review.rendered_paths": "[]"},
+                         {k: stated[k] for k in NEW_KEYS[:4]},
                          "premise: reference-config.md states the four keys' defaults")
         path = lambda text: section(text, UPGRADE)  # noqa: E731
         self.assertFlags(config_problems(path(self.mutant("- `ci.rerun_limit`, default `1`:",
@@ -1137,6 +1377,247 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertFlags(fixture, "RPT0044, named for 55, is not signed")
         self.assertFlags(fixture, "RPT0045, named for 77, has no committed JSON")
         self.assertEqual([], cost_problems(self.text))
+
+    def bullet(self, theme: str) -> str:
+        """`theme`'s bullet in the first section, as the notes hold it."""
+        hits = [b for b in _blocks(section(self.text, LEAD) or "")[0] if theme in _norm(b)]
+        self.assertEqual(1, len(hits), f"premise: one bullet holds {theme[:60]!r}")
+        return hits[0]
+
+    def cut(self, rx: str, new: str = "", text: str | None = None) -> str:
+        """The notes with the one match of `rx`, its spaces read as any whitespace, replaced."""
+        text = self.text if text is None else text
+        found = re.compile(rx.replace(" ", r"\s+"))
+        self.assertEqual(1, len(found.findall(text)), f"mutant anchor not unique: {rx[:60]!r}")
+        return found.sub(lambda _m: new, text, count=1)
+
+    def assertClaims(self, theme: str) -> None:
+        """`theme` says each of its `CLAIMS`, and is flagged with any one of them cut."""
+        self.assertEqual([], claim_problems(self.text, theme))
+        raw = self.bullet(theme)
+        flat = " ".join(raw.split())
+        for label, rx in CLAIMS[theme]:
+            with self.subTest(theme=theme[:30], claim=label):
+                m = re.search(rx, flat)
+                self.assertIsNotNone(m, f"premise: {label} matches")
+                cut = self.mutant(raw, flat[:m.start()] + flat[m.end():])
+                self.assertFlags(claim_problems(cut, theme), f"does not say {label}")
+
+    def test_the_lead_names_the_widened_cost_controls(self) -> None:
+        """AC1. MUTANTS: the notes before the widening (each theme's bullet cut); a theme with a
+        unit cut (US1336) or one over (US1339); each sentence the criterion names cut from its
+        bullet; a fourteenth theme."""
+        lead = lambda text: lead_problems(text, self.changelog)  # noqa: E731
+        self.assertEqual([], lead(self.text))
+        for theme in (SPEND, CACHE):
+            self.assertFlags(lead(self.mutant(self.bullet(theme) + "\n", "")), "lists no theme")
+            self.assertFlags(claim_problems(self.mutant(self.bullet(theme) + "\n", ""), theme),
+                             "lists no theme")
+            self.assertClaims(theme)
+        self.assertFlags(lead(self.mutant("US1332, US1333 and US1336.", "US1332 and US1333.")),
+                         "does not name US1336")
+        self.assertFlags(lead(self.mutant("US1332, US1333 and US1336.",
+                                          "US1332, US1333, US1336 and US1339.")),
+                         "names US1339, not one of its units")
+        extra = "- **Installs are faster.** Install is quicker.\n"
+        self.assertFlags(lead(self.mutant("\n## Changed defaults", f"{extra}\n## Changed defaults")),
+                         "not one of its themes")
+
+    def test_the_lead_names_ownership_the_release_record_and_the_disclosure(self) -> None:
+        """AC2. MUTANTS: each new theme's bullet cut; the delegated theme as it stood (US1290 to
+        US1293); each sentence the criterion names cut; a Sources row cut or one id short; the
+        verb each parser adds cut from its theme; a parser adding a second verb."""
+        lead = lambda text: lead_problems(text, self.changelog)  # noqa: E731
+        self.assertEqual([], lead(self.text))
+        for theme in (OWNERSHIP, RECORD):
+            self.assertFlags(lead(self.mutant(self.bullet(theme) + "\n", "")), "lists no theme")
+        for theme in (OWNERSHIP, RECORD, DELEGATED):
+            self.assertClaims(theme)
+        self.assertFlags(lead(self.mutant("US1293, US1294 and US1295.", "US1293.")),
+                         "does not name US1294")
+        self.assertEqual([], sources_problems(self.text))
+        self.assertFlags(sources_problems(self.mutant(
+            "| The person owns the PRD and the PVD | US1339, US1340 |\n", "")),
+            "the units of 'the person owns")
+        self.assertFlags(sources_problems(self.mutant("US1293, US1294, US1295 |", "US1293 |")),
+                         "the units of 'a delegated signature")
+        self.assertEqual(["a", "b-c"], help_verbs("usage: x [-h] {a,b-c} ...\n\nmore {d,e}"))
+        with self.assertRaisesRegex(AssertionError, "2 verb groups"):
+            help_verbs("usage: x [-h] {a,b} {c,d}\n")
+        with self.assertRaisesRegex(AssertionError, "0 verb groups"):
+            help_verbs("usage: x [-h]\n")
+        argv = VERBS[RECORD][0]
+        self.assertFlags(verb_problems(self.text, RECORD, argv, ["a", "b", "c"], ["a"]),
+                         "adds 2 verbs")
+        self.assertFlags(verb_problems(self.text, RECORD, argv, ["a"], ["a"]), "adds 0 verbs")
+        self.assertFlags(verb_problems(self.text, RECORD, argv, ["a", "b"], ["a"]),
+                         "does not name `escape.py b`")
+        self.needs_cli()
+        for theme in (RECORD, DELEGATED):
+            argv = VERBS[theme][0]
+            now, before = cli_verbs(_FIX["scripts"], argv), cli_verbs(_FIX["scripts64"], argv)
+            self.assertEqual([], verb_problems(self.text, theme, argv, now, before))
+            (verb,) = [v for v in now if v not in before]
+            self.assertFlags(verb_problems(self.mutant(f"`{argv[0]} {verb}`", f"`{argv[0]}`"),
+                                           theme, argv, now, before),
+                             f"does not name `{argv[0]} {verb}`")
+            self.assertFlags(verb_problems(self.text, theme, argv, now + ["extra"], before),
+                             "adds 2 verbs")
+
+    def test_the_widened_release_names_its_new_refusals(self) -> None:
+        """AC3. MUTANTS: each new change's bullet cut; its `Instead:` cut; each thing it must
+        say cut; its replacement cut; the annex's replacement made optional, not conditional;
+        the annex version read as 6.4.0's; the annex version unchanged since 6.4.0."""
+        entries = entries_65(self.changelog)
+        self.assertEqual([], changed_problems(self.text, entries))
+        body = section(self.text, r"^Changed defaults and new refusals$")
+        for label in ("the effort refusal", "the cache-read retro", "the annex version"):
+            names, says, instead = CHANGES[label]
+            raw = [b for b in _blocks(body)[0] if re.search(names, " ".join(b.split()))][0]
+            flat = " ".join(raw.split())
+            head, _, tail = flat.partition("Instead:")
+            with self.subTest(change=label):
+                self.assertFlags(changed_problems(self.mutant(raw + "\n", ""), entries),
+                                 f"never names {label}")
+                self.assertFlags(changed_problems(self.mutant(raw, head.strip()), entries),
+                                 "a change named with no replacement")
+                for rx in says:
+                    m = re.search(rx, head)
+                    cut = self.mutant(raw, flat[:m.start()] + flat[m.end():])
+                    self.assertFlags(changed_problems(cut, entries), f"{label} does not say")
+                m = re.search(instead, tail)
+                cut = self.mutant(raw, head + "Instead:" + tail[:m.start()] + tail[m.end():])
+                self.assertFlags(changed_problems(cut, entries), f"{label} is named with no "
+                                                                 "replacement beside it")
+        self.assertFlags(changed_problems(self.mutant("read both as conditional",
+                                                      "read both as optional"), entries),
+                         "the annex version is named with no replacement beside it")
+        now = SCHEMA.search(at_cut(f"{SKILL_REL}/scripts/sprint_report.py")).group(1)
+        self.assertFlags(schema_problems(self.mutant(f"version {now}.", "version 0.9."), now,
+                                         None), f"does not name version {now}")
+        self.assertFlags(schema_problems(self.text, now, now), "is 6.4.0's own")
+        self.needs_cli()
+        old = SCHEMA.search(shipped(f"{SKILL_REL}/scripts/sprint_report.py"))
+        before = old.group(1) if old else None
+        self.assertEqual([], schema_problems(self.text, now, before))
+        self.assertFlags(schema_problems(self.mutant(f"version {now}.", f"version {before}."),
+                                         now, before), f"does not name version {now}")
+
+    def test_the_upgrade_path_names_the_widened_keys(self) -> None:
+        """AC4. MUTANTS: the key bullets as they stood (the spend and kind bullets cut); a spend
+        key's default read as 1; the per-kind row cut from `reference-config.md`, or its default
+        changed; each sentence the criterion names cut from the path."""
+        stated = stated_defaults()
+        self.assertEqual({"appetite.spend": "0", "capacity.spend": "0",
+                          "routing.effort.docs": "{}", "routing.effort.bug": "{}",
+                          "routing.effort.code": "{}"}, {k: stated[k] for k in NEW_KEYS[4:9]},
+                         "premise: reference-config.md states the widened keys' defaults")
+        path = lambda text: section(text, UPGRADE)  # noqa: E731
+        old = path(self.text)
+        self.assertEqual([], config_problems(old, stated))
+        self.assertEqual([], upgrade_problems(self.text))
+        spend = "- `appetite.spend` and `capacity.spend`, default `0`:"
+        cut = self.cut(r"(?s)- `appetite\.spend` and .*? spend ceiling\.\n")
+        self.assertFlags(config_problems(path(cut), stated), "does not name appetite.spend")
+        self.assertFlags(config_problems(path(cut), stated), "does not name capacity.spend")
+        kinds = self.cut(r"(?s)- `routing\.effort\.docs`, .*? role's effort\.\n")
+        self.assertFlags(config_problems(path(kinds), stated), "does not name routing.effort.code")
+        self.assertFlags(config_problems(path(self.mutant(spend, spend.replace("`0`", "`1`"))),
+                                         stated), "gives appetite.spend the default '1'")
+        reference = at_cut(f"{SKILL_REL}/reference-config.md")
+        self.assertIsNotNone(PER_KIND.search(reference), "premise: the per-kind row is found")
+        self.assertFlags(config_problems(old, stated_defaults(PER_KIND.sub("", reference))),
+                         "states no default for routing.effort.docs")
+        moved = PER_KIND.sub(lambda m: m.group(0)[:m.start(1) - m.start()] + "{builder: high}"
+                             + m.group(0)[m.end(1) - m.start():], reference)
+        self.assertFlags(config_problems(old, stated_defaults(moved)),
+                         "reference-config.md states '{builder: high}'")
+        for rx in UPGRADE_SAYS:
+            with self.subTest(says=rx):
+                self.assertFlags(upgrade_problems(self.text.replace(old, self.cut(rx, "", old))),
+                                 f"does not say {rx!r}")
+
+    def test_the_cost_section_names_every_run_that_built_65(self) -> None:
+        """AC5. MUTANTS: the opening as it stood (runs sixteen to twenty-six); each thing the
+        opening must say cut; a row for RPT0046; a figure for run twenty-seven naming no report;
+        the count line doubled or cut; a link to an anchor no page holds; an em dash."""
+        self.assertEqual([], cost_section_problems(self.text))
+        self.assertEqual([], cost_problems(self.text))
+        self.assertEqual([], tree_problems(self.text))
+        self.assertFlags(cost_section_problems(self.cut(r"Runs sixteen to twenty-eight built",
+                                                        "Runs sixteen to twenty-six built")),
+                         "does not say 'Runs sixteen to twenty-eight")
+        for rx in COST_SAYS[1:]:
+            with self.subTest(says=rx):
+                self.assertFlags(cost_section_problems(self.cut(rx)), f"does not say {rx!r}")
+        row = "| RPT0046 | twenty-seven | 22 points | $215.82 | $9.81 | $5.46 |\n"
+        later = self.mutant("| RPT0045 | twenty-six |", row + "| RPT0045 | twenty-six |")
+        self.assertFlags(cost_section_problems(later), "the cost table holds")
+        self.assertFlags(cost_problems(later), "RPT0046, named for")
+        unnamed = self.cut(r"no figure for them is given here\.",
+                           "no figure for them is given here. Run twenty-seven cost $9.81 a point.")
+        self.assertFlags(cost_problems(unnamed), "a cost figure with no report named")
+        count = [ln for ln in self.text.splitlines() if COUNT_LINE.match(ln)][0]
+        self.assertFlags(cost_section_problems(self.mutant(count, f"{count}\n\n{count}")),
+                         "2 disclosure count lines")
+        self.assertFlags(cost_section_problems(self.mutant(count, "")), "0 disclosure count lines")
+        self.assertFlags(tree_problems(self.mutant("](existing-users.md)",
+                                                   "](existing-users.md#no-such-heading)")),
+                         NOTES.name)
+        self.assertFlags(tree_problems(self.cut(r"so none is given\.", "so none is given \u2014 "
+                                                                       "by design.")),
+                         "lint-style.sh refuses the notes")
+
+    def test_the_lead_names_the_solution_review_and_the_upgrade_path_its_keys(self) -> None:
+        """AC6. MUTANTS: the theme's bullet cut; a decision named in it (D0647); a measured
+        figure stated; its Sources row cut; each solution review key's bullet cut; each approach
+        verb the 6.5.0 parser lists cut; each sentence the criterion names cut."""
+        lead = lambda text: lead_problems(text, self.changelog)  # noqa: E731
+        self.assertEqual([], lead(self.text))
+        self.assertFlags(lead(self.mutant(self.bullet(SOLUTION) + "\n", "")), "lists no theme")
+        self.assertFlags(lead(self.mutant("US1353 and BG1768.", "US1353, BG1768 and D0647.")),
+                         "names D0647, not one of its units")
+        self.assertEqual([], measured_problems(self.text, SOLUTION))
+        self.assertFlags(measured_problems(self.cut(
+            r"none of the note\.", "none of the note, and lifts first-round approval by 20 per "
+                                   "cent."), SOLUTION), "states a measured figure")
+        self.assertFlags(measured_problems(self.cut(r"none of the note\.", "none of the note, "
+                                                    "at $1.20 a unit."), SOLUTION),
+                         "states a measured figure")
+        self.assertFlags(sources_problems(self.cut(r"\| A builder's approach can be reviewed "
+                                                   r"\|[^\n]*\n")),
+                         "the units of \"a builder's approach")
+        old, stated = section(self.text, UPGRADE), stated_defaults()
+        self.assertEqual({"review.solution_review.min_points": "0",
+                          "review.solution_review.risk_classes": "[]",
+                          "review.solution_review.panel": "[]"},
+                         {k: stated[k] for k in SOLUTION_KEYS},
+                         "premise: reference-config.md states the solution review keys' defaults")
+        self.assertEqual([], config_problems(old, stated))
+        for key, rx in (("min_points", r"min_points`, default .*? by points\."),
+                        ("risk_classes", r"risk_classes`, default .*? their points\."),
+                        ("panel", r"panel`, default .*? agrees the approach\.")):
+            with self.subTest(key=key):
+                cut = self.cut(rf"(?s)- `review\.solution_review\.{rx}\n")
+                self.assertFlags(config_problems(section(cut, UPGRADE), stated),
+                                 f"does not name review.solution_review.{key}")
+        # The 6.5.0 parser, or in a tree that is no clone (so holds no tag), this tree's own,
+        # which is what it ships: the verbs are judged either way, needing no v6.4.0 tree.
+        argv = VERBS[SOLUTION][0]
+        now = cli_verbs(_FIX.get("scripts", REPO / SKILL_REL / "scripts"), argv)
+        self.assertEqual([], verb_problems(self.text, SOLUTION, argv, now, None))
+        raw = self.bullet(SOLUTION)
+        flat = " ".join(raw.split())
+        for verb in now:
+            with self.subTest(verb=verb):
+                named = f"`critic.py approach {verb}`"
+                self.assertEqual(1, flat.count(named), f"premise: the theme names {named}")
+                cut = self.mutant(raw, flat.replace(named, "`critic.py approach`"))
+                self.assertFlags(verb_problems(cut, SOLUTION, argv, now, None),
+                                 f"does not name {named}")
+        self.assertClaims(SOLUTION)
+        for key in SOLUTION_KEYS:
+            self.assertIn(key, NEW_KEYS, f"the upgrade path's closed list lacks {key}")
 
 
 class RulingCommitTests(unittest.TestCase):

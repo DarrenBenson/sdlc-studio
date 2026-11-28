@@ -58,7 +58,10 @@ the "Upgrading from 6.4" section below is the whole path; from an earlier releas
   report whose signature drops a delegation its run record holds. A run closed and awaiting
   its signature no longer holds the run slot: `sprint plan --write` names each waiting run and
   opens the next, and `sprint sign` seals the waiting run later, judged against the commit that
-  filed its record once HEAD has moved past it. Delivered by US1290, US1291, US1292 and US1293.
+  filed its record once HEAD has moved past it. `sprint_report.py disclose` puts a disclosure
+  line naming an accepted decision on a report already signed, after which the report still
+  checks VALID, and RPT0029 to RPT0034 and the 6.4.0 evidence pack now name the decision behind
+  each delegated signature. Delivered by US1290, US1291, US1292, US1293, US1294 and US1295.
 - **A configuration a project switched on is never read as off, because PyYAML is required.**
   Without PyYAML a project's `.config.yaml` was read as the shipped defaults with one warning,
   so a gate the project switched on was off. Now `install.sh` and `install.ps1` refuse a
@@ -90,6 +93,51 @@ the "Upgrading from 6.4" section below is the whole path; from an earlier releas
   reports a story whose stamped `Risk-class` ranks below the class the component map now gives
   its `Affects`, and `reconcile.py apply` raises it and never lowers one. Delivered by US1314,
   US1324 and US1326.
+- **A run stops on spend as well as minutes and units, and effort can be set by kind of unit.**
+  The spend appetite is counted in priced input-equivalent tokens and set by `appetite.spend`,
+  `capacity.spend` or `--appetite-spend`, both keys shipping at 0, so no run has a spend ceiling
+  until one is set. The breaker warns at 75 and 95 per cent and, at the appetite, starts no
+  further unit while the units already dispatched finish. A meter that cannot read leaves spend
+  unjudged at that boundary and says so, while minutes and units still stop the run. `sprint
+  appetite resize --spend` raises the ceiling only with `--decision` naming a decision
+  `sdlc-studio/decisions.md` records. `routing.effort` takes `docs`, `bug` and `code` entries,
+  shipped empty, which `sprint plan` stamps on each unit by its kind and `sprint lane brief`
+  names. Delivered by US1332, US1333 and US1336.
+- **The run report shows where each role's cache spend went, against its earlier runs and the
+  cache's lifetime.** The report sets each role's cache-read share against its mean over the
+  last five signed runs, reading not available where no earlier run measured it. The close
+  names a role whose share fell more than ten points below that mean, and `retro.py validate`
+  then needs the retro's `## Cost` section to name it. `sprint cost --anatomy` and the report
+  split each role's cache writes into growth and re-writes after the 5-minute and 1-hour
+  lifetimes. A reviewer recorded with its seat counts in the reviewer row, not under other.
+  Delivered by US1334, US1335, US1337, US1338 and BG1764.
+- **The person owns the PRD and the PVD, and a seat checks the work against each under
+  authority the person delegates.** The skill says the person owns every document it keeps,
+  and the Product Owner or Product Manager seat signs its document's review leg, corrects a fact
+  itself, proposes any change to a requirement, a priority or the scope as a change request the
+  person decides, and asks the person when unsure. Delivered by US1339 and US1340.
+- **Each release leaves a committed record, and change failure rate is counted from those
+  records.** The cut writes one record per version to `sdlc-studio/reports/releases.jsonl`,
+  naming its date and the reports signed since the previous release. `escape.py failure-rate`
+  counts the releases with a linked incident over the releases counted in a window. A release
+  inside the settling period is pending, and a project with no release or no incident record
+  reads not measured, never 0%. The sprint report and `retro.py seats` show the same figure
+  beside the CI-run rate, which is unchanged. Delivered by US1233, US1234 and US1235.
+- **A builder's approach can be reviewed before any code is written.** A seat reviews the
+  builder's approach note before any code is written. The step ships off, with
+  `review.solution_review.min_points` at 0 and `review.solution_review.risk_classes` empty, and
+  `min_points: 3` or `risk_classes: [high]` under `review.solution_review` turns it on. A third
+  line there, `panel: [qa, product, persona]`, seats each named seat as its own review, and the
+  approach is then agreed only when every seat has a GO on the note as it stands; the seat that
+  builds a unit is skipped for it, as is `persona` for a unit whose story names no Persona.
+  `critic.py approach brief` prints a seat's review brief for the note, `critic.py approach
+  record` records its GO or CHANGES against the note's digest, `critic.py approach panel`
+  prints one brief command, one reply file and one spend command for each seat, and
+  `critic.py approach spend` adds a seat agent's priced spend to the unit's delegated spend in
+  the open run. `sprint lane land` refuses a named unit until a GO stands on the note as it is,
+  from every seat when a panel is set. The code review brief carries none of the note.
+  Delivered by US1344, US1345, US1346, US1347, US1348, US1349, US1350, US1351, US1352,
+  US1353 and BG1768.
 
 ## Changed defaults and new refusals
 
@@ -147,6 +195,18 @@ to do instead:
   a stamp is never lowered.
   Instead: change the component map to change the class a story reads at, or raise a stamp by
   hand for a story that needs a higher class than the map gives.
+- **`sprint plan` refuses an unknown `routing.effort` entry.** An unknown kind, role or effort
+  under `routing.effort` exits 2 naming the key, with nothing selected or written, where 6.4
+  planned and ignored the entry.
+  Instead: use a kind of `docs`, `bug` or `code` holding `builder` or `reviewer`, or remove the
+  entry.
+- **`retro.py validate` refuses a retro that leaves a cache-read fall unnamed.** A retro whose
+  `## Cost` section does not name each role the close recorded as a cache-read fall is refused,
+  naming the role, its share and its mean.
+  Instead: add a `## Cost` section naming each role the close named and the cause.
+- **The report of record's annex moves to version 1.1.** It adds the conditional sections
+  `cache_read_trend` and `cost_cache_writes`, which a page filed before them does not carry.
+  Instead: read both as conditional, as the annex lists them.
 - **A high-class unit's second review seat is product on the shipped seats.** `sprint plan`
   gave every high-class unit engineering, the default building seat, as its second review
   seat, so that review was the builder's own.
@@ -190,12 +250,26 @@ that `personas.standard`, so a project reads each other key at its default until
   filed flaky bug, which `gate.py --red-run` reads.
 - `review.rendered_paths`, default `[]`: globs of the files the project's build consumes, which
   `critic.py caller-check` reads as no mechanism.
+- `appetite.spend` and `capacity.spend`, default `0`: the run's spend ceiling, counted in priced
+  input-equivalent tokens; `appetite.spend` at 0 inherits `capacity.spend`, so a run with
+  neither spend key set has no spend ceiling.
+- `routing.effort.docs`, `routing.effort.bug` and `routing.effort.code`, default `{}`: the
+  effort each role is spawned at for that kind of unit; an empty kind entry leaves every unit
+  at its role's effort.
+- `review.solution_review.min_points`, default `0`: a unit of this many points or more takes a
+  solution review, so at 0 none does by points.
+- `review.solution_review.risk_classes`, default `[]`: the risk classes whose units take a
+  solution review whatever their points.
+- `review.solution_review.panel`, default `[]`: the seats that review a unit's approach note,
+  each its own agent; empty means one seat's GO agrees the approach.
 
 ## What the 6.5 runs cost
 
-Runs sixteen to twenty-six built 6.5, and the operator's delegate signed each report under a
-decision of record. Each row is read from that report's Estimates table; a total across
-reports is carried by no single report, so none is given.
+Runs sixteen to twenty-eight built 6.5. The table holds the reports of runs sixteen to
+twenty-six, each signed by the operator's delegate under a decision of record and each row read
+from that report's Estimates table. Runs twenty-seven and twenty-eight are reported in their
+own signed reports, and no figure for them is given here. A total across reports is carried by
+no single report, so none is given.
 
 | Report | Run | Delivered | Dollar cost | Per point | Forecast per point |
 | --- | --- | --- | --- | --- | --- |
@@ -237,10 +311,15 @@ Unit ids behind each passage, in this repository.
 | 6.5 ships with fewer than 50 open defects | D0560, D0563, D0564 and D0613 (`sdlc-studio/decisions.md`) |
 | Every persona and seat card is held to a written standard | US1036, US1039, US1040, US1046, US1052, US1053, US1054, US1055, US1056, US1057, US1322, CR0748, BG1655 |
 | A sprint walks a wave from build to paperwork | US1192, US1193, US1195, US1196, US1197, US1198, US1200, US1201, US1202 |
-| A delegated signature names its decision | US1290, US1291, US1292, US1293 |
+| A delegated signature names its decision | US1290, US1291, US1292, US1293, US1294, US1295 |
 | PyYAML is required | US1296, US1297, US1298, US1299 |
 | A red CI run on main | US1236, US1237, US1238 |
 | A harness-agnostic Agent Skill | US1315, US1316, US1317, US1318, US1319, US1320, US1321 |
 | Filing and planning catch overlap | US1314, US1324, US1326 |
-| Changed defaults and new refusals | US1296, US1297, US1298, US1299, BG1063, US1055, US1056, US1322, US1291, US1324, BG0954, US1290, BG1569, US1314, BG1609 |
-| Upgrading from 6.4 | US1299, US1322, BG1063, US1237, BG1606, BG1613 |
+| A run stops on spend | US1332, US1333, US1336 |
+| Where each role's cache spend went | US1334, US1335, US1337, US1338, BG1764 |
+| The person owns the PRD and the PVD | US1339, US1340 |
+| Each release leaves a committed record | US1233, US1234, US1235 |
+| A builder's approach can be reviewed | US1344, US1345, US1346, US1347, US1348, US1349, US1350, US1351, US1352, US1353, BG1768 |
+| Changed defaults and new refusals | US1296, US1297, US1298, US1299, BG1063, US1055, US1056, US1322, US1291, US1324, BG0954, US1290, BG1569, US1314, BG1609, US1336, US1335, US1334, US1338 |
+| Upgrading from 6.4 | US1299, US1322, BG1063, US1237, BG1606, BG1613, US1332, US1336, US1344 |
