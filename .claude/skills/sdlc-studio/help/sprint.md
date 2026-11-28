@@ -798,11 +798,14 @@ their land step; take it through `lane brief`, its note, `critic.py approach bri
 committed in the orchestrator's own tree is not checked.
 
 With `review.solution_review.panel` set, each seat it names is its own agent and its own review,
-and the land needs a GO from every seat the panel names, not only the latest row: the approach is
-agreed only when every seat has a GO on the note as it stands, so a product GO alone under
-`[product, qa]` is refused naming "qa seat: no verdict recorded". The lane brief relays each
-seat's reply by seat and round, quoting a CHANGES item by item, and says the approach is agreed
-only then.
+and the land needs a GO from every seat that sits on the unit, not only the latest row: the
+approach is agreed only when every seat has a GO on the note as it stands, so a product GO alone
+under `[product, qa]` is refused naming "qa seat: no verdict recorded". A seat the panel names
+does not sit on a unit when it is the seat building the unit (the seat its lane brief recorded,
+else engineering), or when it is `persona` and the unit's story names no Persona, so under
+`[qa, product, persona]` a unit with no Persona is agreed on a qa GO and a product GO alone; the
+lane brief names each seat skipped and why. It relays each seat's reply by seat and round,
+quoting a CHANGES item by item, and says the approach is agreed only then.
 
 Once the reviewer answers that brief, one command finishes the unit:
 
