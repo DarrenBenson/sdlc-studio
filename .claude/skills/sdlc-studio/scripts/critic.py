@@ -7209,8 +7209,9 @@ def approach_panel(repo_root: Path | str, unit: str,
                    note: Path | str) -> tuple[str, str | None]:
     """The roster of the unit's solution review, and the stderr lines its verb prints. Under
     `review.solution_review.panel`: one line per seat it seats, in the panel's order (the
-    reviewer, the round its brief is at, its latest verdict, its `approach brief` command and its
-    reply file), one per seat it skips and why, and how the briefs and replies travel; unset,
+    reviewer, the round its brief is at, its latest verdict, its `approach brief` command, its
+    reply file and the `approach spend` command to run when its agent returns), one per seat it
+    skips and why, and how the briefs and replies travel; unset,
     that one seat's GO agrees the approach and the one-seat brief form. Refused with ValueError,
     nothing printed: what `approach brief` refuses for the unit and note, a malformed panel, and
     a seated persona `_stakeholder` cannot frame. Resolves no seat card. Writes nothing."""
@@ -7241,7 +7242,8 @@ def approach_panel(repo_root: Path | str, unit: str,
         rnd, last = _seat_round(seating, seat, who)
         latest = f"latest {last['verdict']} at round {last['round']}" if last else "no verdict yet"
         lines.append(f"- {who} at round {rnd} ({latest}): {brief(seat)}; reply file "
-                     f"{_reply_file(unit, seat, rnd)}")
+                     f"{_reply_file(unit, seat, rnd)}; when its agent returns: critic.py "
+                     f"approach spend --unit {shown} --seat {seat} --agent <agent id>")
     lines += [f"- {seat} is skipped: {why}" for seat, why in seating["skipped"].items()]
     lines += [
         "Each brief goes to its own agent, never two in one brief.",
@@ -7268,6 +7270,81 @@ def cmd_approach_panel(args: argparse.Namespace) -> int:
     print(text)
     if warn:
         print(warn, file=sys.stderr)
+    return 0
+
+
+_SPEND_OPENS = "solution review ("
+_SPEND_NOTE = _SPEND_OPENS + "{})"
+
+
+def approach_spend(repo_root: Path | str, unit: str, seat: str,
+                   agent: str) -> tuple[dict | None, str]:
+    """Add one seat agent's priced spend on the unit's solution review to the unit's delegated
+    spend in the open run: `(record, the stdout line)`, or `(None, why)` with nothing recorded.
+
+    The agent's own transcript is read (`run_state.agent_transcript_tokens`, the id taken with
+    or without its `agent-` prefix) and recorded as `agent-<id>`, provenance `transcript`, note
+    `solution review (<seat>)`, against the unit and untagged by harness, as a builder's is. A
+    later reading of the same transcript for the unit replaces the earlier record (the record's
+    own rule), which is how a mistyped seat is corrected: the seat word is recorded as given,
+    stripped, and not checked against the panel. Nothing is recorded, `(None, why)`, when the
+    run state cannot be read, no run is open (said before any transcript is read), the agent
+    has no readable transcript, the run is sealed or its page filed, or the record refuses the
+    reading. Refused with ValueError, nothing recorded: an unknown unit, a blank seat, and the
+    transcript of a record against the unit not written by this verb, the builder's own. Writes
+    no ledger row, checks no verdict and records no minutes."""
+    root = Path(repo_root)
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r} - a seat agent's spend is recorded "
+                         f"against a real unit")
+    shown = sdlc_md.extract_record_id(found[0].stem) or unit
+    seat = seat.strip()
+    if not seat:
+        raise ValueError(f"the seat is blank, so the record against {shown} would name no seat")
+    try:
+        state = run_state.read(root)
+    except run_state.RunStateError as exc:
+        return None, f"{shown}'s {seat} seat agent's spend was not recorded: {exc}"
+    if not state.get("run_id"):
+        return None, (f"no run is open, so {shown}'s {seat} seat agent's spend was not recorded "
+                      f"- nothing was recorded")
+    bare = agent[len("agent-"):] if agent.startswith("agent-") else agent
+    reading = run_state.agent_transcript_tokens(root, bare)
+    if reading.get("priced") is None:
+        return None, f"{shown}'s {seat} seat agent's spend was not recorded: {reading['reason']}"
+    uid = sdlc_md.norm_id(shown)
+    for rec in state.get(run_state.DELEGATED) or []:
+        if (isinstance(rec, dict) and rec.get("unit") == uid
+                and rec.get("transcript") == reading["source"]
+                and not str(rec.get("note")).startswith(_SPEND_OPENS)):
+            raise ValueError(f"agent-{bare}'s transcript is already recorded against {shown} "
+                             f"as {rec.get('note')!r}, not as a seat agent's, so a seat "
+                             f"record would replace it - the builder's own agent is not a "
+                             f"seat agent")
+    try:
+        rec = run_state.record_delegated_tokens(
+            root, reading["tokens"], agent=f"agent-{bare}", note=_SPEND_NOTE.format(seat),
+            unit=uid, reading=reading, provenance=run_state.READ_FROM_TRANSCRIPT)
+    except ValueError as exc:
+        return None, f"{shown}'s {seat} seat agent's spend was not recorded: {exc}"
+    if rec is None:
+        return None, f"{shown}'s {seat} seat agent's spend was not recorded"
+    return rec, (f"recorded {shown}'s {seat} seat agent agent-{bare} against run "
+                 f"{state['run_id']}: {reading['priced']:,} priced tokens "
+                 f"({reading['tokens']:,} tokens), read from {reading['source']}")
+
+
+def cmd_approach_spend(args: argparse.Namespace) -> int:
+    try:
+        rec, said = approach_spend(args.root, args.unit, args.seat, args.agent)
+    except ValueError as exc:
+        print(f"approach spend refused: {exc}", file=sys.stderr)
+        return 2
+    if rec is None:
+        print(said, file=sys.stderr)
+        return 1
+    print(said)
     return 0
 
 
@@ -7512,14 +7589,30 @@ def build_parser() -> argparse.ArgumentParser:
     apb.set_defaults(func=cmd_approach_brief)
     app = aps.add_parser("panel",
                          help="Print the roster of a unit's solution review: one `approach "
-                              "brief` command and one reply file per seat "
-                              "`review.solution_review.panel` seats, or the one-seat form when "
-                              "it is unset. Writes nothing.")
+                              "brief` command, one reply file and one `approach spend` command "
+                              "per seat `review.solution_review.panel` seats, or the one-seat "
+                              "form when it is unset. Writes nothing.")
     app.add_argument("--unit", required=True)
     app.add_argument("--note", required=True, metavar="NOTE.md",
                      help="the builder's approach note")
     app.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
     app.set_defaults(func=cmd_approach_panel)
+    aps_ = aps.add_parser("spend",
+                          help="Add a seat agent's priced spend on a unit's solution review to "
+                               "the unit's delegated spend in the open run, read from that "
+                               "agent's own transcript; a later reading of it replaces the "
+                               "earlier. Writes no verdict row, checks no verdict and records "
+                               "no minutes; exits 1 recording nothing when no run is open or "
+                               "the agent has no readable transcript.")
+    aps_.add_argument("--unit", required=True)
+    aps_.add_argument("--seat", required=True,
+                      help="the seat the agent sat in, recorded as given in the record's note "
+                           "and not checked against the panel")
+    aps_.add_argument("--agent", required=True,
+                      help="the seat agent's id, with or without its `agent-` prefix; the "
+                           "builder's own agent is refused")
+    aps_.add_argument("--root", default=argparse.SUPPRESS)  # nested: see `self-check record`
+    aps_.set_defaults(func=cmd_approach_spend)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--unrecorded-staged", dest="unrecorded_staged", action="store_true",

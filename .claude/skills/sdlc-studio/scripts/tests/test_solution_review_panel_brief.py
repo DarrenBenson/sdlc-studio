@@ -154,7 +154,9 @@ class SolutionReviewPanelBriefTests(unittest.TestCase):
         for line, (who, seat, rnd, latest) in zip(lines, expect):
             self.assertEqual(line, f"- {who} at round {rnd} ({latest}): critic.py approach brief "
                                    f"--unit {UNIT} --seat {seat} --note {note}; reply file "
-                                   f"sdlc-studio/.local/solution-review/{UNIT}-{seat}-r{rnd}.md")
+                                   f"sdlc-studio/.local/solution-review/{UNIT}-{seat}-r{rnd}.md"
+                                   f"; when its agent returns: critic.py approach spend --unit "
+                                   f"{UNIT} --seat {seat} --agent <agent id>")
         for sentence in ("Each brief goes to its own agent, never two in one brief.",
                          "resumes that seat's own agent where the host can, and otherwise "
                          "briefs a fresh agent for that seat",
