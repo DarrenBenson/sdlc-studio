@@ -872,7 +872,10 @@ def restore_for_repair(root: Path | str, unit: str) -> str:
     since it cannot be that landing. Nothing is overwritten: an occupied path is left as it
     is, and a branch that already exists is not moved. The same worktree already in place on
     its branch is said to be, so a second brief of the repair, or of another unit of the same
-    lane, is not read as a failure."""
+    lane, is not read as a failure. A worktree it recreates is given the unit's approach note
+    the landing kept (`LANDED`/<worktree>/<unit>-approach.md), copied byte for byte into the
+    hand-in folder, so the GO recorded against the note's digest still binds; a unit whose
+    landing kept no note is given none."""
     root_top = _top(Path(root), "the root")
     uid = sdlc_md.norm_id(unit)
     none = f"no worktree was recreated for {unit}'s repair"
@@ -908,8 +911,16 @@ def restore_for_repair(root: Path | str, unit: str) -> str:
     added = _git(root_top, "worktree", "add", "-q", "-b", branch, str(path), commit)
     if added.returncode:
         return f"{none}: git could not add {path} on {branch}: {_tail(added.stderr)}"
-    return (f"recreated the worktree {path} on {branch} at {commit[:12]}, the landed commit, so "
+    line = (f"recreated the worktree {path} on {branch} at {commit[:12]}, the landed commit, so "
             f"the builder that built {unit} can be resumed there")
+    name = approach_hand_in_name(unit)
+    kept = root_top / LANDED / names[at] / name
+    if kept.is_file():
+        (path / HAND_IN).mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(kept, path / HAND_IN / name)
+        line += (f"; restored the approach note {name} to {HAND_IN.as_posix()}, byte for byte, "
+                 f"so its recorded GO still binds by digest")
+    return line
 
 
 def _landed_affects_in(root_top: Path, lanes_: list[_Lane], unit: str, scratch: Path) -> Path:

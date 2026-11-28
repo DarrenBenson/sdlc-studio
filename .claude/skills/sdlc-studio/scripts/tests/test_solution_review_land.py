@@ -344,6 +344,45 @@ class SolutionReviewLandTests(unittest.TestCase):
         self.assertIn(str(self.wt / LANE / f"{A}-approach.md"), said)
         self.assertIn("its GO still holds", said)
 
+    def _landed_then_restored(self, unit: str, body: str) -> tuple[Path, str]:
+        """`unit` landed from `self.wt` with an agreed note of `body`, then its worktree
+        recreated for a repair: the note's path in it, and the line `restore_for_repair` said."""
+        self._hand_in(self.wt, unit)
+        self._record(unit, "go", self._note(self.wt, unit, body))
+        done = self._land(unit)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertFalse(self.wt.exists())
+        said = lanes.restore_for_repair(self.root, unit)
+        return self.wt / LANE / f"{unit}-approach.md", said
+
+    def test_a_repair_s_recreated_worktree_holds_the_kept_note(self) -> None:
+        """AC1, AC2: the recreated worktree holds the unit's kept approach note byte for byte
+        (CRLF and a missing final newline included), so its recorded GO still binds by digest
+        and a repair's land is not refused for want of a note."""
+        body = NOTE.replace("\n", "\r\n").rstrip()
+        note, said = self._landed_then_restored(A, body)
+        kept = self.root / LANE / "landed" / self.wt.name / f"{A}-approach.md"
+        self.assertTrue(note.is_file(), said)
+        self.assertEqual(note.read_bytes(), kept.read_bytes())
+        self.assertEqual(note.read_bytes(), body.encode())
+        self.assertIn(f"restored the approach note {A}-approach.md", said)
+        import critic  # noqa: PLC0415 - a sibling script, on the path
+        ok, why = critic.approach_agreed(self.root, A, note)
+        self.assertTrue(ok, why)
+        self.assertEqual(_git(self.wt, "status", "--porcelain"), "")
+
+    def test_a_unit_with_no_kept_note_gets_none(self) -> None:
+        """Positive control: a unit whose landing kept no note, and a sibling's kept note,
+        leave the recreated worktree with no hand-in folder and no note in the line."""
+        self._hand_in(self.wt, B)
+        _write(self.root, f"{LANE}/landed/{self.wt.name}/{A}-approach.md", NOTE)
+        done = self._land(B)
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        said = lanes.restore_for_repair(self.root, B)
+        self.assertIn("recreated the worktree", said)
+        self.assertNotIn("approach note", said)
+        self.assertFalse((self.wt / LANE).exists())
+
     def test_the_agreed_line_waits_for_the_markdown_check(self) -> None:
         """In-process: the agreed line is printed after the markdown check and before the
         hand-in is copied, so a land the markdown check refuses prints none."""
