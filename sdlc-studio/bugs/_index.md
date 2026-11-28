@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 47 |
+| Open | 49 |
 | In Progress | 0 |
 | Fixed | 1269 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1786** |
+| **Total** | **1788** |
 
 ## All Bugs
 
@@ -862,6 +862,8 @@
 | [BG1784](BG1784-a-parallel-sprint-drive-wave-can-run-one.md) | A parallel `sprint drive` wave can run one unit's paperwork commit while another unit's step runs git in the root, and the commit dies on index.lock | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1785](BG1785-two-test-modules-print-a-diagnostic-on-a.md) | Two test modules print a diagnostic on a green run, so main's full suite is over its noise budget and the push gate refuses it | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1786](BG1786-two-sprint-lane-return-agent-calls-for-one.md) | Two `sprint lane return --agent` calls for one agent transcript count its priced spend twice in the run | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1787](BG1787-after-a-release-cut-folds-the-last-fragment.md) | After a release cut folds the last fragment, the changelog.d directory leaves the tree and the fragment check passes every commit until a fragment is written | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1788](BG1788-the-6-5-0-cut-s-test-declares.md) | The 6.5.0 cut's test declares CHANGELOG.md its census subject, so a CHANGELOG-only commit selects unit suites and the push gate's selection test is red | Open | Low | 2026-11-28 | 2026-11-28 |
 
 ## Archived Releases
 

@@ -90,8 +90,10 @@ buy honestly.
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
 | `BG1786` | Low | Two `sprint lane return --agent` calls for one agent transcript count its priced spend twice in the run |
+| `BG1787` | Low | After a release cut folds the last fragment, the changelog.d directory leaves the tree and the fragment check passes every commit until a fragment... |
+| `BG1788` | Low | The 6.5.0 cut's test declares CHANGELOG.md its census subject, so a CHANGELOG-only commit selects unit suites and the push gate's selection test is... |
 
-47 findings: 0 Medium, 47 Low.
+49 findings: 0 Medium, 49 Low.
 
 ## Not carried
 
