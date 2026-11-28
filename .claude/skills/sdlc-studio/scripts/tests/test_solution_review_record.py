@@ -266,7 +266,15 @@ class SolutionReviewRecordTests(unittest.TestCase):
         for empty in ("review:\n  solution_review:\n", "review:\n", "review: [unclosed\n"):
             with self.subTest(empty):
                 self._config(empty + "risk:\n  components:\n    src/: standard\n")
-                self.assertEqual(critic.solution_review_settings(self.root), (0, []))
+                warned = io.StringIO()
+                with contextlib.redirect_stderr(warned):
+                    got = critic.solution_review_settings(self.root)
+                self.assertEqual(got, (0, []))
+                if empty.startswith("review: [unclosed"):
+                    self.assertIn("could not load .config.yaml", warned.getvalue())
+                    self.assertIn("using built-in defaults", warned.getvalue())
+                else:
+                    self.assertEqual("", warned.getvalue())
         self._config("review:\n  solution_review:\n    min_points: 3\n"
                      "    risk_classes: [' High ']\nrisk:\n  components:\n    src/: standard\n")
         self.assertEqual(critic.solution_review_settings(self.root), (3, ["high"]))

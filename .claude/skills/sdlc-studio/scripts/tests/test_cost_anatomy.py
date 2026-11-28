@@ -317,8 +317,11 @@ class CostAnatomyTests(meter._Case):
             card.parent.mkdir(parents=True, exist_ok=True)
             card.write_text(f"# Pat Doe - {role}\n\n<!-- role: {role} -->\n", encoding="utf-8")
         critic = meter._live("critic")
-        critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (security)",
-                              author="agent-zz")
+        warned = io.StringIO()
+        with contextlib.redirect_stderr(warned):
+            critic.record_verdict(ws.root, "US0103", "APPROVE", reviewer="agent-q0 (security)",
+                                  author="agent-zz")
+        self.assertIn("author 'agent-zz' lacks the `<holder> (<role>)` form", warned.getvalue())
         got = {row["role"]: row for row in self._json(ws)["roles"]}
         self.assertEqual(["agent-q0", "agent-q3", "agent-q4"], got["reviewer"]["agent_ids"])
         self.assertEqual(["agent-a1"], got["other"]["agent_ids"])
