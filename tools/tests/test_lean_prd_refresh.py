@@ -872,8 +872,9 @@ class PrdBaselineTests(unittest.TestCase):
         """AC1. Mutants: one [Unreleased] marker left on a shipped row's Status, or on a
         Feature Details heading; the header's baseline back at v6.0.0, or the inventory's at
         v4.1.0; the header naming no `ON_MAIN` work on main; the header's baseline put back at the
-        stale v6.1.0 plus 6.2 (US1111), v6.2.0 plus 6.3 (US1139) or v6.3.0 plus 6.4 (US1173);
-        the header's Coverage line removed (US1139). Near misses that must pass: the marker
+        stale v6.1.0 plus 6.2 (US1111), v6.2.0 plus 6.3 (US1139), v6.3.0 plus 6.4 (US1173) or
+        v6.4.0 plus 6.5 (US1330), the inventory's too at v6.4.0 plus 6.5 (US1330); the header's
+        Coverage line removed (US1139). Near misses that must pass: the marker
         inside a code span, and on a row whose Status is not shipped."""
         self.assertEqual([], baseline_problems(self.prd))
         self.assertEqual([], unreleased_marks(self.prd))
@@ -918,9 +919,14 @@ class PrdBaselineTests(unittest.TestCase):
                  [f"the header names 6.2.0, not only {BASELINE}"] + unnamed),
                 (coverage.group(0), "**Coverage:** v6.3.0 as cut, plus the 6.4 work",
                  [f"the header names 6.3.0, not only {BASELINE}"] + unnamed),
+                (coverage.group(0), "**Coverage:** v6.4.0 as cut, plus the 6.5 work",
+                 [f"the header names 6.4.0, not only {BASELINE}"] + unnamed),
                 (coverage.group(0), "", unnamed),
                 (preamble, preamble.replace(f"v{BASELINE}", "v4.1.0"),
-                 [f"the inventory preamble names 4.1.0, not only {BASELINE}"] + unnamed)):
+                 [f"the inventory preamble names 4.1.0, not only {BASELINE}"] + unnamed),
+                (preamble, preamble.replace(f"v{BASELINE} as cut, plus the {ON_MAIN} work",
+                                            "v6.4.0 as cut, plus the 6.5 work"),
+                 [f"the inventory preamble names 6.4.0, not only {BASELINE}"] + unnamed)):
             where = "inventory preamble" if old == preamble else "header"
             mutant = self.prd.replace(old, new, 1)
             self.assertNotEqual(self.prd, mutant, new)
@@ -1432,20 +1438,38 @@ SINCE_6_1_0 = "ddc3cda0"
 _UNIT_ID_RE = re.compile(r"\b(?:US|BG|CR|RFC|EP|D)\d{4}\b")
 
 
-def prd_commits(since: str = SINCE_6_1_0) -> list[tuple[str, str]] | None:
-    """Each (hash, subject) of a commit after `since` that changed the PRD, or None when the
-    history cannot answer (no clone, or a shallow one without `since`)."""
+#: The author `tools/remote-gate.sh` gives the commit it wraps a staged tree in, on HEAD, to send
+#: it to the gate host. That commit is the tree under judgement, not history: its subject names
+#: no unit, and no row can name a hash that exists only until the real commit is made.
+GATE_STAGED_AUTHOR = "remote-gate@localhost"
+
+
+def judged_commits(rows: list[tuple[str, str, str]], head: str) -> list[tuple[str, str]]:
+    """Each (hash, subject) of `rows`, (hash, author email, subject) as `git log` lists them,
+    but the gate host's staged-tree commit: the one at `head` that `GATE_STAGED_AUTHOR`
+    authored. A commit of that author below HEAD, or another author's at HEAD, is judged."""
+    return [(sha, subject) for sha, author, subject in rows
+            if not (sha == head and author == GATE_STAGED_AUTHOR)]
+
+
+def prd_commits(since: str = SINCE_6_1_0, root: Path = REPO) -> list[tuple[str, str]] | None:
+    """Each (hash, subject) of a commit after `since` that changed the PRD in `root`, or None
+    when the history cannot answer (no clone, or a shallow one without `since`). The gate
+    host's staged-tree commit is left out (`judged_commits`)."""
     env = gitutil.git_env()
     known = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{since}^{{commit}}"],
-                           cwd=REPO, capture_output=True, text=True, env=env, check=False)
+                           cwd=root, capture_output=True, text=True, env=env, check=False)
     if known.returncode:
         return None
-    run = subprocess.run(["git", "log", "--format=%H%x09%s", f"{since}..HEAD", "--",
-                          "sdlc-studio/prd.md"], cwd=REPO, capture_output=True, text=True,
+    head = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "HEAD"], cwd=root,
+                          capture_output=True, text=True, env=env, check=False)
+    run = subprocess.run(["git", "log", "--format=%H%x09%ae%x09%s", f"{since}..HEAD", "--",
+                          "sdlc-studio/prd.md"], cwd=root, capture_output=True, text=True,
                          env=env, check=False)
-    if run.returncode:
+    if run.returncode or head.returncode:
         return None
-    return [tuple(line.split("\t", 1)) for line in run.stdout.splitlines() if line]
+    rows = [tuple(line.split("\t", 2)) for line in run.stdout.splitlines() if line]
+    return judged_commits(rows, head.stdout.strip())
 
 
 def revision_problems(prd: str, commits: list[tuple[str, str]]) -> list[str]:
@@ -1645,8 +1669,9 @@ class PrdRulesTests(unittest.TestCase):
 
     def test_every_prd_change_since_6_1_0_has_a_changelog_row(self):
         """BG1168 AC2. Mutants, on commits made up so they need no history: a commit whose
-        subject names a unit no row names, and the row put back by its hash. Then the clone's
-        own history, which a clone without it skips."""
+        subject names a unit no row names, and the row put back by its hash; the gate host's
+        staged-tree commit judged, or the same author below HEAD or another author at HEAD left
+        out (US1330). Then the clone's own history, which a clone without it skips."""
         table = section(self.prd, "## Changelog")
         named = [("a" * 40, "fix(US1104): a row names it")]
         self.assertEqual([], revision_problems(self.prd, named))
@@ -1655,6 +1680,16 @@ class PrdRulesTests(unittest.TestCase):
         self.assertEqual(1, len(revision_problems(self.prd, [("f" * 40, "fix: no unit named")])))
         by_hash = self.mutate(table, table + f"| x | {'f' * 8} |\n")
         self.assertEqual([], revision_problems(by_hash, [("f" * 40, "fix: no unit named")]))
+        # The gate host's staged-tree commit, at HEAD under remote-gate.sh's author, is left out
+        # and only it: the same author below HEAD, and another author at HEAD, are still judged.
+        gate, real = "e" * 40, "d" * 40
+        wrapped = "remote-gate: the staged tree, judged on the gate host"
+        rows = [(gate, GATE_STAGED_AUTHOR, wrapped), (real, "dev@example.com", "fix: no unit")]
+        self.assertEqual([(real, "fix: no unit")], judged_commits(rows, gate))
+        self.assertEqual(1, len(revision_problems(self.prd, judged_commits(rows, gate))))
+        self.assertEqual([(gate, wrapped), (real, "fix: no unit")], judged_commits(rows, real))
+        self.assertEqual([(gate, wrapped)],
+                         judged_commits([(gate, "dev@example.com", wrapped)], gate))
         commits = prd_commits()
         if commits is None:
             self.skipTest(f"{SINCE_6_1_0} is not in this clone's history")
@@ -1669,6 +1704,35 @@ class PrdRulesTests(unittest.TestCase):
         dropped = revision_problems(self.mutate(table, stripped), [(sha, subject)])
         self.assertEqual(1, len(dropped), dropped)
         self.assertIn(sha[:8], dropped[0])
+
+    def test_the_gate_host_s_staged_tree_commit_is_not_history(self):
+        """US1330, found at the land: on the gate host `tools/remote-gate.sh` judges a staged
+        tree as a commit on HEAD under `GATE_STAGED_AUTHOR`. Read from a real history, that
+        commit is left out while an ordinary commit with no row is still listed, and the same
+        author's commit is listed once HEAD has moved past it. Mutants: HEAD not read; the
+        committer read in place of the author."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            prd = root / "sdlc-studio" / "prd.md"
+            prd.parent.mkdir(parents=True)
+            gitutil.git(["init", "-q", "-b", "main"], root)
+
+            def commit(text: str, subject: str, author: str | None = None) -> str:
+                prd.write_text(text, encoding="utf-8")
+                gitutil.git(["add", "-A"], root)
+                gitutil.git(["commit", "-q", "-m", subject], root,
+                            env_extra={"GIT_AUTHOR_EMAIL": author} if author else None)
+                return gitutil.git(["rev-parse", "HEAD"], root, text=True).stdout.strip()
+
+            base = commit("one\n", "chore: base")
+            real = commit("two\n", "fix: no unit named")
+            wrapped = "remote-gate: the staged tree, judged on the gate host"
+            gate = commit("three\n", wrapped, GATE_STAGED_AUTHOR)
+            self.assertEqual([(real, "fix: no unit named")], prd_commits(base, root))
+            self.assertEqual(1, len(revision_problems(self.prd, prd_commits(base, root))))
+            after = commit("four\n", "fix(US9999): after it")
+            self.assertEqual([(after, "fix(US9999): after it"), (gate, wrapped),
+                              (real, "fix: no unit named")], prd_commits(base, root))
 
     def test_the_engagement_floor_tracks_bg0959(self):
         """AC3. Mutants: the floor's row or its block reading Partial with every criterion

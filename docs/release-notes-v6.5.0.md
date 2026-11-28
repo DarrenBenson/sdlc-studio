@@ -4,7 +4,7 @@
 the operator set, and every persona and seat card is now held to a written standard before it
 frames a brief.**
 
-Every entry is in [the CHANGELOG's Unreleased section](../CHANGELOG.md#unreleased). From 6.4,
+Every entry is in [the CHANGELOG's 6.5 section](../CHANGELOG.md#650---2026-11-28). From 6.4,
 the "Upgrading from 6.4" section below is the whole path; from an earlier release, start with
 [the existing-users page](existing-users.md).
 

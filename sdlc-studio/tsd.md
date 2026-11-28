@@ -1,8 +1,8 @@
 # Test Strategy Document
 
 > **Project:** SDLC Studio
-> **Version:** 6.4.0
-> **Last Updated:** 2026-11-16
+> **Version:** 6.5.0
+> **Last Updated:** 2026-11-28
 > **Status:** In Progress
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
@@ -14,7 +14,7 @@
 > Consistent with PRD section 5 (Non-Functional Requirements) and section 10
 > (Quality Assessment), and with the TRD component and script inventory.
 >
-> **Coverage:** v6.4.0 as cut, plus the 6.5 work on `main` since. The
+> **Coverage:** v6.5.0 as cut, plus the 6.6 work on `main` since. The
 > document version tracks the product version; it is not itself a release artefact.
 
 ---
@@ -889,6 +889,7 @@ one is set (see Pipeline Stages), whose `full-suite` lane runs both suites once,
 | 2026-11-16 | US1173 | The release cut: the header's Coverage baseline moves to v6.4.0, and the work on `main` beside it to 6.5 |
 | 2026-11-18 | BG1518 | The weekly `corpus-verify` run has a reader: the push stage and Pipeline Stages item 6 say the pre-push red-main read also reads the latest scheduled Lint run on main, and a quality-gate row names it |
 | 2026-11-27 | US1343 | The Scalability row names the spend axis and the `test_loop_guard_spend.py` tests that hold it, and Defect Management gains the change failure rate passage |
+| 2026-11-28 | US1330 | The release cut: the header's Version moves to 6.5.0, its Coverage baseline to v6.5.0, and the work on `main` beside it to 6.6 |
 
 ---
 

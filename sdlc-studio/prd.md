@@ -1,8 +1,8 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.4.0
-**Last Updated:** 2026-11-16
+**Version:** 6.5.0
+**Last Updated:** 2026-11-28
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -11,7 +11,7 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v6.4.0 as cut, plus the 6.5 work on `main` since. The v6 line
+> **Coverage:** v6.5.0 as cut, plus the 6.6 work on `main` since. The v6 line
 > covers the refusal gates (the breakdown gate, the executable-criteria gate on
 > Done, the vacuous-verifier refusal), one independent review per unit and one
 > signature per run (`sprint sign`), the cost work that made the gate cheap enough
@@ -219,7 +219,7 @@ importing it.
 
 ## 3. Feature Inventory
 
-Baseline: v6.4.0 as cut, plus the 6.5 work on `main` (the skill is in production
+Baseline: v6.5.0 as cut, plus the 6.6 work on `main` (the skill is in production
 use); each row's Status column gives its feature's state. Confidence **[HIGH]**
 unless noted – extracted directly from source. The Epic column maps each feature to
 its owning epic (see `sdlc-studio/epics/`); a few rows delivered before the
@@ -883,6 +883,7 @@ none.
 | 2026-11-25 | 6.4.0 | The 6.5 work on `main` (US1329): the Feature Inventory gains a row each for the persona standard and persona review, testable persona goals and the per-seat goal review, the sprint drive and multi-worktree landing, the author's mutation runner and its replay, the red CI run policy, delegated and waiting signatures, the duplicate refusal and the plan's test advisories, and the harness and enterprise pages; the risk class row names reconcile's `risk-class` drift; the flags table gains `personas.standard`, `ci.wait_timeout_minutes`, `ci.rerun_limit` and `review.rendered_paths` at the defaults `reference-config.md` states |
 | 2026-11-26 | 6.4.0 | Evidence annex and committed run record (US1334): the annex is at version 1.1, since the report of record gains the cache-read trend section, each role's cache-read share against its mean over the last five signed runs. |
 | 2026-11-27 | 6.4.0 | The widened 6.5 (US1343): the Sprint capacity, Run appetite, Cost anatomy, Cost forecast and Delegated and waiting signatures rows name the spend appetite, the per-kind effort, the cache-write split and `sprint_report.py disclose`; the inventory gains rows for the cache measures, the release record and change failure rate, the person's ownership of the documents and the solution review; the flags table gains `capacity.spend`, `appetite.spend`, the `routing.effort` kind entries and `review.solution_review.min_points` and `.risk_classes` |
+| 2026-11-28 | 6.5.0 | Release cut (US1330): the Version field, the Coverage note and the Feature Inventory baseline read v6.5.0 as cut, plus the 6.6 work on `main` |
 
 ---
 

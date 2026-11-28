@@ -186,7 +186,7 @@ standard library), so no build is needed; install PyYAML as [Requirements](#requ
   personal copy warns, naming both paths and versions, and leaves the personal
   copy as it is.
 - **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
-  (PowerShell), for example `--version v6.4.0`.
+  (PowerShell), for example `--version v6.5.0`.
 - **When nothing is installed**: both installers skip a target whose folder is not an
   sdlc-studio copy, and `install.sh` also skips one holding a newer copy it will not
   downgrade; each skipped target is named with its reason. When every target is skipped,
@@ -220,7 +220,7 @@ pin a tag and make the check mandatory. The example pins the current release; na
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh \
-  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.4.0
+  | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.5.0
 ```
 
 ```powershell

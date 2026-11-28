@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.4.0
+**Version:** 6.5.0
 **Status:** Draft
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-28
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -34,7 +34,7 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v6.4.0 as cut, plus the 6.5 work on `main` since. The document version
+Coverage: v6.5.0 as cut, plus the 6.6 work on `main` since. The document version
 tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
@@ -1624,6 +1624,7 @@ touches the component. The constraints below span components.
 | 2026-11-20 | 6.4.0 | US1052: ADR-012's Built so far names `persona_review.py` and the persona standard it reports cards against, and Not yet built keeps the memory directory and names the refusal of a card that breaks a blocking rule (US1055) |
 | 2026-11-20 | 6.4.0 | US1055: ADR-012's Built so far names the refusal of a project card that breaks a blocking rule or whose latest review failed, at every entry point that resolves it, and Not yet built keeps only the memory directory |
 | 2026-11-27 | 6.4.0 | The widened 6.5 (US1343): §10 and §13 no longer say tokens only warn, ADR-015 records the spend appetite (D0637), §6's committed records gain the release records and the solution review ledger, the `run-state.json` row names the spend axis and the decision behind each spend raise, and ADR-013's closing bullet names `sprint_report.py disclose` |
+| 2026-11-28 | 6.5.0 | US1330: the release cut. The Version field reads 6.5.0, and the Coverage line v6.5.0 as cut, plus the 6.6 work on `main` |
 
 ---
 

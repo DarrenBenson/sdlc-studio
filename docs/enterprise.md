@@ -57,7 +57,7 @@ finds is missing from this table ([the scan](../tools/tests/test_enterprise_doc.
 
 ## Adopting without forking
 
-- **Pin a release.** `install.sh --version v6.4.0`, or `-Version v6.4.0` in PowerShell,
+- **Pin a release.** `install.sh --version v6.5.0`, or `-Version v6.5.0` in PowerShell,
   installs that tag, and `SDLC_STUDIO_REQUIRE_CHECKSUM=1` refuses a download with no published
   sha256 digest ([verifying the download](INSTALL.md#verifying-the-download)). A `--local`
   install sits in the project, so pinning one project never moves the copy other projects load

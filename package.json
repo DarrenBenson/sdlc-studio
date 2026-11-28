@@ -1,6 +1,6 @@
 {
   "name": "sdlc-studio",
-  "version": "6.4.0",
+  "version": "6.5.0",
   "description": "Harness-agnostic Agent Skill for governed software delivery, human in the lead. Works in GitHub Copilot, Claude Code, Cursor, Codex, Gemini CLI and opencode.",
   "keywords": [
     "agent-skills",

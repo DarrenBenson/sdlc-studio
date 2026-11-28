@@ -891,6 +891,31 @@ VIA_GH, EXCEPTION, NOT_GITHUB = "via `gh`", "exception", "not GitHub"
 _CONNECTS = {"urlopen", "HTTPConnection", "HTTPSConnection", "create_connection"}
 
 
+def coverage_problems(text: str) -> list[str]:
+    """Why the TRD `text` does not cover the release package.json declares, plus the next
+    series' work on `main`: its body outside the Revision History claims another Coverage
+    baseline, or more than one; its Scope states no Coverage line, or one not reading
+    `BASELINE` plus `ON_MAIN` on main; or its header and Coverage line name another release."""
+    body = text.split("\n## Revision History", 1)[0]
+    problems = []
+    claims = [m.group("version") for m in doc_freshness._BASELINE_CLAIM.finditer(body)]
+    if claims != [BASELINE]:
+        problems.append(f"the Coverage claims {claims}, not ['{BASELINE}']")
+    coverage = next((u for u in _units(_section(body, "Scope"))
+                     if u.startswith("Coverage:")), None)
+    if coverage is None:
+        return problems + ["the Scope states no Coverage line"]
+    if not re.search(rf"\bv{re.escape(BASELINE)}\b.*?\bplus\b.*?"
+                     rf"\b{re.escape(ON_MAIN)}\b.*?\bmain\b", coverage):
+        problems.append(f"the Coverage line does not read v{BASELINE} plus {ON_MAIN} on main")
+    header = text.split("\n---\n", 1)[0]
+    named = set(_VERSION_RE.findall(header + "\n" + coverage))
+    if named != {BASELINE}:
+        problems.append(f"the header and Coverage line name {sorted(named)}, not only "
+                        f"{BASELINE}")
+    return problems
+
+
 def _registry(heading: str) -> dict[str, tuple[str, str]]:
     """The one table headed `Type` under `heading`, as {type: (directory, ID prefix)}."""
     table = _one_table(_section(_trd_body(), heading), "Type")
@@ -1104,23 +1129,25 @@ class TrdRegistryNetworkTests(unittest.TestCase):
 
     def test_the_adrs_and_header_match_6_2(self) -> None:
         """AC3. Mutants: ADR-012 with no Revision History row dated on or after its acceptance;
-        a coverage line naming an older baseline, no `ON_MAIN` work on main, or a second
-        baseline; a header or coverage line naming another release; ADR-012 naming a path that
-        does not exist outside its Not yet built paragraph, or listing one there that now exists;
+        a coverage line naming an older baseline (v6.4.0 plus 6.5 among them, US1330), no
+        `ON_MAIN` work on main, or a second baseline; a header or coverage line naming another
+        release; ADR-012 naming a path that does not exist outside its Not yet built paragraph,
+        or listing one there that now exists;
         ADR-003 not naming `reconcile.py settle`, or the hook not running it; ADR-009 not
         naming a `persona_gen.py` verb or a shipped default seat; a `persona_gen.py` verb
         creating a card that was not there."""
         text, body = _read(TRD), _trd_body()
         self.assertIn(f"## [{BASELINE}]", _read(REPO / "CHANGELOG.md"))
-        claims = list(doc_freshness._BASELINE_CLAIM.finditer(body))
-        self.assertEqual([BASELINE], [m.group("version") for m in claims])
-        coverage = next((u for u in _units(_section(body, "Scope"))
-                         if u.startswith("Coverage:")), None)
-        self.assertIsNotNone(coverage, "the Scope states no Coverage line")
-        self.assertRegex(coverage, rf"\bv{re.escape(BASELINE)}\b.*?\bplus\b.*?"
-                                   rf"\b{re.escape(ON_MAIN)}\b.*?\bmain\b")
-        header = text.split("\n---\n", 1)[0]
-        self.assertEqual({BASELINE}, set(_VERSION_RE.findall(header + "\n" + coverage)))
+        self.assertEqual([], coverage_problems(text))
+        line = f"Coverage: v{BASELINE} as cut, plus the {ON_MAIN} work on `main` since."
+        stale = text.replace(line, "Coverage: v6.4.0 as cut, plus the 6.5 work on `main` since.", 1)
+        self.assertNotEqual(text, stale, "the Coverage line does not read as the cut writes it")
+        self.assertEqual([f"the Coverage claims ['6.4.0'], not ['{BASELINE}']",
+                          f"the Coverage line does not read v{BASELINE} plus {ON_MAIN} on main",
+                          f"the header and Coverage line name ['6.4.0', '{BASELINE}'], not only "
+                          f"{BASELINE}"], coverage_problems(stale))
+        self.assertEqual(["the Scope states no Coverage line"],
+                         coverage_problems(text.replace(line, "", 1))[-1:])
 
         adr12 = _adr(body, "012")
         status = re.search(r"^\*\*Status:\*\*.*$", adr12, re.M).group(0)

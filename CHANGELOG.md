@@ -7,6 +7,3001 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.5.0] - 2026-11-28
+
+### Breaking
+
+- PyYAML is now required (US1299). A machine whose Python cannot import it is refused at install, by
+  `install.sh` and `install.ps1`, and at the gate, by `gate.py`'s prerequisite check, and a command
+  that reads a project's `.config.yaml` refuses without it rather than reading the shipped defaults.
+  On such a machine, install it with `python3 -m pip install pyyaml` before installing or upgrading
+  the skill. The PRD, TRD, TSD and README no longer say the scripts need the standard library
+  only; the TRD records the ruling as ADR-014 and its threat model gains a row for a missing or
+  tampered PyYAML, and the TSD's Performance row names the tests that hold PyYAML required.
+- The `require_ac_verification` config key is retired (BG1063). It was documented as the switch that made
+  the story completion cascade run `verify_ac` and refuse a close on a failed verification, but no
+  script ever read it, so setting it changed nothing. The gate those pages described is
+  `quality.done_requires_verified`, which `transition.py` reads and which is on by default. Run
+  `migrate`, then `migrate --apply`, to strip the key from a project's `.config.yaml`;
+  `quality.done_requires_verified` is kept. The shipped defaults, reference pages and help no
+  longer name the retired key, and the PRD's Verify AC criterion now names the live one.
+
+### Added
+
+- `critic.py approach spend --unit <id> --seat <role> --agent <id>` reads a solution review
+  seat agent's own transcript and adds its priced reading to the unit's delegated spend in the
+  open run, so the unit's tokens per unit count every seat. The id is taken with or without its
+  `agent-` prefix. A later reading of the same transcript for the same unit replaces the earlier
+  record, which also corrects a mistyped seat: the seat word is recorded as given, stripped of
+  surrounding whitespace, and not checked against the panel. The builder's own transcript is
+  refused, and so is a transcript the run already records against another unit, naming that
+  unit, so the run counts it once per transcript; a seat agent recorded against a mistyped unit
+  stays there. A unit outside the open run's batch is recorded with a WARNING that no per-unit
+  row shows it. It writes no verdict row, checks no verdict and records no minutes.
+- `approach spend` exits 1 recording nothing when the agent has no readable transcript, when no
+  run is open, and when the run is sealed or its page filed.
+- `critic.py approach panel` names, on each seat's line, the `approach spend` command to run
+  when that seat's agent returns.
+- `sprint.py lane brief` relays a unit's solution review under `review.solution_review.panel`
+  seat by seat: each seated seat in panel order with its latest round and verdict, a CHANGES
+  quoted item by item as `>` lines, a skipped seat with its reason, and a seat with no row as
+  awaiting a review. The brief says the approach is agreed only when every seat has a GO on one
+  note text, naming each seat's round and the digest, and that editing the note voids every
+  GO. The note's latest text is the note the ledger names when it is on disk; without it the
+  ledger alone is read, and it cannot see a revision no seat has reviewed. A mixed round tells
+  the builder to revise the note, answering each numbered item under the heading it changes
+  and naming the seat and item, then to write HANDOFF.md and hand back HANDOFF. With the panel
+  unset the brief and its JSON are unchanged.
+- This repository's `sdlc-studio/.config.yaml` sets `panel: [qa, product, persona]`: a unit
+  `min_points: 3` or `risk_classes: [high]` names needs a GO from qa, from product and, when
+  its story names a Persona, from that persona, all on one note digest, before `sprint lane
+  land` takes it. A one-seat GO already recorded no longer agrees an in-flight unit.
+- The run report's solution review rounds per unit count a unit's highest round, the most
+  rounds any one seat took in the run, so a unit whose seats each GO at round 1 reads 1.0 and
+  one revised once reads 2.0. A unit carried in, whose first round was recorded before the run,
+  reads the rounds the run holds.
+- `critic.py approach panel --unit <id> --note <path>` prints the roster of a unit's solution
+  review under `review.solution_review.panel`: one line per seat, in the panel's order, with
+  its reviewer, round, latest verdict, `approach brief` command and reply file under
+  `sdlc-studio/.local/solution-review/`, and that each brief goes to its own agent; for a
+  panel that seats nobody on the unit, it says the approach cannot be agreed. With the panel
+  unset it says one seat's GO agrees the approach.
+- `critic.py approach brief --seat persona` frames the stakeholder persona the unit's Persona
+  field names, from its registered card, under a panel or without one. A persona that cannot
+  be framed is refused with a remedy: register it, correct the Persona field, or take
+  `persona` off the panel.
+- Under a panel, a seat's later round quotes its own latest changes and no other seat's.
+  With the panel unset, the seat briefs are unchanged.
+- **A project names the seats on a unit's approach panel.** `review.solution_review.panel` lists
+  the seats that review a builder's approach note, such as `[qa, product, persona]`. Each seat is
+  its own agent and its own review, so a panel of three adds three reviews a round. Each seat
+  numbers its own rounds in `sdlc-studio/reviews/solution-reviews.md`, and the approach is agreed
+  only when every seat on the panel has a GO on the note as it stands. An entry is a shipped seat,
+  a seat one of your own seat cards declares, or `persona`, the unit's Persona as a stakeholder.
+  `critic.py approach record` refuses a reviewer that names no `(<seat>)`, one in a seat the panel
+  does not seat, and a `(persona)` reviewer who is not the unit's Persona, exit 2 with nothing
+  written. A value that is not such a list refuses the record of a unit that takes the review
+  by name, as does `persona` while one of your seat cards declares that role. The seat that builds a unit, and `persona` for a
+  unit that names no Persona, are skipped for that unit, not refused; a panel the skips leave
+  empty agrees nothing. Under a panel a unit's rounds are counted per seat, so the sprint report's
+  rounds-per-unit figure reads the slowest seat's rounds rather than the reviews in total.
+  Nothing changes for a project that does not set the key: the default is an empty panel, one
+  seat's GO still agrees the approach, and the unit's rows still number its rounds.
+- The sprint report has a Solution review section in its appendix, after Calibration. It sets the
+  units that took a seat's review of their approach before any code beside the units that took none.
+  Each row states the units the delivery review judged in the run (dropped and carried units too),
+  how many had no REJECT among their delivery verdicts, that share as a whole percent, the delivery
+  rounds per unit (verdict rows, as the Delivered table counts them), the solution review rounds per
+  unit (the most verdicts any one seat recorded on the unit's approach in the run, so a panel whose
+  seats each give one verdict counts one) and the priced tokens per unit (the agents recorded against
+  each unit; NOT MEASURED, naming the unit, when no agent recorded against it carries a priced
+  figure). A run where no unit took a solution review reads NOT MEASURED, never 0%. `sprint close`
+  freezes each unit's solution review rows dated inside the run on the run record, so a row recorded
+  after the close moves neither the filed page nor its fingerprint. A page filed before the section
+  carries none and renders as it was signed.
+- `sprint.py lane land` now refuses a unit that should have had its approach agreed and was not.
+  The step is off by default: a project that sets neither `review.solution_review.min_points` nor
+  `review.solution_review.risk_classes` lands exactly as before, and no unit's story or ledger
+  row is read. Turning it on takes the two lines under `review:`, for example
+  `solution_review: {min_points: 3, risk_classes: [high]}`.
+
+  For a unit the setting names, the landing exits 2 before anything moves (the root's branch,
+  the worktree and its staged change stay as they were) unless the worktree's hand-in holds the
+  unit's approach note, `sdlc-studio/.local/lane/<unit>-approach.md`, and the unit's latest row in
+  `sdlc-studio/reviews/solution-reviews.md` is a GO recorded against the note's digest as it
+  stands. A missing note is refused with its path and `sprint.py lane brief --units <id>`; no
+  verdict, a CHANGES round, or a GO bound to an earlier text of the note (any edit, whitespace
+  included, voids it) is refused naming which, with `critic.py approach brief` and
+  `critic.py approach record` as the way on. Every refused unit is named in one message, and a
+  landing of several worktrees lands none of them. When the worktree a repair recreated holds no
+  note but the last landing kept one, the refusal names that copy and says to put it back, since
+  its GO still holds. An agreed unit's landing prints one line naming its GO, round and digest. A
+  `min_points` or `risk_classes` of the wrong shape, or a unit the project holds no artefact for,
+  is refused rather than read as off; a malformed `panel` refuses only a unit that takes the
+  review, and any other unit lands with one warning. `sprint drive` and `lane run` have no step
+  that writes or reviews a note yet, so a unit the setting names stops at their land step; a unit
+  committed in the orchestrator's own tree is not checked.
+
+  This repository turns the step on for its own work, at 3 points and for high-risk units; that
+  is its own setting, not a default.
+- `sprint.py lane brief` now tells the builder of a unit `review.solution_review` names to write
+  its approach note first: before the build steps, it says why the unit takes the step, names the
+  note's path, `sdlc-studio/.local/lane/<key>-approach.md`, and its five headings, and tells the
+  builder to do none of the steps below until a GO is recorded, but to write `HANDOFF.md` saying
+  the approach awaits review, stage nothing and hand back HANDOFF. After a CHANGES verdict it
+  quotes the changes on a line opening with `>` and asks for a revised note; after a GO it
+  names the round and
+  the note's digest, tells the builder to build to the note, and says editing the note voids the
+  GO. The brief reads the verdict ledger, not the note, so it does not itself detect an edited
+  note. The note joins the hand-in list, keyed as the claims and mutants files are. A unit the
+  setting does not name is briefed exactly as before, and with the setting off nothing more is
+  read; a `min_points` or `risk_classes` of the wrong shape refuses every unit of the brief, exit
+  2; a malformed `panel` refuses only a unit that takes the review, and any other unit is briefed
+  with one warning.
+- `critic.py approach brief --unit <id> --seat <role> --note <path>` prints a seat's review brief
+  for a builder's approach note: the seat's review render, the unit's Affects and criteria
+  verbatim, the decisions that bind it with their text from `sdlc-studio/decisions.md`, the note
+  verbatim, what to judge, the rule to spot-check by execution in a scratch copy only, that the
+  seat will not review the code, and the two `critic.py approach record` commands for a GO and for
+  CHANGES. Decisions are found by id only: each `D` and four digits named in the unit, in its
+  epic, or in the request its `Delivers` field or its epic's `Parent` field names. The note must
+  hold five level-2 headings (`## Reading`, `## Design`, `## May break`, `## Tests`,
+  `## Sentences`; a heading may lead with more words, so `## What it may break` counts), and its
+  `## Tests` section must name every criterion id: otherwise, or for a note that names no file, the
+  brief exits 2 with every gap named on stderr and nothing on stdout. A unit
+  `review.solution_review` does not name is still briefed, with a note on stderr that `approach
+  record` will refuse its verdict. The brief writes nothing. `critic.py brief` now tells a seat
+  that reviewed the unit's approach, on stderr, that its code review must go to a fresh context
+  that has not read the note, and its stdout carries nothing of the solution review.
+- A project can now name which units take a solution review, a seat's review of the builder's
+  approach note before any code: `review.solution_review.min_points` takes a unit of that many
+  points or more, and `review.solution_review.risk_classes` takes a unit whose risk class is
+  listed. The risk class is read through the `risk.components` map, so with no map declared every
+  unit reads `standard` and the refusal says so. Both settings ship off (`0` and `[]`), so the step
+  is off until a project sets one. `critic.py approach record --unit <id> --verdict go|changes
+  --note <path> --reviewer <id> --author <id>` records the seat's verdict as one row of
+  `sdlc-studio/reviews/solution-reviews.md`, naming the unit (spelt as its artefact file spells the id, so a schema v3 id keeps its
+  dash), the round (the unit's own rows so far plus one), the note's 12-hex sha256 digest, the note's path relative to the project root, the
+  reviewer, the author, the date and, for CHANGES, the text of the `--changes` file, and prints
+  why the unit takes the step. It exits 2 and writes nothing for a unit the settings do not name,
+  a GO with `--changes`, a CHANGES without them, a note that names no file or cannot be read, a
+  reviewer of the author's identity, and a setting, or a `review` or `review.solution_review`
+  block, of the wrong shape. It does not check the note's content: a note of any content is
+  recorded.
+- The run report states each role's cache-write growth and re-writes after expiry. The closing
+  reading now keeps each role's cache-write split from `sprint cost --anatomy`, and a new appendix
+  section, Cache writes by role (`cost_cache_writes`), follows the Cache-read trend. Per role it
+  states the growth, the tokens re-written after 5-minute and after 1-hour expiry, and the
+  re-write share of the role's cache writes, all read from the same closing reading in the run's
+  window as the Cost by role table. A role whose split is not available reads `not available` in
+  each of those four cells, and a role that wrote no cache reads 0 growth and 0 re-writes, with its
+  share `not available - this role wrote no cache`, never 0. A
+  closing reading taken before the split reads `NOT MEASURED` with the reason that it recorded no
+  split, and when the Cost by role table is not measured the section is `NOT MEASURED` with that
+  table's reason. A signed page replays the section from itself. A first derivation states the
+  section, and a re-derivation states it only when the filed page carries it, so a page filed
+  before it re-derives and renders without it. The evidence annex catalogues the section, its
+  figure and its row keys under version 1.1.
+- `sprint.py cost --anatomy` now splits each role's cache writes into growth and re-writes after
+  the cache lifetime. A call's gap runs from the first usage record of the call before it in its
+  transcript, over the whole transcript whatever the open run's window, and only the calls the
+  window keeps are summed. A call's 5-minute writes are re-written when its gap is longer than 5
+  minutes and its 1-hour writes when it is longer than 60; otherwise, and on a transcript's first
+  call, they are growth. The JSON gives each role a `cache_writes` object of `growth`, `rewrite_5m`
+  and `rewrite_1h`, which add up to the role's `cache_write_5m` and `cache_write_1h` components,
+  and the text prints the three figures per role in a block under the role table. A re-write
+  counts the call's whole write, since the transcript cannot tell its new turn from the prefix
+  written again, so it overstates the re-write by one turn. A role reads `not available` (`null`
+  in the JSON), never 0, when any agent in it has a usage record of a call with no readable
+  timestamp or no message id, and so does every role of a harness reading with no per-call record.
+- `routing.effort` now takes an entry per kind of unit, `docs`, `bug` and `code`, beside `builder`
+  and `reviewer`: each entry maps a role to an effort, and a role it leaves out takes the role
+  default. A unit is a bug by its id, else code when an Affects path ends in one of the extensions in
+  `CODE_EXTS` in `scripts/route.py`, else docs, as `route.work_kind` classifies it: `.py`, `.ts`,
+  `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.java`, `.rb`, `.sh`, `.c`, `.cc`, `.cpp`, `.cs`, `.h`,
+  `.kt`, `.kts`, `.swift`, `.php`, `.scala`, `.vue`, `.svelte`, `.sql` and `.dart`. A unit that is
+  not a bug and names only other files, `.md`, `.yaml` or `.json` among them, is docs. With any entry
+  set, `sprint plan` stamps each unit's own effort with its `kind`, and `sprint lane brief` names
+  that effort and kind for the unit it briefs. `sprint plan` exits 2 before it selects or writes
+  anything on a key `routing.effort` does not take, a role other than `builder` or `reviewer` in an
+  entry, or an unknown effort, naming the key and what it takes, and refuses a reviewer below its
+  builder within a kind unless `routing.effort.reviewer_below_builder` names a decision
+  `decisions.md` records, printing that id and the kind when it plans. The entries ship empty. What
+  changes for an upgrader: a key `routing.effort` does not know, misspelt or not (`reviwer: high`,
+  say), now refuses the plan with exit 2 and names the key, and `sprint lane brief` says the setting
+  is not valid, where 6.4 planned and ignored the key. A `routing.effort` holding only the keys 6.4
+  documented, `builder`, `reviewer` and `reviewer_below_builder`, plans and briefs as before.
+  `CODE_EXTS` gains `.h`, `.kt`, `.kts`, `.swift`, `.php`, `.scala`, `.vue`, `.svelte`, `.sql` and
+  `.dart`, so a unit changing one of those files now classes as code for routing,
+  `route.py pick --role critic` flooring its critic at medium where 6.4 left it out of that floor,
+  and, unless it is a bug, as code for effort too.
+- The run report sets each role's cache-read share against its mean over earlier signed runs. A
+  new appendix section, Cache-read trend (`cache_read_trend`), follows Cost by role and states per
+  role this run's cache-read share as that table states it, the mean over the five most recent
+  pages signed before the page was generated that state a share for the role (the run's own pages
+  left out), the change in points, and how many pages and which report ids it averaged. A role no
+  earlier page measures reads `not available` with its reason, never 0, and when the Cost by role
+  table is not measured the trend is `NOT MEASURED` with that table's reason. One function,
+  `sprint_report.cache_read_baseline(root, run_id, before)`, computes the mean the page states. A
+  page filed before the section re-derives and renders without it, and the evidence annex and the
+  `evidence_schema` a new page is stamped with move to version 1.1, which the PRD and TRD now
+  name.
+- `sprint plan` resolves the spend appetite with minutes and units (`--appetite-spend`, then
+  `appetite.spend`, then `capacity.spend`) and names it and its source on its capacity line, and
+  `--write` stamps it on the run as `spend` beside `standing_spend` and `over_spend`, so a later
+  edit to `.config.yaml` does not move the ceiling `loop_guard budget` reads. `sprint appetite
+  resize --spend N` moves it mid-run; a raise, including setting 0 to lift the ceiling, is refused
+  (exit 2, the run state untouched) unless `--decision` names a row `sdlc-studio/decisions.md`
+  records. A lowering needs only `--reason`. The change entry records the spend before and after
+  and the decision, and the resize reports a spend over its standing value as an overage. A units
+  or minutes resize keeps the recorded spend, and a recorded standing spend is never moved, 0
+  (unbounded) included. A run that recorded no spend keeps its old shape on such a resize, and
+  measures a spend raise against the ceiling config gives. `--appetite-spend 0` is honoured over
+  `capacity.spend`, and the plan reads a spend key `int` cannot read, such as `5e6`, as unset. A
+  negative spend, which the breaker would read as unbounded, is refused (exit 2) and named:
+  `--spend` on the resize, and `--appetite-spend`, `appetite.spend` or `capacity.spend` on the
+  plan, which then writes nothing. A re-plan over an open run that would raise its spend, from
+  the flag or an edited config, is refused (exit 2) and leaves the run and the plan as they were;
+  the raise goes through `appetite resize`, whose appetite a re-plan keeps, and the line saying
+  so names the spend it keeps. A re-plan keeps the open run's standing spend too, so an
+  edited `capacity.spend` cannot hide a spend overage. A rolling run's policy carries the plan's
+  spend, and each `sprint boundary` stamps the next cycle's run with it beside `standing_spend`, so
+  a config edit does not move a cycle's ceiling; a negative spend in config stops the boundary.
+- `loop_guard.py budget` now stops a run on spend as well as on minutes and units. The spend
+  appetite is counted in priced input-equivalent tokens and resolves from `--appetite-spend`, then
+  the run state's `appetite.spend`, then config `appetite.spend`, then `capacity.spend`; both keys
+  ship at 0, which is unbounded, and with no spend appetite the meter is not read at all. Spend is
+  read as a first close reads it: a session meter reading taken now and held beside the run's
+  stamps, with no stamp written to the run state; like any meter read, it may refresh the meter's
+  parse memo, `sdlc-studio/.local/meter-reads.json`. Output and cache tokens count at their
+  weights, so 1,000 input, 1,000 output and 10,000 cache-read tokens spend 7,000, not 2,000. A
+  spend key `int` cannot read, such as `capacity.spend: 5e6`, which YAML reads as text, leaves
+  spend unjudged and names the key instead of stopping the breaker. The verdict carries `spend`, `appetite_spend`, `spend_warning`,
+  `spend_unread` and `spend_includes_subagents`. The breaker warns at 75 and 95 per cent with one
+  WARNING line, and at 100 it exits 4 naming `spend`: the units already dispatched finish, no
+  further unit starts and no unit's status moves. A meter that cannot read, or a reading that forms
+  no priced total, leaves the spend axis unjudged at that boundary and prints why, while minutes
+  and units still judge. The reading is a lower bound, so the breaker can fire late but never
+  early.
+- The v6.5.0 release notes, `docs/release-notes-v6.5.0.md`, are written for a head of engineering
+  on 6.4.0. They open with what changed under eight themes, each naming the units or decisions
+  that delivered it: the defect bar this release was held to, with each count read from the
+  decision it names; the persona standard; a sprint wave driven from build to paperwork; the
+  delegated signature; PyYAML required; the red CI run policy; the harness-agnostic pages; and
+  overlap caught at filing and planning. A section names each new refusal or changed default a
+  6.4 habit meets beside what to do instead, and the two entries filed under Breaking. The
+  upgrade path installs PyYAML before reinstalling, gives `migrate` before `migrate --apply` with
+  what each lists and writes for a 6.4 project, and names the four configuration keys 6.5 adds
+  with the defaults `reference-config.md` states. Each cost figure names the signed report it is
+  read from, one of RPT0035 to RPT0045, and no total across reports is given. The notes carry the
+  `**v6.5.0 discloses 0 open defects: 0 Medium, 0 Low.**` line for `known_issues.py write` to fill
+  at the cut. `tools/tests/test_lean_release_notes_v65.py` refuses a theme naming the wrong units,
+  a quality count its decision does not carry, a changed behaviour with no replacement, a refusal
+  the code does not make, an upgrade step that does not do what the notes say on a project
+  v6.4.0's `init.py` made, and a cost figure its report does not carry. It reads each Won't Fix
+  count from the bug corpus as the commit that added its decision's row to the decisions log left
+  it, never HEAD or a later commit that edits or removes the row, so a bug reopened after the
+  ruling, or a later Won't Fix bug citing the decision, leaves the check as it was.
+- `sprint plan` now names, per unit, the test modules outside its `Affects` that name a `.py` file
+  it declares, by module name in an import or by file name, so a groomer can see before the run
+  starts which test modules may reach that file. It is matched by name alone, so it may
+  list a module that neither imports nor runs the file (one naming it only in a comment or
+  docstring, or importing a same-named module such as `importlib.util` for a declared `util.py`),
+  and its header says so. A directory in `Affects` covers every module beneath it. The list is
+  advice beside the registry advice: it changes no exit code, batch or grooming verdict under any
+  `sprint.affects_check` mode, and `--format json` carries it as `breakdown.test_advisories`,
+  apart from `affects_advisories`. A test module is a `test_*.py` file
+  `git ls-files` lists under the project root, so an untracked module and the copies a worktree
+  under the project holds are never read, a module conflicted mid-merge is named once, and a name
+  holding a byte that is not UTF-8 is shown with its bad bytes replaced by U+FFFD. The
+  human line names at most ten modules per script, sorted, and ends
+  `, +N more (--format json lists all)` when it leaves N out. Only `sprint plan` reads the
+  modules, only when a unit declares a `.py` file, and once per plan however many units the batch
+  holds; filing, refine and `batch add-epic` never do.
+- `personas.standard` in `sdlc-studio/.config.yaml` sets how the persona standard holds the
+  project's own seat cards. `block`, the default, refuses a card that breaks a blocking rule or
+  whose latest review failed, as before. `report` frames the card and prints one stderr line
+  starting `persona card blocked (report mode):` that names the card, each rule and the command
+  to run next, wherever `persona_resolve` resolves the card: `persona_resolve.py resolve` and
+  `resolve-consult`, and the briefs that call them, `critic.py brief` among them. Any other value
+  is read as `block`, with one stderr line naming the key and its two values.
+
+  Upgrading: `project_upgrade.py --apply` sets `personas.standard: report` for a project that
+  holds its own persona or seat cards and sets no value, and its Applied list names the change
+  and `personas.standard: block`, the one setting that switches the standard on. The dry run
+  lists the same change, in the same words, under Auto-correctable. A `personas:` written on one
+  line is never rewritten: it is listed under Needs judgement, never as applied. A project with
+  no cards of its own, or with a value already set, keeps its config as it was.
+
+  A seat card holding a byte that is not UTF-8 no longer stops `persona_resolve.py` resolving
+  every other seat: the declared role is read past that byte, and the card itself is held by the
+  persona standard until it is saved as UTF-8.
+- `docs/enterprise.md` answers an enterprise reviewer in six sections (US1317): harness and
+  models, data, adopting without forking, fitting existing controls, cost, and verification for
+  less experienced engineers. The data section names every file in the installers and the
+  installed skill that makes a network call, what it contacts and when, and states that SDLC
+  Studio sends no telemetry. The controls section maps requirements approved, design reviewed,
+  tests evidenced, independent review and approval before release to the records and commands
+  that evidence each, and claims no certification. The cost section names `sprint report`,
+  `sprint cost` and the `sprint plan` forecast, explains how Copilot premium requests relate to
+  the meter, and quotes only figures from RPT0035, a signed report. `docs/engineering-leaders.md`
+  links to the new page. `tools/tests/test_enterprise_doc.py` scans the tree for network calls on
+  every run, so a file that gains a network call, or a named file that gains a new kind of call,
+  fails it until the page names it.
+- A harness compatibility page, `docs/harnesses.md`, shows what SDLC Studio gives in Claude Code,
+  Codex, Cursor, Gemini CLI, GitHub Copilot and opencode: install path, invocation, skill
+  discovery, parallel or sub-agents, token and cost reporting, hooks and gates, and live reload.
+  Each cell names the file in this repository that shows it, or opens with Untested. A fallbacks
+  table says what a harness without a feature does instead; for `epic implement --agentic` that is
+  plain `epic implement`, the same stories one at a time in dependency order through the same
+  gates. A new test reads the install paths from `install.sh` and `install.ps1` and checks that
+  every source a matrix cell names exists. It fails on a cell with no source unless the cell opens
+  with Untested and has no second clause after a semicolon, so a cell that claims one part and
+  leaves another untested still needs a source. It also fails on a fallback left empty or one that
+  says there is none in a phrasing it lists, such as "No fallback.", "Nothing." or "not
+  available". The page says the skill installs no git hooks: a project wires its own from the gate
+  help. (US1316)
+- `reconcile.py detect` reports `risk-class` drift (US1314): an open story whose stamped
+  `Risk-class` ranks below the class its Affects now get from the component map, naming the story,
+  its stamp and the map's class. A stamp wins over the map, so a map declared or widened after
+  refine left every earlier story at its old class; `sprint plan` flagged such a story only once
+  it was in a batch, and nothing raised the stamp. `reconcile.py apply` raises it to the map's
+  class and never lowers one, since a stamp above the map may be an operator's raise. A closed
+  story, an unstamped story and a project with no map declared are left alone, and a second apply
+  changes nothing. `reference-reconcile.md` documents the kind.
+- `sprint_report.py disclose --report RPTxxxx --decision Dnnnn` adds a delegation statement to a
+  report already signed (US1294, D0504). The report's signature gains `delegated: true` and the
+  decision's id, as the decisions log spells it, and its Markdown twin is re-rendered, so its Signed
+  by cell says the signature was entered under delegation and names the decision. Only the report
+  and its twin are written. The tracked run record, the fingerprint and the reports index row are
+  unchanged, so a report that read VALID under `sprint_report.py check` still does. The decision
+  must be one `sdlc-studio/decisions.md` holds as accepted (`d0001` and `1` are read as D0001). An
+  unsigned report, a missing report, an id the log does not hold, a decision that is not accepted,
+  and a signature already recording a delegation under another decision or none are each refused
+  with exit 2, and nothing is written. A repeat under the same decision exits 0 and says nothing
+  changed.
+  The release evidence pack (`release_cut.py evidence-pack`) now accepts a delegation the report
+  alone records when the decisions log committed at the revision built holds its decision as
+  accepted, under the id the report spells, and states it on the Accountable line of each of the
+  report's changes. It refuses one whose decision that log does not hold as accepted, and it still
+  refuses a report that drops or changes a delegation its run record holds.
+  The evidence page (`sprint_report.py evidence`) gains an eighth column, Signed by, which gives
+  each run's signer as the report's Signed by cell does. A signature holding neither key shows the
+  principal alone. This repository's `docs/evidence.md` is regenerated with it. A project that
+  commits its own evidence page must regenerate it with
+  `sprint_report.py evidence --out docs/evidence.md`, or `evidence --check` and
+  `release_cut.py tag-check` refuse the seven-column page. The reports signed under delegation
+  before the signature could say so, RPT0029 to RPT0034, still show the principal alone until
+  US1295 discloses them.
+- A signature entered under delegation says so (US1292): the report page's Signed by cell, in
+  both the Markdown and the HTML page, names the delegation and the decision that authorised it,
+  and the evidence pack discloses both on each Accountable line. The pack refuses a report whose
+  signature drops or changes a delegation its run record holds, or a delegated signature that
+  names no decision. An operator's own signature shows the principal alone.
+- `sprint sign --delegated` needs `--decision` naming an accepted decision in
+  `sdlc-studio/decisions.md` (US1291); none, an unknown id and a superseded one are refused before
+  anything is written. The signature block records `delegated: true` and the decision id, and the
+  sealed line names it. A signature the operator enters carries neither.
+- `gate.py --red-run <run> --failed <test> ... --token can-rerun|cannot-rerun` answers a red CI run
+  on main (US1238). When every failing test is named by an open bug whose title says flaky, the run
+  is recorded on that bug under `## CI Red Runs` and the answer is `rerun`, a rerun of the failed
+  jobs, while the run's reds, counted once each across every open bug's record, are fewer than
+  `ci.rerun_limit`; past the limit, or with a token that cannot rerun, it is `stop`, asking the
+  operator and naming the run and the bug. When any failing test is named by no open flaky bug, or
+  an id is only the path of a module that will not collect, the answer is `regression`: when a
+  failing id names a file in the tree a bug is filed through `file_finding` naming the run and the
+  test, and a second red of the same run reuses it; an id that names no file is refused (exit 2)
+  with nothing filed, for the operator to file. Either way the answer says not to push again until
+  main is green.
+  No answer skips or deselects a test, and the command exits 0 only on `rerun`. `help/gate.md` and
+  the flakiness section of `reference-test-validation.md` state the policy.
+- A project sets the CI wait and the rerun limit under two new `ci` keys (US1237).
+  `ci.wait_timeout_minutes` (default 30) bounds the one blocking watch on the CI run a push started,
+  and `ci.rerun_limit` (default 1) counts the reruns one red run may have when every failing test is
+  a filed flaky bug. `config-defaults.yaml` holds both, and the Release Strategy section of
+  `reference-config.md` documents them with the same defaults, its line count unchanged.
+- The sprint report gains a Release change failure rate section after the DORA table, and
+  `retro.py seats` states the same figure on one line and as `release_cfr` under
+  `--format json`. Both read `escape.failure_rate`, the calculation `escape.py failure-rate`
+  prints: the releases with a linked incident over the releases counted, over the 90 days
+  ending on the page's window end or the retro's Date, with a 14-day settling period. The
+  page names each release counted and the incident issues and escaped bugs that failed it,
+  citing `sdlc-studio/reports/releases.jsonl`; the DORA table's change failure rate still
+  counts CI push runs. A project with no release record reads NOT MEASURED on every new page
+  until `release_cut.py changelog-cut` records a release, and an unreadable record line reads
+  NOT MEASURED naming the line rather than refusing the close. A re-derivation replays the
+  section the page was filed with, so a signed page keeps its figure when an incident is
+  linked later, and a page filed before the section shows none and renders as it was signed.
+- `escape.py failure-rate [--since D] [--until D] [--settle-days N]` derives change failure rate
+  from records (US1234, D0458, D0640): the releases with at least one linked incident divided by
+  the releases counted, over the release records `release_cut.py changelog-cut` writes. An incident
+  is an issue whose `## Root Cause` section is written, linked to a release through the escaped
+  bugs it was triaged into. It prints the rate with its count, the releases counted, each failed
+  release with its incidents and bugs, the pending ones and the window, as text or `--format json`.
+  The window is the 90 days ending on the end date, both days included, and a release younger than
+  the 14-day settling period is pending, counted neither way. Both are flags with those defaults;
+  no configuration key is read. For a project on the last release this is a new advisory verb: no
+  default changes and no gate reads it. A project with no release recorded in the window, or no
+  written Root Cause on any issue, reads `not measured:` with the reason, never 0%, until the next
+  release cut records a release and an incident's Root Cause is written. `deploy.py metrics` still
+  counts `failed` and `rolled-back` rows of the deploy ledger; the deploy help says which figure is
+  which.
+- **The release cut records each release in a committed file (US1233).** `release_cut.py
+  changelog-cut --version X.Y.Z` now appends one JSON line to `sdlc-studio/reports/releases.jsonl`
+  naming the version, the date of the cut, the previous release and the signed reports it
+  shipped, so a change failure rate can count releases from the tree. The previous release is
+  the tag on the nearest tagged commit in HEAD's history, however late that tag or an older one
+  was made, named by its ref, so a renamed tag is named as it is now. Between tags on one
+  commit, the one with the latest creator date wins (an annotated tag's tagger date, a
+  lightweight tag's commit date), then the first by name. With no tag in HEAD's history the
+  previous release is the newest earlier record. Where git cannot list the tags or the history
+  of a repository with a commit, the cut refuses and writes nothing. The reports are the signed
+  ones no earlier record names; for the first record, the ones not already signed at the
+  previous tag's commit, or every signed report with no tag. A re-run for
+  a version already recorded keeps its line byte for byte, a cut refused for its CHANGELOG
+  writes no record, and a record file with a malformed line refuses the cut by line number
+  before anything changes. A first release in a directory with no git, no tag and no signed
+  report is still recorded, with a null previous release and an empty report list.
+- `critic.py brief` prints a section of the author's recorded mutants (US1202). When the unit's latest
+  self-check kept the runner's mutant list, the brief replays that list through
+  `mutation.py run --edits` against the tree as it stands and prints each mutant with its recorded
+  verdict and its replayed one, marking a line where the two disagree, so a kill a later change
+  undid reaches the reviewer marked rather than as current. The section says the replayed list is
+  the author's and does not count as the reviewer's own mutation pass; a full-tier brief still
+  carries the practice to mutate the author's tests. A unit whose self-check kept no list is told
+  so, and its brief is issued as before. The section is left out of the brief's fingerprint, as the
+  file history is, because its replay moves with the tree. `reference-review.md` states the rule.
+  The runner is stopped at 600s, and the brief then says the replay did not finish and is issued.
+  `sprint.py lane land` gives its QA brief a bound of 780s, the replay's and its stop's with 120s
+  to spare, so its own bound no longer fires first; a brief that runs past that bound is a stop
+  the landing names, with the `critic.py brief` command that writes it, not a traceback.
+- `critic.py self-check record --mutants-from <report>` records the mutation runner's own report in
+  place of a hand-written mutants list (US1201). Each row is judged as a `--mutants` row is, so an
+  unanswered survivor or a test outside the unit's Affects is refused and nothing is written; a
+  report for another unit, or a row the runner did not apply or could not judge, is refused too. The
+  whole list, each mutant's file, old and new text, test, verdict and answer, is kept in
+  `sdlc-studio/reviews/author-mutants/<id>.json` beside the row, where `critic.py brief` reads it; a
+  later record with `--mutants` alone removes it. A mutant the runner cannot run is listed by hand
+  with `--mutants` beside `--mutants-from`, judged and counted with the report's rows, so its
+  unanswered survivor refuses the record too; it is not kept, carrying no edit to replay. The author
+  self-check section prints the runner command,
+  `mutation.py run --edits EDITS.json --scope <id> --report REPORT.json`, with the unit's pytest
+  Verify selectors and the `--mutants-from` record command. `sprint.py lane brief` points the
+  runner's report at `sdlc-studio/.local/lane/<id>-mutation-edits.json`, and `sprint.py lane land`
+  records a hand-in carrying it through `--mutants-from`, with the `<id>-mutants.json` handed in
+  beside it through `--mutants`; a hand-in with only `<id>-mutants.json` records as before.
+- `mutation.py run --edits <list.json> --scope <id>` runs mutants a person chose (US1200). Each
+  entry of the JSON list is one `{file, old, new, test}` edit, with an optional `mutant` name and an
+  optional `answer` for a survivor. The working tree is copied once into a temporary directory, and
+  each edit is applied there, its pytest selector run there and the file put back and read back
+  before the next. No edit and no test runs in the working tree, the report is the one file
+  written there, and a SIGTERM removes the copy and kills the test's process group. It prints one line per entry, in list order: the name, `killed`, `survived`,
+  `not-applied` or `error`, and the test's last line or the reason. An edit outside the unit's
+  Affects, or whose old text is absent or occurs more than once, is reported not applied with the
+  reason and is never counted killed, and a test that fails before its edit is applied is an
+  `error`, not a kill. A list that is not a non-empty JSON list of entries is refused at exit 2 with
+  nothing run, and a file that does not restore in the copy stops the run at exit 3 naming it. The
+  report goes to `sdlc-studio/.local/mutation-edits-<unit>.json` (or `--report`) in a fixed shape,
+  documented in the module: the unit, the counts and every entry with its verdict.
+- `sprint.py drive step --after <agent-id>` performs the whole chain after one agent's hand-back
+  in one command, ending with the next prompt's path (US1198). From a builder's worktree
+  `agent-<id>` it lands the lane, records the self-check, writes the QA brief and prices the return
+  from the agent's transcript, and its last line is the reviewer's prompt; a landing that stopped
+  after its commit is finished with `lane land --resume` by the same command, found by its land
+  record once the worktree is gone. From a reviewer's written verdict it runs `lane accept`: an
+  APPROVE is verified, moved, returned and its paperwork committed, and the last line is the
+  builder prompt of the wave's next unit not yet briefed, building or landed (one neither drive's
+  own record, the run's lanes in flight nor a land record since the run opened names), or says
+  what the wave waits on or that it has ended. A REJECT gets the repair brief, quoting the
+  refusal and the BLOCKING findings verbatim, as its last line; the repair's hand-back is landed and
+  priced the same way, and its prompt is the round's rejoinder, addressed to the reviewer who
+  rejected so that reviewer is resumed. A REJECT at the project's `review.max_rounds`, like any
+  refused step, prints a decision record naming the cap and the operator's ruling owed, and no
+  prompt path. An agent the run has no lane for exits 2 and changes nothing.
+- `sprint.py drive` drives the open run's current wave in parallel (US1197): units with disjoint
+  Affects build at once, and a unit sharing a file with an earlier unit of the wave starts only once
+  that unit has landed, so its worktree holds the landing. Landings, accepts and paperwork commits
+  take the root one at a time. A WARNING line on the stderr of a step that exited 0 stops that unit
+  with a record quoting it, and its move is left out of every other unit's paperwork commit. A
+  warning at accept names that unit's paperwork commit as its resume, and until that commit is made
+  each re-run of drive stops on the unit again and starts no later wave. A rebase conflict at a
+  landing stops the wave with a record naming the conflicting files: the landing
+  before it stands, the lane stays committed in its worktree, and drive retries and forces nothing.
+  A wave whose every unit completed ends the drive with a record naming each unit's state, and no
+  unit of the next wave starts. `reference-doctrine.md` names the five stops (a refusal, a warning,
+  a REJECT, a rebase conflict and a wave end) as the only points the model is woken.
+- `sprint.py drive --harness <cli>` walks a unit's lane from build to paperwork with no model
+  between its steps (US1196): the headless build (`lane run`), `lane land`, the QA brief the landing
+  wrote, the review (that brief run headless in the same CLI, writing the verdict file the brief
+  names), `lane accept`, the priced return the accept runs and one paperwork commit through the
+  hooks, one line per step. The paperwork commit names its paths, so nothing else staged in the root
+  goes into it, and a refused one leaves the root's index as it was. A step that exits non-zero
+  stops the walk with a decision record of at
+  most 30 lines naming the unit, the step, its exit status, the last lines of its output, where the
+  whole output is kept (`sdlc-studio/.local/drive/<unit>/<step>.log`, and the commit's own log for
+  a refused landing) and the command that resumes; re-running drive resumes a unit at its landing
+  or its brief, and finishes a landing that stopped after its commit with `lane land --resume`. A
+  REJECT is recorded, moves nothing and stops the walk with a record quoting its
+  BLOCKING findings and naming `sprint.py lane brief --repair --units <unit>`; drive spawns no
+  repair. `help/sprint.md`, `reference-sprint.md` and `sprint.py drive --help` name the steps and
+  the five stops.
+- `sprint.py lane brief --units <id> --repair` writes a repair brief (US1195): the unit's ordinary
+  brief followed by its latest landing's refusal, quoted byte for byte from the landing's
+  `commit.log`, and its unanswered REJECT's ISSUES and BLOCKING text, quoted byte for byte from the
+  verdict file the ledger row is bound to and naming that file. A landing is read as refused when its
+  `commit.log` records no commit made, and a REJECT a later verdict answered is not quoted. A unit
+  with neither is refused at exit 2 with no brief printed, and the ordinary brief is unchanged. The
+  runbook's delivery table routes a refused landing or a REJECT to a fresh repair agent holding
+  that brief, and says the orchestrator does not edit the code or run its tests in its own context.
+- `sprint lane land --resume` takes up a landing that stopped, from the step it stopped at. Every
+  landing now leaves a land record, `sdlc-studio/.local/lane/landed/<worktree>.land.json`, naming
+  its worktrees and units, the steps it completed, the step it stopped at and, once the root's
+  branch moved, the commit. A resume runs only the steps that record does not name as completed:
+  it reads the hand-in the first attempt kept rather than emptying it or copying it again, commits
+  once, leaves a brief already written as it is, and finishes a landing whose worktree the first
+  attempt already removed. A landing of several worktrees resumes the same way. A resume with no
+  stopped landing to take up, because no record exists or its landing completed, exits 2 and
+  changes nothing. (US1193)
+- `sprint lane land` lands several builders' worktrees as one commit. Name each with its own
+  `--worktree` and give every unit in `--units`: the commit hooks run once for the lot, and the
+  commit takes the first worktree's subject with its scope naming every landed unit, the other
+  messages as body, and one `Refs:` trailer per unit. Each unit belongs to the worktree whose
+  hand-in carries its claims or mutants file, so its self-check is recorded from that worktree's
+  files under that worktree's name unless `--author` names one, its QA brief is its own, it is priced from that builder's own
+  `agent-<id>` transcript, and its hand-in is kept under
+  `sdlc-studio/.local/lane/landed/<worktree>/`. A file two worktrees stage with different content,
+  a unit whose hand-in is in none or several of them, a worktree named twice, and a worktree after
+  the first holding commits ahead of the root's branch, which would land only its staged change,
+  are refused before anything moves, and a resumed landing refuses that last one too. A change
+  that will not apply beside the first worktree's, or a commit the hooks refuse, lands nothing:
+  the root's branch stays where it was and every worktree keeps its own staged change. The
+  commit's output is kept in every worktree's kept hand-in, so `sprint lane brief --repair`
+  quotes a refusal for the units of a later worktree as well as the first's. (US1192)
+- `tools/remote-gate.sh staged --test <module> [--test <module>]...` runs only the named test
+  modules on the gate host `sdlc.gateHost` names, through the tree's own `gate.py --run-tests`,
+  against exactly the tree the index stages (the one `GIT_INDEX_FILE` names when it is set, as it
+  is under `git commit`). The tree is written from a copy of the index and sent as a commit on
+  HEAD that no local ref points at, so the clone's HEAD, index, working tree and refs are left as
+  they were, and neither an unstaged edit nor an untracked file goes with it. It exits 0 when the
+  selection passed and 1 when it failed, whatever the selection's own exit, with the host's output
+  on stderr; 3 when the host could not be reached, 4 when its setup refused before a test ran,
+  and 5 when another run held the host's lock for more than 60 seconds, none of which is a
+  verdict on the tests; and 2 when it could not start, as for a call naming no module or a module
+  path holding anything but letters, digits, `.`, `_`, `-`, `/` and `:`. Runs on one host stay
+  serialised under its lock, a push, suite or release run still waiting for as long as it is held,
+  and each run's checkout and ref are removed when it ends or its caller goes away.
+  Every ssh the script makes now carries `-o ConnectTimeout=10`, so a host that drops packets
+  silently fails a call with exit 3 after 10 seconds, not the kernel's two minutes; a commit's
+  selection also gives up a connection that dies mid-run after 15 x 4 = 60 seconds of silence
+  (`ServerAliveInterval` x `ServerAliveCountMax`), where a push keeps its patient 60 x 10. A
+  transport of your own in `sdlc.gateSsh` carries its own bounds.
+- `persona_review.py owed` names each persona or seat card owed a review, one `persona review
+  owed:` line each: never reviewed, changed since its review of a given date (by the recorded
+  body hash, so a reviewed marker or a touched file is no change), or not reviewed since the
+  newest release tag, the tag picked by its commit's date and the PASS date compared with that
+  commit's date by day. It exits 0 whatever it finds, and `persona_review.py check` reports the
+  same cards under the new reported rule `persona-review-owed` (Freshness). `sprint.py plan`
+  prints one `persona card blocked:` line for each card the persona standard holds, naming the
+  rule, its line and the one command to run next, and one `persona reviews owed: <count>` line
+  naming `persona_review.py owed`; `release_cut.py changelog-cut` prints one `persona review
+  owed:` line per owed card, each ending in the `persona_review.py brief` command that reviews
+  it, and the `owed` summary names no placeholder. Neither changes its exit code, the plan's batch
+  or the cut's CHANGELOG.md. `plan --skip-personas` prints neither line, though a Sprint Goal
+  tracing to a held persona still prints that card's line.
+
+  A persona, seat or stakeholder card whose bytes are not UTF-8 no longer makes `sprint.py
+  plan`, `validate.py personas` or `validate.py seats` exit with a UnicodeDecodeError traceback.
+  The validators name it as `card-not-utf8` with the line of its first such byte and read it with
+  each such byte replaced, so every other card is still checked. `persona_review.py check` holds
+  such a card, a hold that blocks; the plan's `persona card blocked:` line for it names saving it
+  as UTF-8 as the command to run next, and `persona_review.py record` refuses a review of it
+  rather than failing on its bytes.
+- A persona or seat card now gets a dated verdict from a seat that is not the card.
+  `persona_review.py brief --card PATH --seat ROLE` briefs the reviewing seat with the seat card
+  it adopts, the persona standard, the card, each finding `check` reports for it with its severity,
+  and the record command; naming the card's own seat exits 2 with no brief.
+  `persona_review.py record` appends one row to `sdlc-studio/reviews/persona-reviews.md` with the
+  card, its body hash (the card without its generation stamp or reviewed marker), the outcome, the
+  reviewer, the seat from the reviewer's `(role)` group, the person who ran the review (`--run-by`,
+  defaulting to the repository's `git config user.name`), the date and the rules a FAIL names. The
+  row records who asserted the review; it is not proof the review happened. It refuses, writing
+  nothing, a FAIL naming no rule, a rule the standard does not hold, a reviewer with no `(role)`
+  group, no person to name as running it, a `--run-by` that is only a `(role)` group, the card's
+  own seat, and a PASS while a blocking rule still fails on the card. A PASS on a generated card
+  turns its provisional stamp into the dated reviewed marker `persona_gen.py accept` writes, and
+  the `persona review` workflow now runs brief then record. `persona_gen.py stamp` keeps every
+  other line of the card and its line endings, so stamping a card that ends in a blank line no
+  longer changes its body hash.
+- A persona standard, `best-practices/persona.md`, names every rule a persona or seat card is held
+  to under seven headings (Format, Identity, Evidence, Testable goals, Consistency with the cast,
+  Freshness, Memory hygiene), says whether each rule blocks or is reported, and gives the questions
+  the reviewing seat answers that no rule can. `persona_review.py check [--card PATH] [--format
+  json]` reports each card against it from one rule table and exits 1 when a finding blocks. It
+  adds two rules: `persona-evidence`, reported when a card's Evidence section is missing, cites no
+  id, or cites only ids that resolve to nothing, and `persona-registry-role`, which blocks a card
+  whose Cast role differs from the role `personas/index.md` declares. `validate.py seats` and
+  `validate.py personas` print `blocks resolve` beside a blocking rule, read from the same table,
+  with their own severity words and exit codes unchanged. The persona and amigo templates gain an
+  Evidence section.
+- `validate.py seats` now warns when a seat card names a persona the cast does not declare
+  (`seat-persona-unknown`) or calls one by a role the registry does not declare
+  (`seat-persona-role`), naming the card and the line the name starts on. A claim reads
+  `the Primary persona, Sam`, `the Primary design persona is Maya Okafor` or `Sam (Primary)`, and
+  counts when it wraps across a line break. The declared role is the one `personas/index.md`
+  gives, and the persona card's Cast role only when there is no registry. Both are warnings, so
+  the team-generation flow never fails on them. reference-persona.md's rule table, the generation
+  flow's gate step and the `validate.py` page name both rules.
+- `sprint goal-review brief` now lists the End goals of each persona the Sprint Goal traces to,
+  numbered as on the card, with what checks each: its Verify, `checked by hand` for a
+  `Verify: manual ...` line, or `not testable` with none. When the goal traces to at least one
+  persona and none of those personas' End goals carries an executable Verify, the brief prints one
+  `Goal check: NONE - nothing can check this goal` line naming them, and `sprint plan` prints the
+  same `goal check:` line. It is advice: the plan's exit code and batch do not change. The JSON
+  plan (`sprint plan --format json`) reports `goal_trace.checkable`, with `checked_by` naming each
+  executable End goal and `end_goals` listing every traced one; only the traced personas count, so
+  a testable End goal on a persona the goal does not trace to leaves it uncheckable. A goal that
+  traces only to a PRD outcome, or to nothing, prints no goal-check line and carries none of the
+  three fields.
+- A persona End goal can carry its own Verify line, and the files it constrains as Applies-to
+  patterns, nested under its number. `validate.py personas` now warns `persona-goal-verify` for an
+  End goal whose Verify is empty, an unfilled placeholder or one the `verify_ac` lint flags, naming
+  the card and the goal's number, and `persona-goal-scope` for an Applies-to with no Verify to check
+  it or a pattern written with `**`, naming the trailing-`/` form that replaces it. A Verify line
+  elsewhere on the card is not read. The persona template carries a commented End goal example and
+  states the Applies-to dialect, and the goal-review brief no longer lists that commented example as
+  one of a card's End goals. reference-persona.md gains a rule table naming every rule
+  `validate.py personas` prints.
+- `sprint.py goal-review brief --seat <role>` frames the Sprint Goal brief for one review seat. The
+  brief opens by naming the seat and the path of the card it adopts (the review render), the same
+  card `critic.py brief` resolves, so each seat reads the goal through its own card. A role that no
+  project or shipped card fills exits 2, prints no brief and names the seats that have a card. More
+  than one `--seat`, or a record spec with `|`, is refused the same way: one role per brief. Without
+  `--seat` the brief ends by naming the review seats and the `--seat <role>` form. `goal-review
+  record` still keeps one brief per round: whichever brief the caller passes with `--brief`.
+- Lesson LL0057: give every subagent a persona. An orchestrator briefs every agent it spawns
+  (builders, reviewers, triage, research, planning and any other fan-out) with the render of the
+  seat whose lens fits the work, from `persona_resolve.py resolve --seat <role> --render
+  build|review`, never as a generic worker. Builders and reviewers were already seated; CR0748 will
+  gate the other briefs the skill ships.
+- `retro.py known-issues --retro RETROxxxx --write` writes one row into the retro's
+  `## Known issues carried` table for each open finding the retro's run raised, with its ruling,
+  ruler and date left for the operator. A finding is the run's when the report places it in the
+  run's window by its `Raised-in-batch` moment, as the close's known-issues row does, and it is
+  left out when it is at a terminal status or its stamp names only another run. Each row goes
+  after the table's last row, so none lands after a later section where the close does not read
+  it; a section with no table gets one, and a retro with no section gets it at its end. A retro
+  holding the section twice is written in the last, the one the close reads. A row
+  already in the table is kept word for word, a graduation CR ruled by its lesson class code
+  counts as present, and a second run adds nothing. Without `--write` it reports the rows and
+  writes nothing. A retro that is missing, cannot be read or is not UTF-8, or names no run, a run
+  recorded neither live nor in the archive or with no start time, and an unreadable run state are
+  refused by name. (BG1332)
+- A close that writes a report names each untracked file the signature binds, so the operator
+  leaves them as they are until the run is signed. Ignored files, `sdlc-studio/.local/` and the
+  run records are not named.
+
+### Changed
+
+- Story creation's Three Amigos step now runs one agent per seat: three agents in parallel, each
+  reviewing every story the run generated, where it ran one agent per epic covering all three seats.
+  A run whose stories span several epics now briefs three agents rather than one per epic, so it
+  spends fewer agents when the stories span more than three epics and more when they span one or
+  two; a seat gets a second agent only when its stories will not fit in one. `--skip-personas` still
+  skips the step. If you copied the old "one agent per epic" wording into your own copy of the step
+  or into a wrapper prompt, replace it.
+
+  Epic creation's Three Amigos step now makes each seat, and each affected stakeholder persona the
+  project registers, its own agent with its own brief.
+
+  `persona_resolve.py panel` given a `--question` now says, on the line after the panel, to brief one
+  agent per seat with `persona_resolve.py resolve --seat <role> --render review` and take the
+  questions to each. With `--skip-personas` that line leaves the command out, because the seats are
+  unframed. Without a question it prints the panel line alone, as before, and `--format json` is
+  unchanged.
+
+  The framing rules in reference-agent-prompt-template.md gain a fifth: a brief carries one seat or
+  one persona, never two, and several views are several agents whose replies are recorded files the
+  orchestrator passes on. LL0057 states the rule, and `scripts/tests/test_one_identity_brief.py`
+  holds the lane, review, approach and seat briefs the skill prints to it.
+- The PRD, TRD and TSD describe the widened 6.5. The PRD's Sprint capacity and Run appetite rows
+  name `capacity.spend` and `--appetite-spend`, and no longer say over-budget never gates. Its
+  cost rows name the per-kind effort entries and the cache-write split. New rows name the cache
+  measures, the release record and change failure rate, the person's ownership of the documents
+  and the solution review, and the flags table lists the spend keys, the `routing.effort` kind
+  entries and the three `review.solution_review` keys at their shipped defaults. The solution review row names
+  `critic.py approach panel` and `critic.py approach spend` and the units US1344 to US1353. The TRD drops the
+  token budget from Won't Have and records the spend appetite as ADR-015 (D0637). Its committed
+  records gain `sdlc-studio/reports/releases.jsonl` and `sdlc-studio/reviews/solution-reviews.md`,
+  and ADR-013 names `sprint_report.py disclose`. The TSD names the spend tests and gains a change
+  failure rate passage.
+- **The help and public pages tell a 6.4 team what the widened 6.5 adds (US1342).** help/sprint.md
+  names the spend ceiling (`appetite.spend`, `capacity.spend`, warnings at 75 and 95 per cent,
+  exit 4 with dispatched units finishing, an unreadable meter left unjudged) and the effort per
+  kind of unit, which `sprint plan` refuses by key when unknown; its `cost --anatomy` paragraph
+  names the cache-write split, and its `sign` paragraph says a refused disclosure writes nothing
+  and a repeat leaves one line. help/retro.md says a retro owes a `## Cost` section for a `cost`
+  or `cache-read` known issue, and that the scorecard's change failure rate is the figure
+  `escape.py failure-rate` prints, never 0%. help/gate.md names the release record
+  `release_cut.py changelog-cut` writes. README says a run can stop on spend; the upgrade page
+  lists the spend, per-kind effort and solution review keys with their defaults and gives the
+  lines that turn the solution review on; the engineering leaders page names the spend stop, who
+  owns the PRD and the PVD, and the change failure rate; the enterprise page names the spend keys
+  and the per-kind effort.
+- The v6.5.0 release notes now describe the release as it was widened. Before you take 6.5 to a
+  change board, read four new themes in "What changed for you": a run stopping on spend, with
+  effort set by kind of unit; the cache measures on the run report; the person's ownership of the
+  PRD and the PVD; and a committed record of each release with change failure rate counted from
+  it. The delegated-signature theme now also names `sprint_report.py disclose` and the reports it
+  was applied to. A fifth new theme names the solution review, which ships off: its `panel` line
+  beside `min_points` and `risk_classes`, the `critic.py approach` verbs `brief`, `record`,
+  `panel` and `spend`, and `sprint lane land` refusing a named unit until a GO stands on the note
+  as it is. Three new refusals are listed beside what to do instead: an unknown `routing.effort`
+  entry at `sprint plan`, a retro whose `## Cost` section leaves a cache-read fall unnamed, and
+  the report annex's version 1.1. The upgrade path names `appetite.spend` and `capacity.spend`
+  (default 0, so no spend ceiling until one is set), `routing.effort.docs`, `routing.effort.bug`
+  and `routing.effort.code` (default empty), and `review.solution_review.min_points`,
+  `review.solution_review.risk_classes` and `review.solution_review.panel` (default 0, empty and
+  empty). The cost section says runs sixteen to twenty-eight built 6.5 and gives figures for runs
+  sixteen to twenty-six only.
+- The seats section of `reference-workflow-personas.md` now says what a seat may change in the
+  document it reviews against. Its delegated authority lets it correct a fact itself: a feature's
+  status, a criterion verified work has met, a count, a date or a link. The page links to the
+  review's auto-apply step (step 3b of `reference-review.md`), which in the PRD makes two of these
+  without confirmation, a feature's status and a met criterion's checkbox, and none in the PVD. A
+  change to what the document requires (a requirement added, removed or reworded, a priority or the
+  scope) the seat proposes as a change request carrying the wording, and the person decides it: a
+  seat never writes the requirements it signs against. A seat unsure which kind a change is treats
+  it as a proposal and asks the person. `prd review`, which the person runs, still adds newly found
+  features to the PRD directly.
+- The skill now says the person owns the PRD and the PVD, and the Product Owner and Product
+  Manager seats check the work against them under authority the person delegates. The PRD and PVD
+  pages and `pvd help` no longer say a seat owns either document, and the PVD page calls the
+  Product Manager a seat, not a persona. Each review leg in `reference-review.md` says its seat
+  signs the "requirements satisfied" verdict under authority the person delegates. The seats
+  section of `reference-workflow-personas.md` is renamed "Seats for the requirements documents":
+  it opens by saying the person owns every document the skill keeps (the PRD, the PVD, the TRD,
+  the TSD and the personas), its table's Owns column becomes "Checks the work against", and it says
+  each seat signs its document's review leg and asks the person when unsure. The three links into
+  the old anchor follow the rename. No shipped page or seat template calls a seat a document owner
+  any more.
+- `sprint.py close` now names a role whose cache-read share fell more than 10 points below its
+  mean over earlier signed pages, and the retro must name it. Beside its cost line the close prints
+  one line setting each role's share, at one decimal place as the pages print it, against its mean
+  over up to 5 earlier signed pages that state one (one page is enough), with the change in points
+  and the pages averaged. A role more than 10 points below its mean is recorded as a `cache-read`
+  known issue on the run and its report; a role with no share this run, or no earlier page, is named
+  as not judged, with why. A retro for that run is now refused by `retro.py validate` until its
+  `## Cost` section has a bullet naming each fallen role (checked by word only), and the refusal
+  names the role, its share and its mean. A fall the retro names does not halt `sprint.py
+  boundary`. The first close reads the session's anatomy once, in its cost step before the chain,
+  rather than when it files the page, and hands that same reading to the page's Cost by role table,
+  so on a very large session the close waits for that read before its chain starts. A reading of a
+  session other than the one the meter reads is judged by nobody, and a re-close judges the table
+  the first close stamped. BG1764, also in this release, counts a reviewer recorded with its seat
+  under the reviewer role rather than under other, so a run judged against pages signed before it
+  can show `other` and the reviewer role moving by re-attribution alone; name BG1764 as the cause
+  in that run's retro.
+- The known-issues page, `docs/known-issues.md`, is cut for v6.5.0 with
+  `known_issues.py write --release 6.5.0`. It states the v6.5 bar, fewer than 50 open bugs at the
+  tag and none at Medium or above, keeps the v6.0 bar below it as history, and lists every open
+  finding by id with its count; the same command fills the 6.5.0 notes' disclosure line with that
+  count. `tools/known_issues.py` records the v6.5 bar, so a 6.5 cut states it while a cut for 6.0
+  to 6.4 still states v6.0's. Each bar carries the severities it bars: Critical and High for v6.0
+  and earlier, and Medium as well for v6.5. `known_issues.py bar` holds a tree to the bar its page
+  names (Critical and High where no page names one), so it refuses an open Medium under a 6.5
+  page, and `bar --at` an older tag still judges that tag by its own release's bar. Under v6.5,
+  `bar` also refuses once 50 or more findings are open, since that bar reads "Fewer than 50 open
+  bugs"; earlier bars set no count. Each line `bar` refuses with names the part of the bar it
+  applies: an open finding at a barred severity, or a finding it cannot parse, is refused "under a
+  bar barring" that bar's severities (`Critical, High or Medium` under v6.5, `Critical or High`
+  under v6.0), and too many open findings "under a bar of fewer than 50 open findings". The
+  pre-push hook's refusal of a tag names each of the three causes rather than naming Critical or
+  High. The page's Not
+  carried section, which `check` compares, names the findings at every severity the page's bar
+  bars that were ruled `Won't Fix` or superseded, so the 6.5.0 page names the Medium ones as well
+  as the High ones. The page's ship-open sentence names only the severities its table holds, so a
+  page whose table holds no Medium no longer says Medium findings ship open. The evidence page,
+  `docs/evidence.md`, is regenerated with `sprint_report.py evidence` through RPT0045, run
+  twenty-six's report. `tools/tests/test_lean_release_disclosure_v65.py` judges the release, the
+  v6.5.0 tag once it exists, else the commit that last wrote the page (the working tree while a
+  freshly written page is uncommitted): there `known_issues.py check` exits 0, the page's v6.5
+  section leads with that bar, its Not carried section names every finding at Medium or above that
+  left without a fix, the notes' line equals the page's count, and fewer than 50 findings are open
+  with none at Medium, High or Critical. It runs `known_issues.py bar` at the tag, or on the working
+  tree before the tag exists.
+- v6.5.0 is cut (US1330). `package.json`, `package-lock.json` (its top version and its root
+  package's), `templates/version.yaml`, the `SKILL.md` frontmatter, README and the PRD, TRD and
+  TSD Version fields carry 6.5.0, and `check_versions.py --strict` agrees. This repository's
+  `sdlc-studio/.version` names skill_version 6.5.0, written by `migrate.py --apply`.
+  `release_cut.py changelog-cut` folded every pending fragment into this section and appended the
+  release's record to `sdlc-studio/reports/releases.jsonl`. Before the cut, the fragments that no
+  longer matched the shipped commands were corrected: the persona standard's entry no longer says
+  the old worked example naming Sam is refused, the cache-read entry names BG1764 as shipped, the
+  bad seat card entry says a card under `personas/amigos` declares no role to the anatomy, and the
+  solution review entries say a malformed `review.solution_review.panel` refuses only a unit that
+  takes the review. The two Breaking entries now carry their ids, US1299 and BG1063. README,
+  `docs/INSTALL.md` and `docs/enterprise.md` pin `--version v6.5.0` (`-Version v6.5.0` in
+  PowerShell). README links the 6.5.0 notes and calls 6.5.0, and only 6.5.0, the current
+  release; the notes link this section in place of `[Unreleased]`. The three specs' Coverage
+  lines, and the PRD's inventory baseline, read v6.5.0 as cut, plus the 6.6 work on `main`.
+- The PRD, TRD and TSD now describe what 6.5 ships. The PRD's Feature Inventory gains a row each
+  for the persona standard and persona review, testable persona goals and the per-seat goal review,
+  the sprint drive and multi-worktree landing, the author's mutation runner and its replay, the red
+  CI run policy, delegated and waiting signatures, the duplicate refusal and the plan's test
+  advisories, and the harness and enterprise pages. The risk class row names `reconcile.py
+  detect`'s `risk-class` drift and `reconcile.py apply`, and the flags table lists
+  `personas.standard`, `ci.wait_timeout_minutes`, `ci.rerun_limit` and `review.rendered_paths` at
+  the defaults `reference-config.md` states. While BG1613 is open, the `ci.wait_timeout_minutes`
+  row says no script reads the key. The TRD's committed records table gains the persona review
+  ledger, `sdlc-studio/reviews/persona-reviews.md`, written by `persona_review.py record`. Its JSON
+  state files table gains `drive/<unit>/<step>.log` and `mutation-edits-<unit>.json`, and names
+  the land record, `lane/landed/<worktree>.land.json`, in the row of the directory it is kept
+  beside, each with the code that writes it. Its data architecture names a
+  flaky bug's `## CI Red Runs` section and its writer, `gate.py --red-run`. The TRD refresh scanner
+  now checks every tracked file under `sdlc-studio/reviews/author-mutants/` against a row. The
+  TSD's Mutation Testing section names `mutation.py run --edits <list.json> --scope <id>` and its
+  replay in `critic.py brief`, and its Defect Management section gains the red CI run policy. The
+  `.local` residue test now follows a path written through a call inside a `/` join, through a
+  module-level helper with one `return`, or through a conditional. It also reads a file name
+  holding a `<placeholder>` as a path row, so each new state row is held to a write in its
+  writer's code.
+- The help, upgrade and public pages describe what 6.5 ships. `help/upgrade.md` lists Python 3.10+
+  with PyYAML as a prerequisite and says the installers, `gate.py` and every command reading a
+  present `.config.yaml` refuse without it. `help/persona.md` names `personas.standard`, its
+  default `block`, its `report` mode and the one `persona card blocked (report mode):` line, and
+  that `migrate --apply` sets `report` for a project holding its own cards. `help/bug.md` says
+  `file_finding.py file` refuses a finding that duplicates one of its type, exiting 1 and writing
+  nothing, and that `--distinct-from <id>` files it with a `Distinct-from` line. `help/reconcile.md`
+  lists `risk-class` drift, which `apply` raises and never lowers. `help/review.md` shows the author's
+  mutants run through `mutation.py run --edits` and recorded with `--mutants-from`, and says the
+  review brief replays that list and labels it the author's pass. README carries a 'New in 6.5'
+  line, with its 6.3 and 6.4 lines shortened to keep it within 1,500 words; llms.txt links the
+  known issues page; the Signer bullet of `docs/engineering-leaders.md` says how a delegated
+  signature is entered and disclosed; and `docs/existing-users.md` opens with a 'From 6.4 to 6.5'
+  section. The 6.4 docs test now finds its upgrade section by name, so a newer section above it
+  leaves it passing, and the engineering leaders page test approves the new Signer sentence.
+- `file_finding.py file` now refuses a finding that duplicates an artefact of its type before it
+  mints an id, unless the filer rules on that artefact with `--distinct-from`. A duplicate here is
+  the lens's strongest case: an existing artefact, open or terminal, that shares every `Affects`
+  path the filer declared and whose title the duplicate lens scores at or above its own bar,
+  `artifact.DUP_SHARED_AFFECTS_SIM`, read from `artifact.py` rather than restated. The overlap is
+  judged on the paths as declared, before the filer folds in a companion test. The refusal exits 1
+  with nothing on stdout and nothing written, also under `--dry-run`, and names the existing
+  artefact, its status, the shared paths, the lens score and `--distinct-from <id>` as the way to
+  file anyway. `--distinct-from ID[,ID]`, or a `distinct_from` key in a `--fields-file` document,
+  answers only the duplicates it names, must name artefacts on disk, and is recorded on the new
+  artefact as a `> **Distinct-from:**` line. A partial overlap, a finding with no `Affects`, and
+  every machine caller of the library function `file_finding()` keep today's warning, so the
+  review-cap carry, the red-main regression filer and the command audit's coverage filer still
+  file. When no companion test was folded in, the refusal's scan of the corpus is reused for the
+  warning instead of being read twice.
+- The evidence page now has a Model column (US1321). `sprint_report.py evidence` reads it from each
+  signed report's own JSON: each `price_model` of its `cost_prices` rows or, where it priced none,
+  each `model_name` of its tokens-by-model rows that names a model rather than mixed or unrecorded,
+  or, where it has neither, the `model` figure of its cost section, which RPT0002, RPT0003 and
+  RPT0005 carry in place of those rows. A report naming none reads not recorded, and the catalogue
+  of prices a report carries is never read as a model it priced. `docs/evidence.md` is regenerated
+  through RPT0035, run sixteen's report, and says the reports do not yet record the harness each run
+  ran in, which CR0743 adds; its committed-page test fails on a page older than RPT0035 or one that
+  leaves the harness gap unstated.
+- The public pages no longer describe a generic Claude Code requirement. The quick install in
+  `docs/INSTALL.md` says it installs the skill into the default `claude` target's
+  `~/.claude/skills`, rather than "the Claude Code skill", and the page links the harness
+  compatibility page. The agentic-execution line in `docs/why-sdlc-studio.md` says the waves run
+  in parallel where the harness has sub-agents, and that without them the same stories run one at
+  a time in dependency order, through the same gates. A new guard scans README.md, every page
+  under docs/, llms.txt, package.json, the SKILL.md front matter, the skill's help pages,
+  AGENTS.md, CONTRIBUTING.md, SUPPORT.md and SECURITY.md for "Claude Code skill",
+  "Claude-Code-only" and statements that Claude Code, Claude or Anthropic is required, and names
+  the file, line and phrase it finds. It counts "Requirements: Claude Code", "you must have
+  Claude Code", "Claude Code must be installed", a version before "is required" and a list item
+  under a Requirements or Prerequisites heading as requirement statements. A "not", "no" or
+  "without" excuses only its own clause, so a requirement after a comma, a spaced dash, "and" or
+  "but" is still refused. Harness-specific lines, such as an install row or a note that a step
+  applies in Claude Code, and a statement that Anthropic products are not required, pass.
+  (US1320)
+- The skill's metadata no longer names one harness as required. The SKILL.md `compatibility` line
+  drops "Claude-Code-only" and says that `--agentic` runs its waves in parallel where the harness
+  has sub-agents, and the same stories one at a time elsewhere; it keeps the Python 3.10+ and gh
+  CLI requirements. The SKILL.md `description` already named no harness and is unchanged.
+  `llms.txt` now opens with a harness-agnostic Agent Skill with people in the lead, names Claude
+  Code, Codex, Cursor, Gemini CLI, GitHub Copilot and opencode alphabetically, and links the
+  harness compatibility and enterprise pages. The `--agentic` row of `help/epic.md` states the
+  fallback: without sub-agents the same stories run one at a time in dependency order, through the
+  same gates. A new test fails on a harness named as required in either field, a harness missing
+  or out of order in `llms.txt`, either page unlinked, or the fallback dropped. (US1319)
+- The README's first screen leads with harness-agnostic and human in the lead (US1318): it names
+  Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and opencode, says the skill runs on the
+  models the reader's harness provides under their own contract, and links `docs/harnesses.md`
+  and `docs/enterprise.md`. The quick start's first command installs for every harness the
+  machine has (`--target auto`) rather than for Claude Code alone, and one alphabetical table
+  gives each harness its `--target`, install folders, invocation and a command that verifies the
+  install, each backed by `docs/INSTALL.md` or by an `ls` of the skill in the row's own folder.
+  The Copilot row is GitHub Copilot CLI, and Cursor's invocation is marked untested, as on the
+  harness page. The sponsorship line moved under a new Acknowledgements heading, which says SDLC
+  Studio does not require Anthropic products. The page is 1,498 words, down from 1,500, and
+  `tools/tests/test_readme_front_door.py` refuses a harness or page link missing from the first
+  screen, a second or unordered harness table, a row without a verification command, the
+  sponsorship line outside Acknowledgements, "Claude Code skill" anywhere on the page, and a
+  README over 1,500 words.
+- `package.json` now describes SDLC Studio as a harness-agnostic Agent Skill rather than a Claude
+  Code skill: its description reads "Harness-agnostic Agent Skill for governed software delivery,
+  human in the lead. Works in GitHub Copilot, Claude Code, Cursor, Codex, Gemini CLI and
+  opencode.", and its keywords are the ten topics CR0742 proposes for the GitHub repository.
+  CR0742 gains an Applied note recording that the About description and topics are pending
+  `gh repo edit`. A new test fails when the description or a topic drifts from the CR, or when the
+  note loses its status, its date or the command. (US1315)
+- This repository declares its component map under `risk.components` in `sdlc-studio/.config.yaml`
+  (US1313, D0520). The gate scripts `gate.py`, `critic.py`, `transition.py`, `sprint.py` and
+  `verify_ac.py`, and the hooks under `.githooks`, are high; the rest of the skill's scripts are
+  elevated; everything else is standard. Before it, every unit here read as standard, so the
+  high-risk review trigger never acted on a change to a gate. A bug touching `critic.py` now reads
+  as high in review, while `sprint_report.py` stays elevated beside `sprint.py`.
+  `tools/tests/test_repo_risk_map.py` pins each class, that the map loads with no notes, and that
+  every prefix names a path the tree holds.
+- `gate.py` now requires PyYAML. Where `import yaml` fails, the gate exits 2 before any lane
+  starts, at the commit run and at every boundary, naming PyYAML and
+  `python3 -m pip install pyyaml`. It refuses the same way whether or not the project has a
+  `.config.yaml`. Before, it printed one warning, read the config as the shipped defaults and ran
+  its lanes, so a gate the project switched on was off and the exit code did not change. Where
+  PyYAML imports, the check prints nothing and the exit code is the lanes' own. This is a breaking
+  change for a machine without PyYAML (US1298).
+- A project `.config.yaml` that is present when PyYAML cannot be imported is now refused rather
+  than read as the shipped defaults. The config reader in `lib/sdlc_md.py` and `config.py` raise
+  `PyYamlRequired`, so a command that reads the config exits 1 with one line naming PyYAML and
+  `python3 -m pip install pyyaml`, with no traceback. Before this, the command printed one warning,
+  answered from the defaults and kept its exit code, so a setting the project had switched on was
+  read as switched off. `migrate.py` refuses the same way and writes nothing, where it used to hand the
+  retired config keys back for removal by hand. A project with no config, and a malformed config
+  where PyYAML imports, are handled as before.
+- PyYAML is now required, and both installers refuse a machine that cannot import it. Without
+  PyYAML a project's configuration cannot be read, so every gate it switched on fell back to the
+  shipped default with one warning. `install.sh` checks that `python3` imports `yaml`, and
+  `install.ps1` that `python3`, `python` or the `py -3` launcher does, before the release lookup, any
+  download or any copy; a machine that fails, or has no Python at all, is refused with a message
+  naming PyYAML and `pip install pyyaml`. A dry run, `--list-targets` and an uninstall skip the
+  check. The install page lists PyYAML as required with its install command, and no longer calls
+  the scripts standard library only. (US1296)
+- The signed reports RPT0029 to RPT0034 (runs ten to fifteen) now say that each signature was
+  entered under delegation, and name the decision that authorised it (US1295, D0504, D0640). The
+  decisions are D0467 for RPT0029, D0472 for RPT0030, D0475 for RPT0031, D0479 for RPT0032, and
+  D0493 for RPT0033 and RPT0034. The D0493 reading for those last two stands until the operator
+  rules on it. Each report's signature gains `delegated: true` and its decision, and each Markdown
+  twin's Signed by cell reads, for example, "Darren Benson (entered under delegation, authorised
+  by decision D0472)". `docs/evidence.md` is regenerated, so the Signed by cells of those six runs
+  say the same. Four of the page's hand-written sentences said the operator signed every run; they
+  now say a signature is entered by the operator or under a decision that delegated it.
+
+  `release_cut.py evidence-pack` rebuilds the 6.4.0 evidence pack from the records committed with
+  those disclosures. The Accountable line of each of the 93 changes from RPT0029 to RPT0034 now
+  states the delegation and its decision, and none of RPT0028's 15 changes does. The rebuilt pack
+  also differs from the old one in four other ways, each the generator's own output at that
+  commit. Its header names the commit it read. Every Accountable line also names the fingerprint
+  signed. Its closing note says how the signature is checked, and that a delegated signature names
+  its decision. And two criteria now read as US0994's and US1173's committed files word them.
+
+  Nothing is re-signed. Each report's fingerprint, principal and signing date, and each run
+  record under `sdlc-studio/reports/runs/`, are as the run's seal commit wrote them, and
+  `sprint_report.py check` reads each report VALID. A project upgrading needs to do nothing.
+- The TRD records D0503 as ADR-013 (US1293): a closed run waits for the operator's signature and
+  the next run opens on top of it, and a delegated signature records its authorising decision and
+  is disclosed in the signature block, the report and the evidence pack. The TRD's run lifecycle
+  no longer says `sprint plan --write` refuses while a run awaits its signature. `help/sprint.md`
+  states the closed-run exception under its one-run-slot paragraph, says in its across-checkouts
+  plan bullet that the plan names each waiting run and opens the next, and gives a runnable
+  `sprint.py sign --delegated --decision` invocation, as does `reference-sprint.md`. ADR-013 and
+  `help/sprint.md` say how `sign` judges a waiting run beside a later one, as D0524 rules: once
+  HEAD has moved past the commit that filed the run's record, or while a later run is open in the
+  checkout, the run is judged against that commit, its record, report page and Markdown twin
+  byte for byte, and a close not yet committed beside a later run is refused with "commit the
+  close first". RFC0060's open decision D6 is closed with a pointer to RFC0065 and D0503.
+- A run closed and awaiting its signature no longer holds the run slot (US1290, D0503). `sprint plan
+  --write` names each waiting run and opens the next one, in a fresh clone or in the checkout that
+  closed it, leaving the waiting record untouched; a run open and not yet closed still refuses a
+  disjoint batch. `sprint sign` seals a waiting run from a checkout holding a later run open, setting
+  the open run's state aside and putting it back byte for byte. Once HEAD has moved past the commit
+  that filed the waiting run's record, in any clone, a fresh one holding no run included, or while
+  a later run is open in the checkout, the waiting run is judged against that commit, not the
+  working tree (D0524): its record, report page and Markdown twin must match the files byte for
+  byte, so later commits and the later run's forecast log and stories do not refuse it. A close not
+  yet committed while a later run is open is refused with "commit the close first". While HEAD is
+  that commit, or the close is not committed, with no later run open, the whole-tree check is
+  unchanged. `status.py` names every run awaiting its signature, and the evidence schema's awaiting
+  rule says the plan no longer refuses on it.
+- After a `trunk` push, the shipped guidance now tells the agent to wait on the CI run that push
+  started with one blocking command under a timeout, never a polling loop, and to read a red main
+  before pushing again (US1236). The `trunk` section of `reference-code.md` shows the wait as
+  `timeout 30m gh run watch <id> --exit-status` after `git push origin main`, says never to loop
+  over `gh run list`, and points at the red-run policy in `reference-test-validation.md` rather than
+  restating it. The agent-instructions template carries the same sentence and stays within its
+  5,000-character budget: it drops the "Done mean done" aside, the hotfix bug's parenthetical
+  (both still in `reference-doctrine.md`), and shortens two lines.
+- In a clone that names a gate host (`git config sdlc.gateHost`), the commit-msg hook sends the
+  test modules pre-commit selected to that host through `tools/remote-gate.sh staged`, and runs
+  none of them on this machine: the host's pass or failure is the verdict on them, and its output
+  is shown on a refusal. When the host gives no verdict (it cannot be reached, or goes silent
+  long enough for remote-gate's 10-second connect bound or its 60-second keepalive to end the
+  call, its setup refuses
+  before a test runs, another run holds its lock for more than a minute, or remote-gate cannot
+  start), the hook says so in one line naming the host and the cause, shown on a passing commit
+  too, and runs the same selection here at once, whose verdict then stands. A clone naming no host, `SDLC_GATE_LOCAL=1`, and a commit with no selection run the
+  suites here as before. CONTRIBUTING's section on hooks and the push says where a commit's suites
+  run.
+- `sprint.py goal-review brief` no longer briefs a Sprint Goal that traces to a persona whose card
+  the persona standard holds, by a blocking rule or a latest persona review that is a FAIL: it
+  exits 2 naming the card, each rule and the one command to run next (`persona_review.py brief
+  --card <card> --seat <seat>`), and prints no brief. A goal that traces only to personas whose
+  cards pass is briefed as before, and the brief's list of personas designed for names a held
+  card as refused instead of listing its End goals. `sprint.py plan --sprint-goal` prints one
+  `persona card blocked:` line for a traced card the standard holds and reads none of its End
+  goals into `goal_trace` (the card is listed under `goal_trace.refused`), with the plan's exit
+  code and batch unchanged. A persona or seat card whose bytes are not UTF-8 no longer makes
+  `goal-review brief` or the traced plan exit with a UnicodeDecodeError traceback: the brief is
+  written as before and the plan names the card as `card-not-utf8`, a hold that blocks.
+- A project seat card that breaks a blocking rule of the persona standard, or whose latest row in
+  `sdlc-studio/reviews/persona-reviews.md` is a FAIL, now frames nothing. `persona_resolve.py
+  resolve` (either render) and `resolve-consult` exit 1, and `critic.py brief`, `refine.py apply`,
+  `triage.py apply`, `sprint.py lane brief` (the building seat) and `sprint.py goal-review brief
+  --seat` exit 2, each naming the card, every rule it breaks (a FAIL with its
+  reviewer, date and rules) and one command to run next, `persona_review.py brief --card <card>
+  --seat <another seat>`, naming the first seat whose own card nothing holds. When every other
+  seat's card is held too, that line says no other seat is clear to review it and how to lift
+  one, in place of a brief that would be refused, and `persona_review.py brief` with a held
+  reviewing seat exits 2 printing that seat card's refusal, never a traceback. No other card
+  stands in for a refused one, and the shipped card for the
+  role is not used in its place. A FAIL holds the card however it is edited, until a later PASS is
+  recorded. A card with no review row, or changed since its PASS, still frames and prints one
+  stderr line naming its persona review as owed. The shipped default cards and `--skip-personas`
+  are never judged and never read the ledger. A missing review render is now refused through the
+  same message, under the rule `seat-no-review-render`, for the build render as well as the
+  review render.
+
+  Upgrading: a project seat card that already breaks a rule `validate.py seats` labels `blocks
+  resolve` (a demographic token, a missing review render, a role outside the allowed set, a
+  persona the cast does not declare or declares in another role) stops resolving until it is
+  fixed. Run `persona_review.py check` to list every card a blocking rule holds, then the command
+  each refusal prints, or edit the named line of the card, or remove the card to brief from the
+  shipped card for its role.
+- This repository's RFCs are migrated to the Delivered status. The 36 Accepted RFCs whose change
+  requests and epics had all finished were moved to Delivered by `reconcile apply`. The 20
+  Accepted RFCs with nothing decomposed beneath them are decision-only, as the D0611 ruling
+  records. They stay Accepted, settled, and each now reads `Decomposed-into: none - decided
+  before decomposition was recorded`, written with `transition.py annotate`. `reconcile detect`
+  reports no drift across `sdlc-studio/rfcs/`. The sweep that finds a derivable request now reads
+  the corpus once, so weighing each Accepted RFC no longer walks every artefact again when
+  `reconcile apply` or a sprint close runs it.
+
+### Fixed
+
+- A project that takes the shipped amigo cards passes the persona standard with them. Upgraded with
+  `project_upgrade.py --apply --with-default-amigos`, a project gets the three shipped cards copied
+  verbatim into `personas/seats/`, and `persona_review.py check` finds nothing on them that blocks,
+  whether its cast holds a Primary with a registry, a Primary with none, or no persona at all. The
+  product card's worked example judges its story against the End goal of the Primary for the
+  interface and names no persona, and `validate.py seats` reports errors=0 and no seat-persona
+  finding on it, with its Scenario and every review-render section (Lens, Pushes Back When, Shadow
+  and Hand-back) in place.
+- A green full run no longer prints two diagnostics, so main's test-noise total is back under its
+  budget. The solution-review record test that reads a malformed `.config.yaml` and the cost
+  anatomy test that records a verdict for an author with no `(<role>)` group now capture each
+  warning and assert on its text, and the noise baseline holds both modules at 0.
+- A parallel `sprint drive` wave no longer stops a unit at its paperwork because another unit's
+  step ran `git status` in the root and held its `.git/index.lock`. Landings, accepts and paperwork commits still take the
+  root one at a time; the steps that run beside them now run git with its optional locks off. The
+  build's session and the headless reviewer get `GIT_OPTIONAL_LOCKS=0` in their environment, and
+  drive's own `git status` read of the paperwork paths, which a warned accept's resume runs
+  outside that turn, passes `--no-optional-locks`. A `git status` in the root from any of them no
+  longer holds the lock, so the paperwork commit beside it lands instead of exiting 128 with
+  "Unable to create '.../index.lock': File exists".
+- `critic.py approach panel` marks a seat's GO recorded on an older note, with that GO's digest
+  and the note's digest now, so a roster of GOs no longer reads as agreed after the note is
+  revised. The roster now says the orchestrator records each reply, as each seated brief's Rules
+  now say too: a seat writes only its reply file. A malformed `review.solution_review.panel`
+  refuses only a unit that takes the solution review; any other unit's `sprint.py lane brief`
+  prints, with one warning naming the bad entry on stderr.
+- The corpus lint test no longer fails when an RFC moves from Accepted to Delivered as its
+  requests are done. Its positive control takes RFC0063 and RFC0064 at either status and still
+  checks every Decision field. The rule itself judges only an Accepted RFC, so the control now
+  also proves it reads a real RFC's Decision block: a copy forced to Accepted with a pending
+  Outcome is reported, and the same copy at Delivered is not.
+- The repository hygiene sweep for bare artefact-body reads is green again. `escape trace --confirm`
+  rewrites one bug file, so its read of that file is marked as a deliberate bare read: a bug file
+  that is not valid UTF-8 is refused, with exit 2 and nothing written, and is never skipped or
+  rewritten from a lossy decode. A test pins the refusal and the loud read.
+- `critic.recorded_seat`, which `critic.py approach record`, the approach panel and the retro's
+  seat scoring read, now takes a Reviewer or Author cell's seat from the last `(<role>)` group of
+  its first reviewer. A stakeholder written "Sam Eriksson (QA) (persona)" sits as the persona, no
+  longer as the qa seat, so a panel can no longer read a qa GO where no qa seat reviewed. A cell
+  naming several reviewers joined by ` + ` still reads its first reviewer's seat, so the ledger's
+  three-seat rows read as before. `approach record` also refuses a note it cannot read, a
+  permission error or a file that is not UTF-8, naming the note and the reason in words, with exit
+  2 and nothing written. The note's digest, which `approach_agreed` and the lane brief read, is
+  still taken from its bytes.
+- A repair's recreated worktree now holds the unit's approach note. `restore_for_repair` copies the note the landing kept (`sdlc-studio/.local/lane/landed/<worktree>/<unit>-approach.md`) back into the recreated worktree's `sdlc-studio/.local/lane/`, byte for byte, so the recorded GO still binds by digest and the repair's land is no longer refused for want of a note. A unit whose landing kept no note is given none.
+- RPT0028 (run nine) now says that its signature was entered under delegation, and names the
+  decision that authorised it (BG1778, D0654). The operator had told the orchestrator "I authorise
+  you to sign for me", as the report's seal commit records, but no decision said so and the report
+  read as the operator's own signature. The report's signature gains `delegated: true` and
+  `"decision": "D0654"`, its Markdown twin's Signed by cell reads "Darren Benson (entered under
+  delegation, authorised by decision D0654)", and the RUN-01M7061X row of `docs/evidence.md` says
+  the same.
+
+  The 6.4.0 evidence pack is rebuilt with `release_cut.py evidence-pack`, so the Accountable line of
+  each of RPT0028's 15 changes states the delegation and names D0654, as the changes of RPT0029 to
+  RPT0034 already do. The pack's header names the commit it was built from. Nothing else in the
+  pack differs. `tools/tests/test_lean_delegated_reports_disclosed.py` holds RPT0028 to the same
+  checks as those six, in the report, the pack and the page, and no longer calls it signed in
+  person.
+
+  Nothing is re-signed. The report's fingerprint, principal and signing date, its run record and
+  its row in the reports index are as the seal commit wrote them, and `sprint_report.py check`
+  reads it VALID. A project upgrading needs to do nothing.
+- In a schema 3 project, a request now keeps every child spawned under it with
+  `artifact.py new --parent` in its `Decomposed-into:` field. The field holds each id without its
+  dash (`US01M8BJ3B`), and the reader the append goes through read none of those, so each spawn
+  wrote the field afresh and kept only the latest child. That reader now reads an id spelled with
+  or without its dash, beside a v2 id, and still ignores an id inside a parenthetical. A child's
+  `Parent:` field is read the same way, as are the `Epic:`, `Change Request:` and `RFC:` fields
+  its parent is found by when it has no `Parent:`. `reconcile detect` now reports a request that
+  lost a child this way as `link-asymmetry`, where it reported nothing before, and reports no
+  drift for correct links without dashes. Reconcile also reads an `Epic:` without its dash when
+  it totals an epic's story points, and reads `Delivers:`, `Epic:` and `Supersedes:` ids without
+  their dashes as links the unit already has, as it reads them with dashes.
+- `critic.py record` no longer exits 1 with a UnicodeDecodeError traceback when a seat card under
+  `sdlc-studio/personas/seats` or `sdlc-studio/personas/amigos` is not valid UTF-8. The card is
+  skipped with one warning on stderr naming it and asking for it to be saved as UTF-8, given once
+  per command however often the command resolves the seats, and the valid cards beside it still
+  declare their seats. The warning says only that critic reads no reviewer from the card. A card
+  under `sdlc-studio/personas/seats` still declares its role to the seat roster and the cost anatomy,
+  which read the role past the bad bytes, but a card under `sdlc-studio/personas/amigos` declares
+  none until it is saved as UTF-8, so the anatomy counts a reviewer recorded in that card's role
+  under other. The verdict is
+  recorded and the command exits 0. A card that cannot be read at all is still skipped without a
+  warning. `sprint.py cost --anatomy` reads the seats through the same reader. A card like this
+  now gives the same warning there on stderr, and the JSON form on stdout still parses. The anatomy
+  counts the valid cards beside it under seats and under amigos; beside a bad card it did not
+  count the amigos ones before.
+- `mutation.py run --since REF` now judges a target whose uncommitted work is all staged, in a private copy of the index (`git checkout-index`) that is removed after the run, so a builder's diff-coverage pass over staged work runs instead of refusing. No mutant touches the working tree. With `--files`, the index is never rewritten, even when a staged file's cached stat data is stale; without `--files`, choosing the surface with `git diff --name-only REF` can rewrite a stale index's cached stat data, though never its staged content. The changed lines are the index's diff against `REF`, not against `HEAD`. The copy holds the staged content of every file, so an unstaged edit to a test or helper is not run, and a `--test` naming its tests by absolute path runs the working tree's tests, not the copy's. A red baseline on that route says the suite ran over the staged version of every file in the private copy, not over the working tree, and asks for the fix to be staged. A target with unstaged or untracked changes is still refused, and the refusal now names staging the work and re-running with `--since` beside `git worktree add` and commit or stash. The report marks the run isolated in a private copy of the index and names the repository's paths, never the copy's. (BG1768)
+- A unit carried at the review cap is now filed at a severity the project's release bar allows.
+  `critic.py record` filed every carry at Medium whatever the bar, so in a project whose
+  `review.blocking_priority` bars Medium, a unit whose own criterion checks that bar could not
+  close its own carry. A carry is still filed at Medium while the bar allows it, and at Low when
+  the bar bars Medium or every severity; it is never filed above Medium. The carried bug's summary
+  says which rule set its severity, naming `review.blocking_priority`. A project whose release bar is
+  kept outside the setting sets `review.blocking_priority` to match it, or its carries keep
+  the shipped bar's Medium; this repository now sets `medium`, in step with its v6.5 bar.
+  The close's goal judgement now reads `review.blocking_priority` too: it judged every project
+  by the shipped `high`, so in a project barring Medium an open Medium was reported leavable rather
+  than blocking.
+- The cost anatomy (`sprint.py cost --anatomy`) now counts a reviewer recorded with its seat, the
+  form `sprint lane accept` records (`agent-<id> (qa)`), under the reviewer role. Before, it read no
+  agent id from that form, so the reviewer row showed 0 agents and that reviewer's spend was
+  counted under other. The id is read before a trailing `(<seat>)` or `(<seat> seat)` group naming
+  one of the project's seats: a shipped one (engineering, qa or product), or a role a card under
+  `sdlc-studio/personas/seats` or `sdlc-studio/personas/amigos` declares, as `security` is by
+  `<!-- role: security -->`. `build lane`, `Sam Eriksson (qa)` and a seat name alone (`qa`,
+  `security`) name no agent. A seat card that is not valid UTF-8 does not stop the anatomy: it
+  still reads the shipped seats and the roles the other cards under `sdlc-studio/personas/seats`
+  declare.
+- A lane brief no longer asks a project whose tests the mutation runner cannot run, such as
+  vitest's `*.test.ts` or Go's `*_test.go`, to list its mutants with pytest selectors for the
+  runner, which runs pytest alone. The runner can run a `.py` test file whose name holds no
+  other dot; a dotted `widget.spec.py` fails to import under pytest's default import mode. When
+  none of a unit's Affects test files is one the runner can run, the author self-check's mutation
+  pass now tells the builder to run each mutant by hand with the project's own test runner and
+  list it in the unit's mutants file (`MUTANTS.json`, or `<unit>-mutants.json` in a lane brief),
+  and names no pytest selector, `EDITS.json` or runner command. That unit's lane hand-in list no
+  longer names the runner's report: it hands the mutation pass in as the mutants file alone and
+  accepts a mutant's test by its path. A unit with both kinds of test file keeps the runner route and is told which of
+  its test files are run by hand. A pytest unit's brief is unchanged.
+- The red-run policy test in `tools/tests/test_lean_specs_v65.py` no longer fails under the full
+  suite when an earlier test has put a fresh copy of `file_finding` in `sys.modules`. It patched
+  the filer on the copy it imported at load, while `gate.py --red-run` imports `file_finding` from
+  `sys.modules` when it files a regression, so the gate filed through the unpatched copy and the
+  test counted no call. Both of its filer patches are now set by name on the copy `sys.modules`
+  holds, and a new test runs the same regression path with a fresh copy loaded.
+- Repository tests only: the wall-clock census no longer refuses `test_file_finding.py`, since its prose-escaper property test reads no clock and its linear-time test compares the processor time of a short and a 16-times-longer path rather than bounding seconds.
+- A bare URL followed by an escaped semicolon (`https://example.com/a\;`) is code-spanned without the backslash, so `critic.py record` no longer refuses the finding for an odd backtick count. A backslash inside the address is kept in the span.
+- The commit-msg attribution note spells a schema 3 id as its artefact does, with the dash
+  (`Refs: BG-01JQK3F8`), so the advised trailer names a record. Before it printed the comparison key
+  (`BG01JQK3F8`), which no artefact carries. A sequential id (`BG0042`) is unchanged.
+- The persona coherence test that parses a stub registry now writes the stub under a temporary
+  directory instead of into `sdlc-studio/personas/`. Before, it created and removed a file in that
+  folder, so a test running in parallel and listing the folder could read the stub as a persona
+  card and fail, which refused a push. The parser's positive control and its checks are unchanged.
+- The test session no longer carries `SDLC_VERIFY_RED_DETAIL`: the repository's `conftest.py` unsets
+  it for every session and puts it back at the end, as it does the harness homes. CI's corpus-verify
+  step sets it in the environment that starts the tests, so fixture stories verified by tests wrote
+  129 of one run's 131 red blocks into the record, and each batched red's rerun spawned a test a
+  second time, which turned the batch-ceiling test red there. Separately, `verify_ac` no longer runs
+  a batched node over its per-verifier ceiling again to fill that record: the batch's own timeout
+  answer, exit 124, is recorded once. A red the batch answered by a failing test is still run alone
+  for its output.
+- `python3 -m unittest discover -s tools/tests` no longer stops with "module incorrectly imported".
+  The repository's check that the reference pages state the config refusal shared the file name
+  `test_lean_migrate_config.py` with a skill test module, so discovery loaded the skill's module
+  under the tools name. The check is now `tools/tests/test_config_refusal_pages.py`, and the two
+  bug records whose Affects or Verify lines named the old path name the new one. The test census
+  now fails, naming the file, when any `.py` file name other than `__init__.py` is held by both
+  `tools/tests` and the skill's `scripts/tests`, so a second shared name cannot land unseen while
+  the pytest suite stays green.
+- `artifact.py new` and `artifact.py batch` write a title holding bare identifiers (`_mode_and_cutoff and _check`) code-spanned in the H1, the index row and an epic's breakdown link, and the Low-finding consolidator does the same for the consolidation CR's title, its findings' titles and their summaries, so markdownlint passes on the file and the row (MD037).
+- The duplicate lens in `backlog_triage.py` no longer keeps an artefact's id suffix as a word. Every
+  id the `lib/sdlc_md.py` id pattern finds, in either shape, is now blanked before a title and
+  summary are split into words: a v3 id such as `BG-01JQK3F8`, whose suffix `01jqk3f8` used to be
+  kept, and a dashed v2 id such as `CR-0001`, whose `0001` used to be kept, as well as `BG0001`,
+  which was already dropped. Two v3 bugs whose titles differ only in their ids now score the same as
+  the same pair with v2 ids, where each one's unique suffix used to pull the pair's similarity down.
+  A word that only looks like a suffix, such as `sha256ab` or a bare `01JQK3F8`, has no type prefix
+  and is still kept. The duplicate check that `artifact.py` and `file_finding.py` run when an
+  artefact is minted reads the same words, so it gains the same fix.
+- Lanes started together no longer race their `git worktree add`: `sprint lane run` makes each add
+  holding a lock file in the git common dir (`sdlc-lane-worktree.lock`), waiting up to 120 seconds
+  for another lane's add and releasing the lock when its own ends, whether the add made the worktree
+  or failed. A worktree already there is reused with no lock taken. Past the wait the lane is
+  refused, naming the lock.
+
+  The lock is the one file in the common dir of the repository, so lanes started from the main
+  checkout and from a linked worktree of it exclude each other.
+- `critic.py brief --rejoinder` no longer passes its standing-practices and claim-pass checks on
+  text quoted from the prior REJECT verdict. The checks read the brief less its diff and less
+  the quoted verdict, so a practice the seat's own brief drops is refused even when the old
+  verdict names it. A brief whose seat names the practice is issued with the prior verdict
+  quoted in full, as before.
+- A verdict file a reviewer writes under `sdlc-studio/reviews/verdicts/<unit>/` no longer makes
+  the author self-check stale for a unit whose Affects covers that folder, as the review
+  tooling's other writes already did not. Any other file under `sdlc-studio/reviews/` still
+  does.
+- `critic.py show` now reads the verdict listing inside one corpus cache, as `critic.py brief`
+  does, so it walks the artefact tree a fixed number of times however many rows the ledger
+  holds. It used to walk the tree again for each row, and on this repository's ledger the
+  listing took minutes. Its text and JSON output are unchanged.
+- A unit carried at the review cap and then approved, in the run that carried it, by the reviewer
+  who rejected it now rejoins that run's batch: `critic.py record` adds it back when it writes the
+  discharging APPROVE, ruled past the cap or not, the add's reason naming the carry bug and any
+  ruling, so the close, the retro and the report credit it. The record's output says so, and that
+  the carry bug is still Open until `transition.py set --id <bug> --status Fixed` closes it; an add
+  that fails is named with `sprint.py batch add`. An APPROVE in a later run that already holds the
+  unit, with no open run, or after a hand drop that followed the carry, changes no batch.
+- `sprint lane land`'s refusal of a rebase or a replay that conflicts now names a conflicting path
+  holding a space (`docs/release notes.md`) once, as git names it, where it named `docs/release` and
+  `notes.md`. Both refusals read git's conflict listing NUL-separated; a path with no space is named
+  as before.
+
+  `sprint lane run` reads the staged paths it records (`staged` in the lane record) NUL-separated as
+  well, so a staged path holding a space is recorded once, where it was recorded as two.
+- Two kill tests no longer fail at random on a loaded machine by reading a pid file before its
+  writer has filled it. `test_kill_grace_interrupt.py` and
+  `test_lane_land_commit_timeout_group.py` read a pid file the moment it existed, while its writer
+  created it empty before writing to it, so a read in that window raised `ValueError: invalid
+  literal for int() with base 10: ''`. Each test's reader now polls the file, under a 30 second
+  bound that fails the case by name, until it holds an integer. The deaf child and the commit-msg
+  hook stub now write each pid under a temporary name and rename it into place, so the file never
+  exists empty. The two cases that pin each reader's bound, `test_child_gives_up_at_its_bound`
+  and `test_pid_gives_up_at_its_bound`, no longer time the wait on the wall clock: each runs it
+  on a stand-in clock that moves on as the loop sleeps, and checks the wait gave up once its
+  0.2 second bound had passed and before one second had, on that clock. So neither bounds a
+  duration its own process measured, and the wall-clock census in `test_test_census.py` passes
+  again. That clock also ends a wait that never gives up, so the loop fails the case rather than
+  hanging it: a sleep that carries the clock past its limit, 60 seconds unless a case sets
+  another, raises, and so does any read of it after the 10,000th, which ends a wait that polls
+  without sleeping and so never moves the clock on. `_child` or `_pid` with the sleep between
+  its polls taken out now fails its bound case within seconds, where it hung that case until a
+  bound outside the test run killed it.
+- `sprint close` now rules an open bug that declares `> **Falsifies:** <goal clause>` in its header
+  as blocking the goal claim. The close's open-defect reader carries the clause the field declares
+  to the goal judgement, which prints `BLOCKS THE GOAL CLAIM <id>: falsifies the goal clause:
+  <clause>` and writes a `blocks the goal claim` row to the report; the close still does not
+  refuse on it. Before, no defect the close read ever carried that field, so such a bug was ruled
+  leavable whatever its header said. Only bugs at Open or In Progress are read. A field with
+  nothing after its name declares no clause, even above another header line, as does one holding
+  only `>`, `·` or another `**Name:**` field, so it does not make the bug block the goal claim.
+  The judgement's docstring no longer says a defect blocks for naming a clause, which no code
+  checks, and reference-bug.md names the optional field.
+- The sibling scripts `sprint lane accept` runs (`critic.py record`, `verify_ac.py run`,
+  `transition.py set` and `sprint.py lane return`) now run through the bounded runner the land's
+  commit and brief already use, so a script past its bound is stopped with the whole process group it
+  started. Only the script was stopped before, and a child it had started (the tests `verify_ac.py
+  run` runs) ran on after the accept said it had stopped. A script that ends in time returns its
+  status, stdout and stderr as it did.
+- A seat's `partial` answer in the goal review now reads as partial. An answer whose first word is
+  partial, partly or partially has its own polarity, so a clause the seats answered
+  `partial - <reason>` reaches the close's goal panel as `partial` rather than being dropped and
+  reported UNANSWERED. A yes answer still reaches it as achieved and a no answer as missed, and an
+  unclear answer still leaves the clause unanswered. A whole-goal `partial` achievable answer stays
+  a hedge, not an objection, so `sprint plan` lists no objection for it.
+- The `seat-persona-unknown` row in `reference-persona.md` now states the rule the check applies.
+  A name the cast does not hold is read only where the run resolves to a cast member, is two or
+  more capitalised words, or is one word alone in brackets straight after the role. The row's
+  examples now behave as it says: with Maya Okafor the only cast member, `the Primary persona,
+  Zed Quill`, `the Primary persona: Zed Quill`, `Zed Quill (Primary)`, `the primary persona
+  (Darren)` and `the Primary persona is Maya Smith` warn, while `the Primary persona, Sam` and
+  `Sam (Primary)`, which the row used to give as warning, stay silent. The row no longer says a
+  word after a colon is no name. A test runs each of the row's examples through `validate.py
+  seats` against that cast, so an example that stops behaving as the row says fails the suite.
+- `sprint lane accept` no longer moves a high-risk unit on its first seat's APPROVE. A unit in the
+  top risk class takes two independent seats, so an APPROVE that leaves it without a second seat's
+  is recorded and held, the unit stays where it is, and the output says a second seat is owed. That
+  seat's verdict shares the held round: its APPROVE, accepted the same way, moves the unit and
+  returns its lane, and its REJECT is the same round. Below the review cap that REJECT opens a
+  repair with no review-cap report, no carry bug and no split escalation; on a round held at the
+  cap it is a REJECT at the cap, and the held APPROVE's output says so. Before, the first APPROVE
+  moved the unit to Done, so the second seat's REJECT landed as round 2, hit the cap and carried
+  the unit. `sprint drive` judges its review cap on the round a REJECT took, as `critic.py record`
+  does, so such a REJECT is briefed a repair rather than stopped at the cap. A unit below the top
+  class still moves on its one seat's APPROVE, and verdicts recorded with `critic.py record` alone
+  are numbered as one sequence, as before.
+- `sprint goal-review brief` and `sprint plan` now pair each traced End goal with its own Verify
+  on a persona card that numbers its End goals alike, such as Markdown's style of writing every
+  item as `1.`. Before, each goal was matched to a Verify by the number written on the card, so
+  every goal numbered `1.` took the last goal's Verify: a goal with an executable Verify could
+  read as checked by hand, the goal-check line could say nothing can check the goal, and
+  `goal_trace.checkable` could read false. Each goal is now listed with the check it carries,
+  under its number as on the card, exactly as for the same card numbered `1.` `2.` `3.`. New
+  tests also pin two readings that were untested: an End goal whose Verify is an empty code span
+  reads as not testable, and the traced End goals listing names each persona's own Cast role.
+- The `goal-review brief` answer `NO CURRENT BATCH TO BRIEF` now names the flag the command takes,
+  `goal-review brief --brief-worklist <file>`. It named `--worklist`, which the command refuses as
+  an unrecognised argument. Tests now also pin that a seat's brief opens with its seat framing, and
+  that a seat no card fills is refused naming the seat roster, with nothing printed on stdout and
+  no plan written, even where no plan or worklist exists.
+- The finding filer escapes a bare ` ** ` standing alone between spaces in a title, summary, steps, fix, evidence or criterion (`\*\*`), so markdownlint no longer refuses the bug file and its index row (MD037). A real `**bold**` pair, a `**Field:**` declaration, a marker in a code span and a fenced block in the steps are written as given. A command in the steps holding a lone glob `**` outside a fence reads `\*\*` once filed, which a shell runs as a literal pair of asterisks.
+- `validate.py seats` no longer warns `seat-persona-unknown` over ordinary prose on a seat card.
+  A name the cast does not hold is now read only where it is two or more capitalised words
+  (`the Primary persona: Zed Quill`), or one word alone in brackets straight after the role
+  (`the primary persona (Darren)`), so both of those still warn, after a colon too. A lone
+  capitalised word after `is`, a comma or a colon is no longer read as a name, so a pronoun
+  (`As the Primary persona, I want`), a conjunction (`the Primary persona, If pressed`), `Not`
+  or a question word (`the Primary persona: When they arrive`) stops warning; so does a run
+  opening on an article (`the Primary persona: The Admin Team`) or holding an acronym (`Serve
+  the Web UI (Primary)`). A lone unknown first name such as `the Primary persona, Sam` no
+  longer warns. A first name followed by another surname no longer passes as the cast member:
+  where the cast holds only Maya Okafor, `the Primary persona is Maya Smith` now warns, and
+  `Maya` and `Maya Okafor` still resolve. A persona that `personas/index.md` omits is now
+  checked against their card's Cast role, so a seat card calling them another role warns
+  `seat-persona-role`; before, the role check was skipped.
+- A persona card's End goals are read correctly in three more shapes. A `<!--` inside a fenced
+  block or an inline code span no longer opens a comment that hides every goal below it; a span
+  opens on a run of one or more backticks and closes on the next run of the same length, and a run
+  with no such closer opens none. A nested `Verify` or `Applies-to` line under an unindented
+  paragraph that follows a blank line, such as a `Notes:` paragraph, attaches to no goal instead of
+  the one above. A goal's second `Verify` line is no longer silently taken in place of the first:
+  the first stands and `persona-goal-verify` warns of the second, naming the card, the goal and
+  both checks, and saying a Verify line names no check when it is empty.
+- When `sprint lane accept` records an APPROVE and `transition.py set` then refuses the move, its
+  refusal now names the finishing step: `transition.py set --id <ID> --status <status>`, then
+  `sprint.py lane return --units <ID>` with the `--claimed`, `--timeout` and the `--agent`, `--tokens`,
+  `--minutes`, `--model`, `--proof` and `--gap` flags `lane accept` was given, as the return it would
+  have run. At `sprint.py close`, a unit already at a terminal status
+  whose lane is still marked in flight now has its note (the close's line about a lane never
+  returned, and the `IN FLIGHT at close` line) name `sprint.py lane return --units <ID>` as the
+  command that clears it, spelling the unit as its file does (`US-01M6XQJF` in a schema 3
+  project, not the run state's `US01M6XQJF`); a unit not yet terminal is told nothing new.
+- The QA brief `sprint lane land` saves for a unit whose latest verdict is an unanswered REJECT now
+  opens with a line naming the reviewer who rejected it (`RESUME REVIEWER: <name> ...`), telling the
+  orchestrator to resume that reviewer for round two rather than spawn a new one, whose verdict
+  `critic.py record` would refuse. The landing prints the same line under the brief's path. A unit
+  with no REJECT gets the brief `critic.py brief` printed, with no line added and none printed. The
+  fingerprint `lane accept` hashes from the saved brief leaves the line out, so it is still the one
+  `critic.py brief` noted.
+
+  `critic.py record --brief-file` on a saved repair brief and the resume brief's reading of a landed
+  lane (`resume_brief._approved`) hash it the same way, through `critic.saved_brief_fingerprint`,
+  leaving the reviewer line out, so a round-two verdict recorded from the saved file is filed against
+  the fingerprint `critic.py brief` printed and a repair's lane still reads as rejected or accepted
+  from the verdict rows recorded against it.
+- Three reference pages no longer say the scripts carry on without PyYAML. `reference-config.md`,
+  `reference-upgrade.md` and `reference-scripts-domain.md` said `config.get` degrades to the
+  built-in default, the config migration writes nothing and reports the keys, and `config.py`
+  degrades without PyYAML. Each now says that a command reading a present `.config.yaml` refuses
+  (exit 1) when PyYAML will not import; the refusal is one stderr line naming the file and
+  `python3 -m pip install pyyaml`. (BG1634)
+- The `gate.py` verbs `--suite-decision`, `--run-tests`, `--record-suite-verdict` and `--red-run`
+  now refuse where PyYAML cannot be imported, with exit 2, the same message and the install
+  command, before they read the project config (BG1633). Only the lanes route refused before, so
+  `--red-run` read a project's `ci.rerun_limit: 0` as the shipped default under one warning and
+  could answer a red run with a rerun the project had ruled out.
+- `install.ps1` no longer replaces an existing folder named sdlc-studio that is not the skill. It
+  deleted the folder and installed in its place, where `install.sh` skips it, so a Windows user lost
+  its contents. The folder is now skipped and named with its reason, an empty folder is still
+  installed into, and a dry run reports the skip. As in `install.sh`, the banner and next steps name
+  only the targets written, and a run that wrote none refuses with "Nothing was installed" and the
+  reasons. (BG1632)
+- `install.ps1 -Uninstall` removes only a folder that is an sdlc-studio copy or is empty, as
+  `install.sh --uninstall` does. It deleted any folder named sdlc-studio in a target's skills
+  directory, the user's own files included. A folder whose SKILL.md does not name the skill is now
+  left in place with a warning, a run that removed nothing closes by saying so, and a folder whose
+  SKILL.md names sdlc-studio is still removed. (BG1631)
+- `sprint.py lane land` now records each builder's minutes beside its tokens, read from the span
+  between the first and last message times in its transcript. Before, the land passed no minutes,
+  so a report's Minutes cell read NOT MEASURED for every lane-landed unit. A lane of several units
+  splits its minutes by points the way it splits its tokens, a repaired unit adds both builders'
+  minutes, and a transcript with fewer than two readable message times, or whose times do not
+  move, records its tokens and says why no minutes were recorded beside them. `lane return` and
+  `lane accept` naming the builder with `--agent` and no `--minutes` read the minutes from the
+  transcript the same way, recording none where it spans nothing, so an accept that prices the
+  transcript again keeps the minutes its land recorded rather than replacing them with none;
+  `--minutes` given beside `--agent` is recorded as given.
+- `critic.py record` now escapes an asterisk outside code spans in a finding, as it already
+  escaped an underscore, so a finding naming `a_* or b_*` writes a ledger row that passes
+  markdownlint's MD037, and the readers give the finding back as written. The review ledger no
+  longer disables MD037, and the one row that needed it is escaped.
+- When the bound `sprint lane land` gives `critic.py brief` fires, the replay of the author's
+  mutants it started now stops with it. The brief ran under `subprocess.run(..., timeout=...)`,
+  which kills only critic.py, so the mutation runner and its pytest children ran on and the
+  runner's scratch copy of the tree was left behind. The brief now runs in a session of its own,
+  and at the bound its whole process group is sent SIGTERM and given critic's
+  `REPLAY_STOP_GRACE` before SIGKILL, so the runner stops its tests and removes its scratch copy
+  before the land names the brief as not written.
+- When an APPROVE's accept under `sprint.py drive step` stops on a warning, the resume it prints is
+  the unit's paperwork commit and then the same `drive step --after <id>`, as `sprint.py drive`
+  names at that stop; that step takes up the recorded accept and ends on the next prompt rather than
+  recording the verdict again. Run before the paperwork commit, the step stops again naming it.
+  Only the reviewer whose accept stopped takes it up: another unit's reviewer handing back has its
+  own unit's verdict accepted, and naming the stopped unit it is refused.
+  Before, the resume was `lane accept`, which exits 2 because a verdict file is recorded once.
+- The author self-check section of `critic.py brief` no longer prints the words of a `-k` or
+  `-m` expression as pytest selectors. It names the files, directories and node ids a Verify
+  line selects, and the expression by name as one that names no test. The value of an option
+  pytest itself or pytest-xdist reads one for, such as `-p no:cacheprovider`, `-r a` or
+  `--deselect <id>`, is not named either, and a cluster of short flags such as
+  `-qk 'add or sign'` is read as pytest reads it, as `-q -k 'add or sign'`. A value
+  attached to a short option's letter loses one `=` written straight after the letter and
+  keeps any other `=`: `-k=add` and `-qk=add` are named as the expression `add`, `-k==add`
+  as `=add`, `-m'device(serial=1)'` and `-qm'device(serial=1)'` as `device(serial=1)`, and
+  `-k=` as no expression, leaving the next word a target. The brief reads every one of
+  these the same way on any Python, dropping that one `=`. pytest does too for an option
+  written alone, but for an option in a cluster, as `-qk=add` is, it depends on the
+  interpreter's argparse: Python 3.10 and some 3.11 and 3.12 point releases keep the `=`, so
+  pytest runs `-qk=add` with the expression `=add` while the brief names `add`, and other
+  releases drop it, so the two agree. A long option written with `=`, such as `--deselect=<id>`, carries its own value and
+  leaves the next word a target. `critic.py self-check record` writes the kept mutant list
+  before it adds the row, so a list that cannot be written refuses the record with no row
+  added, and a row that cannot be added leaves the list as it was. A malformed kept list is
+  refused with an error naming the file, where the brief used to crash. The kept list names
+  the runner's report by its path relative to the project root, or by its name alone when it
+  lies outside, never by an absolute local path.
+- A timed-out `sprint lane run` no longer leaves an `index.lock` in the lane's worktree when a
+  `git add` it ran outlasted the kill grace. On a loaded host such a `git add` was still running
+  when the grace ended, the SIGKILL left its lock, and the commit `lane land` makes refused it. A
+  lane run that had to send SIGKILL now removes an `index.lock` that appeared while the lane ran,
+  naming it, and leaves one that was there before it started; a lane whose group emptied on the
+  SIGTERM, so was sent no SIGKILL, has no lock removed. Each of the three holds, and a case pins
+  it, both at a timeout and when the lane's CLI exits on its own. The flaky case that met this on
+  the gate host moved to its own module, which runs the timed-out `git add` loop four times in
+  fresh worktrees and still fails when SIGKILL is sent first.
+- `sprint.py drive step --after <id>` refuses, with exit 2 and nothing recorded, a reviewer id that
+  is the unit's own builder, or one drive's lane record does not already name as the unit's
+  reviewer whose transcript in the session's subagents directory does not name the verdict file;
+  before, any id was taken as the reviewer of the one unit with a written verdict. Re-running
+  `sprint.py drive` after a refused paperwork commit stops on that unit, as it did, and its record
+  now says the paperwork commit was refused, with its exit status and the kept output. The help
+  and `drive --help` state that exit 2 can follow work that ran: a review that cannot start (its
+  brief over the size limit, or the CLI gone from PATH) exits 2 after the unit's build and landing.
+  The order of the steps, the return-step stop, the landing lock and the hold on a unit sharing a
+  file with one building each have a test that fails without them.
+- A passing `test_sprint.py` run no longer prints the plan's unstamped-run warning. Two tests that
+  run `sprint plan --write` in-process now capture its stderr and assert it carries the warning
+  that no session token stamp could be taken, so the suite still proves the warning and the
+  green-run noise gate no longer refuses the push over it. Each test points the session meter at
+  an empty folder of its own, so the warning is expected whatever `SDLC_STUDIO_TRANSCRIPTS` the
+  caller exported. No shipped script changed, and the noise baseline is as it was. (BG1622)
+- The TRD's table of committed records now lists the author mutant lists,
+  `sdlc-studio/reviews/author-mutants/<id>.json`, naming
+  `critic.py self-check record --mutants-from` as their writer and the QA brief's replay of the
+  author's mutants as their reader.
+- `sprint sign` now refuses a `--retro` id that names no retro, before anything is sealed, and says
+  to name the run's own retro or omit the flag. When the velocity row it writes through
+  `retro.py accuracy --write` fails, it says so on stderr with that command's exit status and
+  output, where before it printed nothing. The close's tail now writes the retro `sprint sign`
+  would choose (the id given, then the one the close recorded, then the one it scaffolded) rather
+  than preferring the scaffolded one.
+- `sprint lane land` of several worktrees now moves a message's last paragraph into the commit's
+  trailer block only when every line of it is a `Refs:`, `Mentions:`, `Co-Authored-By:`, `Claude-Session:` or
+  `Signed-off-by:` line. A last body paragraph
+  shaped like a trailer, such as `Note: keep this`, stays in the body, where it used to join the
+  trailers; the real trailers, the attribution lines a commit ends with among them, still reach the trailer
+  block once each. A last paragraph mixing a note with a trailer line stays in the body. The
+  refusal advising that a worktree holding commits ahead of main be named first is now followed by a
+  test: naming it first lands both worktrees.
+- `sprint lane accept` records a second seat's verdict against the brief that seat answered. A
+  verdict file opening with a `BRIEF:` line, as the file `critic.py brief --seat engineering`
+  issues does, is recorded against the fingerprint and tier of the brief whose note issued that
+  file for the unit, where before it took the QA brief `lane land` saved, so the row named the
+  engineering reviewer with the qa brief's fingerprint. A header naming no brief noted for the unit
+  is refused with exit 2, as is a brief noted before the landing that saved the QA brief, which
+  may answer an earlier round. That landing is told by the file the saved brief issued, so a later
+  `critic.py brief` of the same scope is not taken for a landing, and the verdicts on the saved
+  brief and on a seat briefed after it are still recorded. A saved brief that names no file,
+  as one saved before verdict files does, is dated as it was before, by the last note of its
+  fingerprint, so a rejoinder verdict briefed after its landing is still recorded. Where the saved
+  brief names a file no note records, a verdict that a header or a rejoinder's path ties to another
+  brief is refused, naming the brief to save again. A file with no header is recorded
+  against the saved brief as before, or against a rejoinder brief when it is at the path that
+  brief issued, and a verdict file that is not UTF-8 is refused naming it rather than ending in a
+  traceback. The `lane accept` help and the toolchain runbook now say which brief a verdict is
+  recorded against.
+- When the commit `sprint lane land` makes runs past `COMMIT_TIMEOUT`, its hooks and whatever they
+  started are now stopped, as the land says. The commit ran under `subprocess.run(..., timeout=...)`,
+  which kills only git, so the commit-msg hook, its `gate.py --run-tests` and the pytest workers
+  were reparented and ran on, loading the host for the next land. The commit now runs in a session
+  of its own, and at the bound, or on a Ctrl-C, its whole process group is sent SIGTERM and, after
+  `KILL_GRACE`, SIGKILL before the land reports that nothing was committed. Since that session is
+  out of reach of a kill sent to the land's own process group, a watchdog ends the commit's group
+  the same way, after the same grace, when `lane land` itself is stopped while the hooks run (a
+  `timeout` around it, or a harness ending the command).
+- A high-class unit's second review seat is no longer the seat that built it. `sprint plan` gave
+  every high-class unit a second review seat of engineering, the seat `sprint lane brief` builds
+  at by default, so `critic.py brief` at that seat printed a record command naming the author as
+  reviewer with a self-review note, and the plan named no other seat. The second seat is now the
+  first of the project's review seats that is neither the first review seat, qa, nor the default
+  building seat, engineering, which is product on the shipped seats; a project whose own seats
+  hold no such seat gets the first shipped seat that is neither. (BG1609)
+- The 20-word goal limit now binds the goal review, not only the plan and an amendment.
+  `goal-review brief --goal` refuses a goal over the limit before any brief is printed, and every
+  `goal-review record`, a first round included, refuses one whether it comes from `--goal` or a
+  `--fields-file` goal, before goal-review.json is written. The seats no longer judge wording the
+  plan can never take.
+- `sprint sign` no longer rewrites RETRO0001 (BG1607). After the seal it writes the velocity row and
+  accuracy block for the retro named by `sign --retro`, then the retro `sprint close --retro` was
+  given, which the close now records on the run, then the retro the close scaffolded. It used to
+  read only the scaffolded retro and fall back to RETRO0001, so a run whose retro was made with
+  `artifact.py new --type retro` rewrote an unrelated run's retro and its VELOCITY.md row, whatever
+  `--retro` said. A run that records no retro now writes none, and the sign prints that the
+  velocity row was not recorded and names `--retro`.
+- `critic.py caller-check`, which the close runs over the batch, no longer reports a unit changing
+  only an `.mdx` page as a mechanism with no named caller: an `.mdx` page is read as a page, as an
+  `.md` one is. A project now names the files its build consumes, such as a static site's pages,
+  components and data, in `review.rendered_paths` (globs, `*` crossing a `/`, empty by default), and
+  a file one covers is read as no mechanism either. Code outside the globs is still asked for its
+  caller, and a value that is not a list of strings refuses the check, naming the key.
+- `sprint plan --write` now warns when the run it opens holds no session token stamp (BG1605). The
+  meter looks for the session's transcripts under the harness folder named for the run's own
+  repository, so a run driven from a session started in another repository was opened unmetered
+  and closed with every cost row NOT MEASURED, without a word at the plan. The warning gives the
+  meter's reason, which names the folder it looked in, says the cost will read NOT MEASURED at the
+  close unless a later reading is taken, and names `SDLC_STUDIO_TRANSCRIPTS` as the way to point the
+  meter at the session's own store. A run whose open was stamped is not warned about. With the
+  variable set, a run in a second repository is stamped at its open and its close from the named
+  store and its report states a Priced cost; a test now pins that through `sprint plan` and
+  `sprint close`.
+- The SKILL.md `compatibility` line and the `--agentic` row of `help/epic.md` now say that
+  `epic implement --agentic` runs its waves in parallel where the harness has sub-agents with
+  worktree isolation, and the same stories one at a time in dependency order elsewhere. They said
+  "where the harness has sub-agents", which told a reader of a harness whose in-session sub-agents
+  are untested that waves run in parallel there. The Agentic mode of `reference-epic.md`, the
+  procedure an agent follows, gains the step for a harness without them: run the stories one at a
+  time in dependency order, as plain `epic implement` does, without the prior `epic plan --agentic`
+  or the clean-tree stop, which only wave execution needs. Two new tests fail on a bare
+  "sub-agents" in either parallel claim, and on an Agentic mode with no such step, one that denies
+  it, or one in words the other two surfaces do not use. (BG1599)
+- The README install table labels the Copilot row `GitHub Copilot`, the name `docs/harnesses.md`
+  uses, and the row now sits in its alphabetical place after Gemini CLI. The Copilot install pin
+  (`test_install_copilot_global`) matches the row by either label, `Copilot` or `GitHub Copilot`.
+  The front-door pins (`test_readme_front_door`) hold the long label alone: the harness table test
+  reads the rows as `GitHub Copilot` in alphabetical order, and a new test finds the row by its
+  `copilot` target and requires `GitHub Copilot`. A further test pins that a Cost model figure
+  reading `NOT MEASURED` names no model on the evidence page.
+- `sprint lane brief --units` and `sprint lane land --units` now split a named id list on commas
+  as well as spaces, in the order given and dropping an empty piece, so `--units US0001,US0002`
+  briefs or lands two units rather than refusing one id that joins them. A space-separated list
+  works as before, and a mix of spaces and commas, which kept each comma-joined piece as one
+  id and refused it, now splits the same way.
+- `sprint lane land` now records a unit's self-check under the building seat its lane brief
+  recorded, in its `<holder> (<role>)` form, when no `--author` is given. Before, it recorded the
+  worktree's directory name (the builder's agent id), so `lane accept` wrote a verdict row whose
+  author the retro could not score as a seat's and printed a warning saying so. An explicit
+  `--author` still wins, a unit with no briefed seat keeps the worktree name, and the land record
+  keeps the worktree each unit was built in (`owners`) beside the author its self-check was
+  recorded under (`authors`).
+- The AUTHOR SELF-CHECK section `critic.py brief` prints now names, in its claim inventory, each
+  `.md` or `.mdx` page the unit's Affects declares, a surface the self-check record already accepts.
+  The list is read from the surfaces the record accepts (`claim_surfaces`), so the two cannot name
+  different sets: the commit message, the prose surfaces, the declared pages, then the changelog
+  fragments. The line that says how to rule the claims outside the prose surfaces names the
+  declared pages beside the commit message and the fragments. A unit declaring no page reads as
+  before.
+- `sprint sign` now re-derives the page from the close commit once HEAD has moved past it, as it
+  already took the tree check from that commit. The page was re-derived from the working tree, so a
+  not-stop-ship ruling committed into the retro's Known issues carried table after the close moved
+  the page's issue detail and sign refused with `no longer matches what it re-derives to`. The close
+  commit is checked out detached in a scratch worktree of the repository for the check and removed
+  afterwards; no hook of the repository runs for it, and no other worktree is pruned with it. A page
+  the close commit itself does not derive is still refused, and where the commit cannot be checked
+  out the page is re-derived from the working tree, the stricter reading. (BG1590)
+- The review anchor on `reviews/LATEST.md` no longer stamps a closed run "closed running". A run
+  the close left awaiting the operator's signature reads "closed, awaiting signature", followed by
+  its goal verdict when the close judged one; a run at a rung that owes no signature reads
+  "closed"; and a sealed run reads "closed" and its sealed outcome. The close's own line names the
+  same words. Before, the anchor printed the raw outcome the run record keeps until `sprint sign`
+  seals it, which is `running`.
+- `sprint sign --report <page>` now seals the run awaiting that page in its tracked record when
+  this checkout's live state holds a later run closed on a different page. It used to refuse,
+  naming the later run's page as the one to sign. The later run is set aside while the waiting run
+  is sealed and put back byte for byte, as for a later run still open. A page no tracked record
+  awaits is still refused as not this run's report. Three guards a run awaiting its signature
+  relies on are now pinned by tests: a re-plan overlapping its batch never archives it, a take-up
+  refused part way puts the open run's live state back, and `status` names an unreadable run
+  record as `Awaiting signature: UNREADABLE` rather than reading it as no run waiting.
+- `sprint sign` now refuses an uncommitted change to a file a batch unit declares once HEAD has
+  moved past the commit that filed the waiting run's close. Judging the run against that commit, it
+  had skipped the tree check entirely, so with no later run open one empty commit after the close
+  let such an edit be sealed. The refusal names each unit and file, as the close's own check does,
+  and seals nothing. A file no batch unit declares does not refuse the seal, and while a later run
+  is open in the checkout, whose own work the tree then holds, the check is not made. (BG1582)
+- The message-first gate test no longer compares the wall-clock of the refused commit with the
+  accepted one. It judges the skipped suites from the lane log, which records whether a lane
+  executed, and keeps the accepted control that records `skill-tests` and `tool-tests`. Before, a
+  scheduling spike of a few milliseconds on a loaded host made the refusal look as slow as the full
+  run and refused a push. A second test repeats the refusal with a 1.2 s spike inside the refused
+  commit's timed window and the hooks unchanged, and passes.
+- The scheduled corpus verification lane now prints each red criterion's own verifier output.
+  With `SDLC_VERIFY_RED_DETAIL` naming a file, `verify_ac.py` appends to it, for each failing
+  criterion on a unit whose status claims completion, its `<record>::<AC>` id and the Verify
+  line whose run it shows, then that line's exit, stdout and stderr. Of several lines that is
+  the red one, or the last when every line passed and the author's recorded verdict is the red.
+  A red a batch answered is run alone for the record, since the pytest batch keeps only pass or
+  not-pass, and its verdict stays the batch's. A file that cannot be opened is named on stderr
+  and the verdict stands. The corpus job sets the file and, when its verification step itself
+  fails rather than an earlier step, prints it in a step that fails too, so
+  `gh run view --log-failed` shows the output beside the ids. `verify_ac.py run` now takes its
+  per-verifier timeout from `SDLC_VERIFY_TIMEOUT`, the budget a runner sets from its measured
+  speed and the release gate already reads, when `--timeout` is not given; without either it
+  stays 120 seconds.
+- The commit-msg hook now refuses a commit that names a unit and stages code when the unit's
+  `changelog.d/<ID>.md` is neither staged nor already tracked, in a project that keeps a
+  `changelog.d/` directory. Before, the pre-commit lane judged only the shape of fragments a
+  commit staged, so a unit could land with no fragment at all. A subject naming one unit owes that
+  unit's fragment; a shared commit owes one for each id its subject names with a `Refs:` line when
+  that unit owns a staged file outside `sdlc-studio/` and `changelog.d/` (by its `Affects`, or by
+  the id in the file's name), so a unit whose only staged file is its own record owes none, and a
+  `Mentions:` id owes none. A commit that stages only files under `sdlc-studio/` or
+  `changelog.d/`, or whose subject names no unit, is not asked. A fragment in either spelling of
+  the id counts: `changelog.d/BG-1574.md` and `changelog.d/BG1574.md` both answer `BG1574` or
+  `BG-1574`. `Changelog: none - <reason>` exempts one commit, and a bare `Changelog: none` exempts
+  nothing. A refusal names each unit as the fragment it asks for spells it: a schema 3 id dashed,
+  `BG-01JQK3F8: the commit stages code but not changelog.d/BG-01JQK3F8.md`, never as the dashless
+  key `BG01JQK3F8`, and a sequential id dashless (`BG1574`), whichever way the subject wrote it.
+  The new `changelog.py required <message-file>` is the check the hook runs; where `changelog.py`
+  is absent or has no `required` verb (a linked worktree's older scripts run by the shared hook),
+  the hook skips the rule rather than refusing. `refine apply` now ends each story's `Affects`
+  with its own `changelog.d/<story id>.md` when the project keeps `changelog.d/`, so a builder who
+  stages exactly the Affects ships the fragment.
+- `release_cut.py evidence-pack` no longer accepts a signature that was rewritten after it was
+  sealed. The pack compared a report's signature with the run record at the revision it built
+  from, and that record is as editable as the report, so one later commit that changed a figure,
+  re-stamped both fingerprints on the report and set the run record's signature to agree built a
+  pack listing the forged figure; so did one that swapped the principal on both. The pack now
+  finds the seal commit, the first commit in the run record's history whose record signs the
+  report, and refuses a report whose run record holds a signature that differs from the sealed
+  one in any field, naming the report, the fields that differ and the seal commit, and writing no
+  pack. A history git cannot read refuses too. Later commits that leave the run record's
+  signature alone, to a story, the verdict ledger or the record's other fields, still build, and
+  each accountable line names the principal and fingerprint the seal commit's record holds.
+- The RFC accept steps in `reference-rfc.md` now run as written without `--force`. An RFC gains
+  a Delivered status after Accepted. Accepted is the decided state and stays settled (terminal),
+  so moving an RFC to Accepted no longer waits on the change requests it has just spawned.
+  Delivered is the RFC's successful terminal and the status a close defaults to. It carries the
+  gate that refuses it while a spawned request is unresolved, naming that request, as a bug's
+  Verified follows Fixed. `reconcile apply` and a sprint close now derive Delivered for an
+  Accepted RFC once every request or epic it produced is resolved, and never for a Withdrawn or
+  Superseded one. The open-decision gate refuses Delivered as it refuses Accepted, and
+  `validate.py` reports an Open decision row on a Delivered RFC as it does on an Accepted one. A
+  dependency on a Delivered RFC is met, and the handover counts it delivered.
+  `reference-rfc.md`, `help/rfc.md`, `reference-outputs.md`, the schema and TRD status tables
+  and the RFC templates now give the same account.
+- A finding from the default `project` audit profile can now be attributed to its lens.
+  `file_finding.py` used to look a lens up among the packs under `templates/audit-profiles/` alone,
+  so each of the project profile's eight lenses, `PRD` among them, was refused as a lens no pack
+  declares, and the findings of a default audit were filed with no `Audit-lens` or `Audit-run`
+  field. The filer now resolves every profile `readiness.py profile` resolves, the project profile
+  from `reference-audit.md` included, so a finding filed under any of its lenses is stamped with
+  `Audit-profile: project`, and `--profile project` is cross-checked rather than refused as
+  unknown. A lens no profile declares is still refused, and the refusal now lists `project` among
+  the profiles that exist. A lens that the project profile and a pack both declare is refused as
+  ambiguous, as a lens two packs declare already was. A skill directory whose `reference-audit.md`
+  cannot be read names the project profile as unreadable instead of crashing the filing.
+  `help/audit.md` says the project profile's lenses resolve.
+- ADR-012 in the TRD now states the learning loop 6.4.0 ships: a seat proposes a learning (US1065),
+  another seat approves or rejects it (US1066), the close lists every learning about to go live
+  (US1067) and a learning reaches a brief only once the run is signed (US1068), beside the memory
+  file (US1058) and the brief's learnings block (US1059). A revision row records the change, and a
+  new check fails when a story the TRD calls open or not yet built reads Done.
+- `plan.py archive` now refuses a slug that is not one plain plan name: a path separator, a `.` or
+  `..` segment, an absolute or drive-lettered form, an empty slug or one holding a NUL byte exits 1
+  naming the slug, and moves nothing. Before, `../CLAUDE` moved a file beside the plans directory
+  into the archive folder. A plain slug moves its plan into the month folder as before.
+- `archive.py archive` now refuses a `--release` label that is not one plain path segment: a label
+  with a path separator, an absolute or drive-lettered form, a bare `.` or `..`, an empty label or one
+  holding a NUL byte exits non-zero naming the label, writes nothing and leaves the live index as it
+  was. Before, a label with `..` segments wrote the archive sub-index outside the type's `archive/`
+  folder and removed the rows from the live table: `../../x` wrote it to `sdlc-studio/x/`, inside the
+  workspace, `../../../escaped` wrote it at the project root and `../../../../escaped` above it. A
+  separator only nested the sub-index inside `archive/`, `.` and an empty label wrote it into
+  `archive/` itself, and a NUL label raised before writing; each is refused now for not naming one
+  release folder. A plain label such as `r2.5` archives as before.
+- Stale summaries in the TRD now agree with its detail and the code. System Context names every
+  external service (GitHub through the `gh` CLI, the release check's direct request to
+  `api.github.com` and the Cursor usage API), the C4 note points at
+  `templates/modules/trd/c4-diagrams.md`, which exists, and the install table gives the local
+  directories `install.sh` uses for Gemini CLI and opencode. The cost model in section 10 and its
+  echo in section 12 cite 21 re-estimated units with 19 measured, and say the seeded figure holds
+  for the build, not a whole sprint. New tests hold each summary to the table, file or constant it
+  summarises.
+- The TRD's table of committed records now lists both decision stores: the decision log at
+  `sdlc-studio/decisions.md`, written by `decisions.py`, and the per-tranche ledgers at
+  `sdlc-studio/decisions/<tranche>.md`, written by `ledger.py`, each with its purpose. Rule 5 of
+  section 5 names each script with its own store and adds `ledger.py` to the write surface. The
+  storage test now checks every tracked file in both stores against the table, as it does the
+  evidence, report, verdict and persona memory directories.
+- The PRD gives one account of the sprint close (BG1555), in Core Behaviours, naming every step of `sprint._CLOSE_CHAIN` including persona memory, the checklist and the review anchor. The Mission, the Sprint report and sign row and Core Behaviours each give the sprint goal and its verdict as preconditions rather than chain steps, and a test names a step the account drops.
+- The PRD's close-down row (BG1554) is the Sprint close-down reminder: an optional Stop hook, `close_guard.py`, that a project wires into its settings by hand, reminding once at a turn end without locking. It no longer credits a Stop-hook installer, which no script ships, and a test refuses the claim while none does.
+- The PRD's Environment Variables table (BG1553) lists every variable the shipped scripts read, including `SDLC_STUDIO_HARNESS`, `CURSOR_API_KEY`, `SDLC_STUDIO_CURSOR_AGENT_ID` and `SDLC_STUDIO_CURSOR_API`, and the `PYTEST_ADDOPTS`, `PYTHONDONTWRITEBYTECODE` and `PYTHONPYCACHEPREFIX` that `migrate.py` changes and restores while it collects a project's tests. It marks the API key as a secret and the API base as a network endpoint override, and says the harness sets `CLAUDE_SKILL_DIR` and no script reads it. A test collects the names from the scripts, resolving a key that is not a literal through the constant it names, the constants a loop variable runs over and the constants a parameter's callers pass, and it names each read it cannot resolve, so a variable without a row, a row for one nothing reads, or a new read the collector cannot follow is reported.
+- `reconcile.py detect` now reports an epic at Draft, Ready or Approved with a child delivered or
+  under way (In Progress or Review) as `epic-status-stale` deriving `In Progress`, and
+  `reconcile.py apply` moves it there through `transition.py`, so its index row follows. The
+  commit hook's `reconcile.py settle` makes the same move and restages the epic, so a commit that
+  starts a story under a Draft epic is not refused by the commit gate. An epic whose own gates
+  refuse the move, such as one missing a section `quality.require_full_sections` requires, is still
+  reported, naming the refusal and any remedy it gives, and is left where it is: nothing forces it,
+  and the commit gate does not count it. An epic whose every child is terminal is still left to the
+  existing lane, which `reconcile.py apply` does not write. Before, a partly delivered epic kept
+  the status it was minted with. The `epic-status-stale` guidance now names each shape the lane
+  reports and the command that clears it. EP0284, EP0285, EP0287, EP0312, EP0326 and EP0327 now
+  read In Progress, and `reference-epic.md` states the rule beside its In Progress line.
+- `reconcile.py detect` now reports a `Done` epic whose breakdown is finished and none of whose
+  children was delivered, as `epic-status-stale` naming the status it derives, `Superseded`.
+  Before, every terminal epic was skipped, so EP0246 read Done over four Superseded stories with
+  nothing reported. A terminal status may record a ruling, so neither `reconcile.py apply` nor the
+  commit-time settle rewrites it, and the commit gate reports it without refusing the commit.
+  `sprint.py close` reports it without refusing too, in its reconcile step and its final check:
+  each now passes when every drift item left carries `blocked_by`, reporting each, as the commit
+  gate's tally exempts such items; index drift beside the epic still refuses the close.
+  Before, the close exempted only a request another gate refuses, so it refused over the epic and
+  named `reconcile.py apply`, which never rewrites it, and one undecided epic held every later
+  close. The owner moves it with `transition.py set`, or records the ruling that keeps it Done as a
+  `Decision-Override` on the epic with `transition.py annotate`, and the lane then leaves it.
+  EP0246 now reads Superseded, its stories having been replaced by US0908, and CR0561's revision
+  history records that US0908 delivered it.
+- `docs/engineering-leaders.md` and the `evidence_pack.py` entry in `reference-scripts-domain.md` no
+  longer say the evidence pack refuses to name an agent as the accountable person. Both now state the
+  three signer refusals the pack enforces: a blank principal, one that reads as an agent by name (the
+  word agent or subagent in it), and one the committed review ledgers record as an author of the
+  report's own units, unless that author is recorded as a person. Both say the pack cannot tell a
+  person from an agent session signing under another name, so the person it names is the operator's
+  responsibility. Two tests in `tools/tests/test_engineering_leaders_page.py` hold the page and the
+  reference's `evidence_pack.py` entry to a closed world rather than to a list of words: each reads
+  every sentence that names an agent (agent, agents, agentic or subagent, in any case) or the
+  accountable person, and fails on any such sentence that is not on its approved list, new or
+  reworded, and on any listed sentence that is no longer one of them. Each listed sentence names the
+  code that makes it true: `evidence_pack.py` for the pack, and `critic.py` and `sprint.py` for the
+  separation of duties. A sentence that names neither an agent nor the accountable person is not
+  read. The tests also fail when the page's change approval section or the reference entry leaves
+  out one of the three refusals, the exception for an author recorded as a person, or the limit,
+  and when the two disagree on the refusals or the limit. The reference entry the second test reads
+  ends at the next heading of any level.
+- `docs/why-sdlc-studio.md` no longer says a bug reaches Fixed only when its criteria pass. It now
+  says what the gate in `transition.py` enforces: a story reaches Done only when its executable
+  criteria have passed, and a bug is refused Fixed when nothing speaks for the fix (no criterion
+  ticked and none carrying a `Verify:` line) or when a recorded run of its criteria is red. A
+  `Verify:` line that was never run does not refuse Fixed. `docs/whitepaper.md` said `sprint sign`
+  moves a bug to Fixed only if its criteria and recorded verification run speak for it; it now says
+  the sign moves the bug through the gate `transition.py` enforces, which refuses it on the same two
+  grounds. A test in `tools/tests/test_doc_claims.py` holds both pages to a closed world rather
+  than to a list of words: it reads every sentence that names the status Fixed as written, or the
+  word fixed in any case together with a bug, and fails on any such sentence that is not on its
+  approved list, new or reworded, and on any listed sentence that is no longer one of them. Each
+  listed sentence names the code in `transition.py` or `sprint.py` that makes it true. A sentence
+  that names neither is not read. The test also fails when the why page's account no longer says a
+  story reaches Done only when its executable criteria have passed, that a bug is refused Fixed when
+  nothing speaks for the fix, or that it is refused when a recorded run of its criteria is red.
+  BG1039, which stood at Fixed on `Verify:` lines naming a test file that has never existed, now
+  names the two one-list tests in `tools/tests/test_prereq_list_is_ci_list.py` that pin its two
+  criteria, carries a recorded green run of both, and is held to that by a second test in
+  `test_doc_claims.py`.
+- `tools/lint_corpus.py` now reports an RFC whose Status is Accepted while its Decision outcome
+  still reads pending, under the rule `RFC-DECISION`, attributed against the baseline like a
+  markdownlint finding. An RFC not yet Accepted, one with a filled outcome and one with no Outcome
+  line are not reported. The Decision section judged is the one the RFC template writes, under a
+  heading reading `## Decision` alone: a heading with a suffix, such as
+  `## Decision (accepted 2026-11-14)` or RFC0020's `## Decisions (resolved by the consultation)`,
+  opens no Decision section, so an RFC with no `## Decision` heading is not reported. RFC0063 and
+  RFC0064, accepted under D0474 with the Decision section unfilled, now state their outcome, date,
+  rationale, the decisions that resolved each open question and the CRs they spawned. RFC0063's
+  workstream table promised a new CR for work no unit carried (WS2, WS5's monthly budget view,
+  WS6's model scorecard and WS7), and those rows now name D0474, the decision that defers them
+  past 6.4. The rows for WS1, WS3 and WS5's pricing, whose CRs (CR0689, CR0702, CR0690) were
+  already decomposed from the RFC but still read as a new CR, now name them; WS3's row also names
+  D0474 for its items past 6.4, which CR0702 does not carry.
+- `install.sh --uninstall` removes only a folder that is an sdlc-studio copy or is empty. It deleted
+  any folder named sdlc-studio in the target's skills directory, the user's own files included, while
+  every install path skips such a folder as the user's. A folder holding something else is now left
+  alone with a warning, and a run that removed nothing closes by saying so. A symbolic link at the
+  target path is removed as a link, and the copy it points at is kept. The install page states the
+  guard. (BG1547)
+- `install.sh` no longer reports an install that wrote nothing. A target whose folder is not an
+  sdlc-studio copy, or holds a newer copy the installer will not downgrade, was skipped with a
+  warning, yet the run still printed "SDLC Studio installed for" that target, listed its next steps
+  and exited 0. When every target is skipped the closing line now says nothing was installed and
+  why, and the exit status is non-zero. When some were written, the banner and next steps name only
+  those, each skipped target is named with its reason, and the sweep is handed only the written
+  copies as installed. (BG1546)
+- The pre-push hook now holds each pushed tag's name to the tree it points at. Its version, the
+  tag name without a leading `v`, must be what every version home at the tagged commit declares:
+  `tools/check_versions.py` gains `--expect X.Y.Z`, which holds every home and the CHANGELOG
+  topmost release to that exact version and names each home that declares another, and `--at
+  REV`, which reads the homes as committed at REV rather than the working tree (exit 2 when REV
+  names no commit). `tools/known_issues.py check` gains `--release`, which also refuses a page cut
+  for another series than the tag's, naming both. A tag named v6.5.0 over a tree declaring 6.4.0,
+  or over a 6.4 known-issues page, is refused before either gate path runs; a matching tag and a
+  branch push are not affected. Each tag is judged at the commit it points at, so a correct tag
+  pushed onto an older commit than HEAD passes. A version check that crashes now prints its
+  traceback and exits 3, apart from a mismatch (1) and an unreadable commit (2), and the hook says
+  the check crashed rather than that the tree declares another version. A clone whose `tools/`
+  lacks `check_versions.py` is told the name was not compared.
+- `release_cut.py changelog-cut` now refuses a version that already has a section, or a
+  CHANGELOG.md with no `[Unreleased]` section, before it composes the pending fragments. A refused
+  cut used to fold every fragment into `[Unreleased]` and delete the files while reporting that
+  nothing was cut; it now leaves CHANGELOG.md and `changelog.d/` byte for byte as they were. A cut
+  of a new version still folds and consumes the fragments.
+- A sha256 digest that cannot be fetched now refuses the install. `install.sh` read the `.sha256`
+  sidecar with a best-effort fetch that discarded every error, so a 503, a 429 or a dropped
+  connection on the sidecar of a release asset it had just downloaded was taken for "no sha256
+  published", and the archive installed unverified. The sidecar is now read with the same status
+  reader as the asset: a 2xx is the digest, a 404 beside the source archive or `main` (where none is
+  published) still warns and proceeds, and anything else refuses, naming the fault (`HTTP 503`, or a
+  transport error with curl's or wget's exit code). A 404 beside a release asset refuses too, since
+  the release workflow publishes the two together. `install.ps1` reads the sidecar's status the same
+  way, and the install page states that a digest which cannot be fetched refuses the install.
+  (BG1543)
+- `release_cut.py record-green` now stamps the full sha its `--commit` resolves to, and
+  `tag-check` resolves its own `--commit` the same way before comparing, so green recorded on
+  HEAD no longer matches HEAD after another commit, a tree the gate never ran on. An abbreviated
+  sha of the stamped commit is allowed. A name git cannot resolve to a commit (an unknown ref, a
+  sha no object holds, a tree, a flag-shaped value) is refused by both verbs naming it, and
+  `record-green` then writes no stamp and leaves any earlier one in place. A stamp an older
+  `record-green` left is read safely: an abbreviated sha is resolved, and a name such as HEAD is
+  refused rather than resolved to wherever it points now.
+- Filing an escaped bug and tracing it now agree on what a release is. `escape.py` gains
+  `release_tag`, which turns a release name into the git tag it means: the name itself, else the
+  same name with its leading `v` dropped or added. `file_finding.py file` and `artifact.py new`
+  resolve `--shipped-in` through it and store the tag's spelling, so a bug filed as shipped in
+  `6.4.0` records `v6.4.0` and `escape.py trace` reads that release instead of exiting 2. The trace
+  resolves a stored name the same way, so a record that already holds `6.4.0` is read too. A
+  version that only a CHANGELOG.md heading names, with no git tag behind it in either spelling, is
+  now refused at filing with a message saying the trace needs a tag, and nothing is written. Naming
+  an `--escaped-via` unit that no commit of the release names still files the bug, and now prints a
+  note naming the unit and the release, since `escape.py trace --confirm` accepts only a unit the
+  release shipped. The filer's help and `reference-scripts-review.md` say both. The `--shipped-in`
+  help of `artifact.py new` and the escape paragraph of `help/bug.md`, which still said a
+  CHANGELOG.md version alone was accepted, now say what both creators accept and refuse.
+- A Done release-cut story no longer reddens when a High finding is filed after its release.
+  US1173's third criterion now judges the known-issues bar at the commit that cut 6.4.0
+  (`tools/known_issues.py bar --at v6.4.0`) instead of the working tree, and its note says why.
+  `bar --at REV` was already in place; two tests now pin it: a High filed after the commit leaves
+  the bar met there, and a High open at the commit still fails it, while plain `bar` keeps judging
+  the working tree.
+- The report of record no longer states a headless lane's builder as dispatched at the effort the
+  plan stamped. `sprint.py lane run` passes no effort flag to any harness, so its lane record now
+  keeps the stamped effort beside the effort its command carried, which is none, with why for a
+  stamp other than `inherit`, and the run prints that the effort was not applied. The report
+  counts each such unit apart, after the rest, as configured and not applied, each stamp with its
+  count lowest effort first, naming the harnesses. A unit stamped `inherit` or not stamped, and a
+  unit dispatched in session, still reads at its stamp. The config, sprint and evidence schema
+  pages say what a headless lane does with `routing.effort`.
+- US1168 is regroomed so a builder can take it: the census-marker check runs inside the
+  `neutrality` commit-hook lane's script, so the lane count stays at 31 under the cap, and its
+  Affects name the files that change. EP0312's run-six replay and before-and-after criteria are
+  retired, so the epic's bar is US1168 alone.
+- `validate.py personas` now warns on a persona card whose title is still an unfilled `{{...}}`
+  template slot, and on the text above its first section and each section that still holds one,
+  naming the card and where (`persona-section`), so a byte-for-byte copy of `persona-template.md`
+  no longer passes as "personas look well-formed." A slot is a line whose value is a placeholder
+  and nothing else, including a table cell, a numbered item and a placeholder wrapped over the
+  lines of one paragraph; the join never runs into a blank line, a heading, a fence, a table row
+  or another placeholder, so a stray `{{` in prose cannot hide a later section's slot or credit
+  it to the section before. Prose that mentions `{{name}}` syntax and a slot inside a fenced block are not read
+  as one. A Cast role cell that is still a slot, such as the template's list of all six roles,
+  now declares no role: the missing-cast-role warning fires and the card is no longer counted as
+  a Primary. An Interface cell that is still a slot declares no Interface either, so two
+  Primaries that both kept the template's cell draw the one-Primary warning rather than the
+  shared-Interface error; a real shared Interface still errors. The check stays advisory: every
+  new finding is a warning and the exit code is unchanged for a card set that drew no error
+  before. `status.py` no longer counts a persona card whose title is still the template's slot,
+  so a project whose only card is a copy of the template reads `personas=no`; a card with a
+  filled title still counts. Status reads a card's title with the same reader and test as the
+  title warning, so the two agree on every card both read, a bold `**{{full_name}}**` title and
+  a card whose bytes are not UTF-8 included. The persona reference's rule table and its
+  paragraph on checking a persona now describe these readings.
+- The persona index `init.py` seeds into a project now holds only what the persona registry
+  reads: the Primary, Secondary and Negative headings, a line on the bullet shape, and where the
+  review seats live. The Team Personas, Stakeholder Personas, Consultation Defaults, Custom
+  Personas, Usage and Persona Sources sections are gone; nothing read them, and they left 32
+  unfilled placeholders in every project. The link to `reference-persona.md`, which resolved to
+  the project root where no such file exists, is now the page's name in plain text. Guided
+  onboarding still holds the personas stage open on the seeded index: with no placeholder left to
+  find, `init.py` reads the index as a draft while it is still the body seeding wrote, whatever
+  day it was seeded, and as authored once anything in it changes.
+- The persona template, the stakeholder template and the consult page now state one rule for a
+  Customer or Served party. It sits on the one stakeholder panel `consult stakeholders` reads,
+  either as a card under `sdlc-studio/personas/stakeholders/` or as a flat card in
+  `sdlc-studio/personas/` whose Cast role is Customer or Served, and either way declares its type
+  in a `stakeholder:` comment the consult groups on. Before, the persona template made a Served
+  party a flat design card while the stakeholder template and the consult read only
+  `personas/stakeholders/`, so a project whose Served card was flat had an empty stakeholder panel.
+- `verify_ac.py ts-check` now resolves the pytest node ids a test spec's AC Coverage Matrix names.
+  A passing row whose Test Cases cell names a test file and test that nothing in the tree defines
+  is a finding naming the row, where before any filled cell over a pass word read as clean. A
+  cell naming no test file, a manual check, is not resolved. pytest's doctest form,
+  `file.py::module.name`, resolves when the docstring the check reads for that name holds an
+  example: the module's own, named by its directory for a package's `__init__.py`, or that of a
+  class, function or method definition binding the name in the module or in a class bound
+  there, never one inside a function. A definition is read by its own docstring whatever its
+  decorators return, save one with a decorator ending in `.setter` or `.deleter`, as a
+  property's do, where the first such decorator listed decides: on the definition's own name,
+  it leaves the name bound as it was, so a property keeps its getter's docstring and one made
+  by assignment stays unread; on anything else, it binds what is not read. Of several
+  definitions of one name the last is bound. An import or `del` after a definition leaves
+  none, a definition under an `if`, `try`, loop or `with` counts, a `finally` block always
+  runs, and where which one is bound depends on the branch taken, any that may be counts. What
+  a plain or annotated assignment binds a name to is not read either, and what is not read is
+  not reported. The docstring must hold an example the standard library's doctest parser
+  finds, so a prompt holding only a comment or nothing is none. The TS0002 mutation-check
+  gate spec is corrected to match: its US0052 AC4 row names the tests that story's Verify
+  line runs, and its US0054 AC1, AC2 and AC4 rows record the manual Verify lines left when the
+  gate's mutation lane was retired.
+- ADR-005 now says `validate.py instructions` reports the AGENTS.md hygiene as warnings at `init` and
+  `upgrade` and is not a gate, and ADR-001 no longer says that check keeps the loading guide and
+  type tables in sync. This repository's AGENTS.md gains the operating-doctrine pointer and the
+  integration rule, so the check reports no warning here, and it stays inside its 7,000 character
+  cap.
+- A report's JSON and its Markdown twin are rendered first and then staged whole beside the files
+  before either is replaced, so a write interrupted while staging, as on a full disk, leaves a
+  signed report and its twin as they were rather than truncated, and each file keeps its mode. A
+  failure between the two renames that follow leaves the JSON new and the twin the previous
+  rendering, each whole, until the next write. The story
+  `Verified:` rewrite in `verify_ac.py`, `write_project_file` in `lessons.py`, the epic rewrite in
+  `artifact.py` and the `GitHub Issue` stamp in `github_sync.py` now go through
+  `sdlc_md.atomic_write`, as do `artifact.py revision`, `lessons.py add --global` and
+  `summary`, `verify_ac.py scaffold-matrix --out` and `sprint_report.py render --out`. The TRD
+  defines a shared file as any tracked workspace file a script rewrites whole and lists each writer
+  left outside the atomic-write guarantee with its reason, among them the `write_bytes` rewrites in
+  `mutation.py`, `pvd.py sync`, the `artifact.py` retitle rollback and `verify_ac.py`
+  `revert_check`. A sweep in `test_confinement.py` names every `write_text` and `write_bytes` call
+  and every `open` given a literal mode holding `w` in the shipped scripts with the kind of its
+  target, failing on one not listed. It reads an `open` called as `open`, or as `io.open`,
+  `builtins.open` or `codecs.open` on the module name or `as` alias an `import` in its file binds,
+  as the builtin, its mode `mode=` or the second argument, and one on any other receiver as a
+  method, its mode `mode=` or the first, so `gzip.open(path, 'wt')` is not named. It keeps
+  the tracked files not yet moved onto `atomic_write` on a list of their own, apart from the
+  scratch, untracked and new targets it excuses. (BG1532)
+- The TRD no longer lists `critic brief`, `gate` or `review_prep` as read-only helpers, and its
+  second section no longer calls the script layer read-only. Section 5 names the files each writes
+  and whether each is tracked, and the section 9 mitigation cites the corrected lists. A new
+  confinement test runs each of the three through its CLI in a fixture and holds it to its named
+  paths, and the read-only helpers the TRD still lists (`validate`, `next_id`, `critic show`) each
+  gain a read-only assertion. The TRD's `audit` entry named no script and is dropped. Section 5 now
+  names every meta index `review_prep.py close` backfills through `reconcile.apply_meta`, the
+  `_index.md` of `reviews/`, `retros/`, `handoffs/` and `reports/`, and the confinement test
+  requires exactly the paths close writes: the state file and the review's index row, a retro's
+  index where one is unindexed, and `reviews/LATEST.md` given `--latest-body`.
+- ADR-012 in the TRD now says what is built. Its Status line and Built so far paragraph name approval
+  (US1066), the close's listing (US1067) and the signed-close gate (US1068) as built, Not yet built
+  holds only what is still absent from the tree, and a Revision History row records the change. A new
+  check reads the Status line of any story an ADR calls open and fails when that story is Done.
+- The TRD no longer promises a sub-second reconcile and status. Sections 8 and 10 say the census
+  cost scales with the artefact count, give the figures measured on 2026-11-19 with the command that
+  prints the live one, and name the pre-commit `settle` cost. The cost-model sentence that ran into
+  the next one, ending 'is never a gate: a script', is repaired into two complete sentences.
+- The PRD's Context paragraph (BG1528) says this repository is the source, that fixes land here and `tools/forward-port.sh` mirrors them to the installed copy, and cites the Forward-porting section of `AGENTS.md`, in place of calling the installed copy the back-port source. A test pins the paragraph.
+- The PRD's Complete versus calibrated note (BG1527) says the earlier token predictor was falsified and replaced and the points-based forecast cleared the bar set before its data was seen, in place of calling the shipped forecast a falsified hypothesis. A test pins each part.
+- The PRD's Feature Flags table (BG1526) gives `lessons.loop` as `enforce` and `schema_version` as the fallback default 2, saying `init` stamps 3 on a new project, as the defaults file holds them. A test reads both rows against that file.
+- The PRD's Feature Flags introduction (BG1525) names all eight gate-bearing keys that ship off or advisory, `review.line_coverage`, `review.author_self_check`, `constitution.enforce`, `provenance.enforce`, `sprint.affects_check`, `sprint.fresh_session`, `two_backlog.enforce` and `quality.require_full_sections`, each with its incremental-adoption reason, and no longer calls `two_backlog.enforce` the one exception. `reference-config.md` carries the same correction. A test reads the keys rather than keeping them by hand: from the defaults file, each key named `enforce` or `require_*` that ships false and each key whose listed modes include `block` or `enforce` that ships another; from the scripts, each key named that way that is read with a `False` fallback the defaults file does not hold. A key the defaults file adds or turns advisory fails it until the PRD and the reference name it.
+- The evidence pack checks each signed report against its committed run record (BG1524), not
+  only that its JSON carries a non-empty `signed_at`. It re-derives the report's fingerprint and
+  refuses the report, naming it and writing no pack, when the figures no longer match what the run
+  record signed, the record is missing, unsigned or signs a different report, or the report's own
+  signature disagrees with it on principal, date, fingerprint or report. Each Accountable line
+  names the run record's principal and date beside the verified fingerprint. RPT0005 and RPT0017
+  are now refused: one has no committed run record, the other's record signs RPT0018.
+- The second review seat's behaviour on the single-sequence round ledger is ruled and stated
+  (BG1523). D0523 relates D0341, D0356 and D0460; `reference-sprint.md` says that until per-seat
+  rounds land, a second seat's REJECT after the first seat's APPROVE is round 2 at the default cap,
+  so the unit is carried, not repaired. `critic.py` refuses a second seat past the cap with that
+  cause in plain words instead of the generic carried-at-the-cap message.
+- A selected green suite verdict records the modules its run selected (BG1522), and off a
+  boundary it is reused only when the current selection is among them. A selected record with no
+  selectors, as every earlier one is, is never reused for a selection; a full green keeps its
+  reuse.
+- `tools/known_issues.py bar` takes `--at` and judges the bug corpus as committed at that
+  revision (BG1521). The pre-push hook runs it at each tagged commit, refusing a tag while a
+  Critical or High finding is open there, and says so when the bar could not run.
+- `sprint lane accept` gives the Reviewer cell the briefed seat's role group (BG1520), so
+  `critic.recorded_seat` reads the seat: the reviewer's own value is kept, as in
+  `qa-seat-US0101-r1 (qa)`, so a review by the build seat stays distinct from that seat's
+  `<holder> (<role>)` author cell and one round from the next. A value that already carries a role
+  group is kept as given, and its group must name a seat the unit was briefed for. It refuses a
+  reviewer value that carries no seat the unit was briefed for, naming the known seats, and a value
+  that reads as the unit's author, which would be recorded as a self-review; nothing is recorded on
+  either refusal. The retro's learnings review reports a run whose every verdict row names no seat
+  as owed, with the count, rather than as clean. The toolchain runbook's lane accept row documents
+  the holder and role form.
+- The full-suite lane and `gate.py --run-tests` refuse a run in which no test ran (BG1519),
+  because nothing was collected or every test was skipped, counting across every phase. A phase
+  that collects nothing still passes beside one that ran a test, and a commit whose selection
+  holds only tests deferred to the push still passes. The TSD's full-suite row states the floor.
+- The pre-push red-main read now reads the weekly scheduled Lint run on main as well (BG1518), the
+  run whose `corpus-verify` job is the only automated run of every `Verify:` line. A push is
+  refused while the latest completed scheduled run concluded anything but success, naming its run
+  id and the acknowledgement, `SDLC_PUSH_ACK_RED=<run id> git push`, until that id is acknowledged
+  once per clone. The acknowledgement sits beside the push run's in `sdlc-studio/.local/push-ack.json`,
+  so acknowledging one never silences the other, and a later red scheduled run with a new id
+  refuses again. A clone with no `gh` or no network still pushes, naming the scheduled read as
+  unread. The TSD's quality-gate table and Pipeline Stages name the hook as the reader.
+- The TRD no longer says a project's Verify-line tools are bounded to the hosts
+  `SDLC_VERIFY_HTTP_HOSTS` names. Its Network paths prose and exfiltration row now say the allow-list
+  is unset by default, applies to the `http` verb only and bounds nothing until a project sets it,
+  and the Threat Model gains a row for the verifier running artefact text through a shell, naming the
+  `Provenance: external` stamp, `--no-shell` and `--allow-external` and the limit that the stamp is
+  self-declared and an absent stamp permits shell.
+- The TRD now describes the headless lane runner. Its new subsection says that `sprint.py lane run`
+  starts the builder as an agent CLI in its own worktree, names all five harnesses
+  `headless_command` builds a command for with the permission flags each is given, and the
+  Agentic execution passage and open question 3 no longer call the Agent-tool wave fan-out the only
+  harness-specific part. The Agentic passage now says what the `compatibility` frontmatter says,
+  that the skill needs no particular harness, where it said the frontmatter flags the fan-out
+  Claude-Code-only, and names `plan.py`, which manages Claude Code's plan-mode files, among the
+  other harness-specific parts, where it said nothing else is tied to one harness. The Network paths table and the Threat Model gain a row for the spawned
+  agent CLI, each naming what bounds it and where that bound stops. The network row says a lane
+  that runs past its timeout is recorded unmetered, and the subsection and the threat row say that
+  nothing in the runner stops the CLI committing, pushing or writing outside its worktree: the
+  brief's instruction not to commit is a prompt, not a control, and Claude Code's six tools include
+  Bash. The tests drive a lane with a stub CLI to hold both statements to the code, check the value
+  each permission flag is given as well as its name, and fail the passage that calls the fan-out
+  the only harness-specific part.
+- A boundary run the gate host refuses now names a full log that exists. `tools/remote-gate.sh`
+  copies the boundary gate's whole output to `boundary-last.log` in the clone's state directory on
+  the host, which the run's cleanup does not remove and only the next boundary run for that clone
+  replaces. Before, the refusal named `boundary-suite-last.log`, which only the full-suite lane
+  writes, so a red module-alone lane left a path nobody had written. A boundary run stopped while a
+  process its gate left behind still holds the output no longer leaves the copy to that log running:
+  the cleanup ends it, so the push returns within seconds rather than when that process exits. The
+  two serial-phase tests that read red in that lane under load now wait on the event they judge: the
+  leak check's test waits up to 60 seconds for its sibling's files, and the serial-only mark's test
+  asks the batch again until its phases have reported, up to 120 seconds, then fails with the batch's
+  whole reason.
+- `sprint lane return --agent <id>` now prices a builder spawned from a session started in another
+  project. When the lane repository's own folder in the harness's projects store
+  (`~/.claude/projects`) holds no `agent-<id>.jsonl`, every other project's folder there is
+  searched, each session's subagents directory, and the newest match is read; the return names
+  that directory on stderr. The lane repository's own transcript is still read first, and an agent
+  no folder holds is warned about naming the agent, the repository's own directory and every
+  other project's folder searched, with no priced cost recorded. `critic.py record --from-verdict`
+  reads a reviewer's session the same way: when the repository's own folder does not hold the
+  session `CLAUDE_CODE_SESSION_ID` names, the first other project's folder that does is read, and
+  the printed note names it. `SDLC_STUDIO_TRANSCRIPTS`, when set, is still the only folder either
+  reads.
+- `sprint.py lane land` and `critic.py self-check record` now name every surface, ruling and
+  mutant result the record refuses in one refusal, each with the values it accepts, and the land
+  refuses before its commit hook runs, leaving main and the worktree as they were. A mutant's
+  result is now taken word for word, so `SURVIVED` is refused rather than read as `survived`; a
+  ruling is still read in any case, so `true` is TRUE. An absent ruling or result is still named
+  by the check for it, as unruled or as a result of none. A page the unit's Affects declares, an
+  `.md` or `.mdx` file in any case, is accepted as a claim surface, named by its path, so a
+  documentation unit can cite the page its claims live in; a page outside its Affects is still
+  refused. The lane brief lists the accepted surfaces, rulings and results word for word from
+  what the record checks against.
+- The skill's own tests no longer leave a module they swapped in `sys.modules` behind from inside
+  a test class's methods. A test that loaded a script under its own name and registered it there
+  kept the copy for every later test in the process, the shape that read red only in the batched
+  release gate. Each such swap that had no restore now starts a `mock.patch.dict(sys.modules)`
+  before it and stops it on cleanup. A new hygiene test scans every test module for an assignment
+  to `sys.modules` that nothing puts back and reports it by file and line. It counts as a restore
+  only a `patch.dict(sys.modules)` block or decorator around the swap, an `addCleanup` that puts
+  the same entry back (the `stop` of a `patch.dict(sys.modules)` started before the swap, or a
+  `pop`, `__setitem__` or `__delitem__` of that key), or a `finally` after the swap that puts that
+  entry back (an assignment made inside a `finally` is itself the restore). A cleanup or `finally`
+  that restores another entry, or none, leaves the swap reported. A registration made at import
+  time, at module level or in a module-level loader function, is counted as advisory and does not
+  fail the test; such a loader called during a test still leaves its module registered.
+- `release_cut.py tag-check` now refuses a tag whose generated release records are out of date
+  with the records at the tagged commit. A generated evidence page (`docs/evidence.md` between its
+  generation markers) that differs from what the committed signed reports render is refused,
+  naming each report it does not carry and the `sprint_report.py evidence --out docs/evidence.md`
+  command that regenerates it. Once CHANGELOG.md has cut a version and the commit holds a signed
+  report, that version's evidence pack must exist and must equal what its own named reports
+  rebuild to from the committed records: a missing pack, or one built before a record it
+  summarises changed, is refused naming the pack and the `release_cut.py evidence-pack` command.
+  The page, the pack and the reports are read as committed, so a page regenerated but left
+  uncommitted is still refused, and a page, pack or report that cannot be read refuses naming the
+  file. A project with neither a generated page nor a cut version with a signed report tags as
+  before. The shipped release-gate checklist gains a pre-tag step to regenerate the evidence page,
+  the known-issues page and the evidence pack after the last signature and filing, naming
+  `tag-check` as what refuses a stale one, and the gate help page and the scripts reference now
+  name every question the tag asks. They also say exactly when the forge is not asked: only for a
+  clone with no remote, or one whose remotes a signed-in `gh` reports are on no GitHub host, while
+  a `gh` that is missing or not signed in refuses the tag.
+- A run now guards the operator's global git identity. When a run opens it records the name and
+  email a commit carries, read as a commit reads them: from each global configuration file in
+  git's order, the XDG file and then ~/.gitconfig, a later file's value winning, or from
+  `GIT_CONFIG_GLOBAL` alone when it is set. `sprint lane land` and `sprint close` refuse while that
+  identity differs, naming the file git now reads, the identity recorded and the identity found. A
+  refused landing commits nothing and leaves main where it was; a refused close leaves the run open.
+  The XDG file rewritten beside a ~/.gitconfig that holds no identity is caught, and a ~/.gitconfig
+  appearing with none is not refused. A process whose configuration shares no file with the one the
+  run opened under (another `GIT_CONFIG_GLOBAL`, or both the XDG file and ~/.gitconfig moved by HOME
+  or `XDG_CONFIG_HOME`) reads a different configuration and is not compared; one run under an
+  agent's own HOME that still reads the XDG file is. A run opened with no global identity is not refused while none is set, and a run
+  opened before this release records none and is not checked. The shipped `sdlc-builder` and
+  `sdlc-reviewer` agent definitions now tell an agent to give a fixture its git identity with
+  `git -c user.name=t -c user.email=t@t`, or a `GIT_CONFIG_GLOBAL` file inside its throwaway
+  directory, and never to run `git config --global`: redirecting HOME alone does not isolate git
+  where `XDG_CONFIG_HOME` is exported. (BG1507)
+- The `sdlc-builder` agent card, shipped and installed, tells a builder to remove only the paths
+  it created and recorded, and never to delete by a glob over a shared directory such as
+  `TMPDIR` or a scratchpad, where other agents' files sit beside its own.
+- `reference-config.md` gives a row to `sprint.fresh_session`, with its three modes and its
+  default, `warn`, and to keys the scripts read that it had no row for, among them
+  `complexity.cognitive_high`, `version_check.*`, `lessons.carried_max`, `triage.enabled`,
+  `test_execution.*` and `review.blocking_priority`. A new Other Settings section holds keys read
+  from a project's own file alone, and `report.enabled` has a Sprint Report section of its own.
+  `config-defaults.yaml` declares each with the value its script uses when it is unset, the
+  `pricing` keys among them, so an unconfigured project behaves and is priced as before. A test
+  now fails on a key either file lacks, naming the key and the file: one passed to `config.get`,
+  `config.feature_enabled` or `project_override` as a string, a constant, a name assigned one, a
+  loop over literals or constants, an f-string of those, or a helper's parameter every caller in
+  the script fills that way, or read from a block one of them, `config.load_config` or a helper
+  returns. It also fails, naming the file and line, on a plain key passed to a reader that it
+  cannot resolve, while a key built at run time inside a block, a model id or an artefact type,
+  reads as that block: `f"triage.{k.name}_cap"` reads as `triage`, and `blk[name]` as `blk`.
+- `sprint plan` now warns that a wave is not safely parallel only for a pair of that wave's own
+  units that touch a code file in common, whether both declare it in their `Affects` or their
+  `Verify:` lines name it, and names each such pair with the files they share. Before, a wave was
+  warned whenever its units sat in one shared-file cluster, even when the cluster joined them only
+  through a unit in a later wave, so a wave whose units shared nothing was flagged.
+- The pre-commit hook now refuses a commit that stages a verdict file under
+  `sdlc-studio/reviews/verdicts/` which no recorded review row cites, or whose staged bytes
+  differ from the ones its row cites. `git add -A` of the records could otherwise commit a
+  verdict a reviewer was still writing. The refusal names the file and the `critic.py record`
+  command that records it, or the `git restore --staged` command that unstages it. The check
+  runs in the gate lane, and only when a verdict file is staged; `critic.py show
+  --unrecorded-staged` runs it by hand.
+- `sprint.py lane accept` now refuses an APPROVE for a unit with a criterion that has no Verify
+  line, naming each such criterion, before it records the verdict, runs the criteria or moves the
+  unit. Before, the APPROVE moved the unit and its `lane return` then reported it blocked, with the
+  criterion counted unspecified. A REJECT is still recorded. `sprint plan` and `sprint batch add`
+  name each criterion with no Verify line as an advisory, so it can be given one before the unit is
+  built. With `--format json` both name them on stderr, so the advisory adds nothing to the JSON
+  on stdout, and the plan's JSON carries them in an `unspecified_criteria` field, each unit with
+  its criteria.
+- The close now counts a lesson class repeated in the run when a bug filed in the run cites its
+  code in its Summary, or the retro's Stop or Keep section cites it, not only a cited REJECT or a
+  tagged Try item. Run thirteen repeated LC-019 and LC-021, caught by the land and the push gate,
+  and both stayed at 0 hits, so a recurring build trap could never graduate. A bug is the run's
+  when the report places it in the run's window by its `Raised-in-batch` moment, and only its
+  Summary is read; in the retro a code inside an HTML comment or in another section does not
+  count. Each class gains at most one such hit per run, naming the bug or the retro section, and
+  none when a REJECT or a Try item already hit it this run, so a bug and the retro citing one
+  repeat count it once and a re-run close adds nothing. A cited code the store does not hold is
+  reported as unknown, and a cited retired class is back in force. The close's lessons line names
+  each repeat it counted, and the retro reference lists the citation hit, keyed on the run, beside
+  a Try item's hit, which is keyed on the retro and the unit. (BG1483)
+- The lane brief now carries every live lesson class injected at build. A build class leaves only
+  when its graduation CR closes, but the brief's lessons block was capped at five, so a sixth live
+  build class pushed the oldest zero-hit builder trap out of every lane brief. The plan and review
+  digests are still capped at five and still say how many they dropped. The `close_pass` docstring
+  and the retro reference now say a builder trap reaches every lane brief, not that every brief
+  carries at most five, and the `active_for` docstring says `phase_digest` caps plan and review,
+  never build. (BG1482)
+- `sprint.py lane accept --agent <id>` no longer charges a lane's whole transcript to each unit it
+  built. Where that transcript was already split across the lane's units by points, by `lane land`
+  or by an earlier `lane return` of several units, the accept keeps each unit's share and says so,
+  so the units' tokens still sum to the transcript once. Before, the accept's `lane return`
+  repriced each unit at the whole transcript, doubling a two-unit lane's cost. The `--minutes` the
+  accept supplies are the builder's whole, so the kept share records its points' part of them, as
+  `lane return --units` of the lane does: a 30-minute builder of two 2-point units records 15 and
+  15, not 30 and 30. The `--model` it supplies is recorded as given, the output names what the kept
+  share records, and what the accept does not supply stays as the share holds it. An accept giving
+  `--tokens` records those tokens, an accept naming another agent prices the unit from that agent's
+  own transcript, and a transcript that has grown since it was split is warned about with the share
+  kept. A unit the land did not price is still priced at its transcript in full.
+- A finding filed while a run is open now stamps its `Raised-in-batch` line with that run's id (`RUN-... - raised during the run, <moment>`), ending with the moment of filing as before. With no run open, a closed run or an unreadable run state the stamp still reads `none open - raised outside a delivery batch, <moment>`, and a batch a caller names is stamped unchanged.
+- `sprint.py close --dry-run` names each step on stderr as it starts
+  (`close --dry-run: running <step>`, the preflight as `prerequisites and gate`), so a slow preview
+  can be told from a hung one; before, nothing was printed until the verdict. The review-current
+  check reads every artefact's last commit time in one pass of the history (one
+  `git log --name-only`, beside `git rev-parse --show-prefix` and `git ls-tree`), where it ran one
+  `git log -1` per artefact, so the git processes it starts no longer grow with the number of
+  artefacts. An untracked artefact still reads its file time, and a merge whose artefact differs
+  from each parent's, as a conflict's resolution leaves it, still counts as its last change, in a
+  project at its repository's top and in one kept in a folder of its repository alike, a folder
+  whose name holds a `"`, a `\` or a tab among them, and whatever the user's `diff.relative`
+  setting: the walk names every path from the repository top (`--no-relative`) and as it is, never
+  quoted (`-z`), and each is matched with the project's folder before it. On this repository's
+  4,253 artefacts that is 3 git processes and about 7 seconds at a load average of 9, where one
+  `git log -1` took about half a second each on the same host, about half an hour for them all.
+  The gate's review-current lane reads the staleness once a run, where a stale review anchor made
+  it read it twice.
+- A signed run's tracked record that no longer reads is now named on the brief instead of reading
+  as a run awaiting its signature. When a learning's run record is filed and cannot be parsed, or
+  is not UTF-8, the seat's brief says the run record at its path is unreadable and does not carry
+  the learning; a record that is only unsigned or absent still reads as awaiting its signature.
+  Several damaged records are named together, in the plural. The close still lists such a
+  learning, as it lists one whose run is unsigned, so the next signature judges it; one the
+  operator struck keeps its own Struck field and is not listed.
+  `run_state.read_tracked` now raises `RunStateError` naming the path for a record whose bytes are
+  not UTF-8, where a `UnicodeDecodeError` escaped before, and `run_state.record_unreadable` tells
+  a damaged record from an unsigned one.
+- Five branches of the close's learning review and the sign's strike now each have a test that
+  fails without them. The close's review names a seat that owes a learning for a round found
+  after its approval and for a bug it approved over its own finding, and does not name a seat
+  that has a learning listed. A run ended with no signature, by a `sprint boundary` stop or
+  `--file-and-close`, holds its learning out of the next brief. A re-close of a signed run that
+  struck a learning does not list it again. The persona-learning reference says a sealed run is
+  not a signed one, and US1068's note now says a learning is live only from a signed record.
+- `sprint.py lane land` now puts back the self-check a builder recorded in its own worktree, the
+  ledger row and the recorded mutants file, before the commit, since the land records the
+  self-check on the root from the hand-in. Before, the ledger was left unstaged, the commit hooks
+  ran their whole course, and the rebase after them refused over the unstaged change. Any other
+  unstaged edit or untracked file outside the hand-in path is refused before the commit, each
+  named, and nothing is discarded, in every worktree of a landing of several. An unstaged deletion
+  is refused as an edit is, a file moved in the work tree is named under both its old and its new
+  path, and a name that is not UTF-8 is named rather than stopping the land. The unstaged verify
+  edit to the unit's own story or bug is still discarded as before.
+- `retro.py seats` no longer stalls over a long window. `seat_misses` looked up each reviewed unit
+  an in-window bug cites under the narrow rule with `sdlc_md.find_by_id`, once per bug, and each
+  lookup walked every artefact type: over this repository's unbounded window (every bug up to
+  2026-11-22, 682 distinct reviewed units) the call did not finish in ten minutes. It now resolves
+  each unit once per call, however many bugs cite it, a unit with no file or no Affects included,
+  and runs inside one corpus cache, so each artefact type is walked once and each lookup reads the
+  by-id index the first one builds: the same window finished in 13 seconds when measured. The
+  charges, the shared Affects files and the uncharged list are those a lookup made per bug gives.
+  (BG1465)
+- `retro.py seats` now names every bug in the window whose `Escaped-via` unit charges no seat,
+  with the reason: no review approved the unit (only a REJECT stands), its approval names no
+  seat, a seat approved it only after the bug was created, or no seat's latest verdict on or
+  before that day approves it. Before, only a unit with no live ledger row was named, and the
+  other cases printed no line for the bug. A bug charged to a seat is not also listed as
+  uncharged, and a bug read by the narrow rule that charges no seat is still not named. The
+  post-dates reason reads a unit's earliest dated seated approval, and an approval naming no seat
+  is named so though a seated REJECT stands beside it. The `seat_misses` docstring and the retro
+  reference now say which bugs are named. (BG1463)
+- `escape.py trace` no longer proposes a unit that a release's commits only mention. It used to
+  count every story or bug id anywhere in a commit message as a unit the release shipped,
+  `Mentions:` trailers included, so a commit that named a unit without changing any of its files
+  put that unit among the suspects. A commit now owns the ids its subject names that no
+  `Mentions:` trailer names, and the ids its `Refs:` trailers name; an id named only in a
+  `Mentions:` trailer, or only in the body's prose, is not counted. A release whose commits own no
+  unit is refused with `tags no unit`. The tests now also pin three rules the module already
+  documented: the verdict proposed is the unit's latest APPROVE, not a later REJECT; the escaped
+  bug is never proposed as its own cause; and a bug with no Affects is refused with
+  `names no Affects`.
+- `sprint lane return --agent agent-<id>` now prices the lane. The `agent-` prefix that
+  `lane land` prints before a builder's id is dropped before the transcript is looked up, so
+  `--agent agent-a1b2c3d4` and `--agent a1b2c3d4` read the same transcript. An id that only
+  contains the word, such as `xagent-7`, or opens with it and no dash, such as `agentx9`, is
+  kept as given, and an id with no transcript is still warned as not priced.
+- A request refined in part is no longer derived terminal when its children resolve. `refine.py
+  apply --unrefined AC3,AC4` records the criteria a refine leaves on the request's `Unrefined:`
+  field and does not seed them onto the story or the epic, on the `--into` path too; an unknown
+  label is refused with nothing minted. `refine.py add --unrefined` replaces the record with the
+  criteria still left, and `--unrefined none` clears it. Where the project enforces the two-backlog
+  workflow (`two_backlog.enforce`), while the record names any criterion `reconcile.py detect`
+  reports the request as `request-derivable` naming those criteria and the commands that clear
+  them, neither `reconcile.py apply` nor a sprint close derives it, and `transition.py set` refuses
+  the request's successful terminal unless forced. A record that names no label it can read is
+  reported as written and still blocks. `help/refine.md` documents `--unrefined`.
+- The return contract every `critic.py brief` ends on, at the full and light tiers and in a
+  `--rejoinder` re-review, now states that a code span must not begin or end with whitespace:
+  markdownlint's MD038 refuses it, so `critic.py record` refuses the verdict file that carries one.
+  A reviewer is told to quote the value without the space and say in prose that it has one.
+- `sprint lane accept` now records a REJECT on a unit whose self-check is stale under
+  `review.author_self_check: block`, naming the stale self-check in a warning, and moves nothing.
+  Before, it refused the REJECT as it refuses an APPROVE, so the reviewer's findings were recorded
+  nowhere. A REJECT whose BLOCKING line quotes no ISSUES finding reaches the record's own refusal,
+  which names the line to fix. An APPROVE on a stale self-check is still refused, and so is a
+  verdict file with no readable VERDICT line. Under `review.author_self_check: report` the warning
+  on a REJECT says `block` records it too.
+- `sprint.py lane land` now refuses a lane whose staged change conflicts with main when it replays
+  the change, before the commit hooks run, naming the conflicting files and leaving the change
+  staged on its old base. Before, the replay's conflict was undone and the commit ran anyway, so
+  the hooks ran their whole course and the rebase after them refused on the same conflict. A
+  replayed change that carries a page `docgen.py` generates, the command surface page, the
+  reference index or a reference page with its reading guide, now has that page regenerated over
+  the tree it lands on and staged again, so two lanes that each regenerated the command surface
+  page land without the hook refusing a merged page on drift. Only a page the lane staged is
+  staged again. A generator run that fails or overruns its bound is warned of and left to the
+  commit hook.
+- A lesson class recorded with no run open, by `lessons.py class-add` or by a manual
+  `retro.py extract`, no longer retires at the next close. Its `recorded_run` names no run, so
+  once a clone had archived more than five runs the close retired it at once unless that run hit
+  it. The first close that finds such a class active now stamps that run as its `quiet_from`, once,
+  and the class then gets its full five quiet runs; the close's lessons line names each class it
+  stamped. Only the labels those two write are stamped, a blank one or a retro id: a class
+  recorded in another clone's run, or one of the bundled seed's classes (recorded under another
+  project's review, `back-to-basics-review`), is not stamped and is judged quiet as before. Tests
+  now pin `class-add` refusing each blank required field and an unreadable run state with the
+  store left byte-identical. The help page, the script catalogue and the retro reference's
+  retirement row say so, and the catalogue's run-on `lessons.py` sentence is split. (BG1436)
+- The Cursor meter books each hook-ledger response by the price table of the repo root it is
+  metering. A project `pricing.models` entry that moves a model's long-context threshold (a
+  128,000-token Grok prompt, say) now books a prompt past it under the long-context id; before, the
+  ledger reader loaded the shipped table only, booked such a prompt at the short rate and read the
+  figure as exact. A project with no pricing block books by the shipped thresholds as before.
+- `file_finding.py file --parent` now brings the parent's index row up to date as well as its `Decomposed-into` line, so `reconcile detect` reports no spawned-column drift for the parent and the next commit is not refused. Only the parent's own row is written, from one scan of the corpus, inside the same lock as the mint; no other row is touched, and a cell naming work the census cannot see is left as it is.
+- A bare `sprint close` (a run with a Sprint Goal, no `--retro`, not `--file-and-close`) now
+  scaffolds the run's retro and records it in the run state before its pre-flight report, not
+  after it. A close stopped or killed during the pre-flight leaves the retro scaffolded, and the
+  next close reuses it ("already scaffolded") rather than waiting minutes to write it. A close
+  with `--retro`, or `--file-and-close`, still scaffolds nothing early.
+- CI sets up Node 26 where it set up Node 20, below the `node >=22` that markdownlint-cli,
+  markdownlint and other packages in package-lock.json declare. A test holds every
+  `node-version` in lint.yml to every `engines.node` range the lockfile records, at the lowest and
+  the highest version each one admits; the whole 26 line meets them all, where Node 22 before
+  22.12 would not meet `commander`'s.
+- A Ctrl-C during the kill grace of a timed-out `sprint lane run` no longer leaves a child that
+  ignores SIGTERM running. The run sends the lane's process group SIGTERM and waits up to
+  `KILL_GRACE` for it to empty; a KeyboardInterrupt in that wait skipped the SIGKILL that follows.
+  The SIGKILL is now sent from a `finally`, so it reaches what is left of the group before the
+  interruption propagates and the command exits.
+- The `sdlc-builder` agent card, shipped and installed, runs a unit's criteria with
+  `verify_ac.py run --id <unit> --dry-run`, as the lane brief does, so a builder following the
+  card no longer writes the results into the unit's own artefact.
+- `sprint lane land` no longer lands an empty commit when the builder's branch holds a commit that
+  main already carries. Replaying the staged change onto main before the commit rebased the
+  builder's own commits with `--empty=keep --reapply-cherry-picks`, flags meant for the staged
+  change alone, so such a commit was kept, emptied, and fast-forwarded onto main. The replay now
+  rebases as the landing's later rebase does, dropping a builder commit main holds, whether as the
+  same patch or inside a commit of its own that leaves the builder's empty. The replay's scratch
+  commit is told from a builder commit by the author it is given, which the rebase keeps whatever
+  a `prepare-commit-msg` hook does to its message, and is taken back out only when it is the
+  commit the rebase ended on, so in a repository with such a hook it never lands in place of the
+  lane's own commit.
+- The author self-check now says where to run a mutant the mutation runner cannot run. Its
+  sentence sending such a mutant to MUTANTS.json named no place, so a builder could run the probe
+  from a copy of the tests alone, without the project's root `conftest.py` and its HOME
+  confinement, and write to the operator's real home. The same sentence now says to run it by
+  hand in the lane's own worktree or a detached worktree of the repository
+  (`git worktree add --detach`), never in a copy of the tests alone. It sits on the line the lane
+  brief passes through, so the brief `sprint lane brief` prints carries it too. A unit whose
+  Affects declares no test file has no such mutant, and its self-check is unchanged.
+- `sprint.py lane run` now refuses a unit that declares `Isolation: home` before it starts
+  anything, naming the unit and saying to brief it with `sprint.py lane brief` and build it in the
+  main checkout as the wave's last lane. Before, the headless lane built it in a worktree, which
+  the declaration exists to rule out. The field is read as the exact word `home`, in any case and
+  with or without backticks, so a value such as `no home`, `home only` or `homework` is not taken
+  for it.
+- `critic.py record`'s refusal of a finding that carries no origin tag now says how to keep a
+  semicolon inside one finding: an unescaped `;` can end a finding, so the text after it is refused
+  when it carries no tag of its own, and `\;` keeps it in one (`"[new] a\; b"` records one). The
+  refusal reads the same for `--issues` and for a verdict file given with `--from-verdict`. The
+  split and the escape are unchanged.
+- `sprint.py lane accept` on a unit carried at the review cap now records the verdict under the
+  reviewer whose REJECT it carried, exactly as that REJECT was recorded, bare or with its seat
+  group, so the APPROVE answers it. With `--reviewer` left off it defaults to the reviewer of the
+  latest unanswered REJECT and says so; a `--reviewer` naming none of them is refused before
+  anything is recorded, naming the reviewers to use. Before, any id was taken, and an APPROVE
+  recorded under a different reviewer, or under the seat group a bare id was given, left the
+  carried REJECT unanswered, so the unit could not close. A unit that was not carried, or whose
+  carried REJECT is already answered, takes its reviewer as before.
+- `sprint lane land` now judges each unit's self-check before it commits anything. A self-check
+  `critic.py self-check record` would refuse, one missing a required surface above all (the commit
+  message or a changelog fragment the unit's Affects declares), is refused with exit 2, naming the
+  unit and the critic's reason, while the builder's worktree, its staged change and main are as
+  they were and the commit hook has not run. Before, the lane was committed, landed and its
+  worktree removed first, so the refusal came once the builder could no longer repair it in place.
+  The judgement uses the critic's own readers and checks, against the unit's Affects as the
+  landing leaves them on main: the copy staged in whichever worktree of the landing changes them,
+  the unit's own or another landed with it, read from the index and not the checkout, so a lane
+  that widens or narrows a unit's Affects is judged on what it lands, and a lane that removes the
+  unit's own file is refused as having no artefact with that id; main's copy otherwise, so an
+  Affects main changed after the lane branched is the one judged. A hand-in
+  missing what a record needs (no claims file, or neither a mutants file nor the runner's report)
+  still lands and is named as unrecorded afterwards, as before, and a resumed landing records the
+  hand-in it kept without judging it again, so its self-check step still names a refused record.
+- `sprint lane brief --units` naming more than one unit now states the lane's total tool-call
+  budget once, after the briefs: `Lane total: 128 tool calls over 2 units (38 + 90), the sum of
+  the per-unit budgets above.` Each unit's brief keeps its own `Budget:` line. When a briefed unit
+  declares no Points, the line says no lane total is derived and names the unsized units, with no
+  figure, rather than summing the sized units and understating the lane. A brief of one unit prints
+  no total line, and the total never takes the per-unit `Budget: N tool calls` form.
+- `extract_field` now reads a metadata field with nothing after its name as empty (None), where it
+  ran on into the next line and returned `>`. `metadata_fields` agrees: the first occurrence of a
+  name decides, so a later occurrence does not fill a field the header left empty.
+- `critic.py record` no longer refuses a verdict because a session transcript holds a path it
+  cannot resolve. The self-review check reads the Edit and Write paths in the session's Claude
+  Code transcripts, and a path holding a NUL character stopped the record with
+  `lstat: embedded null character in path`, writing no row. Every path the check reads from a
+  transcript or from a subagent's recorded worktree now goes through one guard that skips a path
+  it cannot resolve, a NUL in it or a loop of symbolic links (which Python before 3.13 refuses),
+  so that record costs only itself: the verdict is recorded, a later clean edit of the unit's
+  file still makes the row a self-review, and the verdict's writer is still found from its real
+  write. An empty recorded worktree path names no tree, as before.
+- The lane-yield note on a report page whose run record froze its tally now says the tally is the
+  closing clone's refusal log as the close read it, not this clone's, which read as the reader's
+  own log in a fresh clone. A tally built live still adds no closing-clone sentence.
+- `sprint.py plan --write --format json` now prints one JSON document on stdout. The lines a
+  written plan adds for a person (the plan file written, the appetite kept, the run opened or its
+  charter, each status transition, the content review, the lane worklists exported or not, and
+  the rolling policy) go to stderr under `--format json`, so `json.load` reads the output whole.
+  The text plan keeps every one of those lines on stdout, as before.
+- `sprint decision defer --block` on a bug holds the block on the run state (`blocked_units`),
+  since a bug has no Blocked status. Each unit is held once, in its file's spelling.
+  `sprint decision list`, the close and `/sdlc-studio status` show each held unit with its own
+  status and as blocked. Resolving a decision clears that unit's block alone, and only once no
+  other open blocking decision names the unit.
+- Minting a story into an epic that is Done reopens the epic to In Progress, and moves the request it delivers back to its working status when that reads Complete (an RFC, Delivered), so `reconcile apply` no longer derives the request Complete over a Draft story. A Superseded or Rejected request records a ruling and is left as it is. A reopen a gate refuses is a warning with the command to run, in `artifact.py new` and `batch` alike. `refine.py apply --request <request> --into <epic>` now adds a further slice to a Done epic the request already names: the request lists the epic once and the epic is reopened, and `--into` any other terminal epic, or an epic the request does not name, is refused as before.
+- The commit-msg hook's trailer derivation and the multi-id subject check now find git's scissors
+  line under a comment character other than `#`: `core.commentChar` set to `;`, `@` or a letter such
+  as `x`, or a `core.commentString` such as `//` (any comment string that holds no space). They read
+  nothing below it, so a `Refs:` context line in a verbose commit's diff no longer accounts for a
+  subject id. In a verbose message the derived trailers are written above git's comment scaffolding
+  in that character. A message with no scissors line has its scaffolding read as `#`, so under
+  another character the trailers follow git's comment lines, which git strips, and they still close
+  the commit. The unnamed-unit note reads only the author's text as well. The `_ledger_rows`
+  docstring now says a review-ledger row the commit adds or edits makes its unit the ledger's owner.
+- A repair's `sprint lane brief --units <id>`, with `--repair` or without, now recreates the
+  worktree `sprint lane land` removed when the unit landed: at the path the unit was built in, on
+  the branch it was built on, at the landed commit, with a clean tree, so the builder that built
+  the unit can be resumed there rather than a fresh one reading everything again. The land record
+  now keeps each worktree's branch for this. When no worktree can be recreated the brief still
+  prints and says why: no land record names the unit, its landing did not remove the worktree, the
+  record names no branch (a landing recorded before branches were), the record is damaged, the
+  path is occupied, or git will not add the branch. A land record that cannot be read at all (not
+  JSON, say) may be the unit's newest landing unless a record naming the unit is newer, so the
+  brief names it and recreates no older landing's worktree in its place. An occupied path and an
+  existing branch are never overwritten, and a worktree already in place on its branch is said to
+  be. The repair row of reference-sprint-toolchain.md says so.
+- `tools/skill-tests.sh` now clears the agent harness variables the token meter reads before it runs
+  the unittest suite. A shell run inside Cursor made the Cursor meter read a Claude transcript
+  fixture, so the meter modules passed under pytest and failed through the runner. The names come
+  from `token_meters.selection_variables()`, the helper the root `conftest.py` clears by, so a
+  harness added to the meter is cleared by both runners. A skill directory whose helper cannot be
+  read stops the run.
+- `persona_registry` now reads every cast role the persona guide declares (Primary, Secondary,
+  Supplemental, Negative, Customer and Served), so a persona listed under `## Served` is returned
+  with role `served` and its card path, where it was invisible to every command that reads the
+  registry. A role is the heading's first word, so a parenthesis such as `(served, ...)` names
+  none, and a bullet under a heading that is no role, such as Review seats, registers nobody. An
+  index holding only Primary, Secondary and Negative reads as before.
+- A file path in finding or request prose is written as one code span, where it used to come out split into prose and a code-spanned file name: a relative path (`tools/tests/test_x.py`), a rooted one with one or more segments after its root (`/abs/dir/test_x.py`, `/tmp_dir`, `~/my_file.txt`, `~/.cache/run_x.json`, `$HOME/bin/do_it`) and one whose underscore sits in a directory (`src/my_pkg/main.py`). The escaper reads a path in a single linear pass, so a very long run of segments costs no more than any other prose. A bare identifier is still wrapped, a path already in a code span is unchanged, a path with no underscore inside a word (`docs/guide.md`, `~/plain.txt`, `sdlc-studio/bugs/_index.md`) is left as written, and a slash after a call or an index (`unit_cost()/attempts_of`) is two identifiers, each in its own span, never one rooted path. A span of the escaper's never touches another span of its own or one the author wrote: a rooted path taken as a call's argument (`open_x(/tmp_dir)`) is one span, and a path or an identifier written straight against the author's span (their `$REPO` followed by `/tools/run_x.py`) is left bare there. A bare URL, which is code-spanned whole, is the exception: written straight against the author's span it still touches it, as it always has.
+- `sprint lane land --units us0101` now lands the unit as the artefact spells its id (`US0101`), so
+  the brief and the no-brief note it writes or removes are the ones named for that spelling:
+  `US0101-qa.txt` from an earlier round is removed and the note is written as `US0101-qa.none`,
+  where it used to write `us0101-qa.none` beside the earlier brief. `sprint lane accept --unit
+  us0101` reads the brief by the same spelling, so with the earlier brief gone it is refused for want
+  of one, as `--unit US0101` is, and records nothing. A unit no artefact carries keeps the spelling
+  it was given.
+
+  `sprint lane land --resume` takes up a landing whose record spells a unit as the base wrote it
+  (`us0101`) as it does one spelt as its artefact: units are compared by their normalised id, and the
+  resume reads the record's units as the artefact's spelling, so the brief it writes is the canonical
+  one.
+- `sprint lane brief` run in a linked worktree whose HEAD is behind the main worktree's branch
+  prints a WARNING naming both commits and the `git merge --ff-only <branch>` that brings the
+  briefed unit up to date. Every brief also names its base, the main worktree's branch and tip
+  commit, and the `git merge --ff-only` that reaches it from a harness worktree cut from an older
+  commit.
+- The lane brief's landing obligation says the lane is landed by `sprint lane land` onto the
+  root's branch, with no PR opened and no branch pushed unless `release_strategy` is
+  `pr-required`. It no longer names `main` or tells the builder to fast-forward beside the
+  brief's own instruction not to commit. A unit declaring `Isolation: home`, built in the root
+  checkout, is told instead that the orchestrator commits it onto the root's branch, as its
+  stage line says, with the same exception.
+- The token meter no longer refuses a reading because `COPILOT_HOME` or `OPENCODE_DB` is
+  exported. The two variables say where Copilot CLI and OpenCode keep their stores, so a harness
+  only they signal is set aside while any other harness variable is set: a Claude Code session
+  with either exported reads its own transcript. Set alone, each still selects its
+  harness, and the two together, with nothing else set, are still two candidates.
+- The pre-push hook now names a push-triggered Lint run on main that has not finished. Its red-main
+  read asks only for the latest completed run, so a run still in progress over main's newest commit
+  was passed over in silence, and a red there was first read pushes later. After judging the
+  completed run, the hook reads the newest push-triggered run whatever its status. When that run
+  has not completed, it prints the run id, its status and the commit it judges, and says its result
+  is not yet read. The notice never refuses a push. It adds nothing when the newest run is the
+  completed one, when the answer cannot be read, or when it names no run id. A red completed run is
+  still refused before this read, as it was already, so a newer run in progress never masks it.
+- `sprint plan` names each pair of units sharing a code file on a line of its own, and warns a
+  wave only over a shared code file. A shared prose page (`.md`, `.mdx`) is reported as advisory
+  and no longer joins units into one lane or withholds a parallel build. Two units editing one
+  place in a shared page still conflict at `sprint lane land`, which names the file to resolve,
+  and the plan, the lane worklists and both references say so. The sprint and delivery
+  references say lanes share no code file, rather than no file.
+- The reviewer agent definition, shipped and in this repository, now tells the reviewer to
+  mutate in a detached `git worktree add` under its scratchpad, never an archive copy of the
+  tree, to run the suites there the way the project's gate runs them, and to remove the worktree
+  with `git worktree remove --force` before handing back. The review brief's isolated-checkout
+  practice says the same. `critic.py record` names a detached worktree still registered under a
+  scratchpad or the temporary folder; it does not refuse the record. Since a review still
+  running may be using that worktree, the note says to remove it only once every reviewer
+  dispatched has returned its verdict, with a plain `git worktree remove`, which refuses a tree
+  still holding uncommitted changes, and never tells whoever records to force-remove it. The
+  review reference's section on where a delegated reviewer mutates states both rules.
+- The unconfined-git sweep in the skill's tests now sees a git call made through a local name bound
+  to a subprocess runner, and a git call inside a string that is itself Python source (a generated
+  fake CLI). It counts the same call passing an `env` as clean, and a string that only mentions git
+  as nothing. The calls it newly finds, in the lane run, lane timeout, sprint drive and command audit
+  fixtures, now pass a confined environment, so a hook's `GIT_INDEX_FILE` can no longer name the index
+  a fake CLI stages into. A new lane-run case pins that a caller's index is never written.
+- Three lane frictions. `sprint lane brief` names sibling lanes still in flight on one line
+  instead of a warning for each. `sprint lane land` runs markdownlint over the staged markdown
+  and refuses before the commit when it fails. Each page is linted under the config nearest
+  above it, or, in a dot-directory such as `.claude/`, under the one config that directory
+  tracks, as the commit hook does. A linter that runs past its bound is stopped, with what it
+  started, and the landing is refused rather than crashing. The builder brief's hand-in line
+  names the test files in the unit's `Affects` that a mutant's test must be in.
+- `sprint batch add` refuses an id no artefact file carries, naming it as typed, and adds
+  nothing. A unit whose file was removed can still be dropped.
+- `critic.py self-check record` reads a claim ruled `TRUE: <evidence>`, `FALSE: <evidence>` or
+  `UNVERIFIABLE: <evidence>` as that ruling, the evidence kept with the claim. A TRUE or
+  UNVERIFIABLE claim so ruled is recorded; a FALSE one is still refused, as a bare FALSE is, and
+  the refusal names its evidence. A ruling with anything after the word and no colon, such as
+  `TRUE in substance`, is still refused. `critic.py record --dry-run` checks a verdict as
+  `record` would, every refusal included, says what it would record and writes nothing. A
+  finding naming two globs, each a code span followed by an asterisk and a space, now writes a
+  ledger row markdownlint passes: an asterisk outside a code span is escaped there, as an
+  underscore is.
+- `migrate.py` removes the bytecode directory (`sdlc-migrate-pyc-*`) a killed run left behind. Its
+  collection guard now names the directory for its owning process and, on its next start, sweeps each
+  such directory under the temporary directory whose owner is no longer running; a running owner's
+  directory, a link and a directory with no process id in its name are left alone. Before, only a
+  SIGTERM was handled, so a SIGKILL, or a killed timeout wrapper, left the directory for good.
+- A run metered by two harnesses no longer adds a delegated total twice. `retro.py accuracy`
+  takes `--delegated-harness HARNESS` beside `--delegated-tokens N`, naming the harness whose
+  metered session ran the agent as a subagent, one a meter reads (`claude`, `cursor`, `copilot`,
+  `opencode` or `codex`), and the record carries it. A total tagged to a harness whose reading in
+  the run already holds its agents' spend (as an opencode session's does beside a Claude main
+  thread) is kept on the record but left out of `_run_tokens_actual` and the report's Tokens
+  figure, which read every session's stamps, and the report's Dollar cost row does not name it
+  among the supplied totals it leaves unpriced. The retro's accuracy total is one capture, the
+  closing session's own reading, so it leaves a tagged total out only when that capture is the
+  tagged harness's reading and holds its subagents; its basis then says how many totals under
+  that harness are not added and that adding them would count that spend twice, rather than that
+  none was supplied. Under any other capture, such as a Claude close beside an opencode-tagged
+  total, the total is added and named as supplied, since that capture does not read the tagged
+  harness's session. An agent that ran as a session of its own is recorded without the flag,
+  since no reading holds it. Any other harness name is refused and nothing is recorded,
+  as is `--delegated-harness` given with no `--delegated-tokens`. A total recorded without the
+  flag carries no harness and is added as before, so a Claude-only fan-out reads the same.
+  `record_delegated_tokens` takes the same `harness`. Before, the all-or-nothing
+  `includes_subagents` flag added the whole delegated total beside an opencode session that had
+  already counted it, and no command could say which harness a total came from.
+  The lane-run return (`sprint lane return`) records a lane run's usage untagged under every
+  harness, `claude`, `codex` and `opencode` alike, so a mixed run adds it even where that
+  harness's readings hold their own subagents: no reading holds a lane worktree's session (a
+  `claude -p` lane is a session of its own, the Codex reader leaves threads under the lane
+  worktrees out, and the OpenCode reader matches only the repository root's own directory), so a
+  lane record tagged to a harness whose readings hold their subagents would be left out and its
+  spend counted nowhere.
+- Inside `corpus_cache()`, the artefact walk is memoised against the absolute root and handed back
+  in each caller's own spelling of it, so a read through a relative root followed by one through
+  the absolute root no longer fails in `reconcile` with a `ValueError`, and both return the names
+  they return outside the cache.
+- The PRD no longer says id allocation fetches (BG1180): section 8 says it reads `origin/main` with `git ls-tree` and does not fetch, and the PRD test reads every sentence of the PRD above its Changelog, not only the Security NFR, for a claim that it does. Section 8 no longer calls the `git fetch origin` at the plan's preflight and at each `sprint boundary` best-effort with its failure ignored: it says a failed fetch marks the comparison unverified, and that under `--strict` the plan is refused or the run stops, as the Security NFR says. The test refuses a passage on that fetch that calls its failure ignored or best-effort, or names a failure without saying it leaves the comparison unverified.
+- The PRD test's unreleased-marker check (BG1168) exempts a code span only in a row's Description cell, so a shipped row's Status cell or a details block's Status line carrying the marker in backticks now fails it, and the release-cut row still passes. A test also requires the PRD's Changelog table to name the unit of every commit since 6.1.0 that changed the PRD, and the table gains the rows it lacked.
+- The PRD tests' protections match their claims (BG1162). The Security NFR scan finds a `git ls-remote`, pull, push or clone call and a `gh` tuple call as well as a list, the PRD's breakdown rule says any pointed unit, a CR included, is held to the split ceiling, the cost model is checked to say the override replaces the measured rate, and each held criterion in the Feature Details is checked to name the bug its words describe.
+- `artifact.py batch` and `artifact.py new --fields-file` write a list-valued `affects` as the comma-separated path line (`> **Affects:** a, b`) that the planner parses to those paths, where it used to be written as a Python list (`['a']`), which parsed to one bracketed token. Each path is stripped and a blank one dropped, and an element that is not text (`null`, a number, a nested list) is refused by position and kind, naming the batch item, with nothing minted.
+- The interface-path persona router no longer reads the example spans in a card's unfilled
+  `{{optional ...}}` Interface slot as declared paths, so such a card is named in the
+  missing-interface warning rather than owning `src/` and `bin/run`. An escaped pipe in the
+  Interface cell no longer ends the row, so the paths after it are read. `validate personas` now
+  reports two Primaries whose declared paths are equal or nested, whatever their prose, as sharing
+  an interface; a cell declaring no path is still compared by its text.
+- The close checklist's cost row now reads a run that holds only its legacy
+  `session_token_baseline` the way the report page does: it takes the closing reading from the
+  live transcript, so the row states the measured figure instead of `unattributed` beside a page
+  that states one. A test now pins that the row's detail carries the re-derivation note when the
+  total re-derived a reading taken on an earlier counting basis.
+- The close's goal panel and the next amendment's carry read every round recorded on the latest
+  goal wording, not only the newest round, so a seat that answered in an earlier round on the
+  same wording is no longer reported as owing.
+- An amendment of an open run's goal that a seat requested, `goal-review record --amend-from
+  <the run's goal> --requesting-seat <role>`, now moves the goal the close judges, as an
+  operator's amendment already did. The run state's amendment ledger records the requesting seat
+  by its role, apart from the operator. The same guards hold: once the run's goal verdict is
+  recorded the amendment is refused and nothing is written, and an amendment from another
+  reviewed goal, or of a closed run's goal, leaves the run state as it was and says no run's goal
+  moved.
+- The review brief's UNIT DIFF now holds the briefed unit's own commits when another unit's
+  commits change the same Affects file since the run's base. It used to be the whole `git diff
+  <base> HEAD`, so each unit's brief carried the other's hunks as its own. When the commits that
+  change the unit's Affects include commits naming it, in the subject or on a `Refs:` line, and
+  commits that do not, the section lists each of its own commits oldest first, a `commit <sha>
+  <subject>` line and its diff against its parent, under the tier's line cap. A last line names
+  the commits left out and the command that shows them. When every such commit names the unit,
+  or none does, the section is the whole diff from the base, as before. The review
+  help page's account of the brief describes both forms.
+- `critic.py brief` now runs its standing-practices and claim-inventory refusals over the brief it
+  composed, less the UNIT DIFF it carries and the author's recorded mutants section appended after
+  it. A unit whose own commit quoted or removed a practice's text had its deficient brief issued,
+  because the diff's lines satisfied the check; it is now refused, naming the practice. The
+  re-review brief (`--rejoinder`) is checked the same way.
+- An author self-check record is now also judged against the unit's own change hunk by hunk, so it
+  stays current in the landing orders the file-by-file view could not see through. A record of
+  uncommitted work survives another unit committing its own hunk to the shared file before the
+  author's commit of the recorded edit, and a record taken at a commit later cherry-picked onto
+  HEAD survives later commits of other units: each change another unit committed since the record,
+  or since the commit HEAD shares with it, is taken back out of the content as it stands, newest
+  first. A further edit of the unit's own, a record whose commit never reached HEAD, and a change
+  that cannot be taken out cleanly still read as stale: a change another unit made beneath the
+  author's own, committed, uncommitted or cherry-picked, on or next to a line the author's own
+  change touches is one, since `git merge-file` reads the two as a conflict. The review help, the review
+  and configuration references and the self-check log's header describe the binding, and the review
+  help and reference name the neighbouring-line case.
+- The self-check gate in `critic.py brief` now reads a merge commit by its remerge diff, so an edit
+  the author made while resolving a merge conflict in a declared file stales the record under
+  `review.author_self_check: block`, as any other edit of the author's does. A merge touches a
+  declared file only where it left that file differing both from git's own automatic merge of its
+  parents and from every parent, and it is attributed by its subject like any other commit. A merge
+  git made by its default strategy without a conflict, such as a merge of another unit's branch or
+  of two units' edits to different lines of one file, and a file a merge took whole from one parent
+  still do not stale the record. A conflict git settled by a strategy option such as `-X theirs` is
+  held to the same rule as a hand resolution, since the remerge diff merges by the default strategy.
+  A declared path outside ASCII is read as it is named. A git too old to give a remerge diff (before
+  2.36) reads a merge as before, listing no file.
+- A unit carried at the review cap now records, on the batch drop that carries it, the commit its
+  capping REJECT judged: the commit that REJECT's own brief was cut at, read from the note of the
+  brief its fingerprint names rather than the unit's latest note, which a second seat's later brief
+  may have written. When the REJECT was recorded with no brief, or no brief note names its
+  fingerprint, or the note that does records no commit, as a note cut before this change does, the
+  commit checked out at the carry is recorded instead. `critic.py brief` of the carry bug, or of
+  the carried unit delivered again, diffs from that commit and says so, with the id given in either
+  case. A repair that landed before the redelivery's run opened is then in the diff the reviewer
+  is given, rather than beneath that run's base, where every finding on it read as pre-existing and
+  the review could not block.
+- A persona card's End goal written across several lines now reaches every reader whole. The reader
+  kept each numbered line and dropped its continuation lines, so the goal-review brief, the goal
+  trace and the product seat's lens read half a sentence. `sprint.persona_cards` and `_end_goals`
+  now join a goal's wrapped lines onto it, indented or not, up to a blank line, a heading, the next
+  numbered goal or a nested list line such as its Verify, which stays the goal's own. (BG1107)
+- The repo-hygiene probe test no longer writes into the repository's `scripts/tests/` directory.
+  Its two fixture modules are built in a scratch directory that holds a `tests` package, and the
+  probe runs from there, so the real `tests/__pycache__` is neither created nor removed. A new
+  case pins that running the probe cases leaves every file under `tests/` as it found it.
+- The TRD no longer says `verify_ac run --coverage` refuses under `block` and reports under `report`
+  when the `coverage` module is absent. Its Script language row now says the run exits 2 naming the
+  module absent whatever `review.line_coverage` says, and that the block/report split is the Done
+  gate's in `transition.py`. A new test drives both halves with the measurement refusing as it does
+  when the module is absent, and holds the row to what each does.
+- `critic.py record` now writes a bare email address (`ops@example.com`) or a bare `www.` address
+  in a finding as a code span, as it already did a bare http(s) URL, so the verdict ledger passes
+  markdownlint's MD034 (no bare URLs) at the next commit that touches it. A `www.` address is
+  matched in any case, as markdownlint matches it, and ends before a backslash, so the escaped
+  semicolon a finding may write straight after it stays outside the span and the finding records
+  as one. A trailing full stop or an unbalanced closing bracket stays outside the span, and an
+  http(s) URL holding a `www.` host or an address is still one span. An address already in a code
+  span, in angle brackets or in a link destination, and a `www.` inside a longer host name, are
+  written as given.
+- The escalation `critic.py record` prints now judges a unit's current delivery alone, as the round
+  count does, both its REJECTs and its seats' verdicts. A reopened unit's first REJECT is no longer
+  reported as a panel split against the closed delivery's APPROVE, nor as a second REJECT beside the
+  closed delivery's. In an open run the delivery is counted from the run's base for the unit, so a
+  split that a carry at the cap then drops from the batch still escalates; a closed run's base is
+  not read. Two REJECTs within one delivery still escalate.
+- `artifact.py retitle` rewrites the text of an inbound link that reads `<ID>: <old title>` to the new title, together with its new path, so an epic's Story Breakdown no longer announces the retired title. A title holding a code span or a bracket is read whole, and the escaped bracket one retitle writes is read back by the next. Any other link text, a link to another file and a link in a fenced block or code span are left alone.
+- `sprint sign` now prints, after the run is sealed, the `Refs:` trailers its paperwork commit
+  needs: a header line and then one `Refs: <id>` line for each batch unit the seal moved to its
+  terminal status, in the batch's order. A unit already terminal before the sign, or one the
+  close's retro carries and the seal leaves where it stands, is not named, and a seal that moves
+  no unit prints no header and no `Refs:` line. Pasting the block into a commit message that
+  names another unit stops the commit-msg hook's `engagement floor (attribution)` advisory for
+  each unit the seal moved.
+- `retro.py extract` no longer starts a project lessons log the committed digest outlives. With
+  `sdlc-studio/retros/LESSONS.md` absent (after any legacy `.local/lessons.md` has been moved) and
+  `LESSONS-SUMMARY.md` listing lessons, an extract that has an untagged lesson to record writes
+  nothing, the class store included, and names the missing log and how many lessons the digest
+  lists; a dry run refuses the same way. A digest that cannot be read refuses by name. A project
+  whose digest is absent or lists nothing starts its log as before, and a retro whose Try items
+  are all class tags, which writes no log, is not refused. (BG1060)
+- `retro.py validate`, and so the close's retro-validate step, now compares a retro's Batch field
+  with the batch of the run its `> **Run:**` field names and refuses a field that omits a unit of
+  that batch, naming each omitted id. A unit added with `sprint.py batch add` after the close
+  scaffolded the retro used to leave the field stale and still valid, so accuracy, the report's
+  delivery count and `close_owed` all read a subset of the run. The run is read from the live run
+  state when it is that run, else from the run archive; a run recorded in neither, a retro naming
+  no run, and a batch that is not a list are not compared, and an unreadable run state refuses by
+  name. A unit the field names that the batch does not is left as written. The retro reference's
+  list of what the close gate checks, the script catalogue's `retro.py` entry and the retro help
+  page's `retro validate` row now name the check. (BG1059)
+- `sprint close --dry-run` no longer names a batch unit the live unanswered-unit hold answers. The
+  dry run judges a scratch copy holding only `sdlc-studio/`, and the hold asked the seal's own bar of
+  that copy, which reads a unit's risk band from its Affects files and, for a light-tier APPROVE,
+  history the copy does not hold. A unit whose light APPROVE meets the bar on the real tree
+  therefore read `unfinished and not ruled` in the preview. `sprint.unanswered_units` now takes the
+  read root the dry run already carries and asks the seal's bar of the real tree, so the preview's
+  known-issues line agrees with the close it previews. (BG1058)
+- `sprint close --dry-run` no longer cuts a step's detail or remedy at 160 characters. The
+  known-issues refusal names every unit the run cannot end over on one line, and the cut landed
+  inside the second unit, so the preview could not say what held the rest. Every line of a step's
+  detail and remedy is now printed whole, so each unit's id, status and reason reaches the operator.
+  (BG1051)
+- Each cell `critic.py` cleans for a verdict ledger row (the reviewer id, author, brief, tier,
+  source and findings) now has every character Python's `str.splitlines` breaks on folded to a
+  space, not only the newline: the carriage return, vertical tab, form feed, the file, group and
+  record separators, the next-line control and the Unicode line and paragraph separators. One left
+  in a cell tore its own row, which `read_verdicts` then skipped as malformed, so the unit's
+  delivery verdict vanished from every gate.
+- The pre-commit links lane now checks the tree the commit records, not the working tree. It runs
+  `tools/check_links.py --staged`, which writes the index out to a temporary directory and runs
+  every link pass there. A staged index row, artefact body, root document or skill reference that
+  links to a file the working tree holds but the commit does not is refused as
+  `[untracked: the commit does not carry it - stage it, or drop the link]`, so the commit no longer
+  passes locally and fails CI on push. A tracked file deleted only in the working tree still
+  resolves, because the commit carries it. An unstaged edit is no longer judged. A pathspec commit
+  or `git commit -a` is judged on its own index, read through `GIT_INDEX_FILE`. A loading-guide
+  cell naming an untracked file says so. Outside a repository, or with an index git cannot read,
+  the check exits 2 with the reason. Without `--staged`, which is how CI runs it on a fresh
+  checkout, the check still reads the working tree.
+- A criterion heading with a parenthesised tag after its id, such as `### AC3 (DEFERRED)`, now
+  opens its own criterion in `verify_ac` and every other reader of the shared pattern, so its
+  `Verify:` line is no longer folded into the criterion above it, and trailing spaces after the
+  tag do not stop it, as they do not after a colon title. `### AC10: title` still opens AC10,
+  never AC1. A heading that merely starts with an id, such as `### AC1 - a test plan row`,
+  `### AC5 and AC6 were withdrawn` or `### AC5 (DEFERRED) - moved elsewhere (round two)`, is prose
+  and opens no criterion, so `validate.py check` and `verify_ac` read the repository's own
+  stories and bugs as they did before.
+- `vitest <file> -t "name"` and `jest <file> -t "name"` Verify lines now select the test they
+  name. The file stays a positional argument and only the name goes to `-t` (or
+  `--testNamePattern`), matched literally, so a `(` or `.` in a test title needs no escaping;
+  before, the whole tail was folded into the `-t` pattern and nothing matched. When the bare
+  `jest` or `vitest` binary is not on PATH, the runner is launched from the project's
+  `node_modules/.bin`, or else through `npx --no-install`. The name goes in front of the first
+  `--` on the line, where the runner still reads `-t` as the name filter. A line with no `-t`
+  keeps its old meaning: the tail is the name pattern, a regex.
+- `sprint.py breakdown` and the plan now list a Proposed CR declared Size L or XL for decomposition,
+  naming `declared Size L` or `declared Size XL` as the reason, alongside a CR sized at the split
+  ceiling in Points or touching five or more files. A CR declared Size S or M is not listed on its
+  size. reference-sprint.md now names the three signals. (BG1021)
+- The validator no longer warns pseudo-verify on the Verify line indented beneath a request's criterion, the `- **Verify:** <selector>` line `file_finding.py file --type cr --verify` writes there; it skips what `sdlc_md.VERIFY_RE`, the reader `verify_ac` uses, reads as a Verify line beneath a criterion item. Only a command in the criterion's own prose is judged, as the filer's refusal judges it, and the warning now advises keeping the command on a `- **Verify:**` line beneath the criterion. A Verify written as a `*` or `+` bullet (which that reader does not take), a flush item, one with no criterion above it and one in a later criteria section after a heading are still warned.
+- `persona_resolve.py resolve --seat` now frames a worker for any role a project seat card
+  declares, such as `sre`, as `critic.py brief` already did. It checked the role against the
+  shipped `engineering, qa, product` alone and refused the rest as an unknown seat. A role no card
+  declares and the skill does not ship is still refused with exit 2, and the refusal now lists the
+  shipped seats and every role the project declares, naming any seat card that declares no role.
+- The waiver remedy the close and the checklist print is one command that records as printed:
+  `decisions.py waive --subject rule:sprint-checklist:<item> --rationale '<why>' --authorised-by
+  '<the operator>'`.
+- `sprint_report.py checklist` reads the run record a commit holds at
+  `sdlc-studio/reports/runs/<RUN>.json`, so in a clean clone with no `.local` the rows that read the
+  run (impediments among them) read the signed run instead of saying no run record could be read.
+  Each run is read from one copy: the live record, else the committed one, else the `.local`
+  archive's, the order the report's own record reader uses. A committed copy stands in for this
+  clone's archived copy of the same run. A tie between runs goes to the newest start, then the
+  higher cycle index, then the higher run id, each read from the record itself, so two runs that
+  start in the same second read the same whichever copy, committed or archived, holds each. A
+  committed record that is not UTF-8, empty, not JSON, `{}` or not an object is skipped, one whose
+  start, cycle or cycle index has the wrong type sorts without raising, and the checklist still
+  renders; one naming none of the sprint's units is not taken. (BG1012)
+- `sprint batch add` under `sprint.affects_check: warn` says it added the unit. An `Affects`
+  entry that is a phrase rather than a path is named as not a path, with the file to name in its
+  place, by `batch add` and by `sprint plan`, its refusal under `block` included. An entry with
+  no space, such as `Makefile`, is still a path.
+- `sprint goal-review brief` now reads the open run rather than the plan snapshot. A persona the
+  run declares with `sprint plan --write --serves` appears on the brief's Goal serves line and
+  among the personas designed for, with its End goals, whatever the goal's own wording traces to;
+  before, the brief re-traced only the goal's wording and listed only Primary and Secondary
+  personas, so a declared Served persona was missing and the goal could read as serving nobody.
+  The brief's batch line now counts the open run's batch, units added with `sprint batch add` after
+  the plan was written included, where it used to repeat the count the plan was written with.
+- The caller check (`critic.py caller-check`, and the line `sprint close` prints from it) now
+  resolves a Caller naming a Python script of the loaded skill, such as `decisions.py waive`, in a
+  project whose own tree does not hold that script. The script is looked up by its file name, named
+  bare or directly under a `scripts/` directory. A project path that only shares a script's file name
+  (`src/gate.py`) and a file of the skill that is no script (its `README.md`) are still reported
+  unresolved, as is a name found in neither tree, and a bare word or a stem never resolves against
+  the skill.
+- A per-unit engagement-floor waiver recorded under the id as it is written, dash included
+  (`decisions.py waive --subject rule:engagement-floor:BG-01JQK3F8`), now waives that unit. The
+  floor looked the waiver up under the dashless id only, so the waiver was recorded and waived
+  nothing. It now matches the subject's id by the normalised key, so the dashed and the dashless
+  spellings, in any case, waive the same one unit and no other, a dashed sequential id such as
+  `US-0100` included. A waiver already recorded with the dash starts to apply, and the decisions
+  log is not rewritten: its subject keeps the dash.
+- The finding filer no longer pulls a sentence's closing punctuation into the code span it wraps
+  around an identifier: in `(API_KEY_2, TOKEN_V2) is reported` and `ends with keep_alive.` the `)`
+  and the full stop now stay outside the span. A call keeps the parentheses it opens and closes
+  itself, as in `resolve_canonical(x)`.
+- `refine.py apply` no longer seeds a duplicated label from a request whose criteria are written
+  `**AC1** text` or `**AC1:** text`, the rows the skill writes for a bug's and a story's criteria,
+  which a request copied from one carries: the seeded heading reads `### AC1: text`, for a label
+  of any number of digits, `**AC10**` included. A label closed in bold now strips with a separator
+  inside the bold, after it, or none; a plain label still needs a separator, as before. A
+  criterion that opens on a bold phrase, such as `**AC1 is met** when`, keeps its text.
+- The close's goal judgement now reaches the sprint report the signer is told to read. `sprint
+  close` records the goal panel's verdict with its per-clause verdicts, the count of blocking and
+  leavable defects, each open defect ruled blocking with its reason, and the caller-check line on
+  the run, and the report carries them in a Goal judgement section of their own, in the JSON of
+  record and first in the appendix of both the Markdown twin and the HTML page, so a later
+  re-derivation reads what the close recorded. An item the close could not judge says why. The Known issues table still lists
+  open findings only, and a page whose close recorded no judgement carries no such section and
+  re-derives unchanged. `critic.judge_defects_against_goal` now tags each blocking defect with a
+  `basis` of `clause` or `priority`, and a priority-floor defect's reason no longer says it blocks
+  the close, which does not refuse on it: the close prints `WOULD BLOCK A RELEASE` or `BLOCKS THE
+  GOAL CLAIM` before each blocking defect it lists, the first eight, and the report labels every
+  blocking defect's row `would block a release` or `blocks the goal claim`. The evidence schema catalogues the section and its row keys. (BG0987)
+- `tools/forward-port.sh` no longer deletes the installed skill's `CHANGELOG.md`. The installer
+  copies the repository's changelog in so `project upgrade` can digest it offline, and the mirror's
+  delete sweep removed it on every port. The sweep now spares that one root file, `--yes` copies
+  the repository's current `CHANGELOG.md` over it as the installer does, and `--check` counts a
+  copy that lacks it or holds a different one as one differing file. Every other stray, a nested
+  `CHANGELOG.md` included, is still swept.
+- `sprint close --dry-run` no longer previews a non-blocking pre-flight row as a refusal. A row that
+  says it does not hold the close, such as the gate's review-current lane reporting cadence debt, is
+  shown as a `note` line labelled `reported not blocking`, as the close's own pre-flight report
+  labels it, and is not counted: a dry run whose only pre-flight row is advisory prints no `STOP`
+  line, says `dry run CLEAN` and exits 0, and still previews the gate step as run. A blocking row,
+  or one that carries no flag, still previews as a `STOP` refusal and the dry run exits 1. (BG0985)
+- Review coverage now reads only the open run's own review of a unit. `critic.verdict_for`, which
+  `sprint.review_coverage`, the close's closing-review row and the seal's bar all read, takes a unit
+  the open run holds from its rows past the run's `REVIEW_BASE`, as `critic.delivery_rounds` counts
+  its rounds, and reads no APPROVE for a unit the run holds and has not yet reviewed. An APPROVE an
+  earlier delivery recorded therefore no longer covers a reopened bug or a story moved back into a
+  later run, and the close's closing-review row reads not run until the run reviews it. A REJECT
+  its own reviewer has not answered still stands from any delivery: another reviewer's APPROVE in a
+  later run does not discharge a carried unit, which reaches Done or Fixed only on the rejecting
+  reviewer's APPROVE, and a frozen batch review does not cover a held unit over it. An APPROVE
+  recorded in the run still covers the unit, and outside a run, in a run that has ended, for a unit
+  no open run holds, or with a run state that cannot be read, the whole ledger is read as before.
+  (BG0983)
+- `critic.py brief` now names, in a "Changed but not declared" block beneath the diff scope, each
+  file the unit's commits since the base changed outside its Affects, and asks for the Affects to be
+  corrected. A unit's commits are the ones `verify_ac` already counts as its own, whose subject or a
+  `Refs:` line names it. A file such a commit changes that another unit it names the same way
+  declares is that unit's, so a commit landing several units does not list one unit's files against
+  another. The workspace's records under `sdlc-studio/`, which status and review bookkeeping commits
+  write under the unit's id, are left out, and each path is read from the project's root, as Affects
+  are, in a project below its repository's top too. A declared file covers only itself and a
+  declared directory what lies beneath it, so a file whose name merely starts with a declared one is
+  named, and a file the unit renamed into its Affects is named by the path it left. The diff the
+  brief carries and names stays bounded to the Affects, and a unit whose changes all sit inside its
+  Affects gets no block. Git unable to list the commits is said in the block rather than read as no
+  undeclared change.
+- A Verify line `verify_ac.py run` cannot parse now leaves its unit ungroomed. The grooming gate
+  `sprint.py breakdown` and `sprint.py plan` share asked only whether a criterion carries a Verify
+  line, so a line wrapping its expression in backticks or naming a verb the runner does not know
+  was planned as groomed and refused only at build time. `conformance.unit_is_ungroomed` now asks
+  the runner's own parser, through the new `verify_ac.parse_refusal`, of every Verify line in the
+  criteria the runner judges, and reports such a unit ungroomed as `unparseable-verifier`;
+  `breakdown` names each refused criterion with the runner's own message, and `plan --write`
+  refuses the batch and opens no run. A DSL verb, `shell`, `eval` or a `manual` marker still
+  counts as groomed. (BG0981)
+- `critic.py brief --rejoinder` given no `--tier` now briefs the re-review at the tier the seat's
+  standing REJECT was recorded at when that is deeper than the tier the unit's risk band derives,
+  whether the prior verdict comes from a file or from the ledger. The footer names that REJECT as
+  the tier's source (`review tier: full (inherited from <reviewer>'s REJECT of <unit> (<date>), the
+  verdict this re-review answers)`), and the record command carries the tier. An explicit `--tier`
+  is kept as chosen, and a REJECT no deeper than the band, or recorded with no tier, leaves the
+  band's tier.
+- The finding filer (`file_finding.py file`) now markdown-safes a finding's title and its Evidence
+  line the way it safes the prose fields: a bare `snake_case` or leading-underscore identifier is
+  written inside a code span in the H1, in the index row and on the Evidence line, and the rest of
+  the text is kept as written. Before, a title such as `_mode_and_cutoff and _check disagree` was
+  written bare, and markdownlint refused the new bug file and its index row with MD037. The file
+  name is still slugged from the title's words. Wherever the filer safes text, a markdown link's
+  destination is now left as written when it reads as a path or URL, holding no whitespace and
+  holding a `/`, `.`, `#` or `:`, or when it sits in angle brackets, together with any quoted
+  title after it. So a link to an underscored file such as
+  `[the filer test](scripts/tests/test_file_finding.py)` keeps working, and its link text is
+  still safed. A bracket before any other parenthetical, such as `handlers[kind](_row, _seat)`,
+  is safed as prose, so its identifiers are written inside code spans.
+- `artifact.py new` no longer prints the NOT FINISHED acceptance-criteria warning for a record whose template has no Acceptance Criteria section (a review, a retro, an epic), whatever slot text its title or body holds. The warning is given only when the file has that section and a placeholder sits in its first 400 characters.
+- `critic.py brief` now warns on stderr when the unit's Affects hold uncommitted changes, naming
+  each path (modified, staged, deleted or untracked, a declared directory's files included) and
+  saying an isolated reviewer will not see them: a reviewer's worktree is made from HEAD and judges
+  the unit without them. Each path is named from the project's root, as its Affects are, in a
+  project below its repository's top too. A clean tree prints no warning, the review tooling's own
+  writes and the verdict files reviewers write under `sdlc-studio/reviews/verdicts/` are not named,
+  and git unable to give a status is said rather than read as a clean tree. The brief also records
+  the commit it was cut at, in its note beside the fingerprint and on a `brief cut at commit:` line
+  beneath the fingerprint line, so a verdict recorded against that fingerprint can be matched to
+  the revision it judged. The re-review brief does both. Outside a repository neither the warning
+  nor a commit is given.
+- `sprint close --file-and-close --goal-verdict` is refused before anything is filed, naming
+  `sprint.py goal-verdict` as the way to record the verdict first. The verdict was dropped in
+  silence and the close then refused the goal as unjudged.
+- CI's suite step no longer lets a failing skill suite stop tools/tests from running. The two
+  suites ran one after the other in one `run:` block, whose shell stops at the first failing
+  command, so a red skill suite hid every tools/tests result. The step now holds the skill
+  suite's exit status, runs tools/tests whatever it was, and fails on either suite's failure, and
+  a test runs the step itself with each suite failing in turn.
+- The finding filer (`file_finding.py file`, including the Steps section it adds to a CR) and
+  `artifact.py new` and `batch` now write a bug's Steps to Reproduce exactly as its author gave
+  it, so a repro command copied out of the filed bug still runs. Before, the markdown-safety pass
+  back-ticked identifiers such as `sdlc_md` inside a command, which the shell then read as command
+  substitution, and a later attempt to tell commands from prose fenced some lines and misread
+  others. The filer no longer tells a command from prose in the Steps: it adds no backtick, fence,
+  list marker or indentation there, drops no `$` prompt, and leaves names and URLs unquoted. What
+  the author fenced or back-ticked stays as they wrote it. Two changes remain, and neither tells a
+  command from prose. A metadata declaration such as `**Waived:**` opening a line (after an
+  optional `>`) or following a ` · ` has its bold markers escaped, inside a fenced block the
+  author wrote too, because the bug's field reader takes such a declaration there for a field and
+  no filed step may declare a field the bug's head did not. A fenced block the author left open is
+  closed after the value on its own marker, so it cannot swallow the sections below. The creators
+  still label a bare fence opener `text`, as before. The cost is lint, not a broken command: a
+  name markdown reads as emphasis (`__init__`), a bare URL or a `#` line in an unfenced command
+  is no longer rewritten, so markdownlint reports it at its line, and the author back-ticks the
+  name or fences the command. The `--steps` help of both commands says so. The Summary, Proposed
+  Fix, Impact and Recommendation fields are safed as before.
+- A `shell` Verify line can now reach a skill script through the `<skill>` placeholder, as in
+  `shell test -f <skill>/scripts/verify_ac.py`. verify_ac puts the skill directory it was
+  loaded from in its place just before the command runs, quoted, so a directory holding a space
+  stays one argument, and the artefact keeps the placeholder rather than one machine's install
+  path. Before, the shell read the bare placeholder as an input redirect from a file called
+  `skill`, so every such check failed before it ran. The placeholder expands bare, inside
+  double quotes and inside `$(...)`, and stays literal inside single quotes and inside ANSI-C
+  `$'...'` quoting, where an escaped quote does not end the string. Backticks are not tracked.
+- `sprint plan` refused for a missing `Verify` line now prints the `Verify` repair under each
+  criterion, with a manual form for a criterion only a person can check. A unit that lacks only
+  a verifier is no longer shown the `Affects` and `Points` fields as its fix.
+- On a schema v3 project the engagement floor takes a v3 id as its
+  `engagement_floor.adopt_after` cutoff (`BG-01KXB3QF`) where it raised `ValueError` and told you
+  to set a sequential one. It reads the cutoff and compares it as `conformance.adopt_after` does:
+  an id minted in an earlier timestamp bucket, and the cutoff id itself, are grandfathered;
+  another id in the cutoff's bucket and every later one are judged; on a migrated project the
+  sequential ids are grandfathered under it. A v3 cutoff in a bucket the clock has not reached is
+  refused as a forward disarm, as a numeric cutoff above the highest existing id already is. So is
+  a v3 cutoff on a project before schema v3, which still mints the sequential ids it would exempt:
+  the refusal says so and names the bare and prefixed forms. A numeric cutoff judges exactly as
+  before, and the printed remedy names a v3 id as a legal cutoff on schema v3 beside the bare and
+  prefixed sequential ones, and says one is refused before schema v3.
+
+  Where a cutoff is no id at all, the refusal now names the v3 form among those accepted, for the
+  floor on a schema v3 project and for `conformance.adopt_after`, which also take one; a caller
+  that takes no v3 id gives the refusal it gave before. `migrate.py` no longer says no cutoff can
+  reach a unit with a v3 id: it says a numeric cutoff cannot, that on a schema v3 project a v3
+  cutoff can but also exempts every sequential id and, within its own timestamp bucket, only
+  itself, and that before schema v3 the floor refuses one.
+- The epic index test's negative control no longer needs a live epic row to mutate. With every epic
+  row archived it takes a row from the archive sub-indexes, writes it blanked into the live table of
+  a copy, and still requires the sweep to report exactly that row. Before, the control stopped on an
+  exhausted search the day archiving emptied the live index. With live rows present it behaves as
+  before.
+
+  A second test pins the live-rows route: with one live row and one archived row it requires the
+  live row blanked in place and no row added to the live index.
+- `transition.py set` and `reconcile apply` now rewrite a unit's row where `archive.py` moved it.
+  A bug closed after its row was archived to `archive/<release>/bug.md` had its live summary
+  counts recomputed while the archived row kept its old status, so `transition.py` reported
+  `index synced=False`, `reconcile detect` reported a status mismatch and a count mismatch, and
+  `reconcile apply` refused the row as "not in a rewritable layout", leaving drift only a hand edit
+  cleared. The writer now changes the Status cell of the archived row the census reads, and only
+  that cell, keeping a hand-aligned table aligned and the file's final newline as it was. A
+  unit with a live row has only its live row written, its archived row left as it is, because
+  the census reads the live one. An archived row no writer can place, such as one in a table with
+  no header, is still reported as unsynced and named by `reconcile apply`.
+- `transition.py set --status Done` now refuses a Draft or Proposed story that misses the
+  Definition of Ready `sprint plan` applies, naming each unmet item: no `Affects`, an `Affects`
+  none of whose paths `sprint plan` can resolve while at least one is a typo for a file that
+  exists elsewhere (only the typos are named), or no `Points` on the scale. One typo beside a path
+  that resolves goes through, as does an `Affects` of new files whose names exist nowhere. Before,
+  a story could go from Draft to Done on green criteria alone. `transition.py requirements` lists
+  the same items. A recorded `> **Decision-Override:** <reason>` on the story lets the move through
+  and the reason is reported, `sprint.breakdown: judgement` reports the items instead of refusing,
+  and `--force` waives the check with the override recorded on the story. The project's
+  `definition-of-ready.md` decides which of the two checks enforce: an item whose check its Story
+  section leaves untagged goes through, and `set` reports it as downgraded to human judgement
+  rather than dropping it silently. Only the direct move is asked: a story at Ready or later is not,
+  and a Draft story set to Ready first is not asked on either step. Won't Implement, Deferred and
+  Superseded stay reachable from Draft.
+- An Open Questions item written `- [ ] - None.`, with an en dash or with an em dash before `None`
+  or `n/a`, now declares there are no questions, as the plain `None` always did, so a terminal
+  artefact carrying one is no longer refused for an unanswered question. A question that merely
+  starts with the letters, such as `Nonetheless, ...`, is still reported.
+- An inline ruling written as `ruled: yes` or `**Decided:** no` is now read as a ruling. The
+  pattern that recognises a ruling recorded on an Open Question item put a word boundary after the
+  colon, so only the unspaced `ruled:yes` matched and the spaced and bold forms were reported as
+  unanswered questions. A ruling that names an artefact is still held to that artefact.
+- `validate.py check --emit-baseline placeholder` now prints the placeholder baseline record, one
+  `ID:{{token}}` line for each distinct body placeholder of an artefact at a terminal status, ready
+  to redirect into `sdlc-studio/.placeholder-baseline.txt`. The bare `--emit-baseline` (or
+  `--emit-baseline criteria`) still prints only the criteria record, so each record goes to its
+  own file, and a finding the record already waives is printed again so a re-capture keeps it.
+  Before, nothing printed the placeholder record and a project upgraded from an older skill could
+  only clear those errors by writing the file by hand. The baseline now matches a schema 3 id
+  (`US-01JQK3F8`) as it does a v2 one, spelled with or without its dash, and no longer reads a
+  five-digit id as its four-digit prefix. The waiver stays per token: a placeholder the record
+  does not list still errors beside ones it does.
+
 ## [6.4.0] - 2026-11-16
 
 ### Added

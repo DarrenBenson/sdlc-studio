@@ -620,7 +620,7 @@ class TsdRefreshTests(unittest.TestCase):
     def test_the_header_and_history(self):
         """AC4. Mutants: the baseline back at v6.0.0 or the work on main at 6.1; the stale
         v6.2.0 plus 6.3 put back, or the Coverage line removed (US1139); the stale v6.3.0 plus
-        6.4 put back (US1173); the status
+        6.4 put back (US1173), or v6.4.0 plus 6.5 (US1330); the status
         restored to the generated wording or set to a value the foot does not define; two
         revision-history rows swapped."""
         self.assertEqual([], header_problems(self.tsd))
@@ -639,6 +639,9 @@ class TsdRefreshTests(unittest.TestCase):
                       header_problems(stale))
         stale = mutate(self.tsd, coverage.group(0), "**Coverage:** v6.3.0 as cut, plus the 6.4 work")
         self.assertIn(f"the TSD names v6.3.0; SKILL.md is {coverage.group(1)}",
+                      header_problems(stale))
+        stale = mutate(self.tsd, coverage.group(0), "**Coverage:** v6.4.0 as cut, plus the 6.5 work")
+        self.assertIn(f"the TSD names v6.4.0; SKILL.md is {coverage.group(1)}",
                       header_problems(stale))
         self.assertTrue(header_problems(mutate(self.tsd, coverage.group(0), "")),
                         "the header passes with its Coverage line removed")

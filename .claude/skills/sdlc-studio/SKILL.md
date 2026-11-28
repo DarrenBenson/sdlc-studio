@@ -4,7 +4,7 @@ description: "The antidote to vibe coding: a full software engineering team. Cre
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Needs no particular harness: --agentic runs its waves in parallel where the harness has sub-agents with worktree isolation, and the same stories one at a time in dependency order elsewhere."
 metadata:
-  version: "6.4.0"
+  version: "6.5.0"
   openclaw: { "emoji": "📋", "requires": { "bins": ["python3"] } }
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---
