@@ -1,6 +1,6 @@
 # BG1779: A repair's recreated worktree holds no approach note, so the solution review gate refuses its land
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py, changelog.d/BG1779.md
@@ -29,8 +29,10 @@
 
 - [ ] **AC1** The behaviour described is corrected: `sprint lane` recreates a refused unit's worktree for its repair with `restore_for_repair` (lib/lanes.py), which restores the staged diff and the hand-in but...
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note
+  - **Verified:** yes (2026-11-28)
 - [ ] **AC2** The proposed fix lands, pinned by a test: `restore_for_repair` copies the unit's approach note back into the recreated worktree's sdlc-studio/.local/lane/, so the recorded GO still binds to the same...
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note
+  - **Verified:** yes (2026-11-28)
 
 ## Revision History
 

@@ -1,0 +1,6 @@
+UNIT: US1353
+BRIEF: e93d870bd21a-a4414413
+VERDICT: APPROVE
+ISSUES: [new] the no-run refusal still reads redundantly: "no run is open, so X's qa seat agent's spend was not recorded - nothing was recorded" says it twice (critic.py approach_spend, the no-run return), cosmetic and the words stay true
+BLOCKING: none
+RULINGS: Judged the original diff plus 41fed6f03. The repair's claims hold by execution of the unit's suite and the surface check\: a transcript the run holds against another unit or none is refused with exit 2 and the holder named, an off-batch unit is recorded with a stderr WARNING, and the catalogue, fragment and --seat help say the seat is stripped. BG1780 and BG1783 not re-raised.

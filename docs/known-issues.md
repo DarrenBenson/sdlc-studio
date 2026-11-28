@@ -89,11 +89,9 @@ buy honestly.
 | `BG1755` | Low | The prose escaper spans a bare URL written straight against an author's code span so the two spans touch |
 | `BG1756` | Low | A plan refused for a criteria problem other than a missing Verify line names only the Affects and Points template |
 | `BG1757` | Low | A commit can stage a review-ledger row whose ruling cites a decision the commit does not carry |
-| `BG1779` | Low | A repair's recreated worktree holds no approach note, so the solution review gate refuses its land |
-| `BG1780` | Low | `critic.recorded_seat` reads a reviewer's first role group, so a persona named with a parenthetical can be recorded as another seat |
-| `BG1783` | Low | `critic.py approach panel` reports a seat's latest GO without saying it is on an older note, and its roster tells seats to record while their brief... |
+| `BG1786` | Low | Two `sprint lane return --agent` calls for one agent transcript count its priced spend twice in the run |
 
-49 findings: 0 Medium, 49 Low.
+47 findings: 0 Medium, 47 Low.
 
 ## Not carried
 

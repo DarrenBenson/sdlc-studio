@@ -1,0 +1,4 @@
+VERDICT: APPROVE
+ISSUES: [pre-existing] approach brief and approach panel still print raw OSError text for an unreadable note (known, not re-raised here)
+BLOCKING: none
+RULINGS: Product reading. Executed recorded_seat over cells: "Sam Eriksson (QA) (persona)" reads persona, "A (qa) + B (product)" reads qa, "A (product) + B (qa) + C (engineering)" reads product, "Lena Marsh (product seat)" reads product. Replayed every Reviewer and Author cell of critic-verdicts.md, solution-reviews.md and author-self-checks.md through the old and new readers: zero cells change seat, so the ledger's three-seat cells read as before. test_solution_review_panel.py and test_solution_review_panel_brief.py pass (33 passed, 18 subtests). The unreadable-note refusal names the note and the reason in words with no Errno, exit 2, nothing written (the test covers non-UTF-8 and mode 000, then a positive control records once readable). Changelog and commit claims for BG1780 are TRUE by execution.

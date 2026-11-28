@@ -1,0 +1,4 @@
+VERDICT: APPROVE
+ISSUES: [pre-existing] approach brief and approach panel still print raw OSError text for an unreadable note (known, not re-raised here)
+BLOCKING: none
+RULINGS: Product reading. The named behaviours are pinned and pass by execution (test_solution_review_panel_brief.py and test_solution_review_panel.py, 33 passed): a GO recorded on an older note is marked on the roster with its digest and the note's digest now, the roster and a seated brief's Rules both say the orchestrator records each reply and a seat writes only its reply file, and a malformed panel such as [qa, nobody] now warns once on stderr and refuses only a unit that takes the solution review while another unit's lane brief prints. The roster mark applies to a GO only, which matches the promise (a CHANGES on an older note is not read as agreement). Changelog and commit claims for BG1783 are TRUE by execution of the named tests.

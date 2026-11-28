@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 49 |
+| Open | 47 |
 | In Progress | 0 |
-| Fixed | 1266 |
+| Fixed | 1269 |
 | Verified | 0 |
 | Closed | 88 |
 | Won't Fix | 324 |
 | Superseded | 58 |
-| **Total** | **1785** |
+| **Total** | **1786** |
 
 ## All Bugs
 
@@ -854,13 +854,14 @@
 | [BG1776](BG1776-bg1768-did-not-converge-in-review-round-2.md) | BG1768 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
 | [BG1777](BG1777-us1344-did-not-converge-in-review-round-2.md) | US1344 did not converge in review: round 2 REJECT findings | Fixed | Low | 2026-11-27 | 2026-11-27 |
 | [BG1778](BG1778-rpt0028-was-signed-under-the-operator-s-delegation.md) | RPT0028 was signed under the operator's delegation, and nothing discloses it | Fixed | Low | 2026-11-27 | 2026-11-27 |
-| [BG1779](BG1779-a-repair-s-recreated-worktree-holds-no-approach.md) | A repair's recreated worktree holds no approach note, so the solution review gate refuses its land | Open | Low | 2026-11-27 | 2026-11-27 |
-| [BG1780](BG1780-critic-recorded-seat-reads-a-reviewer-s-first.md) | `critic.recorded_seat` reads a reviewer's first role group, so a persona named with a parenthetical can be recorded as another seat | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1779](BG1779-a-repair-s-recreated-worktree-holds-no-approach.md) | A repair's recreated worktree holds no approach note, so the solution review gate refuses its land | Fixed | Low | 2026-11-27 | 2026-11-27 |
+| [BG1780](BG1780-critic-recorded-seat-reads-a-reviewer-s-first.md) | `critic.recorded_seat` reads a reviewer's first role group, so a persona named with a parenthetical can be recorded as another seat | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1781](BG1781-escape-py-became-a-tree-walking-scanner-in.md) | escape.py became a tree-walking scanner in US1234, and its bare bug-file read at line 224 now fails the repository's bare-read sweep | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1782](BG1782-test-lint-corpus-pins-rfc0064-at-accepted-but.md) | `test_lint_corpus` pins RFC0064 at Accepted, but its status is derived from its children and reconcile moved it to Delivered | Fixed | Low | 2026-11-28 | 2026-11-28 |
-| [BG1783](BG1783-critic-py-approach-panel-reports-a-seat-s.md) | `critic.py approach panel` reports a seat's latest GO without saying it is on an older note, and its roster tells seats to record while their brief forbids it | Open | Low | 2026-11-28 | 2026-11-28 |
+| [BG1783](BG1783-critic-py-approach-panel-reports-a-seat-s.md) | `critic.py approach panel` reports a seat's latest GO without saying it is on an older note, and its roster tells seats to record while their brief forbids it | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1784](BG1784-a-parallel-sprint-drive-wave-can-run-one.md) | A parallel `sprint drive` wave can run one unit's paperwork commit while another unit's step runs git in the root, and the commit dies on index.lock | Fixed | Low | 2026-11-28 | 2026-11-28 |
 | [BG1785](BG1785-two-test-modules-print-a-diagnostic-on-a.md) | Two test modules print a diagnostic on a green run, so main's full suite is over its noise budget and the push gate refuses it | Fixed | Low | 2026-11-28 | 2026-11-28 |
+| [BG1786](BG1786-two-sprint-lane-return-agent-calls-for-one.md) | Two `sprint lane return --agent` calls for one agent transcript count its priced spend twice in the run | Open | Low | 2026-11-28 | 2026-11-28 |
 
 ## Archived Releases
 

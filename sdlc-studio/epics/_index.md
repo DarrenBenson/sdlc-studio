@@ -9,8 +9,8 @@
 | Draft | 59 |
 | Ready | 0 |
 | Approved | 0 |
-| In Progress | 9 |
-| Done | 284 |
+| In Progress | 7 |
+| Done | 286 |
 | Superseded | 34 |
 | **Total** | **386** |
 
@@ -129,14 +129,14 @@
 | [EP0376](EP0376-review-in-this-repository-treats-a-change-to.md) | Review in this repository treats a change to a gate as high risk | Done | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0377](EP0377-harness-agnostic-enterprise-ready-public-surfaces.md) | Harness-agnostic, enterprise-ready public surfaces | Done | 7 | -- | 2026-11-18 | 2026-11-18 |
 | [EP0378](EP0378-guards-against-the-costs-runs-keep-paying-a.md) | Guards against the costs runs keep paying: a misread cost line, duplicate filings, generic subagents and tests outside Affects | In Progress | 4 | -- | 2026-11-23 | 2026-11-23 |
-| [EP0379](EP0379-v6-5-0-ships-with-paperwork-that-matches.md) | v6.5.0 ships with paperwork that matches the code | In Progress | 8 | -- | 2026-11-25 | 2026-11-25 |
+| [EP0379](EP0379-v6-5-0-ships-with-paperwork-that-matches.md) | v6.5.0 ships with paperwork that matches the code | Done | 8 | -- | 2026-11-25 | 2026-11-25 |
 | [EP0380](EP0380-the-run-breaker-reads-spend-warnings-at-75.md) | The run breaker reads spend: warnings at 75 and 95 per cent, a clean stop at 100, and a raise on the record | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0381](EP0381-the-run-report-sets-each-role-s-cache.md) | The run report sets each role's cache-read share against earlier runs, and the retro explains a fall | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0382](EP0382-routing-effort-sets-an-effort-per-kind-of.md) | routing.effort sets an effort per kind of unit, and the plan and the lane brief carry each unit's | Done | 1 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0383](EP0383-the-cost-anatomy-measures-cache-re-writes-after.md) | The cost anatomy measures cache re-writes after the cache lifetime, per role, on the page | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0384](EP0384-the-person-owns-every-document-and-the-seats.md) | The person owns every document, and the seats check the work under delegated authority | Done | 2 | -- | 2026-11-26 | 2026-11-26 |
 | [EP0385](EP0385-a-seat-reviews-a-builder-s-approach-before.md) | A seat reviews a builder's approach before it writes code, and the code review stays independent | Done | 5 | -- | 2026-11-26 | 2026-11-26 |
-| [EP0386](EP0386-a-subagent-carries-one-persona-and-a-unit.md) | A subagent carries one persona, and a unit's solution review is a panel of one agent per seat and its stakeholder | In Progress | 5 | -- | 2026-11-27 | 2026-11-27 |
+| [EP0386](EP0386-a-subagent-carries-one-persona-and-a-unit.md) | A subagent carries one persona, and a unit's solution review is a panel of one agent per seat and its stakeholder | Done | 5 | -- | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US1330: v6.5.0 is cut: version, changelog, install pins and the specs' baseline
 
-> **Status:** Ready
+> **Status:** Done
 > **Depends on:** US1327, US1328, US1329, US1331, US1233, US1341, US1342, US1343, BG1765
 > **Release:** 6.5
 > **Created:** 2026-11-25
@@ -39,6 +39,7 @@ describe are the same release
   CHANGELOG range from the `[6.5.0]` heading to the `[6.4.0]` heading as holding US1321 (rechecked at the cut) and
   not the sentence ending 'in every project whose cast holds no Sam'.
   - **Verify:** shell python3 tools/check_versions.py --strict && python3 -m pytest -q tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_every_version_home_and_the_section_name_650
+  - **Verified:** yes (2026-11-28)
 - **AC2:** Given README, docs/INSTALL.md and docs/enterprise.md, then every install and version
   example pins `--version v6.5.0` (`-Version v6.5.0` in PowerShell); README links the 6.5.0 notes
   and its release-notes list calls 6.5.0, and only 6.5.0, the current release; and the 6.5.0 notes'
@@ -46,12 +47,14 @@ describe are the same release
   pinned at v6.4.0, and enterprise.md's "Pin a release" line at `v6.4.0`, which no test reads, as at
   HEAD; two releases called current.
   - **Verify:** shell grep -qE '[]][(]docs/release-notes-v6[.]5[.]0[.]md[)]' README.md && python3 -m pytest -q tools/tests/test_lean_public_docs_retired.py tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_notes_link_the_650_section tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_every_install_pin_names_the_release
+  - **Verified:** yes (2026-11-28)
 - **AC3:** Given the PRD, TRD and TSD at the commit that cut 6.5.0, then each Coverage line, and the
   PRD's inventory baseline, reads v6.5.0 as cut, plus the 6.6 work on `main`; the refresh tests read
   that baseline from package.json through `release_baseline()` and refuse the stale "v6.4.0 as cut,
   plus the 6.5 work" as they refuse 6.3's. Fails on: the specs at HEAD, whose Coverage lines read
   v6.4.0 as cut; a refresh test that passes with the 6.4.0 baseline put back.
   - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_release_cut_v65.py::ReleaseCutTests::test_the_specs_name_650_as_cut tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py
+  - **Verified:** yes (2026-11-28)
 
 ## Notes
 

@@ -1,0 +1,52 @@
+{
+  "unit": "BG1779",
+  "digest": "10baa2e89619c363 at 3dda3f4a0ad2",
+  "report": "sdlc-studio/.local/lane/landed/agent-a134cad5cd1484914/BG1779-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "never copy the note",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if kept.is_file():\n        (path / HAND_IN)",
+      "new": "    if False:\n        (path / HAND_IN)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy from the wrong keep directory",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "kept = root_top / LANDED / names[at] / name",
+      "new": "kept = root_top / LANDED / name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "write under the wrong name",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "shutil.copyfile(kept, path / HAND_IN / name)",
+      "new": "shutil.copyfile(kept, path / HAND_IN / (name + '.x'))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the line no longer says the note was restored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "restored the approach note {name}",
+      "new": "restored it {name}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_repair_s_recreated_worktree_holds_the_kept_note",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "copy even when no note was kept",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if kept.is_file():\n        (path / HAND_IN)",
+      "new": "    if True:\n        (path / HAND_IN)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_solution_review_land.py::SolutionReviewLandTests::test_a_unit_with_no_kept_note_gets_none",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

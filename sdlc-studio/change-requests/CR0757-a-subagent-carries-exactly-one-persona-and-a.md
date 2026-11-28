@@ -1,6 +1,6 @@
 # CR-0757: A subagent carries exactly one persona, and a unit's solution review is a panel with one agent per seat and its stakeholder
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0386
 > **Priority:** High
 > **Type:** Feature

@@ -1,6 +1,6 @@
 # US1353: A seat agent's spend on a unit's solution review is recorded against the unit, so its tokens per unit count every seat
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0757
 > **Created:** 2026-11-27
@@ -39,6 +39,7 @@ As a head of engineering who holds delivery to a monthly budget, I want each sea
   though no code had been written; and `retro.py accuracy --delegated-tokens` records a supplied
   total that is never priced (E14)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_each_seat_agent_s_spend_is_added_to_the_unit_once
+- **Verified:** yes (2026-11-28)
 
 ### AC2: an agent with no readable transcript records nothing
 
@@ -50,6 +51,7 @@ As a head of engineering who holds delivery to a monthly budget, I want each sea
   third exits 1 saying no run is open, recording nothing
 - **Fails on:** HEAD plus US1344, where `approach spend` is an invalid choice (E5)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_an_agent_with_no_readable_transcript_records_nothing
+- **Verified:** yes (2026-11-28)
 
 ### AC3: the panel and the catalogue name the spend command
 
@@ -62,6 +64,7 @@ As a head of engineering who holds delivery to a monthly budget, I want each sea
 - **Fails on:** HEAD plus US1344, where `approach panel` and `approach spend` are invalid choices
   (E5), and the catalogue and the surface page have 0 matches for "approach spend" (E17)
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_solution_review_spend.py::SolutionReviewSpendTests::test_the_panel_and_the_catalogue_name_the_spend_command
+- **Verified:** yes (2026-11-28)
 
 ## Notes
 

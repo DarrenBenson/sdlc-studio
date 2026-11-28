@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 153 |
-| Ready | 2 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 1008 |
+| Done | 1010 |
 | Won't Implement | 96 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -367,7 +367,7 @@
 | [US1327](US1327-the-v6-5-release-notes-lead-with-what.md) | The v6.5 release notes lead with what changed for the person answering for the release | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1328](US1328-the-help-upgrade-and-public-pages-describe-what.md) | The help, upgrade and public pages describe what 6.5 ships | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1329](US1329-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.5 ships | Done | EP0379 | 2026-11-25 | 2026-11-25 |
-| [US1330](US1330-v6-5-0-is-cut-version-changelog-known.md) | v6.5.0 is cut: version, changelog, install pins and the specs' baseline | Ready | EP0379 | 2026-11-25 | 2026-11-25 |
+| [US1330](US1330-v6-5-0-is-cut-version-changelog-known.md) | v6.5.0 is cut: version, changelog, install pins and the specs' baseline | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1331](US1331-v6-5-0-discloses-what-it-ships-with.md) | v6.5.0 discloses what it ships with: the known-issues page under the operator's bar, and the evidence page through the last signed run | Done | EP0379 | 2026-11-25 | 2026-11-25 |
 | [US1332](US1332-loop-guard-budget-stops-a-run-on-spend.md) | `loop_guard` budget stops a run on spend as well as minutes and units, warning at 75 and 95 per cent | Done | EP0380 | 2026-11-26 | 2026-11-26 |
 | [US1333](US1333-sprint-plan-stamps-the-spend-appetite-on-the.md) | sprint plan stamps the spend appetite on the run, and raising it mid-run names a recorded decision | Done | EP0380 | 2026-11-26 | 2026-11-26 |
@@ -390,7 +390,7 @@
 | [US1350](US1350-a-project-names-the-seats-on-a-unit.md) | A project names the seats on a unit's approach panel, each records its own verdict in its own rounds, and the approach is agreed only when every one has a GO | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1351](US1351-critic-py-approach-panel-names-one-brief-and.md) | critic.py approach panel names one brief and one reply file per seat, and approach brief frames the unit's stakeholder persona | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 | [US1352](US1352-sprint-lane-brief-relays-each-seat-s-reply.md) | sprint lane brief relays each seat's reply to the builder, and this repository seats a three-member approach panel | Done | EP0386 | 2026-11-27 | 2026-11-27 |
-| [US1353](US1353-a-seat-agent-s-spend-on-a-unit.md) | A seat agent's spend on a unit's solution review is recorded against the unit, so its tokens per unit count every seat | Ready | EP0386 | 2026-11-27 | 2026-11-27 |
+| [US1353](US1353-a-seat-agent-s-spend-on-a-unit.md) | A seat agent's spend on a unit's solution review is recorded against the unit, so its tokens per unit count every seat | Done | EP0386 | 2026-11-27 | 2026-11-27 |
 
 ## Archived Releases
 

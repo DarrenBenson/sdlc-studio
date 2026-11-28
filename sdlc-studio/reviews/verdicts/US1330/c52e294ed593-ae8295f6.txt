@@ -1,0 +1,6 @@
+UNIT: US1330
+BRIEF: c52e294ed593-ae8295f6
+VERDICT: APPROVE
+ISSUES: [pre-existing] changelog.d/ no longer exists on disk after the cut (git tracks no empty directory), so AC1's "left changelog.d empty" holds as "no fragments"\; the 88 tests and check_versions pass without it, not blocking
+BLOCKING: none
+RULINGS: verify_ac dry run: 3 of 3 ACs pass. The pytest set (release_cut_v65, prd/trd/tsd refresh, public_docs_retired) gave 88 passed. check_versions --strict is consistent at 6.5.0, and sdlc-studio/.version reads skill_version 6.5.0 with upgraded_from 6.4.0. The [6.5.0] section is 2993 lines, holds US1321 and carries no "cast holds no Sam" sentence. README, INSTALL and enterprise pin v6.5.0, with 0 v6.4.0 left in enterprise.md, and README calls only 6.5.0 current. The PRD history skip is narrow. In a throwaway clone with git commit-tree, a commit authored remote-gate@localhost at HEAD passes, a commit by another author at HEAD fails, and the same gate author below HEAD fails. The fragment sentences match the shipped CLI, and I spot-checked US1054 and the commit-body probes. The Changelog: none trailer is reasoned and fits, since the cut folds US1330's own fragment.
